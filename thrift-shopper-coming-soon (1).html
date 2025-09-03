@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ThriftShopper.ai - Coming Soon</title>
+    <meta name="description" content="The magic of predictive discovery. AI-powered secondhand shopping that knows what you need before you do.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #1a365d 0%, #2d5a87 50%, #4a90c2 100%);
+            min-height: 100vh;
+            color: white;
+            overflow-x: hidden;
+        }
+
+        .hero-section {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 2rem;
+            position: relative;
+        }
+
+        .logo-section {
+            margin-bottom: 3rem;
+            animation: fadeInUp 1s ease-out;
+        }
+
+        .brand-title {
+            font-family: 'DM Serif Display', serif;
+            font-size: clamp(3rem, 8vw, 7rem);
+            font-weight: 400;
+            color: #f7fafc;
+            margin-bottom: 1rem;
+            line-height: 1.1;
+        }
+
+        .tagline {
+            font-size: clamp(1.2rem, 3vw, 2rem);
+            color: #ffd700;
+            font-weight: 300;
+            font-style: italic;
+            margin-bottom: 3rem;
+        }
+
+        .coming-soon-badge {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            padding: 1rem 2.5rem;
+            border-radius: 50px;
+            font-size: 1.3rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-bottom: 3rem;
+            display: inline-block;
+            box-shadow: 0 10px 30px rgba(255, 107, 107, 0.3);
+            animation: pulse 2s infinite;
+        }
+
+        .preview-section {
+            margin-top: 4rem;
+            animation: fadeInUp 1s ease-out 0.5s both;
+        }
+
+        .preview-title {
+            font-size: 1.5rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+
+        .phone-mockup {
+            position: relative;
+            width: 300px;
+            height: 600px;
+            margin: 0 auto;
+            background: #000;
+            border-radius: 30px;
+            padding: 8px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .phone-screen {
+            width: 100%;
+            height: 100%;
+            background: #f8f9fa;
+            border-radius: 22px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .status-bar {
+            height: 44px;
+            background: #f8f9fa;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            font-size: 16px;
+            font-weight: 600;
+            color: #000;
+        }
+
+        .app-header {
+            padding: 20px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .app-title {
+            font-family: 'DM Serif Display', serif;
+            font-size: 28px;
+            color: #1a202c;
+            margin-bottom: 8px;
+        }
+
+        .app-subtitle {
+            font-size: 14px;
+            color: #718096;
+            margin-bottom: 4px;
+        }
+
+        .predicted-section {
+            padding: 20px;
+            background: #f8f9fa;
+        }
+
+        .prediction-badge {
+            background: #4a5568;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 16px;
+            display: inline-block;
+        }
+
+        .item-card {
+            background: #e2e8f0;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .item-image {
+            width: 100%;
+            height: 120px;
+            background: #cbd5e0;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+        }
+
+        .item-title {
+            font-family: 'DM Serif Display', serif;
+            font-size: 20px;
+            color: #1a202c;
+            margin-bottom: 4px;
+        }
+
+        .item-price {
+            font-size: 18px;
+            font-weight: 700;
+            color: #38a169;
+            margin-bottom: 8px;
+        }
+
+        .item-reason {
+            font-size: 12px;
+            color: #4a5568;
+            font-style: italic;
+        }
+
+        .local-gems {
+            padding: 20px;
+            background: #f8f9fa;
+        }
+
+        .section-title {
+            font-family: 'DM Serif Display', serif;
+            font-size: 24px;
+            color: #1a202c;
+            margin-bottom: 8px;
+        }
+
+        .section-subtitle {
+            font-size: 14px;
+            color: #718096;
+            margin-bottom: 16px;
+        }
+
+        .gems-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+
+        .gem-item {
+            background: #e2e8f0;
+            border-radius: 12px;
+            padding: 12px;
+            text-align: center;
+        }
+
+        .gem-icon {
+            width: 100%;
+            height: 60px;
+            background: #cbd5e0;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .gem-title {
+            font-size: 11px;
+            font-weight: 600;
+            color: #1a202c;
+            margin-bottom: 4px;
+            line-height: 1.2;
+        }
+
+        .gem-price {
+            font-size: 12px;
+            font-weight: 700;
+            color: #38a169;
+        }
+
+        .cta-button {
+            background: #ffd700;
+            color: #1a202c;
+            padding: 12px;
+            border-radius: 12px;
+            font-weight: 600;
+            margin: 16px 20px 20px;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .email-section {
+            margin-top: 4rem;
+            max-width: 500px;
+            animation: fadeInUp 1s ease-out 1s both;
+        }
+
+        .email-form {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .email-input {
+            flex: 1;
+            padding: 1.2rem;
+            border: none;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.9);
+            font-size: 1rem;
+            outline: none;
+        }
+
+        .email-button {
+            padding: 1.2rem 2rem;
+            background: #ffd700;
+            color: #1a202c;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .email-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(255, 215, 0, 0.4);
+        }
+
+        .success-message {
+            background: rgba(34, 197, 94, 0.2);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-top: 1rem;
+            display: none;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(40px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .hero-section {
+                padding: 1rem;
+            }
+            
+            .phone-mockup {
+                width: 250px;
+                height: 500px;
+            }
+            
+            .email-form {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="hero-section">
+        <div class="logo-section">
+            <h1 class="brand-title">ThriftShopper</h1>
+            <p class="tagline">the magic of predictive discovery</p>
+        </div>
+
+        <div class="coming-soon-badge">
+            Coming Soon
+        </div>
+
+        <div class="preview-section">
+            <h2 class="preview-title">AI that knows what you need before you do</h2>
+            
+            <div class="phone-mockup">
+                <div class="phone-screen">
+                    <div class="status-bar">
+                        <span>9:41</span>
+                        <span>●●● ⚡ 🔋</span>
+                    </div>
+                    
+                    <div class="app-header">
+                        <h1 class="app-title">Thrift Shopper AI</h1>
+                        <p class="app-subtitle">Powered by Interest Mapper</p>
+                        <p class="app-subtitle">Story Finder</p>
+                    </div>
+                    
+                    <div class="predicted-section">
+                        <span class="prediction-badge">Predicted Pick for You</span>
+                        <div class="item-card">
+                            <div class="item-image">🧙‍♂️</div>
+                            <h3 class="item-title">Vintage Wizard of Oz</h3>
+                            <p class="item-price">$45</p>
+                            <p class="item-reason">This matches your hidden love of pop culture</p>
+                        </div>
+                    </div>
+                    
+                    <div class="local-gems">
+                        <h2 class="section-title">Local Gems</h2>
+                        <p class="section-subtitle">Powered by Location & Context</p>
+                        
+                        <div class="gems-grid">
+                            <div class="gem-item">
+                                <div class="gem-icon">⚾</div>
+                                <div class="gem-title">Baseball bobblehead</div>
+                                <div class="gem-price">$20</div>
+                            </div>
+                            <div class="gem-item">
+                                <div class="gem-icon">🧥</div>
+                                <div class="gem-title">90s NBA windbreaker</div>
+                                <div class="gem-price">$55</div>
+                            </div>
+                            <div class="gem-item">
+                                <div class="gem-icon">💡</div>
+                                <div class="gem-title">Unique desk lamp</div>
+                                <div class="gem-price">$35</div>
+                            </div>
+                        </div>
+                        
+                        <div class="cta-button">
+                            Didn't know you needed this? →
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="email-section">
+            <h3 style="font-size: 1.5rem; margin-bottom: 1rem;">Be first to experience the magic</h3>
+            <form class="email-form" id="emailForm">
+                <input 
+                    type="email" 
+                    class="email-input" 
+                    placeholder="Enter your email"
+                    required
+                    id="emailInput"
+                >
+                <button type="submit" class="email-button">
+                    Notify Me
+                </button>
+            </form>
+            <div class="success-message" id="successMessage">
+                ✨ Thanks! You'll be first to know when ThriftShopper.ai launches.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('emailForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('emailInput').value;
+            const successMessage = document.getElementById('successMessage');
+            
+            console.log('Email collected:', email);
+            
+            successMessage.style.display = 'block';
+            document.getElementById('emailInput').value = '';
+            
+            setTimeout(() => {
+                successMessage.style.display = 'none';
+            }, 5000);
+        });
+    </script>
+</body>
+</html>
