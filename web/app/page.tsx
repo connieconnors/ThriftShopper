@@ -31,7 +31,6 @@ const { data, error } = await supabase
   .order("created_at", { ascending: false })
   .limit(1);
 
-
   // Choose real listing if we have one, otherwise fall back to demo
   const rawListing: Listing = data?.[0] ?? demoListing;
 
