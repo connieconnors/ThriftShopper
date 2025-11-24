@@ -23,8 +23,9 @@ const demoListing: Listing = {
 
 export default async function Home() {
   // Try to fetch 1 listing from Supabase
-  const { data, error } = await supabase
-  .from<Listing>("listings")
+ // Try to fetch 1 listing from Supabase
+const { data, error } = await supabase
+  .from("listings")
   .select("*")
   .eq("status", "active")
   .order("created_at", { ascending: false })
