@@ -156,7 +156,7 @@ const { data, error } = await supabase
         </div>
       </section>
 
-      {/* Product card */}
+        {/* Product card */}
       <section
         style={{
           borderRadius: "18px",
@@ -233,7 +233,22 @@ const { data, error } = await supabase
         </div>
       </section>
 
-      {/* Footer */}
+      {/* Link to Browse */}
+      <footer style={{ marginTop: "16px" }}>
+        <Link
+          href="/browse"
+          style={{
+            fontSize: "12px",
+            textDecoration: "underline",
+            color: "#ffffff",
+            opacity: 0.9,
+          }}
+        >
+          View all finds →
+        </Link>
+      </footer>
+
+      {/* Bottom navigation bar */}
       <footer
         style={{
           display: "flex",
