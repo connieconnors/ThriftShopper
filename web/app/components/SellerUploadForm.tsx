@@ -1,10 +1,11 @@
 // components/SellerUploadForm.tsx
-// Beautiful, intuitive seller upload form with AI processing
+// Beautiful, intuitive seller upload form with AI processing and voice input
 
 'use client';
 
-import { useState, useRef } from 'react';
-import Image from 'next/image';
+import { useState, useRef, useCallback } from 'react';
+import { Mic, Loader2, X } from 'lucide-react';
+import { useWhisperTranscription } from '@/hooks/useWhisperTranscription';
 
 interface UploadResult {
   processedImageUrl: string;
@@ -21,6 +22,54 @@ interface UploadResult {
 }
 
 type ProcessingStep = 'idle' | 'uploading' | 'removing-bg' | 'analyzing' | 'generating' | 'pricing' | 'complete';
+
+// Voice input button component
+interface VoiceInputButtonProps {
+  onTranscript: (text: string) => void;
+  disabled?: boolean;
+  className?: string;
+}
+
+function VoiceInputButton({ onTranscript, disabled, className = '' }: VoiceInputButtonProps) {
+  const {
+    isRecording,
+    isProcessing,
+    isSupported,
+    toggleRecording,
+  } = useWhisperTranscription({
+    onTranscriptComplete: onTranscript,
+    silenceTimeout: 2000,
+    maxDuration: 30000,
+  });
+
+  if (!isSupported) return null;
+
+  return (
+    <button
+      type="button"
+      onClick={toggleRecording}
+      disabled={disabled || isProcessing}
+      className={`
+        p-2 rounded-full transition-all
+        ${isRecording 
+          ? 'bg-rose-500 text-white animate-pulse' 
+          : isProcessing 
+            ? 'bg-violet-500 text-white cursor-wait'
+            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+        }
+        ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
+        ${className}
+      `}
+      title={isRecording ? 'Stop recording' : 'Voice input'}
+    >
+      {isProcessing ? (
+        <Loader2 size={18} className="animate-spin" />
+      ) : (
+        <Mic size={18} />
+      )}
+    </button>
+  );
+}
 
 export default function SellerUploadForm() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -144,6 +193,19 @@ export default function SellerUploadForm() {
     setCategory('');
   };
 
+  // Voice input handlers
+  const handleTitleVoice = useCallback((transcript: string) => {
+    setTitle(prev => prev ? `${prev} ${transcript}` : transcript);
+  }, []);
+
+  const handleDescriptionVoice = useCallback((transcript: string) => {
+    setDescription(prev => prev ? `${prev} ${transcript}` : transcript);
+  }, []);
+
+  const handleCategoryVoice = useCallback((transcript: string) => {
+    setCategory(transcript);
+  }, []);
+
   return (
     <div className="max-w-4xl mx-auto p-6">
       <h1 className="text-3xl font-bold mb-8">List Your Item</h1>
@@ -188,7 +250,7 @@ export default function SellerUploadForm() {
                   onClick={resetForm}
                   className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-2 hover:bg-red-600"
                 >
-                  ✕
+                  <X size={16} />
                 </button>
               </div>
             )}
@@ -249,38 +311,56 @@ export default function SellerUploadForm() {
 
             {/* Listing Details */}
             <div className="space-y-4">
+              {/* Title with voice input */}
               <div>
                 <label className="block font-semibold mb-2">Title</label>
-                <input
-                  type="text"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2"
-                  maxLength={80}
-                />
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    className="flex-1 border border-gray-300 rounded-lg px-4 py-2"
+                    maxLength={80}
+                    placeholder="Enter title or use voice..."
+                  />
+                  <VoiceInputButton onTranscript={handleTitleVoice} />
+                </div>
                 <p className="text-xs text-gray-500 mt-1">
                   {(title || '').length}/80 characters
                 </p>
               </div>
 
+              {/* Description with voice input */}
               <div>
                 <label className="block font-semibold mb-2">Description</label>
-                <textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2"
-                  rows={4}
-                />
+                <div className="flex gap-2 items-start">
+                  <textarea
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    className="flex-1 border border-gray-300 rounded-lg px-4 py-2"
+                    rows={4}
+                    placeholder="Describe your item or use voice..."
+                  />
+                  <VoiceInputButton 
+                    onTranscript={handleDescriptionVoice}
+                    className="mt-1"
+                  />
+                </div>
               </div>
 
+              {/* Category with voice input */}
               <div>
                 <label className="block font-semibold mb-2">Category</label>
-                <input
-                  type="text"
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2"
-                />
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    className="flex-1 border border-gray-300 rounded-lg px-4 py-2"
+                    placeholder="e.g., Home Decor, Vintage..."
+                  />
+                  <VoiceInputButton onTranscript={handleCategoryVoice} />
+                </div>
               </div>
 
               <div>

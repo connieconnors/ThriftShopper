@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Mic } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Mic, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { useWhisperTranscription } from '@/hooks/useWhisperTranscription';
 
 interface VoiceInputProps {
   onVoiceQuery: (query: string, detectedMoods: string[]) => void;
@@ -32,142 +33,37 @@ function detectMoods(text: string): string[] {
   return detectedMoods;
 }
 
-interface SpeechRecognitionEvent extends Event {
-  results: SpeechRecognitionResultList;
-  resultIndex: number;
-}
-
-interface SpeechRecognitionErrorEvent extends Event {
-  error: string;
-}
-
 export function VoiceInput({ onVoiceQuery, onListeningChange }: VoiceInputProps) {
-  const [isListening, setIsListening] = useState(false);
-  const [transcript, setTranscript] = useState('');
-  const [isSupported, setIsSupported] = useState(true);
-  
-  const recognitionRef = useRef<any>(null);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [internalTranscript, setInternalTranscript] = useState('');
 
-  // Notify parent of listening state and transcript changes
-  useEffect(() => {
-    onListeningChange?.(isListening, transcript);
-  }, [isListening, transcript, onListeningChange]);
-
-  // Initialize speech recognition
-  useEffect(() => {
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    
-    if (!SpeechRecognition) {
-      setIsSupported(false);
-      return;
-    }
-
-    const recognition = new SpeechRecognition();
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.lang = 'en-US';
-
-    recognition.onresult = (event: SpeechRecognitionEvent) => {
-      let fullTranscript = '';
-
-      for (let i = 0; i < event.results.length; i++) {
-        fullTranscript += event.results[i][0].transcript;
-      }
-
-      setTranscript(fullTranscript);
-
-      // Reset timeout on each result
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-      
-      // Auto-stop after 2 seconds of silence
-      timeoutRef.current = setTimeout(() => {
-        if (recognitionRef.current) {
-          recognition.stop();
-        }
-      }, 2000);
-    };
-
-    recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
-      console.error('Speech recognition error:', event.error);
-      setIsListening(false);
-    };
-
-    recognition.onend = () => {
-      setIsListening(false);
-      
-      // Process the final transcript
-      if (transcript.trim()) {
-        const moods = detectMoods(transcript);
-        onVoiceQuery(transcript.trim(), moods);
-      }
-    };
-
-    recognitionRef.current = recognition;
-
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-    };
-  }, []);
-
-  // Use ref to access latest transcript in onend
-  const transcriptRef = useRef(transcript);
-  useEffect(() => {
-    transcriptRef.current = transcript;
-  }, [transcript]);
-
-  const startListening = useCallback(async () => {
-    if (!recognitionRef.current) return;
-
-    try {
-      await navigator.mediaDevices.getUserMedia({ audio: true });
-    } catch (err) {
-      console.error('Microphone permission denied');
-      return;
-    }
-
-    setTranscript('');
-    setIsListening(true);
-
-    try {
-      recognitionRef.current.start();
-    } catch (err) {
-      setIsListening(false);
-    }
-  }, []);
-
-  const stopListening = useCallback(() => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-    
-    if (recognitionRef.current) {
-      try {
-        recognitionRef.current.stop();
-      } catch (e) {}
-    }
-    
-    setIsListening(false);
-    
-    // Process transcript
-    const finalText = transcriptRef.current.trim();
-    if (finalText) {
-      const moods = detectMoods(finalText);
-      onVoiceQuery(finalText, moods);
+  const handleTranscriptComplete = useCallback((transcript: string) => {
+    if (transcript.trim()) {
+      const moods = detectMoods(transcript);
+      onVoiceQuery(transcript.trim(), moods);
     }
   }, [onVoiceQuery]);
 
-  const toggleListening = () => {
-    if (isListening) {
-      stopListening();
-    } else {
-      startListening();
-    }
-  };
+  const handleTranscriptChange = useCallback((transcript: string) => {
+    setInternalTranscript(transcript);
+  }, []);
+
+  const {
+    isRecording,
+    isProcessing,
+    transcript,
+    isSupported,
+    toggleRecording,
+  } = useWhisperTranscription({
+    onTranscriptChange: handleTranscriptChange,
+    onTranscriptComplete: handleTranscriptComplete,
+    silenceTimeout: 2000,
+    maxDuration: 30000,
+  });
+
+  // Notify parent of listening state
+  useEffect(() => {
+    onListeningChange?.(isRecording || isProcessing, transcript || internalTranscript);
+  }, [isRecording, isProcessing, transcript, internalTranscript, onListeningChange]);
 
   if (!isSupported) {
     return (
@@ -183,16 +79,21 @@ export function VoiceInput({ onVoiceQuery, onListeningChange }: VoiceInputProps)
 
   return (
     <motion.button
-      onClick={toggleListening}
-      className="w-11 h-11 rounded-full flex items-center justify-center"
+      onClick={toggleRecording}
+      disabled={isProcessing}
+      className="w-11 h-11 rounded-full flex items-center justify-center relative"
       style={{
-        backgroundColor: isListening ? '#cfb53b' : '#191970',
+        backgroundColor: isRecording ? '#cfb53b' : isProcessing ? '#6b46c1' : '#191970',
       }}
       whileTap={{ scale: 0.9 }}
-      animate={isListening ? { scale: [1, 1.1, 1] } : {}}
-      transition={isListening ? { repeat: Infinity, duration: 1 } : {}}
+      animate={isRecording ? { scale: [1, 1.1, 1] } : {}}
+      transition={isRecording ? { repeat: Infinity, duration: 1 } : {}}
     >
-      <Mic size={22} className="text-white" />
+      {isProcessing ? (
+        <Loader2 size={22} className="text-white animate-spin" />
+      ) : (
+        <Mic size={22} className="text-white" />
+      )}
     </motion.button>
   );
 }
@@ -201,9 +102,10 @@ export function VoiceInput({ onVoiceQuery, onListeningChange }: VoiceInputProps)
 interface VoiceSearchBarProps {
   isVisible: boolean;
   transcript: string;
+  isProcessing?: boolean;
 }
 
-export function VoiceSearchBar({ isVisible, transcript }: VoiceSearchBarProps) {
+export function VoiceSearchBar({ isVisible, transcript, isProcessing }: VoiceSearchBarProps) {
   // Truncate to 80 chars max
   const displayText = transcript.length > 80 
     ? transcript.slice(0, 77) + '...' 
@@ -226,7 +128,15 @@ export function VoiceSearchBar({ isVisible, transcript }: VoiceSearchBarProps) {
               border: '1px solid rgba(207, 181, 59, 0.3)',
             }}
           >
-            {transcript ? (
+            {isProcessing ? (
+              <p 
+                className="text-sm flex items-center gap-2"
+                style={{ color: '#cfb53b', fontFamily: 'Merriweather, serif' }}
+              >
+                <Loader2 size={14} className="animate-spin" />
+                Transcribing...
+              </p>
+            ) : transcript ? (
               <p 
                 className="text-sm text-white truncate"
                 style={{ fontFamily: 'Merriweather, serif' }}
@@ -238,7 +148,7 @@ export function VoiceSearchBar({ isVisible, transcript }: VoiceSearchBarProps) {
                 className="text-sm italic animate-pulse"
                 style={{ color: '#cfb53b', fontFamily: 'Merriweather, serif' }}
               >
-                Listening...
+                Recording...
               </p>
             )}
           </div>
