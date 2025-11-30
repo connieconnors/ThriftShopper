@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "../context/AuthContext";
 import { supabase } from "../../lib/supabaseClient";
+import { TSLogo } from "../../components/TSLogo";
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -82,67 +83,75 @@ export default function SignUpPage() {
   };
 
   return (
-    <main className="min-h-screen bg-black text-white flex flex-col">
+    <main className="min-h-screen flex flex-col" style={{ backgroundColor: '#f8f9fa', fontFamily: 'Merriweather, serif' }}>
       {/* Header */}
-      <header className="p-4 flex items-center justify-between">
-        <Link href="/browse" className="text-xl font-bold tracking-tight">
-          RetroThrifter
+      <header className="p-4 flex items-center justify-between" style={{ backgroundColor: '#191970' }}>
+        <Link href="/browse" className="flex items-center gap-2">
+          <TSLogo size={32} primaryColor="#ffffff" accentColor="#efbf04" />
+          <span className="text-white font-semibold">ThriftShopper</span>
         </Link>
         <Link
           href="/login"
-          className="text-sm text-white/70 hover:text-white transition-colors"
+          className="text-sm text-white/80 hover:text-white transition-colors"
         >
-          Already have an account? <span className="font-semibold text-white">Log in</span>
+          Already have an account? <span className="font-semibold" style={{ color: '#efbf04' }}>Log in</span>
         </Link>
       </header>
 
       {/* Sign Up Form */}
       <div className="flex-1 flex items-center justify-center p-6">
-        <div className="w-full max-w-md">
+        <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8">
+          {/* Logo */}
+          <div className="flex justify-center mb-6">
+            <div className="w-20 h-20 rounded-full flex items-center justify-center" style={{ backgroundColor: '#191970' }}>
+              <TSLogo size={48} primaryColor="#ffffff" accentColor="#efbf04" />
+            </div>
+          </div>
+
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold mb-2">Create your account</h1>
-            <p className="text-white/60">Join RetroThrifter and start discovering unique finds</p>
+            <h1 className="text-2xl font-bold mb-2" style={{ color: '#191970' }}>Create your account</h1>
+            <p className="text-gray-600">Join ThriftShopper and start discovering unique finds</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
-              <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl">
-                <p className="text-red-400 text-sm">{error}</p>
+              <div className="p-4 bg-red-50 border border-red-200 rounded-xl">
+                <p className="text-red-600 text-sm">{error}</p>
               </div>
             )}
 
             <div>
-              <label className="block text-sm text-white/60 mb-1.5">Email</label>
+              <label className="block text-sm mb-1.5" style={{ color: '#191970' }}>Email</label>
               <input
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 bg-slate-900/50 border border-white/10 rounded-xl text-white placeholder-white/30 focus:outline-none focus:border-white/30 transition-colors"
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:border-[#191970] transition-colors"
                 placeholder="you@example.com"
               />
             </div>
 
             <div>
-              <label className="block text-sm text-white/60 mb-1.5">Password</label>
+              <label className="block text-sm mb-1.5" style={{ color: '#191970' }}>Password</label>
               <input
                 type="password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 bg-slate-900/50 border border-white/10 rounded-xl text-white placeholder-white/30 focus:outline-none focus:border-white/30 transition-colors"
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:border-[#191970] transition-colors"
                 placeholder="At least 6 characters"
               />
             </div>
 
             <div>
-              <label className="block text-sm text-white/60 mb-1.5">Confirm Password</label>
+              <label className="block text-sm mb-1.5" style={{ color: '#191970' }}>Confirm Password</label>
               <input
                 type="password"
                 required
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full px-4 py-3 bg-slate-900/50 border border-white/10 rounded-xl text-white placeholder-white/30 focus:outline-none focus:border-white/30 transition-colors"
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:border-[#191970] transition-colors"
                 placeholder="Confirm your password"
               />
             </div>
@@ -154,11 +163,12 @@ export default function SignUpPage() {
                 id="accepts-marketing"
                 checked={acceptsMarketing}
                 onChange={(e) => setAcceptsMarketing(e.target.checked)}
-                className="mt-1 w-4 h-4 rounded border-white/20 bg-slate-900/50 text-violet-500 focus:ring-violet-500 focus:ring-offset-0 cursor-pointer"
+                className="mt-1 w-4 h-4 rounded border-gray-300 focus:ring-2 cursor-pointer"
+                style={{ accentColor: '#191970' }}
               />
               <label 
                 htmlFor="accepts-marketing" 
-                className="text-sm text-white/60 cursor-pointer select-none"
+                className="text-sm text-gray-600 cursor-pointer select-none"
               >
                 I want to receive promotional emails and updates
               </label>
@@ -167,7 +177,8 @@ export default function SignUpPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full h-14 bg-white text-black font-bold text-lg rounded-full hover:bg-white/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-6"
+              className="w-full h-14 font-bold text-lg rounded-xl text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-6"
+              style={{ backgroundColor: '#191970' }}
             >
               {isLoading ? (
                 <>
@@ -183,7 +194,7 @@ export default function SignUpPage() {
             </button>
           </form>
 
-          <p className="text-center text-xs text-white/40 mt-6">
+          <p className="text-center text-xs text-gray-500 mt-6">
             By signing up, you agree to our Terms of Service and Privacy Policy
           </p>
         </div>

@@ -1,19 +1,20 @@
-// ThriftShopper Seller Upload Service - WITH DATABASE INTEGRATION
-// Saves to listings and listing_photos tables
+// ThriftShopper Seller Upload Service
+// Saves to listings table in Supabase
 
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE!
-);
+// Use the correct environment variable names
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 interface UploadAndSaveResult {
   success: boolean;
   listingId?: string;
-  photoId?: string;
   data?: {
     processedImageUrl: string;
+    originalImageUrl: string;
     suggestedTitle: string;
     suggestedDescription: string;
     detectedCategory: string;
@@ -23,6 +24,7 @@ interface UploadAndSaveResult {
       maxPrice: number;
       avgPrice: number;
       recentSales: number;
+      source: 'ebay' | 'ai_estimate';
     };
   };
   error?: string;
@@ -39,77 +41,170 @@ export async function uploadAndCreateListing(
   }
 ): Promise<UploadAndSaveResult> {
   try {
-    const originalFilename = `original-${Date.now()}.jpg`;
+    console.log('Starting upload for seller:', sellerId);
+    
+    // Step 1: Upload original image to Supabase Storage
+    const originalFilename = `original-${Date.now()}-${Math.random().toString(36).substring(7)}.jpg`;
+    
+    let uploadData: Uint8Array;
+    if (Buffer.isBuffer(imageFile)) {
+      uploadData = new Uint8Array(imageFile);
+    } else {
+      // It's a File object
+      const arrayBuffer = await (imageFile as File).arrayBuffer();
+      uploadData = new Uint8Array(arrayBuffer);
+    }
+
     const { data: originalUpload, error: originalError } = await supabase.storage
-      .from('product-images')
-      .upload(originalFilename, imageFile, {
+      .from('listings')
+      .upload(originalFilename, uploadData, {
         contentType: 'image/jpeg',
         upsert: false,
       });
 
-    if (originalError) throw new Error(`Original upload failed: ${originalError.message}`);
+    if (originalError) {
+      console.error('Storage upload error:', originalError);
+      throw new Error(`Image upload failed: ${originalError.message}`);
+    }
 
     const { data: { publicUrl: originalUrl } } = supabase.storage
-      .from('product-images')
+      .from('listings')
       .getPublicUrl(originalFilename);
 
-    const processedImageUrl = await removeBackground(imageFile);
-    const visionData = await analyzeImage(processedImageUrl);
-    const listing = await generateListing(visionData, userInput);
-    const pricingIntelligence = await getEbayPricing(listing.title);
+    console.log('Image uploaded:', originalUrl);
+
+    // Step 2: Try to process with AI (but don't fail if APIs are missing)
+    let processedImageUrl = originalUrl;
+    let visionData = { 
+      category: userInput?.category || 'General', 
+      attributes: [] as string[],
+      suggestedTitle: '',
+      suggestedDescription: '',
+      suggestedPrice: null as number | null,
+    };
+    let listing = { 
+      title: userInput?.title || 'New Listing', 
+      description: userInput?.description || '' 
+    };
+    let pricingIntelligence = null;
+
+    // Try background removal (optional - don't fail if key missing)
+    if (process.env.REMOVE_BG_KEY) {
+      try {
+        processedImageUrl = await removeBackground(imageFile);
+        console.log('Background removed:', processedImageUrl);
+      } catch (e) {
+        console.warn('Background removal skipped:', e);
+      }
+    }
+
+    // Use OpenAI Vision (GPT-4o) for image analysis + listing generation + price estimation
+    // This combines vision analysis, listing generation, and price estimation in one call
+    if (process.env.OPENAI_API_KEY) {
+      try {
+        const openAIResult = await analyzeWithOpenAI(originalUrl);
+        console.log('OpenAI Vision analysis:', openAIResult);
+        
+        visionData = {
+          category: openAIResult.category || 'General',
+          attributes: openAIResult.attributes || [],
+          suggestedTitle: openAIResult.title || '',
+          suggestedDescription: openAIResult.description || '',
+          suggestedPrice: openAIResult.estimatedPrice || null,
+        };
+        
+        listing = {
+          title: openAIResult.title || 'New Listing',
+          description: openAIResult.description || '',
+        };
+        
+        // Use OpenAI's price estimate if no eBay data
+        if (openAIResult.estimatedPrice) {
+          pricingIntelligence = {
+            minPrice: Math.round(openAIResult.estimatedPrice * 0.7),
+            maxPrice: Math.round(openAIResult.estimatedPrice * 1.3),
+            avgPrice: openAIResult.estimatedPrice,
+            recentSales: 0, // Estimated, not from eBay
+            source: 'ai_estimate',
+          };
+        }
+      } catch (e) {
+        console.warn('OpenAI Vision analysis skipped:', e);
+      }
+    }
+    // Fallback: Try Google Vision image analysis (if OpenAI didn't work)
+    else if (process.env.VISION_API_KEY) {
+      try {
+        const googleVisionData = await analyzeImage(processedImageUrl);
+        visionData.category = googleVisionData.category;
+        visionData.attributes = googleVisionData.attributes;
+        console.log('Google Vision analysis:', googleVisionData);
+      } catch (e) {
+        console.warn('Google Vision analysis skipped:', e);
+      }
+    }
+
+    // Try eBay pricing (optional - better prices if available)
+    if (process.env.EBAY_APP_ID && listing.title !== 'New Listing') {
+      try {
+        const ebayPricing = await getEbayPricing(listing.title);
+        if (ebayPricing) {
+          pricingIntelligence = { ...ebayPricing, source: 'ebay' };
+          console.log('eBay pricing data:', pricingIntelligence);
+        }
+      } catch (e) {
+        console.warn('eBay pricing skipped:', e);
+      }
+    }
+
+    // Step 3: Create listing in database
+    const listingInsert = {
+      seller_id: sellerId,
+      title: userInput?.title || listing.title,
+      description: userInput?.description || listing.description,
+      price: userInput?.price || pricingIntelligence?.avgPrice || null,
+      category: userInput?.category || visionData.category,
+      original_image_url: originalUrl,
+      clean_image_url: processedImageUrl !== originalUrl ? processedImageUrl : null,
+      staged_image_url: null,
+      status: 'draft',
+      styles: visionData.attributes?.slice(0, 3) || [],
+      moods: [],
+      intents: [],
+    };
+
+    console.log('Creating listing:', listingInsert);
 
     const { data: listingData, error: listingError } = await supabase
       .from('listings')
-      .insert({
-        seller_id: sellerId,
-        title: userInput?.title || listing.title,
-        description: userInput?.description || listing.description,
-        price: userInput?.price || pricingIntelligence?.avgPrice || null,
-        category: userInput?.category || visionData.category,
-        ai_generated_title: listing.title,
-        ai_generated_description: listing.description,
-        user_edited_title: !!userInput?.title,
-        user_edited_description: !!userInput?.description,
-        ebay_min_price: pricingIntelligence?.minPrice,
-        ebay_max_price: pricingIntelligence?.maxPrice,
-        ebay_avg_price: pricingIntelligence?.avgPrice,
-        ebay_recent_sales: pricingIntelligence?.recentSales,
-        ebay_last_checked: new Date().toISOString(),
-        status: 'draft',
-      })
+      .insert(listingInsert)
       .select()
       .single();
 
-    if (listingError) throw new Error(`Listing creation failed: ${listingError.message}`);
+    if (listingError) {
+      console.error('Listing creation error:', listingError);
+      throw new Error(`Listing creation failed: ${listingError.message}`);
+    }
 
-    const { data: photoData, error: photoError } = await supabase
-      .from('listing_photos')
-      .insert({
-        listing_id: listingData.id,
-        original_image_url: originalUrl,
-        processed_image_url: processedImageUrl,
-        storage_path: processedImageUrl.split('/').pop(),
-        ai_detected_category: visionData.category,
-        ai_detected_attributes: visionData.attributes,
-        processing_status: 'complete',
-        is_primary: true,
-      })
-      .select()
-      .single();
-
-    if (photoError) throw new Error(`Photo record creation failed: ${photoError.message}`);
+    console.log('Listing created:', listingData.id);
 
     return {
       success: true,
       listingId: listingData.id,
-      photoId: photoData.id,
       data: {
-        processedImageUrl,
+        processedImageUrl: processedImageUrl,
+        originalImageUrl: originalUrl,
         suggestedTitle: listing.title,
         suggestedDescription: listing.description,
         detectedCategory: visionData.category,
         detectedAttributes: visionData.attributes,
-        pricingIntelligence: pricingIntelligence || undefined,
+        pricingIntelligence: pricingIntelligence ? {
+          minPrice: pricingIntelligence.minPrice,
+          maxPrice: pricingIntelligence.maxPrice,
+          avgPrice: pricingIntelligence.avgPrice,
+          recentSales: pricingIntelligence.recentSales,
+          source: pricingIntelligence.source as 'ebay' | 'ai_estimate',
+        } : undefined,
       },
     };
   } catch (error) {
@@ -121,6 +216,99 @@ export async function uploadAndCreateListing(
   }
 }
 
+// OpenAI Vision (GPT-4o) - analyzes image and generates listing details + price estimate
+async function analyzeWithOpenAI(imageUrl: string): Promise<{
+  title: string;
+  description: string;
+  category: string;
+  attributes: string[];
+  estimatedPrice: number | null;
+}> {
+  const prompt = `You are an expert at identifying and pricing secondhand/vintage items for resale on marketplaces like eBay, Poshmark, and ThriftShopper.
+
+Analyze this image and provide:
+1. A compelling, SEO-friendly title (max 80 characters) 
+2. A detailed description (2-3 sentences highlighting key features, condition, and appeal)
+3. The most appropriate category from: Kitchen & Dining, Home Decor, Collectibles, Books & Media, Furniture, Art, Electronics, Fashion, Jewelry, Toys & Games, Sports & Outdoors, General
+4. 5 descriptive attributes/tags (like: vintage, gold, leather, designer, bohemian, etc.)
+5. An estimated resale price in USD based on typical secondhand marketplace prices
+
+Be specific about what you see. If it's a designer item, identify the brand. If it's vintage, estimate the era.
+
+Return ONLY valid JSON in this exact format:
+{
+  "title": "Vintage Coach Leather Crossbody Bag Brown",
+  "description": "Beautiful vintage Coach crossbody bag in rich brown leather. Features adjustable strap and brass hardware. Shows light patina consistent with age, adding to its vintage charm.",
+  "category": "Fashion",
+  "attributes": ["vintage", "leather", "designer", "Coach", "crossbody"],
+  "estimatedPrice": 85
+}`;
+
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+    },
+    body: JSON.stringify({
+      model: 'gpt-4o',
+      messages: [
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: prompt },
+            { type: 'image_url', image_url: { url: imageUrl, detail: 'high' } },
+          ],
+        },
+      ],
+      max_tokens: 500,
+      temperature: 0.7,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error('OpenAI Vision API error:', response.status, errorText);
+    throw new Error(`OpenAI Vision API failed: ${response.status}`);
+  }
+
+  const data = await response.json();
+  let content = data.choices?.[0]?.message?.content?.trim() || '{}';
+  
+  console.log('OpenAI raw response:', content);
+
+  // Clean up the response - remove markdown code blocks if present
+  content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+  
+  // Extract JSON from response
+  const firstBrace = content.indexOf('{');
+  const lastBrace = content.lastIndexOf('}');
+
+  if (firstBrace !== -1 && lastBrace !== -1) {
+    content = content.substring(firstBrace, lastBrace + 1);
+  }
+
+  try {
+    const parsed = JSON.parse(content);
+    return {
+      title: parsed.title || 'New Listing',
+      description: parsed.description || '',
+      category: parsed.category || 'General',
+      attributes: Array.isArray(parsed.attributes) ? parsed.attributes : [],
+      estimatedPrice: typeof parsed.estimatedPrice === 'number' ? parsed.estimatedPrice : null,
+    };
+  } catch (e) {
+    console.error('Failed to parse OpenAI response:', e, content);
+    return {
+      title: 'New Listing',
+      description: '',
+      category: 'General',
+      attributes: [],
+      estimatedPrice: null,
+    };
+  }
+}
+
 async function removeBackground(imageFile: File | Buffer): Promise<string> {
   const formData = new FormData();
   
@@ -128,8 +316,8 @@ async function removeBackground(imageFile: File | Buffer): Promise<string> {
     formData.append('image_file', imageFile);
   } else {
     const uint8Array = new Uint8Array(imageFile);
-    const blob = new Blob([uint8Array]);
-    formData.append('image_file', blob);
+    const blob = new Blob([uint8Array], { type: 'image/jpeg' });
+    formData.append('image_file', blob, 'image.jpg');
   }
   
   formData.append('size', 'auto');
@@ -141,14 +329,17 @@ async function removeBackground(imageFile: File | Buffer): Promise<string> {
     body: formData,
   });
 
-  if (!response.ok) throw new Error(`Remove.bg failed: ${response.statusText}`);
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Remove.bg failed: ${response.status} - ${errorText}`);
+  }
 
   const processedImageBuffer = await response.arrayBuffer();
   
-  const filename = `processed-${Date.now()}.png`;
-  const { data, error } = await supabase.storage
-    .from('product-images')
-    .upload(filename, processedImageBuffer, {
+  const filename = `processed-${Date.now()}-${Math.random().toString(36).substring(7)}.png`;
+  const { error } = await supabase.storage
+    .from('listings')
+    .upload(filename, new Uint8Array(processedImageBuffer), {
       contentType: 'image/png',
       upsert: false,
     });
@@ -156,13 +347,13 @@ async function removeBackground(imageFile: File | Buffer): Promise<string> {
   if (error) throw new Error(`Supabase upload failed: ${error.message}`);
 
   const { data: { publicUrl } } = supabase.storage
-    .from('product-images')
+    .from('listings')
     .getPublicUrl(filename);
 
   return publicUrl;
 }
 
-async function analyzeImage(imageUrl: string): Promise<any> {
+async function analyzeImage(imageUrl: string): Promise<{ category: string; attributes: string[] }> {
   const response = await fetch(
     `https://vision.googleapis.com/v1/images:annotate?key=${process.env.VISION_API_KEY}`,
     {
@@ -181,8 +372,8 @@ async function analyzeImage(imageUrl: string): Promise<any> {
   );
 
   const data = await response.json();
-  const labels = data.responses[0]?.labelAnnotations || [];
-  const objects = data.responses[0]?.localizedObjectAnnotations || [];
+  const labels = data.responses?.[0]?.labelAnnotations || [];
+  const objects = data.responses?.[0]?.localizedObjectAnnotations || [];
 
   const allLabels = [
     ...labels.map((l: any) => ({ description: l.description, score: l.score })),
@@ -191,23 +382,23 @@ async function analyzeImage(imageUrl: string): Promise<any> {
 
   const category = inferCategory(allLabels);
   const attributes = allLabels
-    .filter((l) => l.score > 0.7)
-    .map((l) => l.description)
+    .filter((l: any) => l.score > 0.7)
+    .map((l: any) => l.description)
     .slice(0, 5);
 
-  return { category, attributes, rawLabels: allLabels };
+  return { category, attributes };
 }
 
 function inferCategory(labels: Array<{ description: string; score: number }>): string {
   const categoryMap: Record<string, string[]> = {
-    'Kitchen & Dining': ['dishware', 'tableware', 'cookware', 'glassware', 'bowl', 'plate', 'cup', 'mug'],
-    'Home Decor': ['vase', 'lamp', 'picture frame', 'sculpture', 'candle', 'mirror'],
-    'Collectibles': ['figurine', 'toy', 'doll', 'statue', 'antique'],
+    'Kitchen & Dining': ['dishware', 'tableware', 'cookware', 'glassware', 'bowl', 'plate', 'cup', 'mug', 'kitchen'],
+    'Home Decor': ['vase', 'lamp', 'picture frame', 'sculpture', 'candle', 'mirror', 'decor'],
+    'Collectibles': ['figurine', 'toy', 'doll', 'statue', 'antique', 'vintage'],
     'Books & Media': ['book', 'vinyl record', 'cd', 'dvd', 'magazine'],
     'Furniture': ['chair', 'table', 'desk', 'cabinet', 'shelf'],
-    'Art': ['painting', 'artwork', 'print', 'canvas'],
+    'Art': ['painting', 'artwork', 'print', 'canvas', 'art'],
     'Electronics': ['camera', 'radio', 'clock', 'telephone'],
-    'Fashion Accessories': ['handbag', 'jewelry', 'watch', 'scarf', 'hat'],
+    'Fashion': ['handbag', 'jewelry', 'watch', 'scarf', 'hat', 'clothing'],
   };
 
   for (const [category, keywords] of Object.entries(categoryMap)) {
@@ -221,7 +412,10 @@ function inferCategory(labels: Array<{ description: string; score: number }>): s
   return 'General';
 }
 
-async function generateListing(visionData: any, userInput?: any): Promise<any> {
+async function generateListing(
+  visionData: { category: string; attributes: string[] }, 
+  userInput?: { title?: string; description?: string }
+): Promise<{ title: string; description: string }> {
   const prompt = `You are an expert at writing compelling secondhand marketplace listings.
 
 ITEM DETAILS:
@@ -255,8 +449,9 @@ Return ONLY valid JSON:
   });
 
   const data = await response.json();
-  let content = data.choices[0].message.content.trim();
+  let content = data.choices?.[0]?.message?.content?.trim() || '{}';
 
+  // Clean up the response
   content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '');
   
   const firstBrace = content.indexOf('{');
@@ -266,10 +461,19 @@ Return ONLY valid JSON:
     content = content.substring(firstBrace, lastBrace + 1);
   }
 
-  return JSON.parse(content);
+  try {
+    return JSON.parse(content);
+  } catch {
+    return { title: 'New Listing', description: '' };
+  }
 }
 
-async function getEbayPricing(searchQuery: string): Promise<any> {
+async function getEbayPricing(searchQuery: string): Promise<{
+  minPrice: number;
+  maxPrice: number;
+  avgPrice: number;
+  recentSales: number;
+} | null> {
   const endpoint = 'https://svcs.ebay.com/services/search/FindingService/v1';
   
   const params = new URLSearchParams({

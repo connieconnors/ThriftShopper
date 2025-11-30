@@ -16,6 +16,7 @@ import {
 } from "../../../lib/types";
 import FavoriteButton from "../../components/FavoriteButton";
 import SellerDrawer from "../../components/SellerDrawer";
+import { TSLogo } from "../../../components/TSLogo";
 
 interface ProductDetailsProps {
   listing: Listing;
@@ -108,18 +109,23 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
     <main className="min-h-screen bg-black text-white">
       {/* Fixed Header - Back to Browse */}
       <header className="fixed top-0 left-0 right-0 z-50 p-4 flex items-center justify-between">
-        <Link
-          href="/browse"
-          className="w-10 h-10 flex items-center justify-center bg-black/40 backdrop-blur-md rounded-full text-white hover:bg-black/60 transition-colors"
-          aria-label="Back to browse"
-        >
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/browse"
+            className="w-10 h-10 flex items-center justify-center bg-black/40 backdrop-blur-md rounded-full text-white hover:bg-black/60 transition-colors"
+            aria-label="Back to browse"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </Link>
+          <Link href="/browse" className="opacity-80 hover:opacity-100 transition-opacity">
+            <TSLogo size={28} primaryColor="#ffffff" accentColor="#efbf04" />
+          </Link>
+        </div>
 
         {showShareSuccess && (
-          <div className="absolute left-1/2 -translate-x-1/2 px-4 py-2 bg-white/90 text-black text-sm font-medium rounded-full">
+          <div className="px-4 py-2 bg-white/90 text-black text-sm font-medium rounded-full">
             Link copied!
           </div>
         )}

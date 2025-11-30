@@ -1,9 +1,40 @@
 // app/api/seller/upload/route.ts
 import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
 import { uploadAndCreateListing } from '@/lib/seller-upload-service';
+
+// Create Supabase client for server-side auth
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 export async function POST(request: NextRequest) {
   try {
+    // Get auth token from request header
+    const authHeader = request.headers.get('authorization');
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json(
+        { error: 'Authentication required. Please log in to create a listing.' },
+        { status: 401 }
+      );
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+    
+    // Verify the token and get user
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: 'Invalid or expired session. Please log in again.' },
+        { status: 401 }
+      );
+    }
+
+    const sellerId = user.id;
+
     const formData = await request.formData();
     const imageFile = formData.get('image') as File;
     
@@ -11,10 +42,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No image provided' }, { status: 400 });
     }
 
-    // TODO: Get actual seller ID from auth session
-    // For now using a placeholder - you'll replace this with real auth
-    const sellerId = '00000000-0000-0000-0000-000000000000'; // Temporary UUID
-    
     const userInput = {
       title: formData.get('title') as string | undefined,
       description: formData.get('description') as string | undefined,

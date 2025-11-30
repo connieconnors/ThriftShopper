@@ -2,7 +2,8 @@
 
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { Store, Mail, Lock } from 'lucide-react';
+import { Mail, Lock } from 'lucide-react';
+import { TSLogo } from './TSLogo';
 
 interface SellerLoginProps {
   onLogin: (email: string) => void;
@@ -27,8 +28,8 @@ export function SellerLogin({ onLogin }: SellerLoginProps) {
         className="w-full max-w-md p-8 rounded-2xl bg-white shadow-xl"
       >
         <div className="flex justify-center mb-6">
-          <div className="w-16 h-16 rounded-full flex items-center justify-center" style={{ backgroundColor: '#191970' }}>
-            <Store size={32} color="white" />
+          <div className="w-20 h-20 rounded-full flex items-center justify-center" style={{ backgroundColor: '#191970' }}>
+            <TSLogo size={48} primaryColor="#ffffff" accentColor="#efbf04" />
           </div>
         </div>
 
