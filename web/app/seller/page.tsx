@@ -5,8 +5,10 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/app/context/AuthContext';
 import { supabase } from '@/lib/supabaseClient';
 import { TSLogo } from '@/components/TSLogo';
-import { Loader2, Plus, ArrowLeft } from 'lucide-react';
+import { Loader2, Plus, ArrowLeft, Settings, MessageCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import SellerMessages from './components/SellerMessages';
 import Link from 'next/link';
+import { StreamChatProvider } from './StreamChatProvider';
 
 interface Listing {
   id: string;
@@ -24,6 +26,7 @@ export default function SellerDashboard() {
   
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
+  const [messagesExpanded, setMessagesExpanded] = useState(false);
   const [stats, setStats] = useState({
     totalListings: 0,
     activeListings: 0,
@@ -38,9 +41,34 @@ export default function SellerDashboard() {
     }
 
     if (user) {
-      fetchSellerData();
+      checkOnboardingAndFetchData();
     }
   }, [user, authLoading]);
+
+  const checkOnboardingAndFetchData = async () => {
+    if (!user) return;
+
+    try {
+      // Check if seller profile is set up
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('is_seller, display_name, location_city')
+        .eq('user_id', user.id)
+        .single();
+
+      // If not a seller or missing key info, redirect to onboarding
+      if (!profile?.is_seller || !profile?.display_name || !profile?.location_city) {
+        router.push('/seller/onboarding');
+        return;
+      }
+
+      // Profile is complete, fetch seller data
+      fetchSellerData();
+    } catch (err) {
+      // No profile exists, redirect to onboarding
+      router.push('/seller/onboarding');
+    }
+  };
 
   const fetchSellerData = async () => {
     if (!user) return;
@@ -84,6 +112,7 @@ export default function SellerDashboard() {
   }
 
   return (
+    <StreamChatProvider>
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
@@ -92,7 +121,25 @@ export default function SellerDashboard() {
             <ArrowLeft size={20} className="text-gray-600" />
             <TSLogo size={28} primaryColor="#191970" accentColor="#cfb53b" />
           </Link>
-          <span className="text-sm text-gray-600">Seller Dashboard</span>
+          <span className="text-sm text-gray-600 font-medium">Seller Dashboard</span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => {/* TODO: Open messages */}}
+              className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors relative"
+              title="Messages"
+            >
+              <MessageCircle size={20} className="text-gray-600" />
+              {/* Notification dot - uncomment when messages exist */}
+              {/* <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" /> */}
+            </button>
+            <Link
+              href="/seller/settings"
+              className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors"
+              title="Settings"
+            >
+              <Settings size={20} className="text-gray-600" />
+            </Link>
+          </div>
         </div>
       </header>
 
@@ -116,6 +163,17 @@ export default function SellerDashboard() {
             <div className="text-sm text-gray-500">Sold</div>
           </div>
         </div>
+
+        {/* Messages Section */}
+        {user && (
+          <div className="mb-6">
+            <SellerMessages
+              userId={user.id}
+              expanded={messagesExpanded}
+              onToggleExpand={() => setMessagesExpanded(!messagesExpanded)}
+            />
+          </div>
+        )}
 
         {/* Add New Listing Button */}
         <Link
@@ -189,6 +247,7 @@ export default function SellerDashboard() {
         </div>
       </main>
     </div>
+    </StreamChatProvider>
   );
 }
 

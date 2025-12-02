@@ -3,6 +3,7 @@
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { TSLogo } from "../../components/TSLogo";
 
 function SuccessContent() {
   const searchParams = useSearchParams();
@@ -16,6 +17,13 @@ function SuccessContent() {
 
   return (
     <main className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-6 relative overflow-hidden">
+      {/* Header Branding */}
+      <div className="absolute top-4 left-4 z-20 flex items-center gap-2">
+        <Link href="/browse" className="flex items-center gap-2 opacity-90 hover:opacity-100 transition-opacity">
+          <TSLogo size={28} primaryColor="#ffffff" accentColor="#efbf04" />
+        </Link>
+      </div>
+
       {/* Animated Background */}
       {showConfetti && (
         <div className="absolute inset-0 pointer-events-none">
@@ -80,7 +88,7 @@ function SuccessContent() {
             </li>
             <li className="flex gap-3">
               <span className="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center flex-shrink-0 text-xs font-bold">3</span>
-              <span>Leave a review after you receive your item</span>
+              <span>Once your item arrives, come back and shop for your next find</span>
             </li>
           </ul>
         </div>

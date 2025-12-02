@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { supabase } from "../../lib/supabaseClient";
 import { Listing, getPrimaryImage, TS_BADGE_URL } from "../../lib/types";
+import { useAuth } from "../context/AuthContext";
 
 interface SellerDrawerProps {
   isOpen: boolean;
@@ -26,6 +27,7 @@ export default function SellerDrawer({
 }: SellerDrawerProps) {
   const [otherListings, setOtherListings] = useState<Listing[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const { user } = useAuth();
 
   useEffect(() => {
     if (isOpen && sellerId) {
@@ -108,13 +110,6 @@ export default function SellerDrawer({
             <div className="flex-1">
               <div className="flex items-center gap-1.5">
                 <h3 className="text-lg font-bold text-white">{sellerName}</h3>
-                {hasTSBadge && (
-                  <img 
-                    src={TS_BADGE_URL}
-                    alt="TS Verified"
-                    className="w-5 h-5"
-                  />
-                )}
               </div>
               {sellerLocation && (
                 <p className="text-sm text-white/50 flex items-center gap-1 mt-0.5">
@@ -194,6 +189,20 @@ export default function SellerDrawer({
           >
             View all items
           </Link>
+
+          {/* Subtle Message Seller CTA (only when logged in) */}
+          {user && (
+            <button
+              type="button"
+              onClick={() => {
+                // Placeholder for Stream Chat channel creation
+                console.log("Message seller clicked for", sellerId);
+              }}
+              className="mt-3 w-full py-2.5 text-sm text-white/80 border border-white/20 rounded-full hover:bg-white/10 transition-colors"
+            >
+              Message seller
+            </button>
+          )}
         </div>
       </div>
     </>

@@ -1,0 +1,120 @@
+"use client";
+
+import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
+
+interface SplashScreenProps {
+  autoNavigateDelay?: number; // ms before auto-navigation (default 3000)
+}
+
+export default function SplashScreen({ autoNavigateDelay = 3000 }: SplashScreenProps) {
+  const router = useRouter();
+  const [isExiting, setIsExiting] = useState(false);
+
+  const handleEnter = useCallback(() => {
+    if (isExiting) return;
+    setIsExiting(true);
+    
+    // Wait for fade-out animation, then navigate
+    setTimeout(() => {
+      router.push("/discover");
+    }, 600);
+  }, [isExiting, router]);
+
+  // Auto-navigate after delay
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      handleEnter();
+    }, autoNavigateDelay);
+
+    return () => clearTimeout(timer);
+  }, [autoNavigateDelay, handleEnter]);
+
+  return (
+    <div
+      suppressHydrationWarning
+      onClick={handleEnter}
+      className={`
+        fixed inset-0 z-50 cursor-pointer
+        flex flex-col items-center justify-end
+        transition-opacity duration-500 ease-out
+        ${isExiting ? "opacity-0" : "opacity-100"}
+      `}
+      style={{
+        backgroundImage: "url(/splash_screen.jpg)",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }}
+    >
+      {/* Dark gradient overlay for text readability */}
+      <div 
+        className="absolute inset-0"
+        style={{
+          background: "linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 40%, rgba(0,0,0,0.2) 100%)",
+        }}
+      />
+
+      {/* Content - positioned at ~64% down */}
+      <div 
+        className="absolute left-0 right-0 z-10 px-6"
+        style={{ top: "58%" }}
+      >
+        {/* Branding block - left-aligned text in centered container */}
+        <div className="max-w-fit mx-auto">
+          {/* Logo / Brand - main branding moment */}
+          <h1 
+            className="text-7xl md:text-8xl lg:text-9xl font-light tracking-wide text-white mb-2"
+            style={{ 
+              fontFamily: "var(--font-playfair), Georgia, serif",
+              textShadow: "0 3px 25px rgba(0,0,0,0.6)",
+            }}
+          >
+            ThriftShopper
+          </h1>
+
+          {/* Tagline - left aligned, starts under "T" and "h" */}
+          <p 
+            className="text-3xl md:text-4xl italic"
+            style={{ 
+              fontFamily: "var(--font-playfair), Georgia, serif",
+              color: "#cfb53b",
+              textShadow: "0 2px 12px rgba(0,0,0,0.7)",
+              paddingLeft: "28px", // Another 1.5 spaces right
+              marginBottom: "55px", // Another 10 lines down
+            }}
+          >
+            the magic of discovery™
+          </p>
+
+          {/* Step inside CTA - Merriweather, white #ffffff, centered */}
+          <p 
+            className="text-4xl md:text-5xl tracking-widest text-center"
+            style={{ 
+              fontFamily: "var(--font-merriweather), Georgia, serif",
+              color: "#ffffff",
+              textShadow: "0 2px 10px rgba(0,0,0,0.6)",
+              animation: "gentlePulse 2s ease-in-out infinite",
+            }}
+          >
+            Step inside...
+          </p>
+        </div>
+      </div>
+
+      {/* Custom animation keyframes */}
+      <style jsx>{`
+        @keyframes gentlePulse {
+          0%, 100% {
+            opacity: 0.7;
+            transform: scale(1);
+          }
+          50% {
+            opacity: 1;
+            transform: scale(1.02);
+          }
+        }
+      `}</style>
+    </div>
+  );
+}
+

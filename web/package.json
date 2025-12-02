@@ -19,6 +19,8 @@
     "react": "19.2.0",
     "react-dom": "19.2.0",
     "sonner": "^2.0.7",
+    "stream-chat": "^9.26.0",
+    "stream-chat-react": "^13.12.0",
     "stripe": "^20.0.0"
   },
   "devDependencies": {
