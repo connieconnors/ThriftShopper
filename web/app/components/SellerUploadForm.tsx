@@ -317,6 +317,12 @@ export default function SellerUploadForm() {
       });
 
       const data = await response.json();
+      
+      // TEMPORARY DEBUG: Show AI source info
+      if (data._debug) {
+        console.log('AI Debug:', data._debug);
+        alert(`AI Debug Info:\nSource: ${data._debug.aiSource}\nError: ${data._debug.aiError || 'none'}`);
+      }
 
       if (!response.ok) {
         throw new Error(data.error || 'Upload failed');
