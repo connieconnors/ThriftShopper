@@ -198,12 +198,12 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
       setSearchResults(null);
       return;
     }
-
+  
     const orConditions = words.map(word => {
       const escaped = word.replace(/[%_]/g, "\\$&");
       return `title.ilike.*${escaped}*,description.ilike.*${escaped}*,category.ilike.*${escaped}*`;
     }).join(",");
-
+  
     const { data, error } = await supabase
       .from("listings")
       .select(`
@@ -221,7 +221,7 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
       .or(orConditions)
       .order("created_at", { ascending: false })
       .limit(24);
-
+  
     if (!error && data && data.length > 0) {
       setSearchResults(data as Listing[]);
       setCurrentIndex(0);
@@ -231,7 +231,7 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
     
     setVoiceTranscript('');
   };
-
+  
   const clearSearch = () => {
     setSearchResults(null);
     setCurrentIndex(0);

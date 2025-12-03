@@ -77,6 +77,49 @@ function VoiceInputButton({ onTranscript, disabled, className = '' }: VoiceInput
 }
 
 export default function SellerUploadForm() {
+  // Add this categorization function here
+  const categorizeAttributes = (attributes: string[]) => {
+    const styles: string[] = [];
+    const moods: string[] = [];
+    const intents: string[] = [];
+    
+    // Style descriptors (visual/aesthetic)
+    const styleKeywords = ['vintage', 'modern', 'rustic', 'mid-century', 'antique', 'contemporary', 
+      'traditional', 'industrial', 'bohemian', 'minimalist', 'ornate', 'sleek', 'embroidered',
+      'carved', 'painted', 'glazed', 'silver plated', 'brass', 'wood', 'ceramic', 'porcelain',
+      'designer', 'loafers', 'shoes', 'jewelry', 'necklace', 'pearl', 'scalloped', 'serving bowl'];
+    
+    // Mood descriptors (emotional/feeling)
+    const moodKeywords = ['whimsical', 'elegant', 'playful', 'cozy', 'luxurious', 'quirky', 
+      'charming', 'romantic', 'bold', 'delicate', 'dramatic', 'cheerful', 'sophisticated',
+      'humor', 'humorous', 'fun', 'serious', 'calm', 'energetic'];
+    
+    // Intent descriptors (use case)
+    const intentKeywords = ['gift', 'decor', 'collection', 'display', 'functional', 'serving',
+      'storage', 'wedding', 'housewarming', 'birthday', 'anniversary', 'everyday', 'special occasion'];
+    
+    attributes.forEach(attr => {
+      const lower = attr.toLowerCase();
+      
+      if (styleKeywords.some(k => lower.includes(k))) {
+        styles.push(attr);
+      }
+      else if (moodKeywords.some(k => lower.includes(k))) {
+        moods.push(attr);
+      }
+      else if (intentKeywords.some(k => lower.includes(k))) {
+        intents.push(attr);
+      }
+      else {
+        styles.push(attr); // Default to style
+      }
+    });
+    
+    return { styles, moods, intents };
+  };
+
+
+  // ... rest of your existing code
   const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
   
@@ -339,8 +382,11 @@ export default function SellerUploadForm() {
           condition: condition || null,
           specifications: specifications || null,
           // Merge AI + seller keywords into moods and styles
-          moods: allKeywords,
-          styles: allKeywords,
+   // Categorize keywords properly
+...(() => {
+  const { styles, moods, intents } = categorizeAttributes(allKeywords);
+  return { styles, moods, intents };
+})(),
           status: 'active',
           // Use processed or original image based on toggle
           clean_image_url: showProcessedImage ? result?.processedImageUrl : null,
@@ -396,8 +442,10 @@ export default function SellerUploadForm() {
           category,
           condition: condition || null,
           specifications: specifications || null,
-          moods: allKeywords,
-          styles: allKeywords,
+          ...(() => {
+            const { styles, moods, intents } = categorizeAttributes(allKeywords);
+            return { styles, moods, intents };
+          })(),
           // Keep as draft
           status: 'draft',
           clean_image_url: showProcessedImage ? result?.processedImageUrl : null,

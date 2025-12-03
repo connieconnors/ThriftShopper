@@ -158,20 +158,72 @@ export async function uploadAndCreateListing(
     }
 
     // Step 3: Create listing in database
-    const listingInsert = {
-      seller_id: sellerId,
-      title: userInput?.title || listing.title,
-      description: userInput?.description || listing.description,
-      price: userInput?.price || pricingIntelligence?.avgPrice || null,
-      category: userInput?.category || visionData.category,
-      original_image_url: originalUrl,
-      clean_image_url: processedImageUrl !== originalUrl ? processedImageUrl : null,
-      staged_image_url: null,
-      status: 'draft',
-      styles: visionData.attributes?.slice(0, 3) || [],
-      moods: [],
-      intents: [],
-    };
+  // Categorize the AI-detected attributes
+const categorizeAttributes = (attributes: string[]) => {
+  const styles: string[] = [];
+  const moods: string[] = [];
+  const intents: string[] = [];
+  
+  const styleKeywords = ['vintage', 'modern', 'rustic', 'mid-century', 'antique', 'contemporary', 
+    'traditional', 'industrial', 'bohemian', 'minimalist', 'ornate', 'sleek', 'embroidered',
+    'carved', 'painted', 'glazed', 'silver plated', 'brass', 'wood', 'ceramic', 'porcelain',
+    'designer', 'loafers', 'shoes', 'jewelry', 'necklace', 'pearl', 'scalloped', 'serving bowl',
+    'leather', 'Coach', 'Stubbs', 'Wootton'];
+  
+  const moodKeywords = ['whimsical', 'elegant', 'playful', 'cozy', 'luxurious', 'quirky', 
+    'charming', 'romantic', 'bold', 'delicate', 'dramatic', 'cheerful', 'sophisticated',
+    'humor', 'humorous', 'fun', 'serious', 'calm', 'energetic'];
+  
+  const intentKeywords = ['gift', 'decor', 'collection', 'display', 'functional', 'serving',
+    'storage', 'wedding', 'housewarming', 'birthday', 'anniversary', 'everyday', 'special occasion'];
+  
+  attributes.forEach(attr => {
+    const lower = attr.toLowerCase();
+    
+    if (styleKeywords.some(k => lower.includes(k))) {
+      styles.push(attr);
+    }
+    else if (moodKeywords.some(k => lower.includes(k))) {
+      moods.push(attr);
+    }
+    else if (intentKeywords.some(k => lower.includes(k))) {
+      intents.push(attr);
+    }
+    else {
+      styles.push(attr);
+    }
+  });
+  
+  return { styles, moods, intents };
+};
+// Generate embedding for semantic search
+let embedding = null;
+if (process.env.OPENAI_API_KEY) {
+  try {
+    const embeddingText = `${listing.title} ${listing.description} ${visionData.attributes.join(' ')} ${visionData.category}`;
+    embedding = await generateEmbedding(embeddingText);
+    console.log('Generated embedding');
+  } catch (e) {
+    console.warn('Embedding generation skipped:', e);
+  }
+}
+const categorized = categorizeAttributes(visionData.attributes || []);
+
+const listingInsert = {
+  seller_id: sellerId,
+  title: userInput?.title || listing.title,
+  description: userInput?.description || listing.description,
+  price: userInput?.price || pricingIntelligence?.avgPrice || null,
+  category: userInput?.category || visionData.category,
+  original_image_url: originalUrl,
+  clean_image_url: processedImageUrl !== originalUrl ? processedImageUrl : null,
+  staged_image_url: null,
+  status: 'draft',
+  styles: categorized.styles,
+  moods: categorized.moods,
+  intents: categorized.intents,
+  embedding: embedding,
+};
 
     console.log('Creating listing:', listingInsert);
 
@@ -511,3 +563,24 @@ async function getEbayPricing(searchQuery: string): Promise<{
     recentSales: prices.length,
   };
 }
+async function generateEmbedding(text: string): Promise<number[]> {
+  const response = await fetch('https://api.openai.com/v1/embeddings', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+    },
+    body: JSON.stringify({
+      model: 'text-embedding-3-small',
+      input: text,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Embedding generation failed: ${response.status}`);
+  }
+
+  const data = await response.json();
+  return data.data[0].embedding;
+}
+
