@@ -93,9 +93,13 @@ export async function uploadAndCreateListing(
     }
 
     // Use OpenAI Vision (GPT-4o) for image analysis + listing generation + price estimation
+    let aiSource = 'none';
+    let aiError = '';
+    
     if (process.env.OPENAI_API_KEY) {
       try {
         const openAIResult = await analyzeWithOpenAI(originalUrl);
+        aiSource = 'openai';
         
         visionData = {
           category: openAIResult.category || 'General',
@@ -121,17 +125,22 @@ export async function uploadAndCreateListing(
           };
         }
       } catch (e) {
-        // OpenAI Vision failed, will use defaults or fallback
+        // OpenAI Vision failed, try Google Vision as fallback
+        aiError = e instanceof Error ? e.message : String(e);
+        aiSource = 'openai_failed';
       }
     }
-    // Fallback: Try Google Vision image analysis (if OpenAI didn't work)
-    else if (process.env.VISION_API_KEY) {
+    
+    // Fallback: Try Google Vision image analysis (if OpenAI didn't work or isn't configured)
+    if ((aiSource === 'none' || aiSource === 'openai_failed') && process.env.VISION_API_KEY) {
       try {
         const googleVisionData = await analyzeImage(processedImageUrl);
         visionData.category = googleVisionData.category;
         visionData.attributes = googleVisionData.attributes;
+        if (aiSource !== 'openai_failed') aiSource = 'google_vision';
       } catch (e) {
         // Google Vision failed, continue with defaults
+        if (aiSource !== 'openai_failed') aiSource = 'google_vision_failed';
       }
     }
 
@@ -234,7 +243,6 @@ const listingInsert = {
         suggestedDescription: listing.description,
         detectedCategory: visionData.category,
         detectedAttributes: visionData.attributes,
-        aiSource: process.env.OPENAI_API_KEY ? 'openai' : (process.env.VISION_API_KEY ? 'google' : 'none'),
         pricingIntelligence: pricingIntelligence ? {
           minPrice: pricingIntelligence.minPrice,
           maxPrice: pricingIntelligence.maxPrice,
@@ -243,6 +251,8 @@ const listingInsert = {
           source: pricingIntelligence.source as 'ebay' | 'ai_estimate',
         } : undefined,
       },
+      // Debug info to help troubleshoot AI issues
+      _debug: { aiSource, aiError: aiError || undefined },
     };
   } catch (error) {
     return {
