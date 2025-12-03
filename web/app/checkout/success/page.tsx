@@ -3,7 +3,7 @@
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { TSLogo } from "../../components/TSLogo";
+import { TSLogo } from "@/components/TSLogo";
 
 function SuccessContent() {
   const searchParams = useSearchParams();
