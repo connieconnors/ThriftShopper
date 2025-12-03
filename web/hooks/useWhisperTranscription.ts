@@ -146,22 +146,25 @@ export function useWhisperTranscription(
 
       const dataArray = new Uint8Array(analyser.frequencyBinCount);
       let silenceStart: number | null = null;
+      let hasSpoken = false; // Track if user has started speaking
 
       // Check for silence every 100ms
       silenceCheckIntervalRef.current = setInterval(() => {
         analyser.getByteFrequencyData(dataArray);
         const average = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
         
-        if (average < 10) {
+        // Threshold of 15 (slightly higher for mobile mic sensitivity)
+        if (average < 15) {
           // Silence detected
           if (silenceStart === null) {
             silenceStart = Date.now();
-          } else if (Date.now() - silenceStart > silenceTimeout) {
-            // Silence exceeded timeout, stop recording
+          } else if (hasSpoken && Date.now() - silenceStart > silenceTimeout) {
+            // Only auto-stop after user has spoken AND silence exceeded
             stopRecording();
           }
         } else {
-          // Sound detected, reset silence timer
+          // Sound detected - user is speaking
+          hasSpoken = true;
           silenceStart = null;
         }
       }, 100);

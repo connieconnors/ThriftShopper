@@ -14,6 +14,8 @@ import {
 import { supabase } from "../../lib/supabaseClient";
 import { MoodWheel } from "../../components/MoodWheel";
 import { TSLogo } from "../../components/TSLogo";
+import { useWhisperTranscription } from "../../hooks/useWhisperTranscription";
+import { Mic, Loader2 } from "lucide-react";
 import { Sparkles } from "lucide-react";
 
 interface SwipeFeedProps {
@@ -43,7 +45,7 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
   const touchStartY = useRef(0);
   const touchDeltaY = useRef(0);
   const [dragOffset, setDragOffset] = useState(0);
-  const recognitionRef = useRef<any>(null);
+  const [countdown, setCountdown] = useState(8);
 
   // Navigate to product detail when card is clicked
   const handleCardClick = (listingId: string) => {
@@ -53,35 +55,42 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
   const displayListings = searchResults ?? listings;
   const currentListing = displayListings[currentIndex];
 
-  // Initialize Web Speech API
-  useEffect(() => {
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (SpeechRecognition) {
-      const recognition = new SpeechRecognition();
-      recognition.continuous = true;
-      recognition.interimResults = true;
-      recognition.lang = 'en-US';
-
-      recognition.onresult = (event: any) => {
-        let transcript = '';
-        for (let i = 0; i < event.results.length; i++) {
-          transcript += event.results[i][0].transcript;
-        }
-        setVoiceTranscript(transcript);
-      };
-
-      recognition.onerror = (event: any) => {
-        console.error('Speech recognition error:', event.error);
-        setIsListening(false);
-      };
-
-      recognition.onend = () => {
-        setIsListening(false);
-      };
-
-      recognitionRef.current = recognition;
+  // Handle completed voice transcription
+  const handleTranscriptComplete = useCallback(async (transcript: string) => {
+    if (transcript.trim()) {
+      setVoiceTranscript(transcript);
+      await handleSearch(transcript);
     }
   }, []);
+
+  // Whisper-based voice transcription (works on mobile!)
+  const {
+    isRecording,
+    isProcessing,
+    isSupported: isVoiceSupported,
+    toggleRecording,
+  } = useWhisperTranscription({
+    onTranscriptChange: (t) => setVoiceTranscript(t),
+    onTranscriptComplete: handleTranscriptComplete,
+    silenceTimeout: 1500, // 1.5 sec silence = done talking
+    maxDuration: 8000,    // 8 sec max - auto-stop for mobile UX
+  });
+
+  // Countdown timer when recording
+  useEffect(() => {
+    if (isRecording) {
+      setCountdown(8);
+      const interval = setInterval(() => {
+        setCountdown(prev => Math.max(0, prev - 1));
+      }, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [isRecording]);
+
+  // Sync listening state
+  useEffect(() => {
+    setIsListening(isRecording || isProcessing);
+  }, [isRecording, isProcessing]);
 
   // Keyboard navigation
   useEffect(() => {
@@ -157,40 +166,12 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
     }
   }, [handleWheel]);
 
-  // Voice Search
-  const toggleVoice = async () => {
-    if (isListening) {
-      // Stop listening
-      if (recognitionRef.current) {
-        recognitionRef.current.stop();
-      }
-      setIsListening(false);
-      
-      // Process search with current transcript
-      if (voiceTranscript.trim()) {
-        await handleSearch(voiceTranscript);
-      }
-    } else {
-      // Start listening
-      try {
-        await navigator.mediaDevices.getUserMedia({ audio: true });
-        setVoiceTranscript('');
-        setIsListening(true);
-        
-        if (recognitionRef.current) {
-          recognitionRef.current.start();
-          
-          // Auto-stop after 5 seconds
-          setTimeout(() => {
-            if (recognitionRef.current && isListening) {
-              recognitionRef.current.stop();
-            }
-          }, 5000);
-        }
-      } catch (err) {
-        console.error('Microphone permission denied:', err);
-      }
+  // Voice Search - now using Whisper for reliable mobile support
+  const toggleVoice = () => {
+    if (!isRecording) {
+      setVoiceTranscript('');
     }
+    toggleRecording();
   };
 
   const handleSearch = async (query: string) => {
@@ -305,38 +286,80 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
             </p>
           </div>
 
-          {/* Right: Mic Button ONLY */}
-          <button
-            onClick={toggleVoice}
-            className="w-12 h-12 rounded-full flex items-center justify-center transition-all"
-            style={{
-              backgroundColor: isListening ? COLORS.oldGold : COLORS.midnightBlue,
-              transform: isListening ? 'scale(1.1)' : 'scale(1)',
-            }}
-          >
-            <svg className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 1.5a4.5 4.5 0 00-4.5 4.5v5.25a4.5 4.5 0 109 0V6a4.5 4.5 0 00-4.5-4.5zm0 16.5a6.75 6.75 0 006.75-6.75V10.5a.75.75 0 00-1.5 0v.75a5.25 5.25 0 01-10.5 0V10.5a.75.75 0 00-1.5 0v.75A6.75 6.75 0 0012 18zm.75 2.25V21a.75.75 0 00-1.5 0v-.75a.75.75 0 001.5 0z" />
-            </svg>
-          </button>
+          {/* Right: Mic Button with countdown ring */}
+          <div className="relative">
+            {/* Countdown ring when recording */}
+            {isRecording && (
+              <svg 
+                className="absolute -inset-1 w-14 h-14 -rotate-90"
+                viewBox="0 0 56 56"
+              >
+                <circle
+                  cx="28" cy="28" r="26"
+                  fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="2"
+                />
+                <circle
+                  cx="28" cy="28" r="26"
+                  fill="none" stroke={COLORS.oldGold} strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeDasharray={2 * Math.PI * 26}
+                  strokeDashoffset={2 * Math.PI * 26 * (1 - countdown / 8)}
+                  style={{ transition: 'stroke-dashoffset 1s linear' }}
+                />
+              </svg>
+            )}
+            <button
+              onClick={toggleVoice}
+              disabled={isProcessing || !isVoiceSupported}
+              className="w-12 h-12 rounded-full flex items-center justify-center transition-all relative"
+              style={{
+                backgroundColor: isRecording ? COLORS.oldGold : isProcessing ? '#6b46c1' : COLORS.midnightBlue,
+                transform: isRecording ? 'scale(1.05)' : 'scale(1)',
+                opacity: !isVoiceSupported ? 0.5 : 1,
+              }}
+            >
+              {isProcessing ? (
+                <Loader2 className="w-6 h-6 text-white animate-spin" />
+              ) : (
+                <Mic className="w-6 h-6 text-white" />
+              )}
+            </button>
+          </div>
         </div>
 
-        {/* Voice Transcript (appears ONLY when listening) */}
-        {isListening && (
+        {/* Voice Transcript (appears when listening or processing) */}
+        {(isRecording || isProcessing) && (
           <div 
-            className="mt-4 h-10 px-4 flex items-center rounded-full max-w-md"
+            className="mt-4 h-10 px-4 flex items-center justify-between rounded-full max-w-md"
             style={{ 
               backgroundColor: 'rgba(255,255,255,0.15)', 
               backdropFilter: 'blur(10px)',
               border: `1px solid ${COLORS.oldGold}50`,
             }}
           >
-            <p className="text-sm truncate" style={{ color: 'white' }}>
-              {voiceTranscript || (
-                <span className="italic animate-pulse" style={{ color: COLORS.oldGold }}>
+            <p className="text-sm truncate flex-1" style={{ color: 'white' }}>
+              {isProcessing ? (
+                <span className="flex items-center gap-2" style={{ color: COLORS.oldGold }}>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Transcribing...
+                </span>
+              ) : voiceTranscript ? (
+                `"${voiceTranscript}"`
+              ) : (
+                <span className="italic" style={{ color: COLORS.oldGold }}>
                   Listening...
                 </span>
               )}
             </p>
+            {/* Countdown indicator */}
+            {isRecording && countdown > 0 && (
+              <span 
+                className="text-xs ml-2 opacity-70"
+                style={{ color: COLORS.oldGold }}
+              >
+                {countdown}s
+              </span>
+            )}
           </div>
         )}
 

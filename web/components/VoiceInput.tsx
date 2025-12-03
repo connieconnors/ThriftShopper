@@ -33,8 +33,11 @@ function detectMoods(text: string): string[] {
   return detectedMoods;
 }
 
+const MAX_DURATION = 8000; // 8 seconds
+
 export function VoiceInput({ onVoiceQuery, onListeningChange }: VoiceInputProps) {
   const [internalTranscript, setInternalTranscript] = useState('');
+  const [countdown, setCountdown] = useState(8);
 
   const handleTranscriptComplete = useCallback((transcript: string) => {
     if (transcript.trim()) {
@@ -56,9 +59,20 @@ export function VoiceInput({ onVoiceQuery, onListeningChange }: VoiceInputProps)
   } = useWhisperTranscription({
     onTranscriptChange: handleTranscriptChange,
     onTranscriptComplete: handleTranscriptComplete,
-    silenceTimeout: 2000,
-    maxDuration: 30000,
+    silenceTimeout: 1500, // 1.5 sec silence = done talking
+    maxDuration: MAX_DURATION,
   });
+
+  // Countdown timer when recording
+  useEffect(() => {
+    if (isRecording) {
+      setCountdown(8);
+      const interval = setInterval(() => {
+        setCountdown(prev => Math.max(0, prev - 1));
+      }, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [isRecording]);
 
   // Notify parent of listening state
   useEffect(() => {
@@ -77,24 +91,62 @@ export function VoiceInput({ onVoiceQuery, onListeningChange }: VoiceInputProps)
     );
   }
 
+  // Calculate progress for the countdown ring (0 to 1)
+  const progress = isRecording ? countdown / 8 : 0;
+  const circumference = 2 * Math.PI * 24; // radius 24 for the ring
+  const strokeDashoffset = circumference * (1 - progress);
+
   return (
-    <motion.button
-      onClick={toggleRecording}
-      disabled={isProcessing}
-      className="w-11 h-11 rounded-full flex items-center justify-center relative"
-      style={{
-        backgroundColor: isRecording ? '#cfb53b' : isProcessing ? '#6b46c1' : '#191970',
-      }}
-      whileTap={{ scale: 0.9 }}
-      animate={isRecording ? { scale: [1, 1.1, 1] } : {}}
-      transition={isRecording ? { repeat: Infinity, duration: 1 } : {}}
-    >
-      {isProcessing ? (
-        <Loader2 size={22} className="text-white animate-spin" />
-      ) : (
-        <Mic size={22} className="text-white" />
+    <div className="relative">
+      {/* Countdown ring - only visible when recording */}
+      {isRecording && (
+        <svg 
+          className="absolute -inset-1 w-[52px] h-[52px] -rotate-90"
+          viewBox="0 0 52 52"
+        >
+          {/* Background ring */}
+          <circle
+            cx="26"
+            cy="26"
+            r="24"
+            fill="none"
+            stroke="rgba(255,255,255,0.2)"
+            strokeWidth="2"
+          />
+          {/* Progress ring */}
+          <circle
+            cx="26"
+            cy="26"
+            r="24"
+            fill="none"
+            stroke="#cfb53b"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeDasharray={circumference}
+            strokeDashoffset={strokeDashoffset}
+            style={{ transition: 'stroke-dashoffset 1s linear' }}
+          />
+        </svg>
       )}
-    </motion.button>
+      
+      <motion.button
+        onClick={toggleRecording}
+        disabled={isProcessing}
+        className="w-11 h-11 rounded-full flex items-center justify-center relative"
+        style={{
+          backgroundColor: isRecording ? '#cfb53b' : isProcessing ? '#6b46c1' : '#191970',
+        }}
+        whileTap={{ scale: 0.9 }}
+        animate={isRecording ? { scale: [1, 1.05, 1] } : {}}
+        transition={isRecording ? { repeat: Infinity, duration: 1.5 } : {}}
+      >
+        {isProcessing ? (
+          <Loader2 size={22} className="text-white animate-spin" />
+        ) : (
+          <Mic size={22} className="text-white" />
+        )}
+      </motion.button>
+    </div>
   );
 }
 
@@ -103,9 +155,10 @@ interface VoiceSearchBarProps {
   isVisible: boolean;
   transcript: string;
   isProcessing?: boolean;
+  countdown?: number; // optional countdown in seconds
 }
 
-export function VoiceSearchBar({ isVisible, transcript, isProcessing }: VoiceSearchBarProps) {
+export function VoiceSearchBar({ isVisible, transcript, isProcessing, countdown }: VoiceSearchBarProps) {
   // Truncate to 80 chars max
   const displayText = transcript.length > 80 
     ? transcript.slice(0, 77) + '...' 
@@ -121,7 +174,7 @@ export function VoiceSearchBar({ isVisible, transcript, isProcessing }: VoiceSea
           className="w-full max-w-md"
         >
           <div 
-            className="h-10 px-4 rounded-full flex items-center"
+            className="h-10 px-4 rounded-full flex items-center justify-between"
             style={{ 
               backgroundColor: 'rgba(255,255,255,0.15)', 
               backdropFilter: 'blur(10px)',
@@ -138,18 +191,27 @@ export function VoiceSearchBar({ isVisible, transcript, isProcessing }: VoiceSea
               </p>
             ) : transcript ? (
               <p 
-                className="text-sm text-white truncate"
+                className="text-sm text-white truncate flex-1"
                 style={{ fontFamily: 'Merriweather, serif' }}
               >
                 "{displayText}"
               </p>
             ) : (
               <p 
-                className="text-sm italic animate-pulse"
+                className="text-sm italic"
                 style={{ color: '#cfb53b', fontFamily: 'Merriweather, serif' }}
               >
-                Recording...
+                Listening...
               </p>
+            )}
+            {/* Countdown indicator when recording and not processing */}
+            {!isProcessing && countdown !== undefined && countdown > 0 && (
+              <span 
+                className="text-xs ml-2 opacity-70"
+                style={{ color: '#cfb53b', fontFamily: 'system-ui' }}
+              >
+                {countdown}s
+              </span>
             )}
           </div>
         </motion.div>

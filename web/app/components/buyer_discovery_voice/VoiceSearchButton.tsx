@@ -24,8 +24,8 @@ export default function VoiceSearchButton({
   } = useWhisperTranscription({
     onTranscriptChange,
     onTranscriptComplete,
-    silenceTimeout: 2000,
-    maxDuration: 30000,
+    silenceTimeout: 1500, // 1.5 sec silence = done talking
+    maxDuration: 8000,    // 8 sec max - auto-stop for mobile UX
   });
 
   const getButtonState = useCallback(() => {

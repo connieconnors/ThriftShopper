@@ -100,10 +100,15 @@ export async function uploadAndCreateListing(
 
     // Use OpenAI Vision (GPT-4o) for image analysis + listing generation + price estimation
     // This combines vision analysis, listing generation, and price estimation in one call
+    console.log('=== OPENAI DEBUG ===');
+    console.log('OPENAI_API_KEY exists:', !!process.env.OPENAI_API_KEY);
+    console.log('OPENAI_API_KEY length:', process.env.OPENAI_API_KEY?.length || 0);
+    
     if (process.env.OPENAI_API_KEY) {
       try {
+        console.log('Calling OpenAI Vision with image:', originalUrl);
         const openAIResult = await analyzeWithOpenAI(originalUrl);
-        console.log('OpenAI Vision analysis:', openAIResult);
+        console.log('OpenAI Vision analysis SUCCESS:', openAIResult);
         
         visionData = {
           category: openAIResult.category || 'General',
@@ -129,11 +134,14 @@ export async function uploadAndCreateListing(
           };
         }
       } catch (e) {
-        console.warn('OpenAI Vision analysis skipped:', e);
+        console.error('=== OPENAI ERROR ===');
+        console.error('OpenAI Vision analysis FAILED:', e);
+        console.error('Error details:', e instanceof Error ? e.message : String(e));
       }
     }
     // Fallback: Try Google Vision image analysis (if OpenAI didn't work)
     else if (process.env.VISION_API_KEY) {
+      console.warn('=== OPENAI SKIPPED - No API key, trying Google Vision ===');
       try {
         const googleVisionData = await analyzeImage(processedImageUrl);
         visionData.category = googleVisionData.category;
@@ -142,6 +150,8 @@ export async function uploadAndCreateListing(
       } catch (e) {
         console.warn('Google Vision analysis skipped:', e);
       }
+    } else {
+      console.warn('=== NO AI KEYS FOUND - Using defaults ===');
     }
 
     // Try eBay pricing (optional - better prices if available)
@@ -240,7 +250,7 @@ const listingInsert = {
 
     console.log('Listing created:', listingData.id);
 
-    return {
+    const returnData = {
       success: true,
       listingId: listingData.id,
       data: {
@@ -259,6 +269,15 @@ const listingInsert = {
         } : undefined,
       },
     };
+    
+    console.log('=== RETURN DATA ===');
+    console.log('Title:', returnData.data.suggestedTitle);
+    console.log('Description:', returnData.data.suggestedDescription);
+    console.log('Category:', returnData.data.detectedCategory);
+    console.log('Attributes:', returnData.data.detectedAttributes);
+    console.log('Pricing:', returnData.data.pricingIntelligence);
+    
+    return returnData;
   } catch (error) {
     console.error('Upload and save error:', error);
     return {
@@ -296,6 +315,7 @@ Return ONLY valid JSON in this exact format:
   "estimatedPrice": 85
 }`;
 
+  console.log('Making OpenAI Vision API request...');
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -318,10 +338,12 @@ Return ONLY valid JSON in this exact format:
     }),
   });
 
+  console.log('OpenAI Vision API response status:', response.status);
+  
   if (!response.ok) {
     const errorText = await response.text();
     console.error('OpenAI Vision API error:', response.status, errorText);
-    throw new Error(`OpenAI Vision API failed: ${response.status}`);
+    throw new Error(`OpenAI Vision API failed: ${response.status} - ${errorText}`);
   }
 
   const data = await response.json();
