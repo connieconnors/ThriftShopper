@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { motion } from 'motion/react';
-import { X, Heart, MapPin, Star } from 'lucide-react';
+import { X, Sparkles, MapPin, Star } from 'lucide-react';
 import { Product } from './ProductCard';
 import { TSLogo } from './TSLogo';
 
@@ -41,8 +41,8 @@ export function Favorites({
       >
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-3">
-            <Heart className="w-8 h-8" style={{ color: '#efbf04', fill: '#efbf04' }} />
-            <h1 className="text-2xl text-white">My Favorites</h1>
+            <Sparkles className="w-8 h-8" style={{ color: '#efbf04', fill: '#efbf04' }} />
+            <h1 className="text-2xl text-white">My Saved Finds</h1>
           </div>
           <button
             onClick={onClose}
@@ -64,10 +64,10 @@ export function Favorites({
             animate={{ opacity: 1, y: 0 }}
             className="flex flex-col items-center justify-center py-20 text-center"
           >
-            <Heart className="w-20 h-20 mb-6" style={{ color: '#cfb53b', strokeWidth: 1 }} />
-            <h2 className="text-xl text-white mb-2">No favorites yet</h2>
+            <Sparkles className="w-20 h-20 mb-6" style={{ color: '#cfb53b', strokeWidth: 1 }} />
+            <h2 className="text-xl text-white mb-2">No saved finds yet</h2>
             <p className="text-sm" style={{ color: '#cfb53b' }}>
-              Heart items as you discover them to save them here
+              Tap the sparkle as you discover treasures to save them here
             </p>
           </motion.div>
         ) : (
@@ -104,7 +104,7 @@ export function Favorites({
                       backdropFilter: 'blur(10px)',
                     }}
                   >
-                    <Heart
+                    <Sparkles
                       className="w-5 h-5"
                       style={{ color: '#efbf04', fill: '#efbf04' }}
                     />

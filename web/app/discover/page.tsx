@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Sparkles } from "lucide-react";
 import { supabase } from "../../lib/supabaseClient";
 import type { Listing } from "../../lib/types";
 
@@ -120,7 +121,7 @@ export default async function DiscoverPage() {
             textDecoration: "none",
           }}
         >
-          Favorites ♥
+          Favorites <Sparkles size={14} style={{ display: 'inline', marginLeft: '4px' }} />
         </Link>
       </header>
 
@@ -263,7 +264,7 @@ export default async function DiscoverPage() {
       >
         <span>← Skip</span>
         <span>Discovery • Co-op • Magic</span>
-        <span>Save ♥</span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>Save <Sparkles size={14} /></span>
       </footer>
     </main>
   );

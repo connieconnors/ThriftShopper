@@ -2,7 +2,7 @@
 
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Heart, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
 import { TSLogo } from './TSLogo';
 
 export interface Product {
@@ -33,7 +33,7 @@ interface ProductCardProps {
 
 export function ProductCard({ product, onFavorite, onSwipeUp, onTap, isFavorited }: ProductCardProps) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [showHeart, setShowHeart] = useState(false);
+  const [showSparkle, setShowSparkle] = useState(false);
   const touchStartX = useRef(0);
   const touchStartY = useRef(0);
 
@@ -85,9 +85,9 @@ export function ProductCard({ product, onFavorite, onSwipeUp, onTap, isFavorited
     e.stopPropagation();
     onFavorite(product.id);
     
-    // Show heart animation
-    setShowHeart(true);
-    setTimeout(() => setShowHeart(false), 800);
+    // Show sparkle animation
+    setShowSparkle(true);
+    setTimeout(() => setShowSparkle(false), 800);
   };
 
   // Truncate description to ~60 chars
@@ -143,7 +143,7 @@ export function ProductCard({ product, onFavorite, onSwipeUp, onTap, isFavorited
         </div>
       )}
 
-      {/* Heart Button - Top Right */}
+      {/* Sparkle Button - Top Right */}
       <motion.button
         onClick={handleFavorite}
         className="absolute top-20 right-4 z-10 w-12 h-12 rounded-full flex items-center justify-center"
@@ -154,7 +154,7 @@ export function ProductCard({ product, onFavorite, onSwipeUp, onTap, isFavorited
           animate={isFavorited ? { scale: [1, 1.3, 1] } : {}}
           transition={{ duration: 0.3 }}
         >
-          <Heart 
+          <Sparkles 
             className="w-6 h-6" 
             style={{ 
               color: isFavorited ? '#efbf04' : 'white',
@@ -164,16 +164,16 @@ export function ProductCard({ product, onFavorite, onSwipeUp, onTap, isFavorited
         </motion.div>
       </motion.button>
 
-      {/* Heart Animation on Favorite */}
+      {/* Sparkle Animation on Favorite */}
       <AnimatePresence>
-        {showHeart && (
+        {showSparkle && (
           <motion.div
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: 1.5, opacity: 1 }}
             exit={{ scale: 2, opacity: 0 }}
             className="absolute inset-0 flex items-center justify-center pointer-events-none z-20"
           >
-            <Heart className="w-24 h-24" style={{ color: '#efbf04', fill: '#efbf04' }} />
+            <Sparkles className="w-24 h-24" style={{ color: '#efbf04', fill: '#efbf04' }} />
           </motion.div>
         )}
       </AnimatePresence>

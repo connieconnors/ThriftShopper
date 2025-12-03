@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { Sparkles } from "lucide-react";
 import { supabase } from "../../lib/supabaseClient";
 import { useAuth } from "../context/AuthContext";
 
@@ -156,25 +157,16 @@ export default function FavoriteButton({
     }
   };
 
-  // Heart icon with animation
-  const HeartIcon = ({ size = 24 }: { size?: number }) => (
-    <svg
-      width={size}
-      height={size}
+  // Sparkle icon with animation
+  const SparkleIcon = ({ size = 24 }: { size?: number }) => (
+    <Sparkles
+      size={size}
       className={`transition-transform duration-200 ${
         isAnimating ? "scale-125" : "scale-100"
       }`}
       fill={isFavorited ? "currentColor" : "none"}
-      viewBox="0 0 24 24"
-      stroke="currentColor"
       strokeWidth={isFavorited ? 0 : 2}
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-      />
-    </svg>
+    />
   );
 
   // Small variant for favorites grid
@@ -183,14 +175,14 @@ export default function FavoriteButton({
       <button
         onClick={toggleFavorite}
         disabled={isLoading}
-        aria-label={isFavorited ? "Remove from favorites" : "Add to favorites"}
+        aria-label={isFavorited ? "Remove from saved" : "Save this find"}
         className={`w-8 h-8 flex items-center justify-center rounded-full transition-all duration-200 ${
           isFavorited 
-            ? "bg-rose-500 text-white" 
+            ? "bg-[#cfb53b] text-[#191970]" 
             : "bg-black/60 text-white hover:bg-black/80"
         } ${isLoading ? "opacity-50" : ""} ${className}`}
       >
-        <HeartIcon size={16} />
+        <SparkleIcon size={16} />
       </button>
     );
   }
@@ -201,14 +193,14 @@ export default function FavoriteButton({
       <button
         onClick={toggleFavorite}
         disabled={isLoading}
-        aria-label={isFavorited ? "Remove from favorites" : "Add to favorites"}
+        aria-label={isFavorited ? "Remove from saved" : "Save this find"}
         className={`w-14 h-14 flex items-center justify-center rounded-full border-2 transition-all duration-200 ${
           isFavorited
-            ? "bg-rose-500 border-rose-500 text-white"
-            : "border-white/30 text-white hover:border-white/50 hover:bg-white/10"
+            ? "bg-[#cfb53b] border-[#cfb53b] text-[#191970]"
+            : "border-white/30 text-white hover:border-[#cfb53b]/50 hover:bg-white/10"
         } ${isLoading ? "opacity-50" : ""} ${className}`}
       >
-        <HeartIcon size={24} />
+        <SparkleIcon size={24} />
       </button>
     );
   }
@@ -218,14 +210,14 @@ export default function FavoriteButton({
     <button
       onClick={toggleFavorite}
       disabled={isLoading}
-      aria-label={isFavorited ? "Remove from favorites" : "Add to favorites"}
+      aria-label={isFavorited ? "Remove from saved" : "Save this find"}
       className={`w-14 h-14 flex items-center justify-center backdrop-blur-sm rounded-full transition-all duration-200 ${
         isFavorited 
-          ? "bg-rose-500 text-white" 
+          ? "bg-[#cfb53b] text-[#191970]" 
           : "bg-white/15 text-white hover:bg-white/25"
       } ${isLoading ? "opacity-50" : ""} ${className}`}
     >
-      <HeartIcon size={24} />
+      <SparkleIcon size={24} />
     </button>
   );
 }

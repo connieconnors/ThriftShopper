@@ -7,7 +7,7 @@ import { supabase } from "../../lib/supabaseClient";
 import { Listing, getSellerDisplayName, getPrimaryImage, TS_BADGE_URL, hasSellerTSBadge } from "../../lib/types";
 import { useAuth } from "../context/AuthContext";
 import FavoriteButton from "../components/FavoriteButton";
-import { Heart, Package, Settings, ChevronRight } from "lucide-react";
+import { Sparkles, Package, Settings, ChevronRight } from "lucide-react";
 import { TSLogo } from "@/components/TSLogo";
 
 interface Order {
@@ -235,8 +235,8 @@ export default function BuyerHomePage() {
                 : "text-white/50 hover:text-white/70"
             }`}
           >
-            <Heart size={16} />
-            Favorites {listings.length > 0 && `(${listings.length})`}
+            <Sparkles size={16} />
+            Saved {listings.length > 0 && `(${listings.length})`}
           </button>
           <button
             onClick={() => setActiveTab("orders")}
@@ -262,11 +262,11 @@ export default function BuyerHomePage() {
           ) : listings.length === 0 ? (
             <div className="flex flex-col items-center justify-center px-6 py-20">
               <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center mb-6">
-                <Heart className="w-10 h-10 text-white/30" />
+                <Sparkles className="w-10 h-10 text-white/30" />
               </div>
-              <h2 className="text-xl font-semibold mb-2">No favorites yet</h2>
+              <h2 className="text-xl font-semibold mb-2">No saved items yet</h2>
               <p className="text-white/50 text-center mb-8 max-w-xs">
-                Tap the heart on items you love to save them here for later.
+                Tap the sparkle on items you love to save them here for later.
               </p>
               <Link
                 href="/browse"

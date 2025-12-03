@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { motion } from 'motion/react';
-import { X, MapPin, Package, Star, User, Heart } from 'lucide-react';
+import { X, MapPin, Package, Star, User, Sparkles } from 'lucide-react';
 import { Product } from './ProductCard';
 
 interface ProductDetailProps {
@@ -201,7 +201,7 @@ export function ProductDetail({
           Contact Seller
         </button>
 
-        {/* Favorite Button */}
+        {/* Save Button */}
         {onFavorite && (
           <button
             onClick={handleFavorite}
@@ -212,14 +212,14 @@ export function ProductDetail({
               color: isFavorited ? '#191970' : '#191970',
             }}
           >
-            <Heart
+            <Sparkles
               className="w-5 h-5"
               style={{
                 color: isFavorited ? '#191970' : '#cfb53b',
                 fill: isFavorited ? '#191970' : 'transparent',
               }}
             />
-            <span>{isFavorited ? 'Remove from Favorites' : 'Add to Favorites'}</span>
+            <span>{isFavorited ? 'Saved' : 'Save This Find'}</span>
           </button>
         )}
       </div>

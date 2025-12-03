@@ -14,6 +14,7 @@ import {
 import { supabase } from "../../lib/supabaseClient";
 import { MoodWheel } from "../../components/MoodWheel";
 import { TSLogo } from "../../components/TSLogo";
+import { Sparkles } from "lucide-react";
 
 interface SwipeFeedProps {
   initialListings: Listing[];
@@ -511,21 +512,19 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
 
         {/* Bottom Right: 2 stacked elements */}
         <div className="flex flex-col gap-3 items-center pointer-events-auto">
-          {/* Heart Button (Favorites) - Top */}
+          {/* Sparkle Button (Saved Finds) - Top */}
           <button 
             onClick={() => currentListing && toggleFavorite(currentListing.id)}
             className="relative w-14 h-14 flex items-center justify-center rounded-full"
             style={{ backgroundColor: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(10px)' }}
           >
-            <svg 
+            <Sparkles 
               className="w-7 h-7" 
-              fill={currentListing && favorites.has(currentListing.id) ? COLORS.gold : 'transparent'} 
-              stroke={currentListing && favorites.has(currentListing.id) ? COLORS.gold : 'white'} 
-              strokeWidth={2} 
-              viewBox="0 0 24 24"
-            >
-              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-            </svg>
+              style={{
+                color: currentListing && favorites.has(currentListing.id) ? COLORS.gold : 'white',
+                fill: currentListing && favorites.has(currentListing.id) ? COLORS.gold : 'transparent',
+              }}
+            />
             {favorites.size > 0 && (
               <div 
                 className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold"
