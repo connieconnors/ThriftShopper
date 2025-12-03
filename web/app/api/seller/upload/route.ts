@@ -59,16 +59,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: result.error }, { status: 500 });
     }
 
-    // Add API-level debug info
-    return NextResponse.json({
-      ...result,
-      _debug: {
-        ...(result as any)._debug,
-        apiReached: true,
-        hasOpenAIKey: !!process.env.OPENAI_API_KEY,
-        openAIKeyLength: process.env.OPENAI_API_KEY?.length || 0,
-      },
-    });
+    return NextResponse.json(result);
   } catch (error) {
     console.error('Upload API error:', error);
     return NextResponse.json(

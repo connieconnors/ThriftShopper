@@ -251,8 +251,6 @@ const listingInsert = {
           source: pricingIntelligence.source as 'ebay' | 'ai_estimate',
         } : undefined,
       },
-      // Debug info to help troubleshoot AI issues
-      _debug: { aiSource, aiError: aiError || undefined },
     };
   } catch (error) {
     return {
