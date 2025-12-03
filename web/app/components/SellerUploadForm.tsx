@@ -318,11 +318,10 @@ export default function SellerUploadForm() {
 
       const data = await response.json();
       
-      // TEMPORARY DEBUG: Show AI source info
-      if (data._debug) {
-        console.log('AI Debug:', data._debug);
-        alert(`AI Debug Info:\nSource: ${data._debug.aiSource}\nError: ${data._debug.aiError || 'none'}`);
-      }
+      // TEMPORARY DEBUG: Always show debug info
+      console.log('Full response:', JSON.stringify(data, null, 2));
+      const debugInfo = data._debug || { aiSource: 'no_debug_data', hasOpenAIKey: 'unknown' };
+      alert(`AI Debug:\nSource: ${debugInfo.aiSource || 'unknown'}\nHas OpenAI Key: ${debugInfo.hasOpenAIKey}\nKey Length: ${debugInfo.openAIKeyLength || 0}\nError: ${debugInfo.aiError || 'none'}`);
 
       if (!response.ok) {
         throw new Error(data.error || 'Upload failed');
