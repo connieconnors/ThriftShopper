@@ -61,9 +61,9 @@ export default function SplashScreen({ autoNavigateDelay = 3000 }: SplashScreenP
       >
         {/* Branding block - left-aligned text in centered container */}
         <div className="max-w-fit mx-auto">
-          {/* Logo / Brand - main branding moment */}
+          {/* Logo / Brand - main branding moment - responsive sizing */}
           <h1 
-            className="text-7xl md:text-8xl lg:text-9xl font-light tracking-wide text-white mb-2"
+            className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-light tracking-wide text-white mb-2"
             style={{ 
               fontFamily: "var(--font-playfair), Georgia, serif",
               textShadow: "0 3px 25px rgba(0,0,0,0.6)",
@@ -72,23 +72,23 @@ export default function SplashScreen({ autoNavigateDelay = 3000 }: SplashScreenP
             ThriftShopper
           </h1>
 
-          {/* Tagline - left aligned, starts under "T" and "h" */}
+          {/* Tagline - responsive sizing */}
           <p 
-            className="text-3xl md:text-4xl italic"
+            className="text-lg sm:text-xl md:text-3xl lg:text-4xl italic"
             style={{ 
               fontFamily: "var(--font-playfair), Georgia, serif",
               color: "#cfb53b",
               textShadow: "0 2px 12px rgba(0,0,0,0.7)",
-              paddingLeft: "28px", // Another 1.5 spaces right
-              marginBottom: "55px", // Another 10 lines down
+              paddingLeft: "8px",
+              marginBottom: "40px",
             }}
           >
             the magic of discovery™
           </p>
 
-          {/* Step inside CTA - Merriweather, white #ffffff, centered */}
+          {/* Step inside CTA - responsive sizing */}
           <p 
-            className="text-4xl md:text-5xl tracking-widest text-center"
+            className="text-xl sm:text-2xl md:text-4xl lg:text-5xl tracking-widest text-center"
             style={{ 
               fontFamily: "var(--font-merriweather), Georgia, serif",
               color: "#ffffff",
