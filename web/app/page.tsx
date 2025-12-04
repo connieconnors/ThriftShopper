@@ -1,8 +1,8 @@
 import SplashScreen from "./components/SplashScreen";
 
 export default function Home() {
-  // Longer delay for now while we tune the splash
-  return <SplashScreen autoNavigateDelay={15000} />;
+  // 4 seconds to appreciate the splash, then into discovery
+  return <SplashScreen autoNavigateDelay={4000} />;
 }
 
 

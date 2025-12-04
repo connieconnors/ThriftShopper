@@ -15,9 +15,9 @@ export default function SplashScreen({ autoNavigateDelay = 3000 }: SplashScreenP
     if (isExiting) return;
     setIsExiting(true);
     
-    // Wait for fade-out animation, then navigate
+    // Wait for fade-out animation, then navigate to buyer discovery
     setTimeout(() => {
-      router.push("/discover");
+      router.push("/browse");
     }, 600);
   }, [isExiting, router]);
 
