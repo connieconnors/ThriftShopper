@@ -47,11 +47,26 @@ export default async function ListingPage({ params }: ListingPageProps) {
 
   const raw = data as Listing;
 
-  // Normalize array fields
+  // Normalize array fields and clean JSON artifacts
   const normalize = (val: string[] | string | null): string[] => {
-    if (Array.isArray(val)) return val;
-    if (typeof val === "string") return val.split(",").map(s => s.trim()).filter(Boolean);
-    return [];
+    let arr: string[] = [];
+    if (Array.isArray(val)) {
+      arr = val;
+    } else if (typeof val === "string") {
+      arr = val.split(",").map(s => s.trim()).filter(Boolean);
+    } else {
+      return [];
+    }
+    
+    // Clean brackets and quotes from each item
+    return arr.map(item => {
+      let cleaned = String(item).trim();
+      // Remove leading/trailing quotes and brackets
+      cleaned = cleaned.replace(/^[\["\s]+|[\]"\s]+$/g, '');
+      // Remove any remaining quotes or brackets
+      cleaned = cleaned.replace(/["\[\]]/g, '');
+      return cleaned;
+    }).filter(s => s.length > 0);
   };
 
   const listing: Listing = {

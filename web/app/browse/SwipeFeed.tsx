@@ -472,9 +472,20 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
                   )}
                   {/* Handle styles as array */}
                   {(() => {
-                    const stylesArray: string[] = Array.isArray(listing.styles) 
+                    let stylesArray: string[] = Array.isArray(listing.styles) 
                       ? listing.styles 
                       : (listing.styles as unknown as string)?.split(',')?.map(s => s.trim())?.filter(Boolean) || [];
+                    
+                    // Clean brackets and quotes from each style
+                    stylesArray = stylesArray.map(style => {
+                      let cleaned = String(style).trim();
+                      // Remove leading/trailing quotes and brackets
+                      cleaned = cleaned.replace(/^[\["\s]+|[\]"\s]+$/g, '');
+                      // Remove any remaining quotes or brackets
+                      cleaned = cleaned.replace(/["\[\]]/g, '');
+                      return cleaned;
+                    }).filter(s => s.length > 0);
+                    
                     return stylesArray.slice(0, 2).map((style: string, i: number) => (
                       <span
                         key={`${style}-${i}`}
