@@ -39,6 +39,8 @@ function toArray(value: any): string[] {
     cleaned = cleaned.replace(/^[\["\s]+|[\]"\s]+$/g, '');
     // Remove any remaining quotes or brackets
     cleaned = cleaned.replace(/["\[\]]/g, '');
+    // Ensure space after commas within the text
+    cleaned = cleaned.replace(/,([^\s])/g, ', $1');
     return cleaned;
   }).filter((item: string) => item.length > 0); // Remove empty strings
 }
