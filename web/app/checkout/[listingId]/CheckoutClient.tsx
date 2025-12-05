@@ -162,8 +162,8 @@ export default function CheckoutClient({ listing }: CheckoutClientProps) {
   // Show loading while checking auth
   if (authLoading) {
     return (
-      <main className="min-h-screen bg-black text-white flex items-center justify-center">
-        <div className="animate-spin h-8 w-8 border-2 border-white border-t-transparent rounded-full" />
+      <main className="min-h-screen text-gray-900 flex items-center justify-center" style={{ backgroundColor: '#E5E3DE' }}>
+        <div className="animate-spin h-8 w-8 border-2 border-gray-900 border-t-transparent rounded-full" />
       </main>
     );
   }
@@ -228,19 +228,19 @@ export default function CheckoutClient({ listing }: CheckoutClientProps) {
   const stripePromise = getStripe();
 
   return (
-    <main className="min-h-screen bg-black text-white">
+    <main className="min-h-screen text-gray-900" style={{ backgroundColor: '#E5E3DE' }}>
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-black/90 backdrop-blur-lg border-b border-white/10">
+      <header className="sticky top-0 z-40 backdrop-blur-lg border-b border-gray-200" style={{ backgroundColor: 'rgba(229, 227, 222, 0.9)' }}>
         <div className="px-4 py-4 flex items-center justify-between max-w-2xl mx-auto">
           <Link
             href={`/listing/${listing.id}`}
-            className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+            className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 transition-colors text-gray-900"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
           </Link>
-          <h1 className="text-lg font-semibold">Checkout</h1>
+          <h1 className="text-lg font-semibold text-gray-900">Checkout</h1>
           <div className="w-10" />
         </div>
       </header>
@@ -248,18 +248,18 @@ export default function CheckoutClient({ listing }: CheckoutClientProps) {
       <div className="max-w-2xl mx-auto p-4 space-y-6">
         {/* Progress Steps */}
         <div className="flex items-center justify-center gap-2 py-2">
-          <div className={`flex items-center gap-2 ${step === "shipping" ? "text-white" : "text-white/40"}`}>
+          <div className={`flex items-center gap-2 ${step === "shipping" ? "text-gray-900" : "text-gray-400"}`}>
             <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-              step === "shipping" ? "bg-white text-black" : "bg-white/20"
+              step === "shipping" ? "bg-gray-900 text-white" : "bg-gray-300"
             }`}>
               {step === "payment" ? "✓" : "1"}
             </div>
             <span className="text-sm font-medium">Shipping</span>
           </div>
-          <div className="w-8 h-px bg-white/20" />
-          <div className={`flex items-center gap-2 ${step === "payment" ? "text-white" : "text-white/40"}`}>
+          <div className="w-8 h-px bg-gray-300" />
+          <div className={`flex items-center gap-2 ${step === "payment" ? "text-gray-900" : "text-gray-400"}`}>
             <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-              step === "payment" ? "bg-white text-black" : "bg-white/20"
+              step === "payment" ? "bg-gray-900 text-white" : "bg-gray-300"
             }`}>
               2
             </div>
@@ -268,7 +268,7 @@ export default function CheckoutClient({ listing }: CheckoutClientProps) {
         </div>
 
         {/* Order Summary */}
-        <div className="bg-slate-900/50 rounded-2xl p-4 border border-white/10">
+        <div className="bg-white rounded-2xl p-4 border border-gray-200 shadow-sm">
           <div className="flex gap-4">
             {imageSrc ? (
               <img
@@ -277,27 +277,27 @@ export default function CheckoutClient({ listing }: CheckoutClientProps) {
                 className="w-24 h-24 rounded-xl object-cover flex-shrink-0"
               />
             ) : (
-              <div className="w-24 h-24 rounded-xl bg-slate-800 flex items-center justify-center flex-shrink-0">
+              <div className="w-24 h-24 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0">
                 <span className="text-3xl">📦</span>
               </div>
             )}
             <div className="flex-1 min-w-0">
-              <h2 className="font-semibold text-white line-clamp-2 mb-1">{listing.title}</h2>
-              <p className="text-sm text-white/50 mb-2">Sold by {sellerName}</p>
-              <p className="text-xl font-bold text-white">${listing.price.toFixed(2)}</p>
+              <h2 className="font-semibold text-gray-900 line-clamp-2 mb-1">{listing.title}</h2>
+              <p className="text-sm text-gray-500 mb-2">Sold by {sellerName}</p>
+              <p className="text-xl font-bold text-gray-900">${listing.price.toFixed(2)}</p>
             </div>
           </div>
 
-          <div className="mt-4 pt-4 border-t border-white/10 space-y-2">
+          <div className="mt-4 pt-4 border-t border-gray-200 space-y-2">
             <div className="flex justify-between text-sm">
-              <span className="text-white/60">Subtotal</span>
-              <span>${listing.price.toFixed(2)}</span>
+              <span className="text-gray-600">Subtotal</span>
+              <span className="text-gray-900">${listing.price.toFixed(2)}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-white/60">Shipping</span>
-              <span className="text-emerald-400">Free</span>
+              <span className="text-gray-600">Shipping</span>
+              <span className="text-emerald-600">Free</span>
             </div>
-            <div className="flex justify-between font-semibold pt-2 border-t border-white/10">
+            <div className="flex justify-between font-semibold pt-2 border-t border-gray-200 text-gray-900">
               <span>Total</span>
               <span>${listing.price.toFixed(2)}</span>
             </div>
@@ -305,60 +305,60 @@ export default function CheckoutClient({ listing }: CheckoutClientProps) {
         </div>
 
         {error && (
-          <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl">
-            <p className="text-red-400 text-sm">{error}</p>
+          <div className="p-4 bg-red-50 border border-red-200 rounded-xl">
+            <p className="text-red-600 text-sm">{error}</p>
           </div>
         )}
 
         {/* Shipping Form */}
         {step === "shipping" && (
           <form onSubmit={handleShippingSubmit} className="space-y-4">
-            <h2 className="text-lg font-semibold">Shipping Information</h2>
+            <h2 className="text-lg font-semibold text-gray-900">Shipping Information</h2>
             
             <div>
-              <label className="block text-sm text-white/60 mb-1.5">Full Name *</label>
+              <label className="block text-sm text-gray-600 mb-1.5">Full Name *</label>
               <input
                 type="text"
                 required
                 value={shippingInfo.name}
                 onChange={(e) => setShippingInfo(prev => ({ ...prev, name: e.target.value }))}
-                className="w-full px-4 py-3 bg-slate-900/50 border border-white/10 rounded-xl text-white placeholder-white/30 focus:outline-none focus:border-white/30 transition-colors"
+                className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:border-gray-500 transition-colors"
                 placeholder="John Doe"
               />
             </div>
 
             <div>
-              <label className="block text-sm text-white/60 mb-1.5">Street Address *</label>
+              <label className="block text-sm text-gray-600 mb-1.5">Street Address *</label>
               <input
                 type="text"
                 required
                 value={shippingInfo.address}
                 onChange={(e) => setShippingInfo(prev => ({ ...prev, address: e.target.value }))}
-                className="w-full px-4 py-3 bg-slate-900/50 border border-white/10 rounded-xl text-white placeholder-white/30 focus:outline-none focus:border-white/30 transition-colors"
+                className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:border-gray-500 transition-colors"
                 placeholder="123 Main Street, Apt 4"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm text-white/60 mb-1.5">City *</label>
+                <label className="block text-sm text-gray-600 mb-1.5">City *</label>
                 <input
                   type="text"
                   required
                   value={shippingInfo.city}
                   onChange={(e) => setShippingInfo(prev => ({ ...prev, city: e.target.value }))}
-                  className="w-full px-4 py-3 bg-slate-900/50 border border-white/10 rounded-xl text-white placeholder-white/30 focus:outline-none focus:border-white/30 transition-colors"
+                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:border-gray-500 transition-colors"
                   placeholder="New York"
                 />
               </div>
               <div>
-                <label className="block text-sm text-white/60 mb-1.5">State *</label>
+                <label className="block text-sm text-gray-600 mb-1.5">State *</label>
                 <input
                   type="text"
                   required
                   value={shippingInfo.state}
                   onChange={(e) => setShippingInfo(prev => ({ ...prev, state: e.target.value }))}
-                  className="w-full px-4 py-3 bg-slate-900/50 border border-white/10 rounded-xl text-white placeholder-white/30 focus:outline-none focus:border-white/30 transition-colors"
+                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:border-gray-500 transition-colors"
                   placeholder="NY"
                 />
               </div>
@@ -366,23 +366,23 @@ export default function CheckoutClient({ listing }: CheckoutClientProps) {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm text-white/60 mb-1.5">ZIP Code *</label>
+                <label className="block text-sm text-gray-600 mb-1.5">ZIP Code *</label>
                 <input
                   type="text"
                   required
                   value={shippingInfo.zip}
                   onChange={(e) => setShippingInfo(prev => ({ ...prev, zip: e.target.value }))}
-                  className="w-full px-4 py-3 bg-slate-900/50 border border-white/10 rounded-xl text-white placeholder-white/30 focus:outline-none focus:border-white/30 transition-colors"
+                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:border-gray-500 transition-colors"
                   placeholder="10001"
                 />
               </div>
               <div>
-                <label className="block text-sm text-white/60 mb-1.5">Phone (optional)</label>
+                <label className="block text-sm text-gray-600 mb-1.5">Phone (optional)</label>
                 <input
                   type="tel"
                   value={shippingInfo.phone}
                   onChange={(e) => setShippingInfo(prev => ({ ...prev, phone: e.target.value }))}
-                  className="w-full px-4 py-3 bg-slate-900/50 border border-white/10 rounded-xl text-white placeholder-white/30 focus:outline-none focus:border-white/30 transition-colors"
+                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:border-gray-500 transition-colors"
                   placeholder="(555) 555-5555"
                 />
               </div>
@@ -391,7 +391,7 @@ export default function CheckoutClient({ listing }: CheckoutClientProps) {
             <button
               type="submit"
               disabled={!isShippingComplete || isLoading}
-              className="w-full h-14 bg-white text-black font-bold text-lg rounded-full hover:bg-white/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mt-6 flex items-center justify-center gap-2"
+              className="w-full h-14 bg-gray-900 text-white font-bold text-lg rounded-full hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mt-6 flex items-center justify-center gap-2"
             >
               {isLoading ? (
                 <>
@@ -412,21 +412,21 @@ export default function CheckoutClient({ listing }: CheckoutClientProps) {
         {step === "payment" && clientSecret && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold">Payment</h2>
+              <h2 className="text-lg font-semibold text-gray-900">Payment</h2>
               <button
                 onClick={() => setStep("shipping")}
-                className="text-sm text-white/60 hover:text-white transition-colors"
+                className="text-sm text-gray-600 hover:text-gray-900 transition-colors"
               >
                 Edit shipping
               </button>
             </div>
 
             {/* Shipping Summary */}
-            <div className="p-3 bg-slate-900/30 rounded-xl border border-white/5 text-sm">
-              <p className="text-white/60 mb-1">Shipping to:</p>
-              <p className="text-white">{shippingInfo.name}</p>
-              <p className="text-white/70">{shippingInfo.address}</p>
-              <p className="text-white/70">{shippingInfo.city}, {shippingInfo.state} {shippingInfo.zip}</p>
+            <div className="p-3 bg-white rounded-xl border border-gray-200 text-sm">
+              <p className="text-gray-600 mb-1">Shipping to:</p>
+              <p className="text-gray-900">{shippingInfo.name}</p>
+              <p className="text-gray-700">{shippingInfo.address}</p>
+              <p className="text-gray-700">{shippingInfo.city}, {shippingInfo.state} {shippingInfo.zip}</p>
             </div>
 
             <Elements
@@ -434,12 +434,12 @@ export default function CheckoutClient({ listing }: CheckoutClientProps) {
               options={{
                 clientSecret,
                 appearance: {
-                  theme: "night",
+                  theme: "flat",
                   variables: {
-                    colorPrimary: "#ffffff",
-                    colorBackground: "#0f172a",
-                    colorText: "#ffffff",
-                    colorDanger: "#ef4444",
+                    colorPrimary: "#111827",
+                    colorBackground: "#ffffff",
+                    colorText: "#111827",
+                    colorDanger: "#dc2626",
                     fontFamily: "system-ui, sans-serif",
                     borderRadius: "12px",
                   },
