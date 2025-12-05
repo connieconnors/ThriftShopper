@@ -147,11 +147,11 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
             }}
           >
             {images.map((src, index) => (
-              <div key={index} className="w-full h-full flex-shrink-0">
+              <div key={index} className="w-full h-full flex-shrink-0" style={{ backgroundColor: '#E5E3DE' }}>
                 <img
                   src={src}
                   alt={`${listing.title} - Image ${index + 1}`}
-                  className="w-full h-full object-cover cursor-pointer"
+                  className="w-full h-full object-contain cursor-pointer"
                   draggable={false}
                   onClick={() => setIsZoomed(true)}
                 />
@@ -159,8 +159,8 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
             ))}
           </div>
         ) : (
-          <div className="w-full h-full bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center">
-            <span className="text-slate-500 text-6xl">📦</span>
+          <div className="w-full h-full flex items-center justify-center" style={{ backgroundColor: '#E5E3DE' }}>
+            <span className="text-gray-400 text-6xl">📦</span>
           </div>
         )}
 
@@ -392,13 +392,14 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
       {/* FULLSCREEN IMAGE ZOOM MODAL */}
       {isZoomed && images.length > 0 && (
         <div 
-          className="fixed inset-0 z-[100] bg-black flex items-center justify-center"
+          className="fixed inset-0 z-[100] flex items-center justify-center"
+          style={{ backgroundColor: '#E5E3DE' }}
           onClick={() => setIsZoomed(false)}
         >
           {/* Close Button */}
           <button
             onClick={() => setIsZoomed(false)}
-            className="absolute top-4 right-4 z-10 w-12 h-12 flex items-center justify-center bg-white/10 backdrop-blur-md rounded-full text-white hover:bg-white/20 transition-colors"
+            className="absolute top-4 right-4 z-10 w-12 h-12 flex items-center justify-center bg-gray-800/20 backdrop-blur-md rounded-full text-gray-900 hover:bg-gray-800/30 transition-colors"
             aria-label="Close zoom"
           >
             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -408,8 +409,8 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
 
           {/* Image Counter */}
           {images.length > 1 && (
-            <div className="absolute top-4 left-4 z-10 px-4 py-2 bg-black/60 backdrop-blur-md rounded-full">
-              <span className="text-sm text-white">
+            <div className="absolute top-4 left-4 z-10 px-4 py-2 bg-gray-800/20 backdrop-blur-md rounded-full">
+              <span className="text-sm text-gray-900">
                 {currentImageIndex + 1} / {images.length}
               </span>
             </div>
@@ -442,8 +443,8 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
                   e.stopPropagation();
                   if (currentImageIndex > 0) setCurrentImageIndex(prev => prev - 1);
                 }}
-                className={`absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center bg-white/10 backdrop-blur-md rounded-full text-white transition-opacity ${
-                  currentImageIndex === 0 ? "opacity-30 cursor-not-allowed" : "hover:bg-white/20"
+                className={`absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center bg-gray-800/20 backdrop-blur-md rounded-full text-gray-900 transition-opacity ${
+                  currentImageIndex === 0 ? "opacity-30 cursor-not-allowed" : "hover:bg-gray-800/30"
                 }`}
                 disabled={currentImageIndex === 0}
               >
@@ -456,8 +457,8 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
                   e.stopPropagation();
                   if (currentImageIndex < images.length - 1) setCurrentImageIndex(prev => prev + 1);
                 }}
-                className={`absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center bg-white/10 backdrop-blur-md rounded-full text-white transition-opacity ${
-                  currentImageIndex === images.length - 1 ? "opacity-30 cursor-not-allowed" : "hover:bg-white/20"
+                className={`absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center bg-gray-800/20 backdrop-blur-md rounded-full text-gray-900 transition-opacity ${
+                  currentImageIndex === images.length - 1 ? "opacity-30 cursor-not-allowed" : "hover:bg-gray-800/30"
                 }`}
                 disabled={currentImageIndex === images.length - 1}
               >
@@ -480,8 +481,8 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
                   }}
                   className={`h-2 rounded-full transition-all duration-200 ${
                     index === currentImageIndex
-                      ? "bg-white w-8"
-                      : "bg-white/40 w-2 hover:bg-white/60"
+                      ? "bg-gray-900 w-8"
+                      : "bg-gray-900/40 w-2 hover:bg-gray-900/60"
                   }`}
                   aria-label={`Go to image ${index + 1}`}
                 />
