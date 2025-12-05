@@ -162,7 +162,7 @@ export default function CheckoutClient({ listing }: CheckoutClientProps) {
   // Show loading while checking auth
   if (authLoading) {
     return (
-      <main className="min-h-screen text-gray-900 flex items-center justify-center" style={{ backgroundColor: '#EDE7D9' }}>
+      <main className="min-h-screen bg-white flex items-center justify-center">
         <div className="animate-spin h-8 w-8 border-2 border-gray-900 border-t-transparent rounded-full" />
       </main>
     );
@@ -228,9 +228,9 @@ export default function CheckoutClient({ listing }: CheckoutClientProps) {
   const stripePromise = getStripe();
 
   return (
-    <main className="min-h-screen text-gray-900" style={{ backgroundColor: '#EDE7D9' }}>
+    <main className="min-h-screen bg-white text-gray-900">
       {/* Header */}
-      <header className="sticky top-0 z-40 backdrop-blur-lg border-b border-gray-200" style={{ backgroundColor: 'rgba(237, 231, 217, 0.9)' }}>
+      <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-lg border-b border-gray-200">
         <div className="px-4 py-4 flex items-center justify-between max-w-2xl mx-auto">
           <Link
             href={`/listing/${listing.id}`}

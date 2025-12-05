@@ -16,11 +16,11 @@ function SuccessContent() {
   }, []);
 
   return (
-    <main className="min-h-screen text-gray-900 flex flex-col items-center justify-center p-6 relative overflow-hidden" style={{ backgroundColor: '#EDE7D9' }}>
+    <main className="min-h-screen bg-white flex flex-col items-center justify-center p-6 relative overflow-hidden">
       {/* Header Branding */}
       <div className="absolute top-4 left-4 z-20 flex items-center gap-2">
         <Link href="/browse" className="flex items-center gap-2 opacity-90 hover:opacity-100 transition-opacity">
-          <TSLogo size={28} primaryColor="#191970" accentColor="#efbf04" />
+          <TSLogo size={28} primaryColor="#191970" accentColor="#cfb53b" />
         </Link>
       </div>
 
@@ -68,14 +68,14 @@ function SuccessContent() {
         </p>
 
         {orderId && (
-          <div className="bg-white rounded-xl p-4 border border-gray-200 mb-8">
+          <div className="bg-gray-50 rounded-xl p-4 border border-gray-200 mb-8">
             <p className="text-sm text-gray-500 mb-1">Order ID</p>
             <p className="font-mono text-gray-900 text-sm break-all">{orderId}</p>
           </div>
         )}
 
         {/* What's Next */}
-        <div className="text-left bg-white rounded-xl p-5 border border-gray-200 mb-8">
+        <div className="text-left bg-gray-50 rounded-xl p-5 border border-gray-200 mb-8">
           <h2 className="font-semibold mb-3 text-gray-900">What happens next?</h2>
           <ul className="space-y-3 text-sm text-gray-700">
             <li className="flex gap-3">
@@ -97,13 +97,15 @@ function SuccessContent() {
         <div className="space-y-3">
           <Link
             href="/browse"
-            className="block w-full py-4 bg-gray-900 text-white font-bold rounded-full hover:bg-gray-800 transition-colors"
+            className="block w-full py-4 text-white font-bold rounded-full hover:opacity-90 transition-colors"
+            style={{ backgroundColor: "#191970" }}
           >
             Continue Shopping
           </Link>
           <Link
             href="/favorites"
-            className="block w-full py-4 border-2 border-gray-300 text-gray-900 font-semibold rounded-full hover:border-gray-400 transition-colors"
+            className="block w-full py-4 border-2 text-gray-900 font-semibold rounded-full hover:bg-gray-50 transition-colors"
+            style={{ borderColor: "#191970" }}
           >
             View Favorites
           </Link>
