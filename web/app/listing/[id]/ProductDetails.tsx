@@ -106,7 +106,7 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
   ].filter(Boolean);
 
   return (
-    <main className="min-h-screen bg-black text-white">
+    <main className="min-h-screen text-gray-900" style={{ backgroundColor: '#E5E3DE' }}>
       {/* Fixed Header - Back to Browse */}
       <header className="fixed top-0 left-0 right-0 z-50 p-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -221,17 +221,17 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
         )}
 
         {/* Gradient fade at bottom */}
-        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black via-black/50 to-transparent pointer-events-none" />
+        <div className="absolute bottom-0 left-0 right-0 h-32 pointer-events-none" style={{ background: 'linear-gradient(to top, #E5E3DE 0%, rgba(229, 227, 222, 0.5) 50%, transparent 100%)' }} />
       </section>
 
       {/* Product Info */}
       <section className="px-6 py-6 space-y-6">
         {/* Title & Price */}
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-white leading-tight mb-2">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 leading-tight mb-2">
             {listing.title}
           </h1>
-          <p className="text-3xl font-bold text-white">
+          <p className="text-3xl font-bold text-gray-900">
             ${listing.price}
           </p>
         </div>
@@ -242,8 +242,8 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
           </svg>
           <div>
-            <p className="text-sm font-medium text-emerald-400">Free shipping</p>
-            <p className="text-xs text-white/50">Local pickup + USPS shipping available</p>
+            <p className="text-sm font-medium text-emerald-600">Free shipping</p>
+            <p className="text-xs text-gray-500">Local pickup + USPS shipping available</p>
           </div>
         </div>
 
@@ -253,7 +253,7 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
             {tags.map((tag, index) => (
               <span
                 key={index}
-                className="px-3 py-1.5 text-xs font-medium bg-white/10 rounded-full text-white/80"
+                className="px-3 py-1.5 text-xs font-medium bg-gray-200 rounded-full text-gray-700"
               >
                 {tag}
               </span>
@@ -264,10 +264,10 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
         {/* Description */}
         {listing.description && (
           <div>
-            <h2 className="text-sm font-semibold text-white/60 uppercase tracking-wider mb-2">
+            <h2 className="text-sm font-semibold text-gray-600 uppercase tracking-wider mb-2">
               Description
             </h2>
-            <p className="text-white/80 leading-relaxed">
+            <p className="text-gray-700 leading-relaxed">
               {listing.description}
             </p>
           </div>
@@ -276,25 +276,25 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
         {/* Condition */}
         {listing.condition && (
           <div>
-            <h2 className="text-sm font-semibold text-white/60 uppercase tracking-wider mb-2">
+            <h2 className="text-sm font-semibold text-gray-600 uppercase tracking-wider mb-2">
               Condition
             </h2>
-            <p className="text-white/80">{listing.condition}</p>
+            <p className="text-gray-700">{listing.condition}</p>
           </div>
         )}
 
         {/* Specifications */}
         {listing.specifications && (
           <div>
-            <h2 className="text-sm font-semibold text-white/60 uppercase tracking-wider mb-2">
+            <h2 className="text-sm font-semibold text-gray-600 uppercase tracking-wider mb-2">
               Specifications
             </h2>
-            <p className="text-white/80 whitespace-pre-line">{listing.specifications}</p>
+            <p className="text-gray-700 whitespace-pre-line">{listing.specifications}</p>
           </div>
         )}
 
         {/* Seller Section */}
-        <div className="pt-4 border-t border-white/10">
+        <div className="pt-4 border-t border-gray-200">
           <button
             onClick={() => setShowSellerDrawer(true)}
             className="w-full flex items-center gap-3 group text-left"
@@ -319,7 +319,7 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
             {/* Seller Name with TS Badge */}
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5">
-                <span className="font-semibold text-white group-hover:text-violet-300 transition-colors">
+                <span className="font-semibold text-gray-900 group-hover:text-violet-600 transition-colors">
                   {sellerName}
                 </span>
                 {/* TS Verified Badge Image */}
@@ -332,12 +332,12 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
                 )}
               </div>
               {sellerLocation && (
-                <p className="text-sm text-white/50">{sellerLocation}</p>
+                <p className="text-sm text-gray-500">{sellerLocation}</p>
               )}
             </div>
 
             {/* Arrow */}
-            <svg className="w-5 h-5 text-white/40 group-hover:text-white/60 transition-colors flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-5 h-5 text-gray-400 group-hover:text-gray-600 transition-colors flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </button>
@@ -347,7 +347,7 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
       </section>
 
       {/* Fixed Bottom Action Bar */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-black/90 backdrop-blur-lg border-t border-white/10">
+      <div className="fixed bottom-0 left-0 right-0 p-4 backdrop-blur-lg border-t border-gray-200" style={{ backgroundColor: 'rgba(229, 227, 222, 0.95)' }}>
         <div className="flex items-center gap-3 max-w-lg mx-auto">
           <FavoriteButton listingId={listing.id} variant="detail" />
 
