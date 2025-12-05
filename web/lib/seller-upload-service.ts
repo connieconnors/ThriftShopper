@@ -330,11 +330,25 @@ Return ONLY valid JSON in this exact format:
 
   try {
     const parsed = JSON.parse(content);
+    
+    // Clean attributes - remove any JSON syntax characters like quotes, brackets
+    const cleanAttributes = Array.isArray(parsed.attributes) 
+      ? parsed.attributes.map((attr: any) => {
+          // Convert to string and remove quotes, brackets, and extra whitespace
+          let cleaned = String(attr).trim();
+          // Remove leading/trailing quotes and brackets
+          cleaned = cleaned.replace(/^[\["\s]+|[\]"\s]+$/g, '');
+          // Remove any remaining quotes or brackets in the middle
+          cleaned = cleaned.replace(/["\[\]]/g, '');
+          return cleaned;
+        }).filter(attr => attr.length > 0)  // Remove empty strings
+      : [];
+    
     return {
       title: parsed.title || 'New Listing',
       description: parsed.description || '',
       category: parsed.category || 'General',
-      attributes: Array.isArray(parsed.attributes) ? parsed.attributes : [],
+      attributes: cleanAttributes,
       estimatedPrice: typeof parsed.estimatedPrice === 'number' ? parsed.estimatedPrice : null,
     };
   } catch (e) {

@@ -19,12 +19,28 @@ interface UseProductsReturn {
   refetch: () => Promise<void>;
 }
 
-// Helper to safely convert to array
+// Helper to safely convert to array and clean JSON artifacts
 function toArray(value: any): string[] {
   if (!value) return [];
-  if (Array.isArray(value)) return value;
-  if (typeof value === 'string') return [value]; // Single string becomes array with one item
-  return [];
+  
+  let arr: string[] = [];
+  if (Array.isArray(value)) {
+    arr = value;
+  } else if (typeof value === 'string') {
+    arr = [value]; // Single string becomes array with one item
+  } else {
+    return [];
+  }
+  
+  // Clean each item - remove quotes, brackets, and JSON syntax
+  return arr.map(item => {
+    let cleaned = String(item).trim();
+    // Remove leading/trailing quotes and brackets
+    cleaned = cleaned.replace(/^[\["\s]+|[\]"\s]+$/g, '');
+    // Remove any remaining quotes or brackets
+    cleaned = cleaned.replace(/["\[\]]/g, '');
+    return cleaned;
+  }).filter(item => item.length > 0); // Remove empty strings
 }
 
 // Transform database Listing to component Product format
