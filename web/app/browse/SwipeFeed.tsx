@@ -319,9 +319,9 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
               }}
             >
               {isProcessing ? (
-                <Loader2 className="w-6 h-6 text-white animate-spin" />
+                <Loader2 className="w-3 h-3 text-white animate-spin" />
               ) : (
-                <Mic className="w-6 h-6 text-white" />
+                <Mic className="w-3 h-3 text-white" />
               )}
             </button>
           </div>
@@ -542,7 +542,7 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
             style={{ backgroundColor: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(10px)' }}
           >
             <Sparkles 
-              className="w-7 h-7" 
+              className="w-3.5 h-3.5" 
               style={{
                 color: currentListing && favorites.has(currentListing.id) ? COLORS.gold : 'white',
                 fill: currentListing && favorites.has(currentListing.id) ? COLORS.gold : 'transparent',
@@ -563,7 +563,7 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
             className="w-14 h-14 flex items-center justify-center rounded-full"
             style={{ backgroundColor: 'rgba(25, 25, 112, 0.9)', backdropFilter: 'blur(10px)' }}
           >
-            <TSLogo size={32} primaryColor="#ffffff" accentColor="#efbf04" />
+            <TSLogo size={16} primaryColor="#ffffff" accentColor="#efbf04" />
           </button>
         </div>
       </div>
