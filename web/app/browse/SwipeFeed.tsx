@@ -483,6 +483,8 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
                       cleaned = cleaned.replace(/^[\["\s]+|[\]"\s]+$/g, '');
                       // Remove any remaining quotes or brackets
                       cleaned = cleaned.replace(/["\[\]]/g, '');
+                      // Ensure space after commas within the text
+                      cleaned = cleaned.replace(/,([^\s])/g, ', $1');
                       return cleaned;
                     }).filter(s => s.length > 0);
                     
