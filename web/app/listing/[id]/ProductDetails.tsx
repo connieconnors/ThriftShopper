@@ -133,7 +133,7 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
 
       {/* Full-Bleed Image Gallery */}
       <section
-        className="relative w-full h-[55vh] sm:h-[60vh] overflow-hidden"
+        className="relative w-full h-[65vh] sm:h-[70vh] overflow-hidden"
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
@@ -228,10 +228,10 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
       <section className="px-6 py-6 space-y-6">
         {/* Title & Price */}
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 leading-tight mb-2">
+          <h1 className="text-base sm:text-lg font-bold text-gray-900 leading-tight mb-1">
             {listing.title}
           </h1>
-          <p className="text-3xl font-bold text-gray-900">
+          <p className="text-lg font-bold text-gray-900">
             ${listing.price}
           </p>
         </div>
