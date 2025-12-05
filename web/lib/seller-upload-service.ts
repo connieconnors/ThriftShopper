@@ -341,7 +341,7 @@ Return ONLY valid JSON in this exact format:
           // Remove any remaining quotes or brackets in the middle
           cleaned = cleaned.replace(/["\[\]]/g, '');
           return cleaned;
-        }).filter(attr => attr.length > 0)  // Remove empty strings
+        }).filter((attr: string) => attr.length > 0)  // Remove empty strings
       : [];
     
     return {

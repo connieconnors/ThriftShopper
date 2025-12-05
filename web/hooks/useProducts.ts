@@ -33,14 +33,14 @@ function toArray(value: any): string[] {
   }
   
   // Clean each item - remove quotes, brackets, and JSON syntax
-  return arr.map(item => {
+  return arr.map((item: any) => {
     let cleaned = String(item).trim();
     // Remove leading/trailing quotes and brackets
     cleaned = cleaned.replace(/^[\["\s]+|[\]"\s]+$/g, '');
     // Remove any remaining quotes or brackets
     cleaned = cleaned.replace(/["\[\]]/g, '');
     return cleaned;
-  }).filter(item => item.length > 0); // Remove empty strings
+  }).filter((item: string) => item.length > 0); // Remove empty strings
 }
 
 // Transform database Listing to component Product format
