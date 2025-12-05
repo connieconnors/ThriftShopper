@@ -16,11 +16,11 @@ function SuccessContent() {
   }, []);
 
   return (
-    <main className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-6 relative overflow-hidden">
+    <main className="min-h-screen text-gray-900 flex flex-col items-center justify-center p-6 relative overflow-hidden" style={{ backgroundColor: '#EDE7D9' }}>
       {/* Header Branding */}
       <div className="absolute top-4 left-4 z-20 flex items-center gap-2">
         <Link href="/browse" className="flex items-center gap-2 opacity-90 hover:opacity-100 transition-opacity">
-          <TSLogo size={28} primaryColor="#ffffff" accentColor="#efbf04" />
+          <TSLogo size={28} primaryColor="#191970" accentColor="#efbf04" />
         </Link>
       </div>
 
@@ -62,32 +62,32 @@ function SuccessContent() {
         </div>
 
         {/* Message */}
-        <h1 className="text-3xl font-bold mb-4">Payment Successful!</h1>
-        <p className="text-white/60 mb-4">
+        <h1 className="text-3xl font-bold mb-4 text-gray-900">Payment Successful!</h1>
+        <p className="text-gray-600 mb-4">
           Thank you for your purchase. Your order has been confirmed and the seller has been notified.
         </p>
 
         {orderId && (
-          <div className="bg-slate-900/50 rounded-xl p-4 border border-white/10 mb-8">
-            <p className="text-sm text-white/50 mb-1">Order ID</p>
-            <p className="font-mono text-white text-sm break-all">{orderId}</p>
+          <div className="bg-white rounded-xl p-4 border border-gray-200 mb-8">
+            <p className="text-sm text-gray-500 mb-1">Order ID</p>
+            <p className="font-mono text-gray-900 text-sm break-all">{orderId}</p>
           </div>
         )}
 
         {/* What's Next */}
-        <div className="text-left bg-slate-900/30 rounded-xl p-5 border border-white/10 mb-8">
-          <h2 className="font-semibold mb-3">What happens next?</h2>
-          <ul className="space-y-3 text-sm text-white/70">
+        <div className="text-left bg-white rounded-xl p-5 border border-gray-200 mb-8">
+          <h2 className="font-semibold mb-3 text-gray-900">What happens next?</h2>
+          <ul className="space-y-3 text-sm text-gray-700">
             <li className="flex gap-3">
-              <span className="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center flex-shrink-0 text-xs font-bold">1</span>
+              <span className="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-600 flex items-center justify-center flex-shrink-0 text-xs font-bold">1</span>
               <span>The seller will prepare and ship your item within 1-3 business days</span>
             </li>
             <li className="flex gap-3">
-              <span className="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center flex-shrink-0 text-xs font-bold">2</span>
+              <span className="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-600 flex items-center justify-center flex-shrink-0 text-xs font-bold">2</span>
               <span>You'll receive tracking information via email once shipped</span>
             </li>
             <li className="flex gap-3">
-              <span className="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center flex-shrink-0 text-xs font-bold">3</span>
+              <span className="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-600 flex items-center justify-center flex-shrink-0 text-xs font-bold">3</span>
               <span>Once your item arrives, come back and shop for your next find</span>
             </li>
           </ul>
@@ -97,13 +97,13 @@ function SuccessContent() {
         <div className="space-y-3">
           <Link
             href="/browse"
-            className="block w-full py-4 bg-white text-black font-bold rounded-full hover:bg-white/90 transition-colors"
+            className="block w-full py-4 bg-gray-900 text-white font-bold rounded-full hover:bg-gray-800 transition-colors"
           >
             Continue Shopping
           </Link>
           <Link
             href="/favorites"
-            className="block w-full py-4 border-2 border-white/20 text-white font-semibold rounded-full hover:border-white/40 transition-colors"
+            className="block w-full py-4 border-2 border-gray-300 text-gray-900 font-semibold rounded-full hover:border-gray-400 transition-colors"
           >
             View Favorites
           </Link>
