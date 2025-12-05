@@ -106,7 +106,7 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
   ].filter(Boolean);
 
   return (
-    <main className="min-h-screen text-gray-900" style={{ backgroundColor: '#E5E3DE' }}>
+    <main className="min-h-screen text-gray-900" style={{ backgroundColor: '#EDE7D9' }}>
       {/* Fixed Header - Back to Browse */}
       <header className="fixed top-0 left-0 right-0 z-50 p-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -147,7 +147,7 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
             }}
           >
             {images.map((src, index) => (
-              <div key={index} className="w-full h-full flex-shrink-0" style={{ backgroundColor: '#E5E3DE' }}>
+              <div key={index} className="w-full h-full flex-shrink-0" style={{ backgroundColor: '#EDE7D9' }}>
                 <img
                   src={src}
                   alt={`${listing.title} - Image ${index + 1}`}
@@ -159,7 +159,7 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
             ))}
           </div>
         ) : (
-          <div className="w-full h-full flex items-center justify-center" style={{ backgroundColor: '#E5E3DE' }}>
+          <div className="w-full h-full flex items-center justify-center" style={{ backgroundColor: '#EDE7D9' }}>
             <span className="text-gray-400 text-6xl">📦</span>
           </div>
         )}
@@ -221,7 +221,7 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
         )}
 
         {/* Gradient fade at bottom */}
-        <div className="absolute bottom-0 left-0 right-0 h-32 pointer-events-none" style={{ background: 'linear-gradient(to top, #E5E3DE 0%, rgba(229, 227, 222, 0.5) 50%, transparent 100%)' }} />
+        <div className="absolute bottom-0 left-0 right-0 h-32 pointer-events-none" style={{ background: 'linear-gradient(to top, #EDE7D9 0%, rgba(237, 231, 217, 0.5) 50%, transparent 100%)' }} />
       </section>
 
       {/* Product Info */}
@@ -347,7 +347,7 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
       </section>
 
       {/* Fixed Bottom Action Bar */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 backdrop-blur-lg border-t border-gray-200" style={{ backgroundColor: 'rgba(229, 227, 222, 0.95)' }}>
+      <div className="fixed bottom-0 left-0 right-0 p-4 backdrop-blur-lg border-t border-gray-200" style={{ backgroundColor: 'rgba(237, 231, 217, 0.95)' }}>
         <div className="flex items-center gap-3 max-w-lg mx-auto">
           <FavoriteButton listingId={listing.id} variant="detail" />
 
@@ -393,7 +393,7 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
       {isZoomed && images.length > 0 && (
         <div 
           className="fixed inset-0 z-[100] flex items-center justify-center"
-          style={{ backgroundColor: '#E5E3DE' }}
+          style={{ backgroundColor: '#EDE7D9' }}
           onClick={() => setIsZoomed(false)}
         >
           {/* Close Button */}
