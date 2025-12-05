@@ -555,8 +555,8 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
             <Sparkles 
               className="w-3.5 h-3.5" 
               style={{
-                color: currentListing && favorites.has(currentListing.id) ? COLORS.gold : 'white',
-                fill: currentListing && favorites.has(currentListing.id) ? COLORS.gold : 'transparent',
+                color: '#efbf04',
+                fill: currentListing && favorites.has(currentListing.id) ? '#efbf04' : 'transparent',
               }}
             />
             {favorites.size > 0 && (
