@@ -106,7 +106,7 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
   ].filter(Boolean);
 
   return (
-    <main className="min-h-screen text-gray-900" style={{ backgroundColor: '#EDE7D9' }}>
+    <main className="min-h-screen text-gray-900" style={{ backgroundColor: '#EDE7D9', fontFamily: 'Merriweather, serif' }}>
       {/* Fixed Header - Back to Browse */}
       <header className="fixed top-0 left-0 right-0 z-50 p-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
