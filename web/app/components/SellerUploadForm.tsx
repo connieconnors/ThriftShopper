@@ -732,7 +732,7 @@ export default function SellerUploadForm() {
                     type="text"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    className="flex-1 border border-gray-300 rounded-lg px-4 py-2"
+                    className="flex-1 border border-gray-300 rounded-lg px-4 py-2 text-[#333333]"
                     maxLength={80}
                     placeholder="Enter title or use voice..."
                   />
@@ -750,7 +750,7 @@ export default function SellerUploadForm() {
                   <textarea
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    className="flex-1 border border-gray-300 rounded-lg px-4 py-2"
+                    className="flex-1 border border-gray-300 rounded-lg px-4 py-2 text-[#333333]"
                     rows={4}
                     placeholder="Describe your item or use voice..."
                   />
@@ -826,7 +826,7 @@ export default function SellerUploadForm() {
                     type="text"
                     value={keywords}
                     onChange={(e) => setKeywords(e.target.value)}
-                    className="flex-1 border border-gray-300 rounded-lg px-4 py-2"
+                    className="flex-1 border border-gray-300 rounded-lg px-4 py-2 text-[#333333]"
                     placeholder="Add a keyword..."
                   />
                   <VoiceInputButton onTranscript={handleKeywordsVoice} />
@@ -865,7 +865,7 @@ export default function SellerUploadForm() {
                     type="text"
                     value={category}
                     onChange={(e) => setCategory(e.target.value)}
-                    className="flex-1 border border-gray-300 rounded-lg px-4 py-2"
+                    className="flex-1 border border-gray-300 rounded-lg px-4 py-2 text-[#333333]"
                     placeholder="e.g., Home Decor, Vintage..."
                   />
                   <VoiceInputButton onTranscript={handleCategoryVoice} />
@@ -900,7 +900,7 @@ export default function SellerUploadForm() {
                   <textarea
                     value={specifications}
                     onChange={(e) => setSpecifications(e.target.value)}
-                    className="flex-1 border border-gray-300 rounded-lg px-4 py-2"
+                    className="flex-1 border border-gray-300 rounded-lg px-4 py-2 text-[#333333]"
                     rows={2}
                     placeholder="Dimensions, materials, brand, era..."
                   />
