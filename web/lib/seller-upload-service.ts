@@ -15,6 +15,7 @@ interface UploadAndSaveResult {
   data?: {
     processedImageUrl: string;
     originalImageUrl: string;
+    backgroundRemoved: boolean;
     suggestedTitle: string;
     suggestedDescription: string;
     detectedCategory: string;
@@ -82,14 +83,21 @@ export async function uploadAndCreateListing(
       description: userInput?.description || '' 
     };
     let pricingIntelligence = null;
+    let backgroundRemoved = false;
 
     // Try background removal (optional - don't fail if key missing)
     if (process.env.REMOVE_BG_KEY) {
       try {
         processedImageUrl = await removeBackground(imageFile);
+        backgroundRemoved = true;
+        console.log('✓ Background removal successful');
       } catch (e) {
         // Background removal failed, continue with original image
+        console.error('✗ Background removal failed:', e instanceof Error ? e.message : String(e));
+        backgroundRemoved = false;
       }
+    } else {
+      console.log('ℹ REMOVE_BG_KEY not set, skipping background removal');
     }
 
     // Use OpenAI Vision (GPT-4o) for image analysis + listing generation + price estimation
@@ -239,6 +247,7 @@ const listingInsert = {
       data: {
         processedImageUrl: processedImageUrl,
         originalImageUrl: originalUrl,
+        backgroundRemoved: backgroundRemoved,
         suggestedTitle: listing.title,
         suggestedDescription: listing.description,
         detectedCategory: visionData.category,

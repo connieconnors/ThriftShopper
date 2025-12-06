@@ -13,6 +13,7 @@ import { supabase } from '@/lib/supabaseClient';
 
 interface UploadResult {
   processedImageUrl: string;
+  backgroundRemoved: boolean;
   suggestedTitle: string;
   suggestedDescription: string;
   detectedCategory: string;
@@ -639,12 +640,21 @@ export default function SellerUploadForm() {
                 {/* Hover overlay hint */}
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all rounded-lg flex items-center justify-center">
                   <span className="opacity-0 group-hover:opacity-100 text-white bg-black/50 px-3 py-1 rounded-full text-sm transition-opacity">
-                    Click to {showProcessedImage ? 'show original' : 'remove background'}
+                    Click to toggle view
                   </span>
                 </div>
               </div>
-              <p className={`text-sm mb-3 ${showProcessedImage ? 'text-green-600' : 'text-gray-500'}`}>
-                {showProcessedImage ? '✓ Background removed' : '○ Original image'}
+              <p className={`text-sm mb-3 ${
+                showProcessedImage && result.backgroundRemoved 
+                  ? 'text-green-600' 
+                  : showProcessedImage && !result.backgroundRemoved
+                  ? 'text-orange-600'
+                  : 'text-gray-500'
+              }`}>
+                {showProcessedImage 
+                  ? (result.backgroundRemoved ? '✓ Background removed' : '○ Original (bg removal not available)')
+                  : '○ Original image'
+                }
               </p>
 
               {/* Additional Photos (optional) */}
