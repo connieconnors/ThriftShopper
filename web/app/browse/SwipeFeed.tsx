@@ -520,23 +520,18 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
                     </span>
                   )}
                   {/* Handle styles as array */}
-                  {(() => {
-                    const stylesArray: string[] = Array.isArray(listing.styles) 
-                      ? listing.styles 
-                      : (typeof listing.styles === 'string' ? listing.styles.split(',').map((s: string) => s.trim()).filter(Boolean) : []);
-                    return stylesArray.slice(0, 2).map((style: string, i: number) => (
-                      <span
-                        key={`${style}-${i}`}
-                        className="px-3 py-1 text-xs rounded-full"
-                        style={{ 
-                          backgroundColor: 'rgba(207, 181, 59, 0.3)',
-                          border: '1px solid #cfb53b',
-                        }}
-                      >
-                        {style}
-                      </span>
-                    ));
-                  })()}
+                  {normalizeTagColumn(listing.styles).slice(0, 2).map((style: string, i: number) => (
+                    <span
+                      key={`${style}-${i}`}
+                      className="px-3 py-1 text-xs rounded-full"
+                      style={{ 
+                        backgroundColor: 'rgba(207, 181, 59, 0.3)',
+                        border: '1px solid #cfb53b',
+                      }}
+                    >
+                      {style}
+                    </span>
+                  ))}
                 </div>
 
                 {/* Seller Info */}
