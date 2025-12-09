@@ -519,7 +519,7 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
                       {listing.category}
                     </span>
                   )}
-                  {/* Handle styles as array */}
+                  {/* Styles - using normalizeTagColumn for consistent parsing */}
                   {normalizeTagColumn(listing.styles).slice(0, 2).map((style: string, i: number) => (
                     <span
                       key={`${style}-${i}`}
@@ -598,6 +598,50 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
                 style={{ backgroundColor: COLORS.gold, color: COLORS.midnightBlue }}
               >
                 {favorites.size}
+              </div>
+            )}
+          </button>
+          
+          {/* TS Logo Button (Seller Mode) - Bottom */}
+          <button 
+            className="w-14 h-14 flex items-center justify-center rounded-full"
+            style={{ backgroundColor: 'rgba(25, 25, 112, 0.9)', backdropFilter: 'blur(10px)' }}
+          >
+            <TSLogo size={32} primaryColor="#ffffff" accentColor="#efbf04" />
+          </button>
+        </div>
+      </div>
+
+
+      {/* Progress Dots (right side) */}
+      <div className="fixed right-4 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-1.5">
+        {displayListings.slice(0, 8).map((_, index) => (
+          <button
+            key={index}
+            onClick={() => {
+              setIsTransitioning(true);
+              setCurrentIndex(index);
+              setTimeout(() => setIsTransitioning(false), 400);
+            }}
+            className="transition-all duration-300"
+            style={{
+              width: 6,
+              height: index === currentIndex ? 24 : 6,
+              borderRadius: 3,
+              backgroundColor: index === currentIndex ? COLORS.oldGold : 'rgba(255,255,255,0.4)',
+            }}
+          />
+        ))}
+        {displayListings.length > 8 && (
+          <span className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.4)' }}>
+            +{displayListings.length - 8}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
               </div>
             )}
           </button>

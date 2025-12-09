@@ -1042,3 +1042,15 @@ export default function SellerUploadForm() {
     </div>
   );
 }
+
+              className="px-4 py-3 border border-gray-300 rounded-lg font-semibold hover:bg-gray-50 transition disabled:opacity-50"
+              style={{ fontFamily: 'Merriweather, serif' }}
+            >
+              Start Over
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
