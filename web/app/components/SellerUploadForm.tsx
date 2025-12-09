@@ -149,8 +149,8 @@ export default function SellerUploadForm() {
   const [keywords, setKeywords] = useState(''); // For moods/styles
   
   // Additional photos
-  const [additionalPhoto1, setAdditionalPhoto1] = useState<string>(''); // For staged_image_url
-  const [additionalPhoto2, setAdditionalPhoto2] = useState<string>(''); // Extra photo
+  const [additionalPhoto1, setAdditionalPhoto1] = useState<string>(''); // For additional_image_url
+  const [additionalPhoto2, setAdditionalPhoto2] = useState<string>(''); // For additional_image_two_url
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -392,7 +392,8 @@ export default function SellerUploadForm() {
           // Use processed or original image based on toggle
           clean_image_url: showProcessedImage ? result?.processedImageUrl : null,
           // Additional photos
-          staged_image_url: additionalPhoto1 || null,
+          additional_image_url: additionalPhoto1 || null,
+          additional_image_two_url: additionalPhoto2 || null,
         })
         .eq('id', listingId);
 
@@ -450,7 +451,8 @@ export default function SellerUploadForm() {
           // Keep as draft
           status: 'draft',
           clean_image_url: showProcessedImage ? result?.processedImageUrl : null,
-          staged_image_url: additionalPhoto1 || null,
+          additional_image_url: additionalPhoto1 || null,
+          additional_image_two_url: additionalPhoto2 || null,
         })
         .eq('id', listingId);
 

@@ -147,12 +147,24 @@ export function MoodWheel({ onMoodChange, selectedMoods }: MoodWheelProps) {
                 ))}
               </div>
 
-              {/* Selected Count */}
+              {/* Selected Count & Apply Button */}
               {selectedMoods.length > 0 && (
-                <div className="mt-3 pt-2 border-t border-white/10 text-center">
-                  <span className="text-xs" style={{ color: '#efbf04' }}>
-                    {selectedMoods.length} mood{selectedMoods.length !== 1 ? 's' : ''} selected
-                  </span>
+                <div className="mt-3 pt-3 border-t border-white/10 space-y-2">
+                  <div className="text-center">
+                    <span className="text-xs" style={{ color: '#efbf04' }}>
+                      {selectedMoods.length} mood{selectedMoods.length !== 1 ? 's' : ''} selected
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => setIsExpanded(false)}
+                    className="w-full py-2 rounded-lg text-sm font-medium transition-all"
+                    style={{
+                      backgroundColor: '#efbf04',
+                      color: '#191970',
+                    }}
+                  >
+                    Apply Filter
+                  </button>
                 </div>
               )}
             </div>
