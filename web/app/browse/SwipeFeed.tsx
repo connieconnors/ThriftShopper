@@ -235,7 +235,16 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
         return [...prev, mood];
       }
     });
+    // Reset to first card when mood filter changes
+    setCurrentIndex(0);
   };
+
+  // Force MoodWheel to close when user swipes to next card
+  const [moodWheelKey, setMoodWheelKey] = useState(0);
+  
+  useEffect(() => {
+    setMoodWheelKey(prev => prev + 1);
+  }, [currentIndex]);
 
   if (displayListings.length === 0) {
     return (
@@ -533,7 +542,7 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
       >
         {/* Mood Wheel */}
         <div className="pointer-events-auto">
-          <MoodWheel onMoodChange={handleMoodChange} selectedMoods={selectedMoods} />
+          <MoodWheel key={moodWheelKey} onMoodChange={handleMoodChange} selectedMoods={selectedMoods} />
         </div>
 
         {/* Counter */}
