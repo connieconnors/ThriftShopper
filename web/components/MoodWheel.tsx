@@ -1,34 +1,72 @@
 'use client';
 
 import React, { useState } from 'react';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 
 interface MoodWheelProps {
   onMoodChange: (mood: string) => void;
   selectedMoods: string[];
 }
 
+// Expanded mood list (20+ moods for thrift/vintage shopping)
 const moods = [
-  { name: 'Whimsical', color: '#FF6B9D', angle: 0 },
-  { name: 'Vintage', color: '#C19A6B', angle: 60 },
-  { name: 'Elegant', color: '#9B59B6', angle: 120 },
-  { name: 'Quirky', color: '#F39C12', angle: 180 },
-  { name: 'Rustic', color: '#8B4513', angle: 240 },
-  { name: 'Retro', color: '#3498DB', angle: 300 },
+  // Original 6
+  { name: 'Whimsical', color: '#FF6B9D', category: 'playful' },
+  { name: 'Vintage', color: '#C19A6B', category: 'classic' },
+  { name: 'Elegant', color: '#9B59B6', category: 'sophisticated' },
+  { name: 'Quirky', color: '#F39C12', category: 'playful' },
+  { name: 'Rustic', color: '#8B4513', category: 'natural' },
+  { name: 'Retro', color: '#3498DB', category: 'classic' },
+  
+  // New additions
+  { name: 'Cozy', color: '#D4A574', category: 'comfort' },
+  { name: 'Romantic', color: '#E75480', category: 'sophisticated' },
+  { name: 'Bohemian', color: '#CD853F', category: 'natural' },
+  { name: 'Industrial', color: '#696969', category: 'modern' },
+  { name: 'Minimalist', color: '#A9A9A9', category: 'modern' },
+  { name: 'Eclectic', color: '#FF8C00', category: 'playful' },
+  { name: 'Nostalgic', color: '#BC8F8F', category: 'classic' },
+  { name: 'Glamorous', color: '#FFD700', category: 'sophisticated' },
+  { name: 'Artisan', color: '#8B7355', category: 'natural' },
+  { name: 'Farmhouse', color: '#DEB887', category: 'comfort' },
+  { name: 'Victorian', color: '#800080', category: 'classic' },
+  { name: 'Coastal', color: '#5F9EA0', category: 'natural' },
+  { name: 'Mid-Century', color: '#F4A460', category: 'classic' },
+  { name: 'Cottage', color: '#FFE4B5', category: 'comfort' },
+  { name: 'Gothic', color: '#2F4F4F', category: 'sophisticated' },
+  { name: 'Scandinavian', color: '#B0C4DE', category: 'modern' },
 ];
 
 export function MoodWheel({ onMoodChange, selectedMoods }: MoodWheelProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+
+  React.useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  if (!isMounted) {
+    // Return a simple placeholder during SSR to prevent hydration mismatch
+    return (
+      <div className="w-16 h-16 rounded-full flex items-center justify-center shadow-lg relative overflow-hidden" style={{ backgroundColor: '#191970' }}>
+        <span className="text-2xl relative z-10">✨</span>
+      </div>
+    );
+  }
+
+  // Show first 6 moods in the compact wheel
+  const compactMoods = moods.slice(0, 6);
 
   return (
     <div className="relative">
+      {/* Compact Wheel Button */}
       <motion.button
         onClick={() => setIsExpanded(!isExpanded)}
         className="w-16 h-16 rounded-full flex items-center justify-center shadow-lg relative overflow-hidden"
         whileTap={{ scale: 0.95 }}
       >
         <svg className="absolute inset-0 w-full h-full" viewBox="0 0 64 64">
-          {moods.map((mood, index) => {
+          {compactMoods.map((mood, index) => {
             const startAngle = (index * 60 - 90) * (Math.PI / 180);
             const endAngle = ((index + 1) * 60 - 90) * (Math.PI / 180);
             const x1 = 32 + Math.cos(startAngle) * 32;
@@ -51,47 +89,76 @@ export function MoodWheel({ onMoodChange, selectedMoods }: MoodWheelProps) {
         <span className="text-2xl relative z-10">✨</span>
       </motion.button>
 
-      {isExpanded && (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="absolute top-0 left-0"
-        >
-          <div className="relative w-48 h-48">
-            {moods.map((mood, index) => {
-              const angle = (index * 60 * Math.PI) / 180;
-              const radius = 70;
-              const x = Math.cos(angle) * radius + 24;
-              const y = Math.sin(angle) * radius + 24;
-
-              return (
-                <motion.button
-                  key={mood.name}
-                  onClick={() => {
-                    onMoodChange(mood.name);
-                    setIsExpanded(false);
-                  }}
-                  className="absolute w-14 h-14 rounded-full flex items-center justify-center shadow-md transition-all"
-                  style={{
-                    left: `${x + 72}px`,
-                    top: `${y + 72}px`,
-                    backgroundColor: mood.color,
-                    border: selectedMoods.includes(mood.name) ? '3px solid #cfb53b' : 'none',
-                  }}
-                  whileHover={{ scale: 1.2 }}
-                  whileTap={{ scale: 0.9 }}
-                  initial={{ opacity: 0, scale: 0 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: index * 0.05 }}
+      {/* Expanded Grid */}
+      <AnimatePresence>
+        {isExpanded && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: 10 }}
+            className="absolute bottom-20 left-0 z-50"
+          >
+            <div 
+              className="rounded-2xl p-4 shadow-2xl"
+              style={{ 
+                backgroundColor: 'rgba(25, 25, 112, 0.95)',
+                backdropFilter: 'blur(20px)',
+                maxHeight: '60vh',
+                width: '280px',
+                overflowY: 'auto',
+              }}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between mb-3 pb-2 border-b border-white/10">
+                <span className="text-white font-medium text-sm">Choose a Vibe</span>
+                <button
+                  onClick={() => setIsExpanded(false)}
+                  className="text-white/60 hover:text-white text-lg"
                 >
-                  <span className="text-white text-[10px]">{mood.name}</span>
-                </motion.button>
-              );
-            })}
-          </div>
-        </motion.div>
-      )}
+                  ×
+                </button>
+              </div>
+
+              {/* Mood Grid */}
+              <div className="grid grid-cols-2 gap-2">
+                {moods.map((mood, index) => (
+                  <motion.button
+                    key={mood.name}
+                    onClick={() => {
+                      onMoodChange(mood.name);
+                      // Don't close automatically - let user select multiple
+                    }}
+                    className="px-3 py-2 rounded-lg text-sm font-medium transition-all"
+                    style={{
+                      backgroundColor: selectedMoods.includes(mood.name) 
+                        ? mood.color 
+                        : 'rgba(255, 255, 255, 0.1)',
+                      color: selectedMoods.includes(mood.name) ? 'white' : 'rgba(255, 255, 255, 0.8)',
+                      border: selectedMoods.includes(mood.name) ? '2px solid #cfb53b' : '2px solid transparent',
+                    }}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.02 }}
+                  >
+                    {mood.name}
+                  </motion.button>
+                ))}
+              </div>
+
+              {/* Selected Count */}
+              {selectedMoods.length > 0 && (
+                <div className="mt-3 pt-2 border-t border-white/10 text-center">
+                  <span className="text-xs" style={{ color: '#efbf04' }}>
+                    {selectedMoods.length} mood{selectedMoods.length !== 1 ? 's' : ''} selected
+                  </span>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
-
