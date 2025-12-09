@@ -291,19 +291,19 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
             {/* Countdown ring when recording */}
             {isRecording && (
               <svg 
-                className="absolute -inset-1 w-7 h-7 -rotate-90"
-                viewBox="0 0 28 28"
+                className="absolute -inset-1 w-14 h-14 -rotate-90"
+                viewBox="0 0 56 56"
               >
                 <circle
-                  cx="14" cy="14" r="13"
-                  fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="1"
+                  cx="28" cy="28" r="26"
+                  fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="2"
                 />
                 <circle
-                  cx="14" cy="14" r="13"
-                  fill="none" stroke={COLORS.oldGold} strokeWidth="1"
+                  cx="28" cy="28" r="26"
+                  fill="none" stroke={COLORS.oldGold} strokeWidth="2"
                   strokeLinecap="round"
-                  strokeDasharray={2 * Math.PI * 13}
-                  strokeDashoffset={2 * Math.PI * 13 * (1 - countdown / 8)}
+                  strokeDasharray={2 * Math.PI * 26}
+                  strokeDashoffset={2 * Math.PI * 26 * (1 - countdown / 8)}
                   style={{ transition: 'stroke-dashoffset 1s linear' }}
                 />
               </svg>
@@ -311,7 +311,7 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
             <button
               onClick={toggleVoice}
               disabled={isProcessing || !isVoiceSupported}
-              className="w-6 h-6 rounded-full flex items-center justify-center transition-all relative"
+              className="w-12 h-12 rounded-full flex items-center justify-center transition-all relative"
               style={{
                 backgroundColor: isRecording ? COLORS.oldGold : isProcessing ? '#6b46c1' : COLORS.midnightBlue,
                 transform: isRecording ? 'scale(1.05)' : 'scale(1)',
@@ -319,9 +319,9 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
               }}
             >
               {isProcessing ? (
-                <Loader2 className="w-3 h-3 text-white animate-spin" />
+                <Loader2 className="w-6 h-6 text-white animate-spin" />
               ) : (
-                <Mic className="w-3 h-3 text-white" />
+                <Mic className="w-6 h-6 text-white" />
               )}
             </button>
           </div>
@@ -472,22 +472,9 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
                   )}
                   {/* Handle styles as array */}
                   {(() => {
-                    let stylesArray: string[] = Array.isArray(listing.styles) 
+                    const stylesArray: string[] = Array.isArray(listing.styles) 
                       ? listing.styles 
-                      : (listing.styles as unknown as string)?.split(',')?.map(s => s.trim())?.filter(Boolean) || [];
-                    
-                    // Clean brackets and quotes from each style
-                    stylesArray = stylesArray.map(style => {
-                      let cleaned = String(style).trim();
-                      // Remove leading/trailing quotes and brackets
-                      cleaned = cleaned.replace(/^[\["\s]+|[\]"\s]+$/g, '');
-                      // Remove any remaining quotes or brackets
-                      cleaned = cleaned.replace(/["\[\]]/g, '');
-                      // Ensure space after commas within the text
-                      cleaned = cleaned.replace(/,([^\s])/g, ', $1');
-                      return cleaned;
-                    }).filter(s => s.length > 0);
-                    
+                      : (typeof listing.styles === 'string' ? listing.styles.split(',').map((s: string) => s.trim()).filter(Boolean) : []);
                     return stylesArray.slice(0, 2).map((style: string, i: number) => (
                       <span
                         key={`${style}-${i}`}
@@ -551,14 +538,14 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
           {/* Sparkle Button (Saved Finds) - Top */}
           <button 
             onClick={() => currentListing && toggleFavorite(currentListing.id)}
-            className="relative w-7 h-7 flex items-center justify-center rounded-full"
+            className="relative w-14 h-14 flex items-center justify-center rounded-full"
             style={{ backgroundColor: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(10px)' }}
           >
             <Sparkles 
-              className="w-3.5 h-3.5" 
+              className="w-7 h-7" 
               style={{
-                color: '#efbf04',
-                fill: currentListing && favorites.has(currentListing.id) ? '#efbf04' : 'transparent',
+                color: currentListing && favorites.has(currentListing.id) ? COLORS.gold : 'white',
+                fill: currentListing && favorites.has(currentListing.id) ? COLORS.gold : 'transparent',
               }}
             />
             {favorites.size > 0 && (
@@ -573,10 +560,10 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
           
           {/* TS Logo Button (Seller Mode) - Bottom */}
           <button 
-            className="w-7 h-7 flex items-center justify-center rounded-full"
+            className="w-14 h-14 flex items-center justify-center rounded-full"
             style={{ backgroundColor: 'rgba(25, 25, 112, 0.9)', backdropFilter: 'blur(10px)' }}
           >
-            <TSLogo size={16} primaryColor="#ffffff" accentColor="#efbf04" />
+            <TSLogo size={32} primaryColor="#ffffff" accentColor="#efbf04" />
           </button>
         </div>
       </div>
