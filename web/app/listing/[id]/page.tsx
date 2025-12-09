@@ -80,20 +80,3 @@ export default async function ListingPage({ params }: ListingPageProps) {
 
   return <ProductDetails listing={listing} />;
 }
-
-      cleaned = cleaned.replace(/["\[\]]/g, '');
-      // Ensure space after commas within the text
-      cleaned = cleaned.replace(/,([^\s])/g, ', $1');
-      return cleaned;
-    }).filter(s => s.length > 0);
-  };
-
-  const listing: Listing = {
-    ...raw,
-    styles: normalize(raw.styles as string[] | string | null),
-    intents: normalize(raw.intents as string[] | string | null),
-    moods: normalize(raw.moods as string[] | string | null),
-  };
-
-  return <ProductDetails listing={listing} />;
-}
