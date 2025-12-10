@@ -77,7 +77,7 @@ async function handleAccountUpdated(account: Stripe.Account) {
     let onboardingStatus = "pending";
     if (account.details_submitted && account.charges_enabled && account.payouts_enabled) {
       onboardingStatus = "completed";
-    } else if (account.requirements?.currently_due?.length > 0) {
+    } else if (account.requirements?.currently_due && account.requirements.currently_due.length > 0) {
       onboardingStatus = "needs_verification";
     }
 
