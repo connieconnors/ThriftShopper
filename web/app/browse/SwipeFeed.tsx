@@ -12,11 +12,10 @@ import {
   TS_BADGE_URL
 } from "../../lib/types";
 import { supabase } from "../../lib/supabaseClient";
-import { MoodWheel } from "../../components/MoodWheel";
+import { StandaloneMoodWheel } from "../../components/StandaloneMoodWheel";
 import { TSLogo } from "../../components/TSLogo";
 import { useWhisperTranscription } from "../../hooks/useWhisperTranscription";
-import { Mic, Loader2 } from "lucide-react";
-import { Sparkles } from "lucide-react";
+import { Mic, Loader2, Bookmark } from "lucide-react";
 import { normalizeTagColumn } from "../../lib/utils/tagNormalizer";
 
 interface SwipeFeedProps {
@@ -38,6 +37,7 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [voiceTranscript, setVoiceTranscript] = useState('');
+  const [lastSearchQuery, setLastSearchQuery] = useState(''); // Keep track of what was searched
   const [searchResults, setSearchResults] = useState<Listing[] | null>(null);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [selectedMoods, setSelectedMoods] = useState<string[]>([]);
@@ -77,10 +77,14 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
         const allTags = [...listingMoods, ...listingStyles, ...listingIntents]
           .map(tag => tag.toLowerCase());
         
-        // Check if ANY selected mood matches ANY tag from the listing
-        const matches = selectedMoods.some(selectedMood => 
-          allTags.includes(selectedMood.toLowerCase())
-        );
+        // Check if ALL selected moods match tags from the listing (AND logic)
+        const matches = selectedMoods.every(selectedMood => {
+          if (typeof selectedMood !== 'string') {
+            console.warn('Invalid selectedMood type:', selectedMood);
+            return false;
+          }
+          return allTags.includes(selectedMood.toLowerCase());
+        });
         
         console.log(`  → Matches? ${matches}`);
         return matches;
@@ -214,47 +218,44 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
   };
 
   const handleSearch = async (query: string) => {
-    const words = query.toLowerCase().split(/\s+/).filter(w => w.length > 1);
-    if (words.length === 0) {
+    if (!query || query.trim().length === 0) {
       setSearchResults(null);
+      setLastSearchQuery('');
       return;
     }
-  
-    const orConditions = words.map(word => {
-      const escaped = word.replace(/[%_]/g, "\\$&");
-      return `title.ilike.*${escaped}*,description.ilike.*${escaped}*,category.ilike.*${escaped}*`;
-    }).join(",");
-  
-    const { data, error } = await supabase
-      .from("listings")
-      .select(`
-        *,
-        profiles:seller_id (
-          display_name,
-          location_city,
-          avatar_url,
-          ts_badge,
-          rating,
-          review_count
-        )
-      `)
-      .eq("status", "active")
-      .or(orConditions)
-      .order("created_at", { ascending: false })
-      .limit(24);
-  
-    if (!error && data && data.length > 0) {
-      setSearchResults(data as Listing[]);
-      setCurrentIndex(0);
-    } else {
+
+    // Save the search query so we can display it
+    setLastSearchQuery(query.trim());
+
+    try {
+      // Use semantic search with OpenAI interpretation
+      const { semanticSearch } = await import('@/lib/semantic-search');
+      const { listings, interpretation } = await semanticSearch(query.trim(), { limit: 24 });
+      
+      console.log('🔍 Search query:', query);
+      console.log('📊 Found listings:', listings.length);
+      if (interpretation) {
+        console.log('🧠 Query interpretation:', interpretation);
+      }
+
+      if (listings.length > 0) {
+        setSearchResults(listings);
+        setCurrentIndex(0);
+      } else {
+        setSearchResults([]);
+      }
+    } catch (error) {
+      console.error('Search error:', error);
       setSearchResults([]);
     }
     
+    // Clear the transcript after search, but keep lastSearchQuery
     setVoiceTranscript('');
   };
   
   const clearSearch = () => {
     setSearchResults(null);
+    setLastSearchQuery('');
     setCurrentIndex(0);
   };
 
@@ -266,15 +267,10 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
     });
   };
 
-  const handleMoodChange = (mood: string) => {
-    console.log('🎨 Mood clicked:', mood);
-    setSelectedMoods(prev => {
-      const newMoods = prev.includes(mood)
-        ? prev.filter(m => m !== mood)
-        : [...prev, mood];
-      console.log('🎨 Selected moods now:', newMoods);
-      return newMoods;
-    });
+  const handleMoodChange = (moods: string[]) => {
+    console.log('🎨 Moods updated:', moods);
+    setSelectedMoods(moods);
+    console.log('🎨 Selected moods now:', moods);
     // Reset to first card when mood filter changes
     setCurrentIndex(0);
   };
@@ -289,10 +285,15 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
   if (displayListings.length === 0) {
     return (
       <div 
-        className="fixed inset-0 flex flex-col items-center justify-center"
+        className="fixed inset-0 flex flex-col items-center justify-center px-6"
         style={{ backgroundColor: COLORS.midnightBlue, fontFamily: 'Merriweather, serif' }}
       >
-        <p className="text-white text-xl mb-4">No items found</p>
+        <p className="text-white text-xl mb-2">No items found</p>
+        {searchResults !== null && lastSearchQuery && (
+          <p className="text-white/60 text-sm mb-4">
+            for "{lastSearchQuery}"
+          </p>
+        )}
         {searchResults !== null && (
           <button
             onClick={clearSearch}
@@ -335,46 +336,44 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
             </p>
           </div>
 
-          {/* Right: Mic Button with countdown ring */}
-          <div className="relative">
-            {/* Countdown ring when recording */}
-            {isRecording && (
-              <svg 
-                className="absolute -inset-1 w-14 h-14 -rotate-90"
-                viewBox="0 0 56 56"
-              >
-                <circle
-                  cx="28" cy="28" r="26"
-                  fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="2"
-                />
-                <circle
-                  cx="28" cy="28" r="26"
-                  fill="none" stroke={COLORS.oldGold} strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeDasharray={2 * Math.PI * 26}
-                  strokeDashoffset={2 * Math.PI * 26 * (1 - countdown / 8)}
-                  style={{ transition: 'stroke-dashoffset 1s linear' }}
-                />
-              </svg>
-            )}
-            <button
-              onClick={toggleVoice}
-              disabled={isProcessing || !isVoiceSupported}
-              className="w-12 h-12 rounded-full flex items-center justify-center transition-all relative"
-              style={{
-                backgroundColor: isRecording ? COLORS.oldGold : isProcessing ? '#6b46c1' : COLORS.midnightBlue,
-                transform: isRecording ? 'scale(1.05)' : 'scale(1)',
-                opacity: !isVoiceSupported ? 0.5 : 1,
-              }}
-            >
-              {isProcessing ? (
-                <Loader2 className="w-6 h-6 text-white animate-spin" />
-              ) : (
-                <Mic className="w-6 h-6 text-white" />
-              )}
-            </button>
-          </div>
         </div>
+        
+        {/* Active Mood Filters */}
+        {selectedMoods.length > 0 && (
+          <div 
+            className="flex flex-wrap"
+            style={{
+              marginTop: '20px',
+              marginLeft: '20px',
+              gap: '8px'
+            }}
+          >
+            {selectedMoods.map(mood => (
+              <button
+                key={mood}
+                onClick={() => {
+                  setSelectedMoods(prev => prev.filter(m => m !== mood));
+                  setCurrentIndex(0);
+                }}
+                className="flex items-center gap-1.5 font-medium transition-all hover:opacity-80"
+                style={{
+                  height: '28px',
+                  padding: '6px 10px',
+                  borderRadius: '9999px',
+                  fontSize: '13px',
+                  backgroundColor: '#D9A903',
+                  color: 'white',
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
+                  border: 'none',
+                  cursor: 'pointer'
+                }}
+              >
+                <span>{mood}</span>
+                <span style={{ fontSize: '16px', fontWeight: 'bold', lineHeight: 1 }}>×</span>
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Voice Transcript (appears when listening or processing) */}
         {(isRecording || isProcessing) && (
@@ -414,16 +413,30 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
 
         {/* Search Results Indicator */}
         {searchResults !== null && !isListening && (
-          <div className="mt-4 flex items-center gap-2">
-            <span className="text-sm" style={{ color: COLORS.oldGold }}>
-              {displayListings.length} results
-            </span>
-            <button
-              onClick={clearSearch}
-              className="text-sm text-white/60 hover:text-white underline"
-            >
-              Clear
-            </button>
+          <div className="mt-4 flex flex-col items-center gap-2">
+            {lastSearchQuery && (
+              <div 
+                className="px-4 py-2 rounded-full text-sm"
+                style={{ 
+                  backgroundColor: 'rgba(207, 181, 59, 0.15)',
+                  color: COLORS.oldGold,
+                  border: `1px solid ${COLORS.oldGold}40`
+                }}
+              >
+                "{lastSearchQuery}"
+              </div>
+            )}
+            <div className="flex items-center gap-2">
+              <span className="text-sm" style={{ color: COLORS.oldGold }}>
+                {displayListings.length} result{displayListings.length !== 1 ? 's' : ''}
+              </span>
+              <button
+                onClick={clearSearch}
+                className="text-sm text-white/60 hover:text-white underline"
+              >
+                Clear
+              </button>
+            </div>
           </div>
         )}
       </div>
@@ -557,59 +570,74 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
         })}
       </div>
 
-      {/* ===== BOTTOM BAR ===== */}
-      <div 
-        className="absolute bottom-6 left-6 right-6 z-20 flex items-center justify-between pointer-events-none"
-        style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.3) 0%, transparent 100%)' }}
-      >
-        {/* Mood Wheel */}
-        <div className="pointer-events-auto">
-          <MoodWheel key={moodWheelKey} onMoodChange={handleMoodChange} selectedMoods={selectedMoods} />
-        </div>
-
-        {/* Counter */}
-        <div 
-          className="px-4 py-2 rounded-full"
-          style={{ backgroundColor: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(10px)' }}
+      {/* ===== RIGHT SIDE FLOATING BUTTONS (TikTok/Reels style) ===== */}
+      <div className="fixed right-4 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-4">
+        
+        {/* MOOD WHEEL BUTTON */}
+        <StandaloneMoodWheel selectedMoods={selectedMoods} onMoodsChange={handleMoodChange} />
+        
+        {/* BOOKMARK/FAVORITES BUTTON */}
+        <button
+          onClick={() => currentListing && toggleFavorite(currentListing.id)}
+          className="w-12 h-12 rounded-full hover:opacity-90 transition-all shadow-lg relative flex items-center justify-center"
+          style={{ backgroundColor: '#000080' }}
+          aria-label="Favorites"
         >
-          <span className="text-sm" style={{ color: COLORS.oldGold }}>
-            {currentIndex + 1} / {displayListings.length}
-          </span>
-        </div>
-
-        {/* Bottom Right: 2 stacked elements */}
-        <div className="flex flex-col gap-3 items-center pointer-events-auto">
-          {/* Sparkle Button (Saved Finds) - Top */}
-          <button 
-            onClick={() => currentListing && toggleFavorite(currentListing.id)}
-            className="relative w-14 h-14 flex items-center justify-center rounded-full"
-            style={{ backgroundColor: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(10px)' }}
-          >
-            <Sparkles 
-              className="w-7 h-7" 
-              style={{
-                color: currentListing && favorites.has(currentListing.id) ? COLORS.gold : 'white',
-                fill: currentListing && favorites.has(currentListing.id) ? COLORS.gold : 'transparent',
-              }}
-            />
-            {favorites.size > 0 && (
-              <div 
-                className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold"
-                style={{ backgroundColor: COLORS.gold, color: COLORS.midnightBlue }}
-              >
-                {favorites.size}
-              </div>
-            )}
-          </button>
+          <Bookmark 
+            className="w-6 h-6"
+            style={{
+              color: currentListing && favorites.has(currentListing.id) ? COLORS.gold : 'white',
+              fill: currentListing && favorites.has(currentListing.id) ? COLORS.gold : 'none',
+            }}
+          />
           
-          {/* TS Logo Button (Seller Mode) - Bottom */}
-          <button 
-            className="w-14 h-14 flex items-center justify-center rounded-full"
-            style={{ backgroundColor: 'rgba(25, 25, 112, 0.9)', backdropFilter: 'blur(10px)' }}
-          >
-            <TSLogo size={32} primaryColor="#ffffff" accentColor="#efbf04" />
-          </button>
-        </div>
+          {/* Favorites count badge */}
+          {favorites.size > 0 && (
+            <span 
+              className="absolute -top-1 -right-1 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center"
+              style={{ backgroundColor: '#ef4444' }}
+            >
+              {favorites.size}
+            </span>
+          )}
+        </button>
+
+        {/* VOICE SEARCH BUTTON */}
+        <button
+          onClick={toggleVoice}
+          disabled={!isVoiceSupported}
+          className="w-12 h-12 rounded-full hover:opacity-90 transition-all shadow-lg relative flex items-center justify-center"
+          style={{ backgroundColor: '#000080' }}
+          aria-label="Voice search"
+        >
+          <Mic 
+            className="w-6 h-6 text-white"
+          />
+          {/* Recording indicator */}
+          {isRecording && (
+            <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse" />
+          )}
+        </button>
+      </div>
+
+      {/* ===== DASHBOARD/TS BUTTON (Bottom Right) ===== */}
+      <button
+        onClick={() => router.push('/seller')}
+        className="fixed bottom-6 right-6 z-10 w-12 h-12 rounded-full shadow-lg transition-all hover:scale-110 flex items-center justify-center"
+        style={{ backgroundColor: COLORS.navy }}
+        aria-label="Seller Dashboard"
+      >
+        <TSLogo size={24} primaryColor="#ffffff" accentColor={COLORS.gold} />
+      </button>
+
+      {/* ===== COUNTER (Bottom Center) ===== */}
+      <div 
+        className="fixed bottom-6 left-1/2 -translate-x-1/2 z-10 px-4 py-2 rounded-full"
+        style={{ backgroundColor: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(10px)' }}
+      >
+        <span className="text-sm" style={{ color: COLORS.oldGold }}>
+          {currentIndex + 1} / {displayListings.length}
+        </span>
       </div>
 
 

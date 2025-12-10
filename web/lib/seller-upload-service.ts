@@ -145,6 +145,12 @@ export async function uploadAndCreateListing(
         const googleVisionData = await analyzeImage(processedImageUrl);
         visionData.category = googleVisionData.category;
         visionData.attributes = googleVisionData.attributes;
+        
+        // Add brand info to attributes if detected
+        if (googleVisionData.brandInfo) {
+          visionData.attributes = [googleVisionData.brandInfo, ...visionData.attributes];
+        }
+        
         if (aiSource !== 'openai_failed') aiSource = 'google_vision';
       } catch (e) {
         // Google Vision failed, continue with defaults
@@ -165,43 +171,82 @@ export async function uploadAndCreateListing(
     }
 
     // Step 3: Create listing in database
-  // Categorize the AI-detected attributes
-const categorizeAttributes = (attributes: string[]) => {
-  const styles: string[] = [];
-  const moods: string[] = [];
-  const intents: string[] = [];
-  
-  const styleKeywords = ['vintage', 'modern', 'rustic', 'mid-century', 'antique', 'contemporary', 
-    'traditional', 'industrial', 'bohemian', 'minimalist', 'ornate', 'sleek', 'embroidered',
-    'carved', 'painted', 'glazed', 'silver plated', 'brass', 'wood', 'ceramic', 'porcelain',
-    'designer', 'loafers', 'shoes', 'jewelry', 'necklace', 'pearl', 'scalloped', 'serving bowl',
-    'leather', 'Coach', 'Stubbs', 'Wootton'];
-  
-  const moodKeywords = ['whimsical', 'elegant', 'playful', 'cozy', 'luxurious', 'quirky', 
-    'charming', 'romantic', 'bold', 'delicate', 'dramatic', 'cheerful', 'sophisticated',
-    'humor', 'humorous', 'fun', 'serious', 'calm', 'energetic'];
-  
-  const intentKeywords = ['gift', 'decor', 'collection', 'display', 'functional', 'serving',
-    'storage', 'wedding', 'housewarming', 'birthday', 'anniversary', 'everyday', 'special occasion'];
-  
-  attributes.forEach(attr => {
-    const lower = attr.toLowerCase();
+  // Categorize the AI-detected attributes using OpenAI for better accuracy
+const categorizeAttributes = async (attributes: string[], title: string, description: string) => {
+  // If no OpenAI key, fall back to simple categorization
+  if (!process.env.OPENAI_API_KEY) {
+    return {
+      styles: attributes.slice(0, 3),
+      moods: [],
+      intents: []
+    };
+  }
+
+  try {
+    const prompt = `Categorize these item attributes into styles, moods, and intents for search.
+
+ITEM:
+Title: ${title}
+Description: ${description}
+Attributes: ${attributes.join(', ')}
+
+CATEGORIZE INTO:
+- **styles**: Era (vintage, mid-century, art-deco, etc), materials (brass, ceramic, leather, etc), brands
+- **moods**: Emotional vibes (whimsical, elegant, cozy, playful, romantic, quirky, etc)
+- **intents**: Use cases (gifting, home-decor, collection, functional, etc)
+
+RULES:
+- Only use "vintage" for items clearly from 1920s-1980s
+- Avoid generic mood words unless they truly apply
+- Infer intents from the type of item (e.g., decorative items → home-decor, personal items → selfish, gift-worthy items → gifting)
+- Return 2-4 items per category, prioritize most relevant
+
+Return ONLY valid JSON:
+{
+  "styles": ["mid-century", "brass"],
+  "moods": ["elegant"],
+  "intents": ["home-decor", "gifting"]
+}`;
+
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.3,
+        max_tokens: 200,
+      }),
+    });
+
+    const data = await response.json();
+    const content = data.choices?.[0]?.message?.content?.trim() || '{}';
     
-    if (styleKeywords.some(k => lower.includes(k))) {
-      styles.push(attr);
+    // Extract JSON from markdown code blocks if present
+    const jsonMatch = content.match(/```(?:json)?\s*(\{[\s\S]*\})\s*```/) || 
+                      content.match(/(\{[\s\S]*\})/);
+    
+    if (jsonMatch) {
+      const result = JSON.parse(jsonMatch[1]);
+      return {
+        styles: result.styles || [],
+        moods: result.moods || [],
+        intents: result.intents || []
+      };
     }
-    else if (moodKeywords.some(k => lower.includes(k))) {
-      moods.push(attr);
-    }
-    else if (intentKeywords.some(k => lower.includes(k))) {
-      intents.push(attr);
-    }
-    else {
-      styles.push(attr);
-    }
-  });
-  
-  return { styles, moods, intents };
+  } catch (error) {
+    console.error('Error categorizing attributes:', error);
+  }
+
+  // Fallback if AI categorization fails
+  return {
+    styles: attributes.slice(0, 3),
+    moods: [],
+    intents: []
+  };
 };
 // Generate embedding for semantic search
 let embedding = null;
@@ -213,7 +258,11 @@ if (process.env.OPENAI_API_KEY) {
     // Embedding generation failed, listing will work without semantic search
   }
 }
-const categorized = categorizeAttributes(visionData.attributes || []);
+const categorized = await categorizeAttributes(
+  visionData.attributes || [], 
+  listing.title, 
+  listing.description
+);
 
 const listingInsert = {
   seller_id: sellerId,
@@ -277,23 +326,27 @@ async function analyzeWithOpenAI(imageUrl: string): Promise<{
   attributes: string[];
   estimatedPrice: number | null;
 }> {
-  const prompt = `You are an expert at identifying and pricing secondhand/vintage items for resale on marketplaces like eBay, Poshmark, and ThriftShopper.
+  const prompt = `You are an expert at identifying and pricing secondhand items for resale on marketplaces like eBay, Poshmark, and ThriftShopper.
 
 Analyze this image and provide:
 1. A compelling, SEO-friendly title (max 80 characters) 
 2. A detailed description (2-3 sentences highlighting key features, condition, and appeal)
 3. The most appropriate category from: Kitchen & Dining, Home Decor, Collectibles, Books & Media, Furniture, Art, Electronics, Fashion, Jewelry, Toys & Games, Sports & Outdoors, General
-4. 5 descriptive attributes/tags (like: vintage, gold, leather, designer, bohemian, etc.)
+4. 5 descriptive attributes/tags - BE SPECIFIC AND ACCURATE:
+   - Only use "vintage" if the item is clearly from 1920s-1980s (not just old-looking)
+   - Only use "antique" if pre-1920s
+   - Avoid generic words like "charming", "beautiful", "nice" 
+   - Focus on: materials, brands, specific styles, colors, patterns, era (if truly vintage)
+   - Examples of GOOD tags: "brass", "art-deco", "mid-century", "ceramic", "floral-pattern"
+   - Examples of BAD tags: "charming", "lovely", "vintage" (unless truly vintage)
 5. An estimated resale price in USD based on typical secondhand marketplace prices
-
-Be specific about what you see. If it's a designer item, identify the brand. If it's vintage, estimate the era.
 
 Return ONLY valid JSON in this exact format:
 {
-  "title": "Vintage Coach Leather Crossbody Bag Brown",
-  "description": "Beautiful vintage Coach crossbody bag in rich brown leather. Features adjustable strap and brass hardware. Shows light patina consistent with age, adding to its vintage charm.",
+  "title": "Coach Leather Crossbody Bag Brown",
+  "description": "Coach crossbody bag in rich brown leather. Features adjustable strap and brass hardware. Shows light wear consistent with use.",
   "category": "Fashion",
-  "attributes": ["vintage", "leather", "designer", "Coach", "crossbody"],
+  "attributes": ["leather", "brass-hardware", "crossbody", "Coach", "brown"],
   "estimatedPrice": 85
 }`;
 
@@ -418,7 +471,7 @@ async function removeBackground(imageFile: File | Buffer): Promise<string> {
   return publicUrl;
 }
 
-async function analyzeImage(imageUrl: string): Promise<{ category: string; attributes: string[] }> {
+async function analyzeImage(imageUrl: string): Promise<{ category: string; attributes: string[]; brandInfo?: string }> {
   const response = await fetch(
     `https://vision.googleapis.com/v1/images:annotate?key=${process.env.VISION_API_KEY}`,
     {
@@ -430,6 +483,7 @@ async function analyzeImage(imageUrl: string): Promise<{ category: string; attri
           features: [
             { type: 'LABEL_DETECTION', maxResults: 10 },
             { type: 'OBJECT_LOCALIZATION', maxResults: 5 },
+            { type: 'WEB_DETECTION', maxResults: 10 },  // Like Google Lens!
           ],
         }],
       }),
@@ -437,13 +491,63 @@ async function analyzeImage(imageUrl: string): Promise<{ category: string; attri
   );
 
   const data = await response.json();
+  
+  // Debug: Log the full response to see what we're getting
+  console.log('📸 Google Vision API Response:', {
+    hasLabels: !!data.responses?.[0]?.labelAnnotations,
+    hasObjects: !!data.responses?.[0]?.localizedObjectAnnotations,
+    hasWebDetection: !!data.responses?.[0]?.webDetection,
+    webEntitiesCount: data.responses?.[0]?.webDetection?.webEntities?.length || 0,
+    hasBestGuess: !!data.responses?.[0]?.webDetection?.bestGuessLabels
+  });
+  
   const labels = data.responses?.[0]?.labelAnnotations || [];
   const objects = data.responses?.[0]?.localizedObjectAnnotations || [];
+  const webDetection = data.responses?.[0]?.webDetection || {};
 
   const allLabels = [
     ...labels.map((l: any) => ({ description: l.description, score: l.score })),
     ...objects.map((o: any) => ({ description: o.name, score: o.score })),
   ];
+
+  // Extract brand info from web detection (like Google Lens!)
+  let brandInfo = '';
+  
+  console.log('🌐 Web Detection Data:', {
+    entities: webDetection.webEntities?.slice(0, 5),
+    bestGuess: webDetection.bestGuessLabels?.[0]?.label,
+    pagesWithMatching: webDetection.pagesWithMatchingImages?.length || 0
+  });
+  
+  if (webDetection.webEntities) {
+    // Web entities often contain brand names with high scores
+    const brandEntities = webDetection.webEntities
+      .filter((entity: any) => entity.score > 0.5)  // Lowered threshold from 0.6
+      .map((entity: any) => entity.description)
+      .slice(0, 5);  // Get more entities
+    
+    console.log('🏷️ Brand entities found:', brandEntities);
+    
+    if (brandEntities.length > 0) {
+      brandInfo = brandEntities.join(', ');
+      console.log('✅ Brand detection SUCCESS:', brandInfo);
+    } else {
+      console.log('❌ No brand entities with score > 0.5');
+    }
+  }
+
+  // Also check best guess labels from web detection
+  if (webDetection.bestGuessLabels && webDetection.bestGuessLabels.length > 0) {
+    const bestGuess = webDetection.bestGuessLabels[0].label;
+    console.log('🔍 Best guess from web:', bestGuess);
+    if (bestGuess && !brandInfo.includes(bestGuess)) {
+      brandInfo = brandInfo ? `${brandInfo}, ${bestGuess}` : bestGuess;
+    }
+  }
+  
+  if (!brandInfo) {
+    console.log('⚠️ No brand info detected from web detection');
+  }
 
   const category = inferCategory(allLabels);
   const attributes = allLabels
@@ -451,7 +555,7 @@ async function analyzeImage(imageUrl: string): Promise<{ category: string; attri
     .map((l: any) => l.description)
     .slice(0, 5);
 
-  return { category, attributes };
+  return { category, attributes, brandInfo };
 }
 
 function inferCategory(labels: Array<{ description: string; score: number }>): string {
@@ -489,15 +593,22 @@ ITEM DETAILS:
 - User provided title: ${userInput?.title || 'None'}
 - User provided description: ${userInput?.description || 'None'}
 
+IMPORTANT: 
+- If a brand name is in the attributes (like "Guy Degrenne", "Coach", etc.), ALWAYS include it prominently in the title
+- Brand names should be at the start or very early in the title for SEO
+
 Generate a marketplace listing with:
-1. A concise, SEO-friendly title (max 80 characters)
+1. A concise, SEO-friendly title (max 80 characters) - INCLUDE BRAND if detected
 2. A compelling description (2-3 sentences)
 
 Return ONLY valid JSON:
 {
   "title": "your title here",
   "description": "your description here"
-}`;
+}
+
+Example with brand:
+- Attributes include "Guy Degrenne" → Title: "Guy Degrenne Silver-Plated Scalloped Serving Bowl"`;
 
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',

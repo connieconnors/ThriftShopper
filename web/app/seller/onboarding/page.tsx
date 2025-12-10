@@ -27,13 +27,7 @@ const US_STATES = [
   "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY",
 ];
 
-const SHIPPING_OPTIONS = [
-  "Ships within 1-2 days",
-  "Ships within 3-5 days",
-  "Ships within 5-7 days",
-  "Local pickup only",
-  "Local pickup + Shipping available",
-];
+// Shipping is now a free-text field, so we don't need predefined options
 
 export default function SellerOnboardingPage() {
   const router = useRouter();
@@ -49,7 +43,7 @@ export default function SellerOnboardingPage() {
     zipCode: "",
     email: "",
     phone: "",
-    shippingSpeed: SHIPPING_OPTIONS[0],
+    shippingSpeed: "",
   });
 
   // Redirect if not logged in
@@ -74,33 +68,63 @@ export default function SellerOnboardingPage() {
     setError(null);
 
     try {
-      const { error: updateError } = await supabase
+      // Always use UPDATE (upsert) since profile should already exist from signup
+      // If it doesn't exist, the update will fail gracefully and we can handle it
+      const result = await supabase
         .from("profiles")
-        .upsert({
-          user_id: user.id,
+        .update({
           display_name: formData.storeName,
           bio: formData.description,
           location_city: formData.city,
           location_state: formData.state,
           location_zip: formData.zipCode,
-          location_country: "US",
           email: formData.email,
           phone: formData.phone || null,
           shipping_info: formData.shippingSpeed,
           is_seller: true,
-        }, {
-          onConflict: "user_id",
-        });
+        })
+        .eq("user_id", user.id);
 
-      if (updateError) {
-        throw updateError;
+      // If update didn't affect any rows, try insert (profile doesn't exist)
+      if (result.error || (result.data === null && result.count === 0)) {
+        // Try insert as fallback
+        const insertResult = await supabase
+          .from("profiles")
+          .insert({
+            user_id: user.id,
+            display_name: formData.storeName,
+            bio: formData.description,
+            location_city: formData.city,
+            location_state: formData.state,
+            location_zip: formData.zipCode,
+            email: formData.email,
+            phone: formData.phone || null,
+            shipping_info: formData.shippingSpeed,
+            is_seller: true,
+          });
+        
+        if (insertResult.error) {
+          throw insertResult.error;
+        }
+      } else if (result.error) {
+        throw result.error;
+      }
+
+      if (result.error) {
+        console.error("Database error:", result.error);
+        throw new Error(result.error.message || "Failed to save profile");
       }
 
       // Redirect to seller dashboard
-      router.push("/seller");
+      router.push("/seller-dashboard");
     } catch (err) {
       console.error("Error saving profile:", err);
-      setError(err instanceof Error ? err.message : "Failed to save profile");
+      const errorMessage = err instanceof Error 
+        ? err.message 
+        : typeof err === 'object' && err !== null && 'message' in err
+        ? String(err.message)
+        : "Failed to save profile";
+      setError(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -260,19 +284,18 @@ export default function SellerOnboardingPage() {
             </label>
             <div className="relative">
               <Package size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <select
+              <input
+                type="text"
                 value={formData.shippingSpeed}
                 onChange={(e) => updateField("shippingSpeed", e.target.value)}
-                className="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#191970] outline-none transition-colors appearance-none"
+                className="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#191970] outline-none transition-colors"
+                placeholder="e.g., Ships within 3-5 days, Local pickup available"
                 required
-              >
-                {SHIPPING_OPTIONS.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
+              />
             </div>
+            <p className="mt-2 text-sm text-gray-500">
+              Indicate your preferred and secondary shipping methods (e.g., "Ships within 3-5 days, Local pickup available")
+            </p>
           </div>
 
           <motion.button

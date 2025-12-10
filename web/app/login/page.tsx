@@ -45,14 +45,15 @@ function LoginForm() {
         }
 
         // Otherwise, check user's role and redirect accordingly
-        const { data: profile } = await supabase
+        const { data: profile, error: profileError } = await supabase
           .from("profiles")
           .select("is_seller")
-          .eq("user_id", user.id)
+          .eq("id", user.id) // Use 'id' not 'user_id' - it's the primary key
           .single();
 
-        if (profile?.is_seller) {
-          router.push("/seller");
+        // If profile exists and user is a seller, redirect to seller dashboard
+        if (profile && profile.is_seller) {
+          router.push("/seller-dashboard");
         } else {
           router.push("/browse");
         }

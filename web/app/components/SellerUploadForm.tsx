@@ -673,7 +673,7 @@ export default function SellerUploadForm() {
                       <button
                         type="button"
                         onClick={() => setAdditionalPhoto1('')}
-                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                        className="absolute -top-2 -right-2 bg-gray-500 text-white rounded-full p-1 hover:bg-gray-600"
                       >
                         <X size={12} />
                       </button>
@@ -707,7 +707,7 @@ export default function SellerUploadForm() {
                       <button
                         type="button"
                         onClick={() => setAdditionalPhoto2('')}
-                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                        className="absolute -top-2 -right-2 bg-gray-500 text-white rounded-full p-1 hover:bg-gray-600"
                       >
                         <X size={12} />
                       </button>
@@ -844,7 +844,7 @@ export default function SellerUploadForm() {
                   <VoiceInputButton onTranscript={handleKeywordsVoice} />
                 </div>
                 {/* Clickable keyword suggestions */}
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2 mb-2">
                   <span className="text-xs text-gray-500 mr-1">Suggestions:</span>
                   {['whimsical', 'vintage', 'elegant', 'quirky', 'rustic', 'retro', 'cozy', 'mid-century'].map((suggestion) => (
                     <button
@@ -867,6 +867,9 @@ export default function SellerUploadForm() {
                     </button>
                   ))}
                 </div>
+                <p className="text-xs text-gray-600 italic mt-2" style={{ fontFamily: 'Merriweather, serif' }}>
+                  💡 Add 1-2 moods (whimsical, nostalgic), intents (gift, collectibles), and styles (vintage, elegant) to help buyers discover your item.
+                </p>
               </div>
 
               {/* 6. Category */}
