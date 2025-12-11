@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { supabase } from "../../lib/supabaseClient";
+import { supabase } from "@/lib/supabaseClient";
 import { Loader2 } from "lucide-react";
 
 export default function AuthCallbackPage() {
@@ -50,7 +50,7 @@ export default function AuthCallbackPage() {
               const { data: profile } = await supabase
                 .from('profiles')
                 .select('is_seller')
-                .eq('user_id', user.id)
+                .eq('id', user.id) // Use 'id' - it's the primary key
                 .single();
               
               // If seller but profile incomplete, redirect to onboarding
@@ -58,7 +58,7 @@ export default function AuthCallbackPage() {
                 const { data: checkProfile } = await supabase
                   .from('profiles')
                   .select('display_name, location_city')
-                  .eq('user_id', user.id)
+                  .eq('id', user.id) // Use 'id' - it's the primary key
                   .single();
                 
                 // If missing required seller fields, go to onboarding
@@ -98,7 +98,7 @@ export default function AuthCallbackPage() {
               const { data: profile } = await supabase
                 .from('profiles')
                 .select('is_seller')
-                .eq('user_id', user.id)
+                .eq('id', user.id) // Use 'id' - it's the primary key
                 .single();
               
               // If seller but profile incomplete, redirect to onboarding
@@ -106,7 +106,7 @@ export default function AuthCallbackPage() {
                 const { data: checkProfile } = await supabase
                   .from('profiles')
                   .select('display_name, location_city')
-                  .eq('user_id', user.id)
+                  .eq('id', user.id) // Use 'id' - it's the primary key
                   .single();
                 
                 // If missing required seller fields, go to onboarding

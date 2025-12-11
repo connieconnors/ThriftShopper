@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, FormEvent, Suspense } from "react";
+import { useState, FormEvent, Suspense, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion } from "motion/react";
@@ -12,13 +12,36 @@ import { TSLogo } from "../../components/TSLogo";
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { signIn } = useAuth();
+  const { signIn, user, isLoading: authLoading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const redirectTo = searchParams.get("redirect");
+
+  // If user is already logged in, redirect them appropriately
+  useEffect(() => {
+    if (!authLoading && user) {
+      console.log("🔍 Login: User already logged in, checking profile...");
+      const checkAndRedirect = async () => {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("is_seller")
+          .eq("id", user.id)
+          .single();
+        
+        if (profile?.is_seller) {
+          console.log("✅ Login: Already logged in seller, redirecting to /seller");
+          router.push(redirectTo || "/seller");
+        } else {
+          console.log("ℹ️ Login: Already logged in buyer, redirecting to /browse");
+          router.push(redirectTo || "/browse");
+        }
+      };
+      checkAndRedirect();
+    }
+  }, [user, authLoading, router, redirectTo]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -93,6 +116,25 @@ function LoginForm() {
       setIsLoading(false);
     }
   };
+
+  // Show loading while checking auth state
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#f5f5f5" }}>
+        <Loader2 className="w-8 h-8 animate-spin" style={{ color: "#191970" }} />
+      </div>
+    );
+  }
+
+  // If user is already logged in, don't show the form (redirect will happen)
+  if (user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#f5f5f5" }}>
+        <Loader2 className="w-8 h-8 animate-spin" style={{ color: "#191970" }} />
+        <p className="ml-3 text-gray-600">Redirecting...</p>
+      </div>
+    );
+  }
 
   return (
     <div 
