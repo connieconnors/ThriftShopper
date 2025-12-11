@@ -34,7 +34,11 @@ export default function SignUpPage() {
     setIsLoading(true);
 
     try {
-      const { error: signUpError } = await signUp(email, password);
+      // Sign up directly with Supabase to get full response
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+      });
       
       if (signUpError) {
         setError(signUpError.message);
@@ -42,46 +46,63 @@ export default function SignUpPage() {
         return;
       }
 
-      // Auto sign in after signup
-      const { error: signInError } = await signIn(email, password);
+      // Check if email confirmation is required (session will be null)
+      const requiresEmailConfirmation = !signUpData.session && signUpData.user;
       
-      if (signInError) {
-        // If auto-login fails, still redirect (email confirmation might be required)
-        console.log("Auto sign-in note:", signInError.message);
-      }
-
-      // Wait a moment for session to be established
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      // Get the user ID from the session
-      const { data: { user }, error: getUserError } = await supabase.auth.getUser();
-      
-      if (getUserError) {
-        console.error("Error getting user:", getUserError);
-        setError(`Authentication error: ${getUserError.message}`);
-        setIsLoading(false);
+      if (requiresEmailConfirmation) {
+        // Profile will be created by trigger, but update it with additional info
+        if (signUpData.user) {
+          const displayName = email.split("@")[0];
+          
+          // Wait for trigger to create profile
+          await new Promise(resolve => setTimeout(resolve, 1500));
+          
+          // Update profile with additional fields
+          const { error: profileError } = await supabase
+            .from("profiles")
+            .update({
+              display_name: displayName,
+              accepts_marketing: acceptsMarketing,
+            })
+            .eq("user_id", signUpData.user.id);
+          
+          if (profileError) {
+            console.error("Error updating profile:", profileError);
+            // Try upsert as fallback
+            await supabase
+              .from("profiles")
+              .upsert({
+                user_id: signUpData.user.id,
+                display_name: displayName,
+                is_seller: false,
+                accepts_marketing: acceptsMarketing,
+                ts_badge: "false",
+                created_at: new Date().toISOString(),
+              }, {
+                onConflict: 'user_id'
+              });
+          }
+        }
+        
+        // Show success message and redirect to login
+        setError(null);
+        alert("Account created! Please check your email to confirm your account, then log in.");
+        router.push("/login");
         return;
       }
-      
-      if (!user) {
-        setError("User account created but session not established. Please try logging in.");
-        setIsLoading(false);
-        return;
-      }
-      
-      if (user) {
-        // Create display name from email (before the @)
+
+      // If no email confirmation required, proceed with auto-login
+      if (signUpData.session && signUpData.user) {
         const displayName = email.split("@")[0];
         
-        // Wait a moment for trigger to create profile, then update it
+        // Wait for trigger to create profile
         await new Promise(resolve => setTimeout(resolve, 1000));
         
-        // Update profile (trigger should have created it)
-        // Use upsert to handle both cases: profile exists or doesn't exist
+        // Update profile
         const { error: profileError } = await supabase
           .from("profiles")
           .upsert({
-            user_id: user.id,
+            user_id: signUpData.user.id,
             display_name: displayName,
             is_seller: false,
             accepts_marketing: acceptsMarketing,
@@ -93,19 +114,20 @@ export default function SignUpPage() {
         
         if (profileError) {
           console.error("Error upserting profile:", profileError);
-          // Don't block signup - profile might have been created by trigger
-          // Just log the error
         }
-      }
 
-      // Check if seller=true in URL and redirect accordingly
-      const urlParams = new URLSearchParams(window.location.search);
-      const isSeller = urlParams.get('seller') === 'true';
-      
-      if (isSeller) {
-        router.push("/seller/onboarding");
+        // Check if seller=true in URL and redirect accordingly
+        const urlParams = new URLSearchParams(window.location.search);
+        const isSeller = urlParams.get('seller') === 'true';
+        
+        if (isSeller) {
+          router.push("/seller/onboarding");
+        } else {
+          router.push("/browse");
+        }
       } else {
-        router.push("/browse");
+        setError("Account created but unable to establish session. Please try logging in.");
+        setIsLoading(false);
       }
     } catch (err) {
       console.error("Signup error:", err);
