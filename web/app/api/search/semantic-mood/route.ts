@@ -1,11 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-// Initialize Supabase client for semantic mood search
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+// Mark this route as dynamic
+export const dynamic = 'force-dynamic';
 
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+// Initialize Supabase client for semantic mood search
+// Only initialize if env vars are available (not during build)
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+const supabase = supabaseUrl && supabaseServiceKey 
+  ? createClient(supabaseUrl, supabaseServiceKey)
+  : null;
 
 // Function to generate embedding using OpenAI (MUST match seller-upload-service.ts!)
 async function generateEmbedding(text: string): Promise<number[]> {
@@ -33,6 +39,10 @@ async function generateEmbedding(text: string): Promise<number[]> {
 
 export async function POST(req: NextRequest) {
   try {
+    if (!supabase) {
+      return NextResponse.json({ error: 'Supabase not configured' }, { status: 500 });
+    }
+
     const { moods, threshold = 0.7, limit = 50 } = await req.json();
 
     if (!moods || !Array.isArray(moods) || moods.length === 0) {
