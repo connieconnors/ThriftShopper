@@ -162,7 +162,7 @@ async function searchWithInterpretation(
   // Only search text fields if we have actual keywords (not if query is all tag-based)
   if (interpretation.keywords.length > 0) {
     const orConditions = interpretation.keywords
-      .map(keyword => {
+      .map((keyword: string) => {
         const escaped = keyword.toLowerCase().replace(/[%_]/g, '\\$&');
         return [
           `title.ilike.*${escaped}*`,
@@ -194,7 +194,7 @@ async function searchWithInterpretation(
   // Apply category filter
   if (interpretation.categories.length > 0) {
     const categoryConditions = interpretation.categories
-      .map(cat => `category.ilike.*${cat}*`)
+      .map((cat: string) => `category.ilike.*${cat}*`)
       .join(',');
     query = query.or(categoryConditions);
   }
@@ -245,34 +245,34 @@ async function searchWithInterpretation(
 
         // Check if listing matches each tag type (if that type is specified in query)
         const matchesMood = interpretation.moods.length === 0 || 
-          interpretation.moods.some(mood => listingMoods.includes(mood.toLowerCase()));
+          interpretation.moods.some((mood: string) => listingMoods.includes(mood.toLowerCase()));
 
         const matchesStyle = interpretation.styles.length === 0 || 
-          interpretation.styles.some(style => listingStyles.includes(style.toLowerCase()));
+          interpretation.styles.some((style: string) => listingStyles.includes(style.toLowerCase()));
 
         // For intents: use scoring system
         // "collectible gift" = prefer items with BOTH, but accept items with at least one
         const matchesIntent = interpretation.intents.length === 0 || 
-          interpretation.intents.some(intent => listingIntents.includes(intent.toLowerCase()));
+          interpretation.intents.some((intent: string) => listingIntents.includes(intent.toLowerCase()));
         
         // Bonus: check if item is in the right category for "collectible"
         const matchesCategory = interpretation.categories.length === 0 ||
-          interpretation.categories.some(cat => 
+          interpretation.categories.some((cat: string) => 
             (listing.category || '').toLowerCase().includes(cat.toLowerCase())
           );
 
         // Score for ranking (more matches = higher score)
         let score = 0;
-        const moodMatches = interpretation.moods.filter(mood => 
+        const moodMatches = interpretation.moods.filter((mood: string) => 
           listingMoods.includes(mood.toLowerCase())
         ).length;
-        const styleMatches = interpretation.styles.filter(style => 
+        const styleMatches = interpretation.styles.filter((style: string) => 
           listingStyles.includes(style.toLowerCase())
         ).length;
-        const intentMatches = interpretation.intents.filter(intent => 
+        const intentMatches = interpretation.intents.filter((intent: string) => 
           listingIntents.includes(intent.toLowerCase())
         ).length;
-        const categoryMatches = interpretation.categories.filter(cat =>
+        const categoryMatches = interpretation.categories.filter((cat: string) =>
           (listing.category || '').toLowerCase().includes(cat.toLowerCase())
         ).length;
         

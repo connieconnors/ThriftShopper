@@ -224,21 +224,3 @@ export function useProduct(productId: string | null) {
 
   return { product, loading, error };
 }
-
-
-        if (fetchError) throw fetchError;
-
-        setProduct(transformListing(data as Listing));
-      } catch (err) {
-        console.error('Error fetching product:', err);
-        setError(err instanceof Error ? err.message : 'Failed to fetch product');
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchProduct();
-  }, [productId]);
-
-  return { product, loading, error };
-}
