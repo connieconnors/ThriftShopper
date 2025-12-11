@@ -4,12 +4,11 @@ import SwipeFeed from "./SwipeFeed";
 
 export default async function Browse() {
   // Join with profiles table for seller info
-  // Use left join so listings still show even if profile is missing
   const { data, error } = await supabase
     .from("listings")
     .select(`
       *,
-      profiles!left:seller_id (
+      profiles:seller_id (
         display_name,
         location_city,
         avatar_url,
