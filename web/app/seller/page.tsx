@@ -52,10 +52,11 @@ export default function SellerDashboard() {
 
     try {
       // Check if seller profile is set up
+      // Note: profiles.id is the primary key and references auth.users(id)
       const { data: profile } = await supabase
         .from('profiles')
         .select('is_seller, display_name, location_city')
-        .eq('user_id', user.id) // Use 'user_id' - the actual column name
+        .eq('id', user.id) // Use 'id' - it's the primary key that references auth.users(id)
         .single();
 
       // If not a seller or missing key info, redirect to onboarding

@@ -70,6 +70,7 @@ export default function SellerOnboardingPage() {
     try {
       // Always use UPDATE (upsert) since profile should already exist from signup
       // If it doesn't exist, the update will fail gracefully and we can handle it
+      // Note: profiles.id is the primary key that references auth.users(id)
       const result = await supabase
         .from("profiles")
         .update({
@@ -80,10 +81,10 @@ export default function SellerOnboardingPage() {
           location_zip: formData.zipCode,
           email: formData.email,
           phone: formData.phone || null,
-          shipping_info: formData.shippingSpeed,
+          shipping_speed: formData.shippingSpeed, // Use shipping_speed, not shipping_info
           is_seller: true,
         })
-        .eq("user_id", user.id);
+        .eq("id", user.id);
 
       // If update didn't affect any rows, try insert (profile doesn't exist)
       if (result.error) {
@@ -91,7 +92,7 @@ export default function SellerOnboardingPage() {
         const insertResult = await supabase
           .from("profiles")
           .insert({
-            user_id: user.id,
+            id: user.id, // Use id as primary key
             display_name: formData.storeName,
             bio: formData.description,
             location_city: formData.city,
@@ -99,7 +100,7 @@ export default function SellerOnboardingPage() {
             location_zip: formData.zipCode,
             email: formData.email,
             phone: formData.phone || null,
-            shipping_info: formData.shippingSpeed,
+            shipping_speed: formData.shippingSpeed, // Use shipping_speed, not shipping_info
             is_seller: true,
           });
         
@@ -112,7 +113,7 @@ export default function SellerOnboardingPage() {
         const insertResult = await supabase
           .from("profiles")
           .insert({
-            user_id: user.id,
+            id: user.id, // Use id as primary key
             display_name: formData.storeName,
             bio: formData.description,
             location_city: formData.city,
@@ -120,7 +121,7 @@ export default function SellerOnboardingPage() {
             location_zip: formData.zipCode,
             email: formData.email,
             phone: formData.phone || null,
-            shipping_info: formData.shippingSpeed,
+            shipping_speed: formData.shippingSpeed, // Use shipping_speed, not shipping_info
             is_seller: true,
           });
         

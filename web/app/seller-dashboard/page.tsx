@@ -29,11 +29,11 @@ export default function SellerDashboard() {
     if (!user) return; // Guard clause for TypeScript
     
     try {
-      // Fetch profile with Stripe info (using user_id - the actual column name)
+      // Fetch profile with Stripe info (using id - it's the primary key that references auth.users(id))
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*, stripe_account_id, stripe_onboarding_status')
-        .eq('user_id', user.id)
+        .eq('id', user.id)
         .single();
 
       if (profileError) throw profileError;
