@@ -73,44 +73,28 @@ export default function SignUpPage() {
         // Create display name from email (before the @)
         const displayName = email.split("@")[0];
         
-        // Try to insert profile, or update if it already exists (from trigger)
+        // Wait a moment for trigger to create profile, then update it
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Update profile (trigger should have created it)
+        // Use upsert to handle both cases: profile exists or doesn't exist
         const { error: profileError } = await supabase
           .from("profiles")
-          .insert({
+          .upsert({
             user_id: user.id,
             display_name: displayName,
             is_seller: false,
             accepts_marketing: acceptsMarketing,
             ts_badge: "false",
             created_at: new Date().toISOString(),
-          })
-          .select()
-          .single();
-        
-        // If insert fails (profile might already exist from trigger), try update
-        if (profileError) {
-          console.log("Profile insert failed, trying update:", profileError);
-          console.log("Error details:", {
-            message: profileError.message,
-            code: profileError.code,
-            details: profileError.details,
-            hint: profileError.hint
+          }, {
+            onConflict: 'user_id'
           });
-          
-          const { error: updateError } = await supabase
-            .from("profiles")
-            .update({
-              display_name: displayName,
-              accepts_marketing: acceptsMarketing,
-            })
-            .eq("user_id", user.id);
-          
-          if (updateError) {
-            console.error("Error updating profile:", updateError);
-            setError(`Database error: ${updateError.message || profileError.message}. Code: ${updateError.code || profileError.code}`);
-            setIsLoading(false);
-            return;
-          }
+        
+        if (profileError) {
+          console.error("Error upserting profile:", profileError);
+          // Don't block signup - profile might have been created by trigger
+          // Just log the error
         }
       }
 
