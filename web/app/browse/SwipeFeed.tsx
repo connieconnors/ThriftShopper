@@ -639,33 +639,6 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
           {currentIndex + 1} / {displayListings.length}
         </span>
       </div>
-
-
-      {/* Progress Dots (right side) */}
-      <div className="fixed right-4 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-1.5">
-        {displayListings.slice(0, 8).map((_, index) => (
-          <button
-            key={index}
-            onClick={() => {
-              setIsTransitioning(true);
-              setCurrentIndex(index);
-              setTimeout(() => setIsTransitioning(false), 400);
-            }}
-            className="transition-all duration-300"
-            style={{
-              width: 6,
-              height: index === currentIndex ? 24 : 6,
-              borderRadius: 3,
-              backgroundColor: index === currentIndex ? COLORS.oldGold : 'rgba(255,255,255,0.4)',
-            }}
-          />
-        ))}
-        {displayListings.length > 8 && (
-          <span className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.4)' }}>
-            +{displayListings.length - 8}
-          </span>
-        )}
-      </div>
     </div>
   );
 }
