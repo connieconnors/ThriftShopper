@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/app/context/AuthContext';
 import { supabase } from '@/lib/supabaseClient';
 import { TSLogo } from '@/components/TSLogo';
-import { Loader2, Plus, ArrowLeft, Settings, MessageCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import { Loader2, Plus, ArrowLeft, Settings, MessageCircle, ChevronDown, ChevronUp, MoreVertical, EyeOff, Trash2, CheckCircle } from 'lucide-react';
 import SellerMessages from './components/SellerMessages';
 import Link from 'next/link';
 import { StreamChatProvider } from './StreamChatProvider';
@@ -33,6 +33,8 @@ export default function SellerDashboard() {
     totalViews: 0,
     totalSales: 0,
   });
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [showMenuId, setShowMenuId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -100,6 +102,69 @@ export default function SellerDashboard() {
       console.error('Error fetching seller data:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleUpdateStatus = async (listingId: string, newStatus: 'hidden' | 'sold' | 'active', e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (!user) return;
+    
+    setUpdatingId(listingId);
+    setShowMenuId(null);
+
+    try {
+      const { error } = await supabase
+        .from('listings')
+        .update({ 
+          status: newStatus,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', listingId)
+        .eq('seller_id', user.id);
+
+      if (error) throw error;
+
+      // Refresh listings
+      await fetchSellerData();
+    } catch (error) {
+      console.error('Error updating listing status:', error);
+      alert('Failed to update listing. Please try again.');
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  const handleDelete = async (listingId: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (!user) return;
+    
+    if (!confirm('Are you sure you want to permanently delete this listing? This cannot be undone.')) {
+      return;
+    }
+
+    setUpdatingId(listingId);
+    setShowMenuId(null);
+
+    try {
+      const { error } = await supabase
+        .from('listings')
+        .delete()
+        .eq('id', listingId)
+        .eq('seller_id', user.id);
+
+      if (error) throw error;
+
+      // Refresh listings
+      await fetchSellerData();
+    } catch (error) {
+      console.error('Error deleting listing:', error);
+      alert('Failed to delete listing. Please try again.');
+    } finally {
+      setUpdatingId(null);
     }
   };
 
@@ -202,45 +267,120 @@ export default function SellerDashboard() {
           ) : (
             <div className="divide-y divide-gray-200">
               {listings.map((listing) => (
-                <Link
+                <div
                   key={listing.id}
-                  href={`/listing/${listing.id}`}
-                  className="flex items-center gap-4 p-4 hover:bg-gray-50 transition-colors"
+                  className="flex items-center gap-4 p-4 hover:bg-gray-50 transition-colors relative"
                 >
-                  {/* Thumbnail */}
-                  <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
-                    {(listing.clean_image_url || listing.original_image_url) ? (
-                      <img
-                        src={listing.clean_image_url || listing.original_image_url || ''}
-                        alt={listing.title}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-gray-400">
-                        No image
-                      </div>
+                  <Link
+                    href={`/listing/${listing.id}`}
+                    className="flex items-center gap-4 flex-1 min-w-0"
+                  >
+                    {/* Thumbnail */}
+                    <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
+                      {(listing.clean_image_url || listing.original_image_url) ? (
+                        <img
+                          src={listing.clean_image_url || listing.original_image_url || ''}
+                          alt={listing.title}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-gray-400">
+                          No image
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Details */}
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-medium text-gray-900 truncate">{listing.title}</h3>
+                      <p className="text-sm text-gray-600">${listing.price?.toFixed(2) || '0.00'}</p>
+                    </div>
+                    
+                    {/* Status */}
+                    <span 
+                      className={`text-xs px-2 py-1 rounded-full ${
+                        listing.status === 'active' 
+                          ? 'bg-green-100 text-green-700' 
+                          : listing.status === 'sold'
+                          ? 'bg-blue-100 text-blue-700'
+                          : listing.status === 'hidden'
+                          ? 'bg-yellow-100 text-yellow-700'
+                          : 'bg-gray-100 text-gray-600'
+                      }`}
+                    >
+                      {listing.status || 'draft'}
+                    </span>
+                  </Link>
+
+                  {/* Actions Menu */}
+                  <div className="relative flex-shrink-0">
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setShowMenuId(showMenuId === listing.id ? null : listing.id);
+                      }}
+                      disabled={updatingId === listing.id}
+                      className="p-2 rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50"
+                    >
+                      {updatingId === listing.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+                      ) : (
+                        <MoreVertical className="h-4 w-4 text-gray-600" />
+                      )}
+                    </button>
+
+                    {showMenuId === listing.id && (
+                      <>
+                        <div
+                          className="fixed inset-0 z-10"
+                          onClick={() => setShowMenuId(null)}
+                        />
+                        <div
+                          className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-20 overflow-hidden"
+                        >
+                          <div className="py-1">
+                            {listing.status !== 'active' && (
+                              <button
+                                onClick={(e) => handleUpdateStatus(listing.id, 'active', e)}
+                                className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors flex items-center gap-2 text-gray-700"
+                              >
+                                <CheckCircle className="h-4 w-4" />
+                                Mark as Active
+                              </button>
+                            )}
+                            {listing.status !== 'sold' && (
+                              <button
+                                onClick={(e) => handleUpdateStatus(listing.id, 'sold', e)}
+                                className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors flex items-center gap-2 text-gray-700"
+                              >
+                                <CheckCircle className="h-4 w-4" />
+                                Mark as Sold
+                              </button>
+                            )}
+                            {listing.status !== 'hidden' && (
+                              <button
+                                onClick={(e) => handleUpdateStatus(listing.id, 'hidden', e)}
+                                className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors flex items-center gap-2 text-gray-700"
+                              >
+                                <EyeOff className="h-4 w-4" />
+                                Hide Listing
+                              </button>
+                            )}
+                            <div className="border-t border-gray-200 my-1" />
+                            <button
+                              onClick={(e) => handleDelete(listing.id, e)}
+                              className="w-full text-left px-4 py-2 text-sm hover:bg-red-50 transition-colors flex items-center gap-2 text-red-600"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              Delete Permanently
+                            </button>
+                          </div>
+                        </div>
+                      </>
                     )}
                   </div>
-                  
-                  {/* Details */}
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-medium text-gray-900 truncate">{listing.title}</h3>
-                    <p className="text-sm text-gray-600">${listing.price?.toFixed(2) || '0.00'}</p>
-                  </div>
-                  
-                  {/* Status */}
-                  <span 
-                    className={`text-xs px-2 py-1 rounded-full ${
-                      listing.status === 'active' 
-                        ? 'bg-green-100 text-green-700' 
-                        : listing.status === 'sold'
-                        ? 'bg-blue-100 text-blue-700'
-                        : 'bg-gray-100 text-gray-600'
-                    }`}
-                  >
-                    {listing.status || 'draft'}
-                  </span>
-                </Link>
+                </div>
               ))}
             </div>
           )}
