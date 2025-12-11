@@ -421,13 +421,11 @@ export function StandaloneMoodWheel({ selectedMoods, onMoodsChange }: Standalone
             {/* Footer */}
             <div 
               style={{ 
-                paddingTop: '10px',
-                paddingLeft: isMobile ? '16px' : '16px',
-                paddingRight: isMobile ? '16px' : '16px',
-                paddingBottom: isMobile ? '10px' : '12px',
+                padding: '8px 20px',
                 width: '100%', 
                 flexShrink: 0,
-                backgroundColor: '#F6F3EE',
+                backgroundColor: 'rgba(25, 25, 7, 0.9)',
+                borderTop: '1px solid rgba(255, 255, 255, 0.08)',
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center'
