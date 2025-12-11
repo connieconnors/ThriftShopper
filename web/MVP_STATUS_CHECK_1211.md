@@ -40,6 +40,9 @@
 - [ ] **Stripe webhook** - Needs to be configured in production
 - [ ] **Email confirmation** - Works but flow could be smoother
 - [ ] **Profile completion** - Some redirect issues fixed, but should verify
+- [x] **RLS Policy Fix** - Service role key now required (prevents silent fallback to anon key)
+  - ⚠️ **ACTION REQUIRED**: Set `SUPABASE_SERVICE_ROLE_KEY` in Vercel environment variables
+  - See `VERCEL_ENV_SETUP.md` for instructions
 
 ## 🔴 MISSING / TODO
 

@@ -5,7 +5,14 @@ import { createClient } from '@supabase/supabase-js';
 
 // Use the correct environment variable names
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+// CRITICAL: Must use service role key to bypass RLS for server-side operations
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE;
+
+if (!supabaseServiceKey) {
+  console.error('❌ CRITICAL: SUPABASE_SERVICE_ROLE_KEY or SUPABASE_SERVICE_ROLE not set!');
+  console.error('This will cause RLS policy violations. Please set the service role key in your environment variables.');
+  throw new Error('SUPABASE_SERVICE_ROLE_KEY or SUPABASE_SERVICE_ROLE environment variable is required for server-side operations');
+}
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
