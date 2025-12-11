@@ -5,7 +5,7 @@ import { createClient } from '@supabase/supabase-js';
 
 // Use the correct environment variable names
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
@@ -175,10 +175,37 @@ export async function uploadAndCreateListing(
 const categorizeAttributes = async (attributes: string[], title: string, description: string) => {
   // If no OpenAI key, fall back to simple categorization
   if (!process.env.OPENAI_API_KEY) {
+    // Simple keyword-based categorization
+    const allText = `${title} ${description} ${attributes.join(' ')}`.toLowerCase();
+    
+    // Infer intents from keywords
+    const intents: string[] = [];
+    if (allText.includes('gift') || allText.includes('present') || allText.includes('wedding') || allText.includes('anniversary')) {
+      intents.push('gifting');
+    }
+    if (allText.includes('decor') || allText.includes('display') || allText.includes('home') || allText.includes('vase') || allText.includes('bowl') || allText.includes('plate')) {
+      intents.push('home-decor');
+    }
+    if (allText.includes('collect') || allText.includes('vintage') || allText.includes('antique')) {
+      intents.push('collection');
+    }
+    if (allText.includes('functional') || allText.includes('use') || allText.includes('serve')) {
+      intents.push('functional');
+    }
+    
+    // Infer moods from keywords
+    const moods: string[] = [];
+    const moodKeywords = ['whimsical', 'elegant', 'cozy', 'playful', 'romantic', 'quirky', 'charming', 'delicate', 'bold', 'sophisticated'];
+    moodKeywords.forEach(mood => {
+      if (allText.includes(mood)) {
+        moods.push(mood);
+      }
+    });
+    
     return {
-      styles: attributes.slice(0, 3),
-      moods: [],
-      intents: []
+      styles: attributes.slice(0, Math.min(5, attributes.length)),
+      moods: moods.slice(0, 3),
+      intents: intents.slice(0, 3)
     };
   }
 
@@ -268,15 +295,18 @@ const listingInsert = {
   seller_id: sellerId,
   title: userInput?.title || listing.title,
   description: userInput?.description || listing.description,
+  // Save AI-generated content to separate columns
+  ai_generated_title: visionData.suggestedTitle || listing.title || null,
+  ai_generated_description: visionData.suggestedDescription || listing.description || null,
   price: userInput?.price || pricingIntelligence?.avgPrice || null,
   category: userInput?.category || visionData.category,
   original_image_url: originalUrl,
   clean_image_url: processedImageUrl !== originalUrl ? processedImageUrl : null,
   staged_image_url: null,
   status: 'draft',
-  styles: categorized.styles,
-  moods: categorized.moods,
-  intents: categorized.intents,
+  styles: categorized.styles || [],
+  moods: categorized.moods || [],
+  intents: categorized.intents || [],
   embedding: embedding,
 };
 

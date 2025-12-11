@@ -53,7 +53,7 @@ export default function SellerDashboard() {
       const { data: profile } = await supabase
         .from('profiles')
         .select('is_seller, display_name, location_city')
-        .eq('id', user.id) // Use 'id' not 'user_id' - it's the primary key
+        .eq('user_id', user.id) // Use 'user_id' - the actual column name
         .single();
 
       // If not a seller or missing key info, redirect to onboarding

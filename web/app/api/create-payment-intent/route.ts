@@ -38,11 +38,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get seller's profile with Stripe account info
+    // Get seller's profile with Stripe account info and founding seller status
     // Note: seller_id in listings table = user_id in profiles table
     const { data: sellerProfile, error: profileError } = await supabase
       .from("profiles")
-      .select("user_id, stripe_account_id, stripe_onboarding_status")
+      .select("user_id, stripe_account_id, stripe_onboarding_status, is_founding_seller, founding_seller_start_date, transaction_fee_percent")
       .eq("user_id", listing.seller_id)
       .maybeSingle();
 
@@ -85,19 +85,39 @@ export async function POST(request: NextRequest) {
     // Calculate amount in cents (Stripe requires cents)
     const amountInCents = Math.round(listing.price * 100);
     
-    // Calculate platform fee (10% of sale price)
-    const platformFeePercent = 0.10;
-    const platformFeeAmount = Math.round(amountInCents * platformFeePercent);
+    // Determine platform fee based on founding seller status
+    let platformFeePercent = 0.04; // Default 4% for regular sellers
+    let platformFeeAmount = 0;
     
-    // Amount that goes to seller (90% of sale price)
+    if (sellerProfile.is_founding_seller && sellerProfile.founding_seller_start_date) {
+      // Check if founding seller is still within 6-month period
+      const sixMonthsAgo = new Date();
+      sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+      const startDate = new Date(sellerProfile.founding_seller_start_date);
+      
+      if (startDate >= sixMonthsAgo) {
+        // Still within 6-month period - no fee
+        platformFeePercent = 0.00;
+        platformFeeAmount = 0;
+      } else {
+        // 6 months expired - use regular fee
+        platformFeePercent = sellerProfile.transaction_fee_percent || 0.04;
+        platformFeeAmount = Math.round(amountInCents * platformFeePercent);
+      }
+    } else {
+      // Regular seller - use their transaction_fee_percent or default 4%
+      platformFeePercent = sellerProfile.transaction_fee_percent || 0.04;
+      platformFeeAmount = Math.round(amountInCents * platformFeePercent);
+    }
+    
+    // Amount that goes to seller
     const sellerAmount = amountInCents - platformFeeAmount;
 
     // Create payment intent with Stripe Connect
     // This splits the payment: platform fee stays with you, rest goes to seller
-    const paymentIntent = await stripe.paymentIntents.create({
+    const paymentIntentConfig: Stripe.PaymentIntentCreateParams = {
       amount: amountInCents,
       currency: "usd",
-      application_fee_amount: platformFeeAmount, // Platform fee (10%)
       transfer_data: {
         destination: sellerProfile.stripe_account_id, // Seller's Stripe Connect account
       },
@@ -110,7 +130,9 @@ export async function POST(request: NextRequest) {
         seller_id: listing.seller_id,
         seller_stripe_account: sellerProfile.stripe_account_id,
         platform_fee: platformFeeAmount.toString(),
+        platform_fee_percent: platformFeePercent.toString(),
         seller_amount: sellerAmount.toString(),
+        is_founding_seller: sellerProfile.is_founding_seller ? "true" : "false",
         shipping_name: shippingInfo?.name || "",
         shipping_address: shippingInfo?.address || "",
         shipping_city: shippingInfo?.city || "",
@@ -118,7 +140,14 @@ export async function POST(request: NextRequest) {
         shipping_zip: shippingInfo?.zip || "",
         shipping_phone: shippingInfo?.phone || "",
       },
-    });
+    };
+
+    // Only add application_fee_amount if there's a fee (founding sellers have 0% for 6 months)
+    if (platformFeeAmount > 0) {
+      paymentIntentConfig.application_fee_amount = platformFeeAmount;
+    }
+
+    const paymentIntent = await stripe.paymentIntents.create(paymentIntentConfig);
 
     return NextResponse.json({
       clientSecret: paymentIntent.client_secret,
