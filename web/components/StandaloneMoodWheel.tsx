@@ -236,7 +236,7 @@ export function StandaloneMoodWheel({ selectedMoods, onMoodsChange }: Standalone
               borderRadius: isMobile ? '12px' : '16px',
               marginTop: 'auto',
               marginBottom: 'auto',
-              backgroundColor: 'rgba(5, 5, 15, 0.82)',
+              backgroundColor: 'rgba(25, 25, 7, 0.82)',
               boxShadow: '0 12px 24px rgba(0,0,0,0.14)',
               backdropFilter: 'blur(18px)',
               WebkitBackdropFilter: 'blur(18px)',
