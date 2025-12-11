@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { motion } from "motion/react";
 import { Store, MapPin, Mail, Phone, Package, Loader2 } from "lucide-react";
 import { useAuth } from "@/app/context/AuthContext";
@@ -181,6 +182,12 @@ export default function SellerOnboardingPage() {
           <p className="text-gray-600">
             Let&apos;s get you started selling on ThriftShopper
           </p>
+          <Link
+            href="/account"
+            className="mt-4 inline-block text-sm text-[#191970] hover:underline"
+          >
+            Want to shop instead? Go to My Canvas →
+          </Link>
         </div>
 
         {error && (

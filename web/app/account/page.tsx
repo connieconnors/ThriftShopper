@@ -32,6 +32,7 @@ import {
   MapPin,
   LogOut,
   ChevronRight,
+  Store,
 } from "lucide-react";
 
 interface Order {
@@ -332,6 +333,14 @@ export default function BuyerAccountPage() {
               >
                 <CreditCard className="h-4 w-4 text-gray-600" />
                 <span>Payment Methods</span>
+              </Link>
+              <Link
+                href="/seller/onboarding"
+                className="flex items-center gap-3 px-4 py-3 text-sm hover:bg-gray-50 transition-colors border-t border-gray-200 mt-1"
+                onClick={() => setShowProfileMenu(false)}
+              >
+                <Store className="h-4 w-4 text-gray-600" />
+                <span>Become a Seller</span>
               </Link>
               <button
                 onClick={async () => {

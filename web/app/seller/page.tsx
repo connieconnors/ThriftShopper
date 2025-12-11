@@ -455,18 +455,26 @@ export default function SellerDashboard() {
           )}
         </div>
 
-        {/* Logout Button - Small at bottom */}
-        <div className="mt-8 pt-6 border-t border-gray-200 text-center">
-          <button
-            onClick={async () => {
-              await signOut();
-              router.push('/browse');
-            }}
-            className="text-sm text-gray-500 hover:text-gray-700 transition-colors flex items-center justify-center gap-2 mx-auto"
-          >
-            <LogOut size={14} />
-            Sign Out
-          </button>
+        {/* Footer Actions */}
+        <div className="mt-8 pt-6 border-t border-gray-200">
+          <div className="flex items-center justify-between">
+            <Link
+              href="/account"
+              className="text-sm text-gray-600 hover:text-[#191970] transition-colors"
+            >
+              Want to shop instead? Go to My Canvas →
+            </Link>
+            <button
+              onClick={async () => {
+                await signOut();
+                router.push('/browse');
+              }}
+              className="text-sm text-gray-500 hover:text-gray-700 transition-colors flex items-center gap-2"
+            >
+              <LogOut size={14} />
+              Sign Out
+            </button>
+          </div>
         </div>
       </main>
     </div>

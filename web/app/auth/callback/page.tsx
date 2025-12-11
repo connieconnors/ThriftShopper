@@ -91,17 +91,25 @@ function AuthCallbackContent() {
                 }
               }
               
-              // If seller but profile incomplete, redirect to onboarding
+              // Route based on user type
               if (profile?.is_seller) {
-                // If missing required seller fields, go to onboarding
+                // Seller: redirect to onboarding if incomplete, otherwise seller dashboard
                 if (!profile?.location_city || !profile?.display_name) {
                   router.push('/seller/onboarding');
                   return;
+                } else {
+                  router.push('/seller');
+                  return;
                 }
+              } else {
+                // Buyer: redirect to account page (My Canvas)
+                router.push('/account');
+                return;
               }
             }
             
-            router.push(next);
+            // Fallback: if no profile info, go to account page
+            router.push('/account');
             return;
           }
         }
@@ -171,17 +179,25 @@ function AuthCallbackContent() {
                 }
               }
               
-              // If seller but profile incomplete, redirect to onboarding
+              // Route based on user type
               if (profile?.is_seller) {
-                // If missing required seller fields, go to onboarding
+                // Seller: redirect to onboarding if incomplete, otherwise seller dashboard
                 if (!profile?.location_city || !profile?.display_name) {
                   router.push('/seller/onboarding');
                   return;
+                } else {
+                  router.push('/seller');
+                  return;
                 }
+              } else {
+                // Buyer: redirect to account page (My Canvas)
+                router.push('/account');
+                return;
               }
             }
             
-            router.push(next);
+            // Fallback: if no profile info, go to account page
+            router.push('/account');
             return;
           }
         }
