@@ -19,11 +19,49 @@ export default function SellerDashboard() {
 
   useEffect(() => {
     if (!user) {
-      router.push('/');
+      router.push('/login?redirect=/seller-dashboard');
       return;
     }
-    fetchDashboardData();
+    
+    // Check if user is a seller before showing dashboard
+    checkSellerStatus();
   }, [user]);
+
+  const checkSellerStatus = async () => {
+    if (!user) return;
+    
+    try {
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('is_seller, display_name, location_city')
+        .eq('id', user.id)
+        .single();
+      
+      if (error) {
+        console.error('Error checking seller status:', error);
+        router.push('/seller/onboarding');
+        return;
+      }
+      
+      if (!profile?.is_seller) {
+        // Not a seller, redirect to browse
+        router.push('/browse');
+        return;
+      }
+      
+      if (!profile?.display_name || !profile?.location_city) {
+        // Seller but incomplete profile, redirect to onboarding
+        router.push('/seller/onboarding');
+        return;
+      }
+      
+      // Seller with complete profile, show dashboard
+      fetchDashboardData();
+    } catch (err) {
+      console.error('Error in checkSellerStatus:', err);
+      router.push('/seller/onboarding');
+    }
+  };
 
   const fetchDashboardData = async () => {
     if (!user) return; // Guard clause for TypeScript

@@ -53,22 +53,42 @@ export default function SellerDashboard() {
     try {
       // Check if seller profile is set up
       // Note: profiles.id is the primary key and references auth.users(id)
-      const { data: profile } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('is_seller, display_name, location_city')
         .eq('id', user.id) // Use 'id' - it's the primary key that references auth.users(id)
         .single();
 
-      // If not a seller or missing key info, redirect to onboarding
-      if (!profile?.is_seller || !profile?.display_name || !profile?.location_city) {
+      if (profileError) {
+        console.error('Error fetching profile:', profileError);
+        // If profile doesn't exist, redirect to onboarding
+        router.push('/seller/onboarding');
+        return;
+      }
+
+      // If not a seller, redirect to browse (they shouldn't be here)
+      if (!profile?.is_seller) {
+        console.log('User is not a seller, redirecting to browse');
+        router.push('/browse');
+        return;
+      }
+
+      // If seller but missing key info, redirect to onboarding
+      if (!profile?.display_name || !profile?.location_city) {
+        console.log('Seller profile incomplete, redirecting to onboarding', {
+          hasDisplayName: !!profile?.display_name,
+          hasLocationCity: !!profile?.location_city
+        });
         router.push('/seller/onboarding');
         return;
       }
 
       // Profile is complete, fetch seller data
+      console.log('Seller profile complete, loading dashboard');
       fetchSellerData();
     } catch (err) {
-      // No profile exists, redirect to onboarding
+      console.error('Error in checkOnboardingAndFetchData:', err);
+      // No profile exists or error, redirect to onboarding
       router.push('/seller/onboarding');
     }
   };

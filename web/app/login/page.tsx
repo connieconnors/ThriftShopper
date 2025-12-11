@@ -53,15 +53,31 @@ function LoginForm() {
 
         // If profile exists and user is a seller, redirect to seller dashboard
         // The seller dashboard will check if onboarding is complete and redirect if needed
+        if (profileError) {
+          console.error("Profile fetch error:", profileError);
+          // If profile doesn't exist or error, still try to redirect based on user
+          // But default to browse for now
+          router.push("/browse");
+          setIsLoading(false);
+          return;
+        }
+
         if (profile && profile.is_seller) {
           router.push("/seller");
+          setIsLoading(false);
+          return;
         } else {
           router.push("/browse");
+          setIsLoading(false);
+          return;
         }
       } else {
         router.push("/browse");
+        setIsLoading(false);
+        return;
       }
     } catch (err) {
+      console.error("Login error:", err);
       setError("An unexpected error occurred");
       setIsLoading(false);
     }
