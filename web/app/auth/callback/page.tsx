@@ -43,6 +43,32 @@ export default function AuthCallbackPage() {
           if (session) {
             // Wait a moment for session to be established
             await new Promise(resolve => setTimeout(resolve, 500));
+            
+            // Check if user is a seller and needs onboarding
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+              const { data: profile } = await supabase
+                .from('profiles')
+                .select('is_seller')
+                .eq('user_id', user.id)
+                .single();
+              
+              // If seller but profile incomplete, redirect to onboarding
+              if (profile?.is_seller) {
+                const { data: checkProfile } = await supabase
+                  .from('profiles')
+                  .select('display_name, location_city')
+                  .eq('user_id', user.id)
+                  .single();
+                
+                // If missing required seller fields, go to onboarding
+                if (!checkProfile?.location_city || !checkProfile?.display_name) {
+                  router.push('/seller/onboarding');
+                  return;
+                }
+              }
+            }
+            
             router.push(next);
             return;
           }
@@ -65,6 +91,32 @@ export default function AuthCallbackPage() {
           if (data.session) {
             // Wait a moment for session to be established
             await new Promise(resolve => setTimeout(resolve, 500));
+            
+            // Check if user is a seller and needs onboarding
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+              const { data: profile } = await supabase
+                .from('profiles')
+                .select('is_seller')
+                .eq('user_id', user.id)
+                .single();
+              
+              // If seller but profile incomplete, redirect to onboarding
+              if (profile?.is_seller) {
+                const { data: checkProfile } = await supabase
+                  .from('profiles')
+                  .select('display_name, location_city')
+                  .eq('user_id', user.id)
+                  .single();
+                
+                // If missing required seller fields, go to onboarding
+                if (!checkProfile?.location_city || !checkProfile?.display_name) {
+                  router.push('/seller/onboarding');
+                  return;
+                }
+              }
+            }
+            
             router.push(next);
             return;
           }

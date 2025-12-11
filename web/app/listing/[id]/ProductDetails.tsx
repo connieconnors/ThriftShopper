@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, TouchEvent, useCallback } from "react";
+import { useState, useRef, TouchEvent, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { 
@@ -12,11 +12,14 @@ import {
   getSellerRating,
   getSellerReviewCount,
   getListingImages,
+  getPrimaryImage,
   TS_BADGE_URL
 } from "../../../lib/types";
 import FavoriteButton from "../../components/FavoriteButton";
 import SellerDrawer from "../../components/SellerDrawer";
 import { TSLogo } from "../../../components/TSLogo";
+import { useAuth } from "../../context/AuthContext";
+import { addRecentlyViewed } from "../../../lib/userPreferences";
 
 interface ProductDetailsProps {
   listing: Listing;
@@ -24,11 +27,20 @@ interface ProductDetailsProps {
 
 export default function ProductDetails({ listing }: ProductDetailsProps) {
   const router = useRouter();
+  const { user } = useAuth();
   const images = getListingImages(listing);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showShareSuccess, setShowShareSuccess] = useState(false);
   const [showSellerDrawer, setShowSellerDrawer] = useState(false);
   const [isZoomed, setIsZoomed] = useState(false);
+
+  // Track recently viewed
+  useEffect(() => {
+    if (user && listing) {
+      const imageUrl = getPrimaryImage(listing);
+      addRecentlyViewed(user.id, listing.id, listing.title, imageUrl);
+    }
+  }, [user, listing]);
   
   // Touch handling for image carousel
   const touchStartX = useRef(0);

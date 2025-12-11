@@ -49,6 +49,10 @@ export default function SignUpPage() {
       // Check if email confirmation is required (session will be null)
       const requiresEmailConfirmation = !signUpData.session && signUpData.user;
       
+      // Check if seller=true in URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const isSeller = urlParams.get('seller') === 'true';
+      
       if (requiresEmailConfirmation) {
         // Profile will be created by trigger, but update it with additional info
         if (signUpData.user) {
@@ -63,6 +67,7 @@ export default function SignUpPage() {
             .update({
               display_name: displayName,
               accepts_marketing: acceptsMarketing,
+              is_seller: isSeller, // Set based on URL param
             })
             .eq("user_id", signUpData.user.id);
           
@@ -74,7 +79,7 @@ export default function SignUpPage() {
               .upsert({
                 user_id: signUpData.user.id,
                 display_name: displayName,
-                is_seller: false,
+                is_seller: isSeller, // Set based on URL param
                 accepts_marketing: acceptsMarketing,
                 ts_badge: "false",
                 created_at: new Date().toISOString(),
@@ -98,13 +103,17 @@ export default function SignUpPage() {
         // Wait for trigger to create profile
         await new Promise(resolve => setTimeout(resolve, 1000));
         
+        // Check if seller=true in URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const isSeller = urlParams.get('seller') === 'true';
+        
         // Update profile
         const { error: profileError } = await supabase
           .from("profiles")
           .upsert({
             user_id: signUpData.user.id,
             display_name: displayName,
-            is_seller: false,
+            is_seller: isSeller, // Set based on URL param
             accepts_marketing: acceptsMarketing,
             ts_badge: "false",
             created_at: new Date().toISOString(),
@@ -115,10 +124,6 @@ export default function SignUpPage() {
         if (profileError) {
           console.error("Error upserting profile:", profileError);
         }
-
-        // Check if seller=true in URL and redirect accordingly
-        const urlParams = new URLSearchParams(window.location.search);
-        const isSeller = urlParams.get('seller') === 'true';
         
         if (isSeller) {
           router.push("/seller/onboarding");

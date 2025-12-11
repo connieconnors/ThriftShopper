@@ -23,11 +23,18 @@ export default async function Browse() {
 
   if (error) {
     console.error("Error loading listings for /browse:", error);
+    console.error("Error details:", {
+      message: error.message,
+      code: error.code,
+      details: error.details,
+      hint: error.hint
+    });
     return (
       <div className="fixed inset-0 bg-black flex items-center justify-center text-white p-8">
         <div className="text-center">
           <h1 className="text-xl font-semibold mb-2">Something went wrong</h1>
           <p className="text-white/60">Could not load listings. Please try again.</p>
+          <p className="text-white/40 text-sm mt-2">Error: {error.message} (Code: {error.code})</p>
         </div>
       </div>
     );
