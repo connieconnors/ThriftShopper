@@ -63,7 +63,7 @@
 ### Issue 2: RLS error on upload
 - **Cause**: Service role key not set or RLS policy blocking
 - **Fix**: 
-  - Check `.env.local` has `SUPABASE_SERVICE_ROLE=...`
+  - Check `.env.local` has `SUPABASE_SERVICE_ROLE_KEY=...` (or `SUPABASE_SERVICE_ROLE=...`)
   - Run SQL: `DROP POLICY IF EXISTS "Sellers can create listings" ON public.listings; CREATE POLICY "Sellers can create listings" ON public.listings FOR INSERT WITH CHECK (auth.uid() = seller_id);`
 
 ### Issue 3: No AI-generated content
@@ -88,7 +88,7 @@
 - [ ] `.env.local` has all keys:
   - [ ] `NEXT_PUBLIC_SUPABASE_URL`
   - [ ] `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-  - [ ] `SUPABASE_SERVICE_ROLE` (or `SUPABASE_SERVICE_ROLE_KEY`)
+  - [ ] `SUPABASE_SERVICE_ROLE_KEY` (or `SUPABASE_SERVICE_ROLE` as fallback)
   - [ ] `OPENAI_API_KEY` (optional but recommended)
 - [ ] Test signup flow yourself first
 - [ ] Test upload flow yourself first
