@@ -57,7 +57,7 @@ export default function SignUpPage() {
         // Create display name from email (before the @)
         const displayName = email.split("@")[0];
         
-        // Create profile record
+        // Try to insert profile, or update if it already exists (from trigger)
         const { error: profileError } = await supabase
           .from("profiles")
           .insert({
@@ -67,17 +67,34 @@ export default function SignUpPage() {
             accepts_marketing: acceptsMarketing,
             ts_badge: "false",
             created_at: new Date().toISOString(),
-          });
+          })
+          .select()
+          .single();
         
+        // If insert fails (profile might already exist from trigger), try update
         if (profileError) {
-          console.error("Error creating profile:", profileError);
-          // Don't block signup if profile creation fails
+          console.log("Profile insert failed, trying update:", profileError.message);
+          const { error: updateError } = await supabase
+            .from("profiles")
+            .update({
+              display_name: displayName,
+              accepts_marketing: acceptsMarketing,
+            })
+            .eq("user_id", user.id);
+          
+          if (updateError) {
+            console.error("Error updating profile:", updateError);
+            setError(`Database error saving new user: ${updateError.message}`);
+            setIsLoading(false);
+            return;
+          }
         }
       }
 
       router.push("/browse");
     } catch (err) {
-      setError("An unexpected error occurred");
+      const errorMessage = err instanceof Error ? err.message : "An unexpected error occurred";
+      setError(errorMessage);
       setIsLoading(false);
     }
   };
