@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/app/context/AuthContext';
 import { supabase } from '@/lib/supabaseClient';
 import { TSLogo } from '@/components/TSLogo';
-import { Loader2, Plus, ArrowLeft, Settings, MessageCircle, ChevronDown, ChevronUp, MoreVertical, EyeOff, Trash2, CheckCircle } from 'lucide-react';
+import { Loader2, Plus, ArrowLeft, Settings, MessageCircle, ChevronDown, ChevronUp, MoreVertical, EyeOff, Trash2, CheckCircle, LogOut } from 'lucide-react';
 import SellerMessages from './components/SellerMessages';
 import Link from 'next/link';
 import { StreamChatProvider } from './StreamChatProvider';
@@ -21,7 +21,7 @@ interface Listing {
 }
 
 export default function SellerDashboard() {
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, isLoading: authLoading, signOut } = useAuth();
   const router = useRouter();
   
   const [listings, setListings] = useState<Listing[]>([]);
@@ -453,6 +453,20 @@ export default function SellerDashboard() {
               ))}
             </div>
           )}
+        </div>
+
+        {/* Logout Button - Small at bottom */}
+        <div className="mt-8 pt-6 border-t border-gray-200 text-center">
+          <button
+            onClick={async () => {
+              await signOut();
+              router.push('/browse');
+            }}
+            className="text-sm text-gray-500 hover:text-gray-700 transition-colors flex items-center justify-center gap-2 mx-auto"
+          >
+            <LogOut size={14} />
+            Sign Out
+          </button>
         </div>
       </main>
     </div>
