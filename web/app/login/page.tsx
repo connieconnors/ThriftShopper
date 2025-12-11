@@ -25,17 +25,31 @@ function LoginForm() {
     if (!authLoading && user) {
       console.log("🔍 Login: User already logged in, checking profile...");
       const checkAndRedirect = async () => {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("is_seller")
-          .eq("id", user.id)
-          .single();
-        
-        if (profile?.is_seller) {
-          console.log("✅ Login: Already logged in seller, redirecting to /seller");
-          router.push(redirectTo || "/seller");
-        } else {
-          console.log("ℹ️ Login: Already logged in buyer, redirecting to /browse");
+        try {
+          const { data: profile, error } = await supabase
+            .from("profiles")
+            .select("is_seller")
+            .eq("id", user.id)
+            .single();
+          
+          console.log("📊 Login: Profile check result:", { profile, error });
+          
+          if (error) {
+            console.error("❌ Login: Error checking profile:", error);
+            // Default to browse if profile check fails
+            router.push(redirectTo || "/browse");
+            return;
+          }
+          
+          if (profile?.is_seller) {
+            console.log("✅ Login: Already logged in seller, redirecting to /seller");
+            router.push(redirectTo || "/seller");
+          } else {
+            console.log("ℹ️ Login: Already logged in buyer, redirecting to /browse");
+            router.push(redirectTo || "/browse");
+          }
+        } catch (err) {
+          console.error("❌ Login: Exception checking profile:", err);
           router.push(redirectTo || "/browse");
         }
       };

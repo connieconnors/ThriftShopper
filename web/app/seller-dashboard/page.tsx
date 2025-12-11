@@ -49,13 +49,20 @@ export default function SellerDashboard() {
         return;
       }
       
-      if (!profile?.display_name || !profile?.location_city) {
-        // Seller but incomplete profile, redirect to onboarding
+      // Be more lenient - if they're a seller, show dashboard
+      // Only redirect to onboarding if BOTH name and city are missing
+      const hasDisplayName = profile.display_name && String(profile.display_name).trim().length > 0;
+      const hasLocationCity = profile.location_city && String(profile.location_city).trim().length > 0;
+      
+      if (!hasDisplayName && !hasLocationCity) {
+        // Seller but very incomplete profile, redirect to onboarding
+        console.log('⚠️ Seller profile very incomplete, redirecting to onboarding');
         router.push('/seller/onboarding');
         return;
       }
       
-      // Seller with complete profile, show dashboard
+      // Seller with profile (even if partially complete), show dashboard
+      console.log('✅ Seller profile OK, showing dashboard');
       fetchDashboardData();
     } catch (err) {
       console.error('Error in checkSellerStatus:', err);

@@ -83,8 +83,8 @@ export default function SellerDashboard() {
       }
 
       // Check if values are empty strings (which are falsy in JS)
-      const hasDisplayName = profile.display_name && profile.display_name.trim().length > 0;
-      const hasLocationCity = profile.location_city && profile.location_city.trim().length > 0;
+      const hasDisplayName = profile.display_name && String(profile.display_name).trim().length > 0;
+      const hasLocationCity = profile.location_city && String(profile.location_city).trim().length > 0;
       const isSeller = profile.is_seller === true;
 
       console.log('✅ Profile check:', {
@@ -92,7 +92,10 @@ export default function SellerDashboard() {
         hasDisplayName,
         hasLocationCity,
         displayNameValue: profile.display_name,
-        locationCityValue: profile.location_city
+        displayNameType: typeof profile.display_name,
+        locationCityValue: profile.location_city,
+        locationCityType: typeof profile.location_city,
+        fullProfile: profile
       });
 
       // If not a seller, redirect to browse (they shouldn't be here)
@@ -103,8 +106,11 @@ export default function SellerDashboard() {
       }
 
       // If seller but missing key info, redirect to onboarding
-      if (!hasDisplayName || !hasLocationCity) {
-        console.log('⚠️ Seller profile incomplete, redirecting to onboarding', {
+      // Make this check less strict - only require display_name OR location_city
+      // Actually, let's be more lenient - if they're a seller, show dashboard
+      // They can complete profile later if needed
+      if (!hasDisplayName && !hasLocationCity) {
+        console.log('⚠️ Seller profile very incomplete (no name or city), redirecting to onboarding', {
           hasDisplayName,
           hasLocationCity,
           displayName: profile.display_name,
@@ -114,8 +120,8 @@ export default function SellerDashboard() {
         return;
       }
 
-      // Profile is complete, fetch seller data
-      console.log('✅ Seller profile complete, loading dashboard');
+      // Profile is complete enough, fetch seller data
+      console.log('✅ Seller profile OK, loading dashboard');
       fetchSellerData();
     } catch (err) {
       console.error('❌ Error in checkOnboardingAndFetchData:', err);
