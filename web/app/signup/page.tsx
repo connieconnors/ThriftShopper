@@ -90,19 +90,24 @@ export default function SignUpPage() {
           
           if (profileError) {
             console.error("Error updating profile:", profileError);
-            // Try upsert as fallback
-            await supabase
+            console.log("Profile doesn't exist yet, creating it...");
+            // Profile doesn't exist, create it
+            const { error: insertError } = await supabase
               .from("profiles")
-              .upsert({
+              .insert({
                 user_id: signUpData.user.id,
+                email: signUpData.user.email || email,
                 display_name: displayName,
                 is_seller: isSeller, // Set based on URL param
                 accepts_marketing: acceptsMarketing,
-                ts_badge: "false",
-                created_at: new Date().toISOString(),
-              }, {
-                onConflict: 'user_id'
               });
+            
+            if (insertError) {
+              console.error("Error creating profile:", insertError);
+              // If insert also fails, the trigger might be broken - user will need to confirm email first
+            } else {
+              console.log("✅ Profile created successfully");
+            }
           }
         }
         
