@@ -296,27 +296,17 @@ function LoginForm() {
             </Link>
           </p>
 
-          <p className="text-center text-sm text-gray-600 mt-3">
-            Want to sell?{" "}
-            <Link
-              href="/signup?seller=true"
-              className="font-semibold hover:underline"
-              style={{ color: "#cfb53b" }}
-            >
-              Become a seller
-            </Link>
-          </p>
         </div>
 
         {/* Back to browse */}
-        <p className="text-center mt-6">
-          <Link
-            href="/browse"
-            className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
+        <div className="text-center mt-6">
+          <button
+            onClick={() => router.push("/browse")}
+            className="text-[#000080] text-sm hover:underline transition-colors"
           >
             ← Continue browsing
-          </Link>
-        </p>
+          </button>
+        </div>
       </motion.div>
     </div>
   );

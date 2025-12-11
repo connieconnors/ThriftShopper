@@ -14,7 +14,7 @@ import {
 import { supabase } from "../../lib/supabaseClient";
 import { StandaloneMoodWheel } from "../../components/StandaloneMoodWheel";
 import { TSLogo } from "../../components/TSLogo";
-import TSAccountDrawer from "../../components/TSAccountDrawer";
+import AccountSheet from "../../components/AccountSheet";
 import { useWhisperTranscription } from "../../hooks/useWhisperTranscription";
 import { Mic, Loader2, Bookmark } from "lucide-react";
 import { normalizeTagColumn } from "../../lib/utils/tagNormalizer";
@@ -42,7 +42,7 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
   const [searchResults, setSearchResults] = useState<Listing[] | null>(null);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [selectedMoods, setSelectedMoods] = useState<string[]>([]);
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
   
   const containerRef = useRef<HTMLDivElement>(null);
   const touchStartY = useRef(0);
@@ -624,7 +624,7 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
 
       {/* ===== DASHBOARD/TS BUTTON (Bottom Right) ===== */}
       <button
-        onClick={() => setIsDrawerOpen(true)}
+        onClick={() => setAccountOpen(true)}
         className="fixed bottom-6 right-6 z-10 w-10 h-10 rounded-full shadow-lg transition-all hover:scale-110 flex items-center justify-center opacity-70 hover:opacity-100"
         style={{ backgroundColor: COLORS.navy }}
         aria-label="Account"
@@ -632,8 +632,8 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
         <TSLogo size={18} primaryColor="#ffffff" accentColor={COLORS.gold} />
       </button>
 
-      {/* Account Drawer */}
-      <TSAccountDrawer isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} />
+      {/* Account Sheet */}
+      <AccountSheet isOpen={accountOpen} onClose={() => setAccountOpen(false)} />
 
       {/* ===== COUNTER (Bottom Center) ===== */}
       <div 
