@@ -86,8 +86,8 @@ export default function SellerOnboardingPage() {
         .eq("user_id", user.id);
 
       // If update didn't affect any rows, try insert (profile doesn't exist)
-      if (result.error || (result.data === null && result.count === 0)) {
-        // Try insert as fallback
+      if (result.error) {
+        // Update failed, try insert as fallback
         const insertResult = await supabase
           .from("profiles")
           .insert({
@@ -104,15 +104,30 @@ export default function SellerOnboardingPage() {
           });
         
         if (insertResult.error) {
-          throw insertResult.error;
+          console.error("Database error:", insertResult.error);
+          throw new Error(insertResult.error.message || "Failed to save profile");
         }
-      } else if (result.error) {
-        throw result.error;
-      }
-
-      if (result.error) {
-        console.error("Database error:", result.error);
-        throw new Error(result.error.message || "Failed to save profile");
+      } else if (result.data === null && result.count === 0) {
+        // Update succeeded but no rows affected, try insert
+        const insertResult = await supabase
+          .from("profiles")
+          .insert({
+            user_id: user.id,
+            display_name: formData.storeName,
+            bio: formData.description,
+            location_city: formData.city,
+            location_state: formData.state,
+            location_zip: formData.zipCode,
+            email: formData.email,
+            phone: formData.phone || null,
+            shipping_info: formData.shippingSpeed,
+            is_seller: true,
+          });
+        
+        if (insertResult.error) {
+          console.error("Database error:", insertResult.error);
+          throw new Error(insertResult.error.message || "Failed to save profile");
+        }
       }
 
       // Redirect to seller dashboard
