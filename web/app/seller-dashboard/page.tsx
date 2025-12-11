@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { supabase } from '../../lib/supabaseClient';
 import { StripePayoutSetup } from '../../components/StripePayoutSetup';
 import Link from 'next/link';
+import { MoreVertical, EyeOff, Trash2, CheckCircle, Edit } from 'lucide-react';
 
 export default function SellerDashboard() {
   const { user } = useAuth();
@@ -13,6 +14,8 @@ export default function SellerDashboard() {
   const [profile, setProfile] = useState<any>(null);
   const [listings, setListings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [showMenuId, setShowMenuId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) {
@@ -49,6 +52,63 @@ export default function SellerDashboard() {
       console.error('Error fetching dashboard data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleUpdateStatus = async (listingId: string, newStatus: 'hidden' | 'sold' | 'active') => {
+    if (!user) return;
+    
+    setUpdatingId(listingId);
+    setShowMenuId(null);
+
+    try {
+      const { error } = await supabase
+        .from('listings')
+        .update({ 
+          status: newStatus,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', listingId)
+        .eq('seller_id', user.id); // Security: only update own listings
+
+      if (error) throw error;
+
+      // Refresh listings
+      await fetchDashboardData();
+    } catch (error) {
+      console.error('Error updating listing status:', error);
+      alert('Failed to update listing. Please try again.');
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  const handleDelete = async (listingId: string) => {
+    if (!user) return;
+    
+    if (!confirm('Are you sure you want to permanently delete this listing? This cannot be undone.')) {
+      return;
+    }
+
+    setUpdatingId(listingId);
+    setShowMenuId(null);
+
+    try {
+      const { error } = await supabase
+        .from('listings')
+        .delete()
+        .eq('id', listingId)
+        .eq('seller_id', user.id); // Security: only delete own listings
+
+      if (error) throw error;
+
+      // Refresh listings
+      await fetchDashboardData();
+    } catch (error) {
+      console.error('Error deleting listing:', error);
+      alert('Failed to delete listing. Please try again.');
+    } finally {
+      setUpdatingId(null);
     }
   };
 
@@ -167,21 +227,41 @@ export default function SellerDashboard() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Created
                   </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {listings.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="px-6 py-8 text-center text-gray-500">
+                    <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
                       No listings yet. <Link href="/sell" className="text-blue-600 hover:underline">Create your first listing</Link>
                     </td>
                   </tr>
                 ) : (
                   listings.map((listing) => (
                     <tr key={listing.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium" style={{ color: '#1f2937' }}>
-                          {listing.title || 'Untitled'}
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          {listing.original_image_url && (
+                            <img
+                              src={listing.original_image_url}
+                              alt={listing.title || 'Listing'}
+                              className="w-12 h-12 rounded object-cover"
+                            />
+                          )}
+                          <div>
+                            <div className="text-sm font-medium" style={{ color: '#1f2937' }}>
+                              {listing.title || 'Untitled'}
+                            </div>
+                            <Link
+                              href={`/listing/${listing.id}`}
+                              className="text-xs text-blue-600 hover:underline"
+                            >
+                              View listing
+                            </Link>
+                          </div>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -196,6 +276,8 @@ export default function SellerDashboard() {
                               ? 'bg-green-100 text-green-800'
                               : listing.status === 'sold'
                               ? 'bg-blue-100 text-blue-800'
+                              : listing.status === 'hidden'
+                              ? 'bg-yellow-100 text-yellow-800'
                               : 'bg-gray-100 text-gray-800'
                           }`}
                         >
@@ -204,6 +286,76 @@ export default function SellerDashboard() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {new Date(listing.created_at).toLocaleDateString()}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <div className="relative inline-block">
+                          <button
+                            onClick={() => setShowMenuId(showMenuId === listing.id ? null : listing.id)}
+                            disabled={updatingId === listing.id}
+                            className="p-2 rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50"
+                            style={{ color: '#6b7280' }}
+                          >
+                            {updatingId === listing.id ? (
+                              <div className="animate-spin h-4 w-4 border-2 border-gray-400 border-t-transparent rounded-full" />
+                            ) : (
+                              <MoreVertical className="h-4 w-4" />
+                            )}
+                          </button>
+
+                          {showMenuId === listing.id && (
+                            <>
+                              <div
+                                className="fixed inset-0 z-10"
+                                onClick={() => setShowMenuId(null)}
+                              />
+                              <div
+                                className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-20 overflow-hidden"
+                                style={{ fontFamily: 'Merriweather, serif' }}
+                              >
+                                <div className="py-1">
+                                  {listing.status !== 'active' && (
+                                    <button
+                                      onClick={() => handleUpdateStatus(listing.id, 'active')}
+                                      className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors flex items-center gap-2"
+                                      style={{ color: '#1f2937' }}
+                                    >
+                                      <CheckCircle className="h-4 w-4" />
+                                      Mark as Active
+                                    </button>
+                                  )}
+                                  {listing.status !== 'sold' && (
+                                    <button
+                                      onClick={() => handleUpdateStatus(listing.id, 'sold')}
+                                      className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors flex items-center gap-2"
+                                      style={{ color: '#1f2937' }}
+                                    >
+                                      <CheckCircle className="h-4 w-4" />
+                                      Mark as Sold
+                                    </button>
+                                  )}
+                                  {listing.status !== 'hidden' && (
+                                    <button
+                                      onClick={() => handleUpdateStatus(listing.id, 'hidden')}
+                                      className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors flex items-center gap-2"
+                                      style={{ color: '#1f2937' }}
+                                    >
+                                      <EyeOff className="h-4 w-4" />
+                                      Hide Listing
+                                    </button>
+                                  )}
+                                  <div className="border-t border-gray-200 my-1" />
+                                  <button
+                                    onClick={() => handleDelete(listing.id)}
+                                    className="w-full text-left px-4 py-2 text-sm hover:bg-red-50 transition-colors flex items-center gap-2 text-red-600"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                    Delete Permanently
+                                  </button>
+                                </div>
+                              </div>
+                            </>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))
