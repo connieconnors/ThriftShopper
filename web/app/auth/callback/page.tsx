@@ -47,19 +47,41 @@ function AuthCallbackContent() {
             // Check if user is a seller and needs onboarding
             const { data: { user } } = await supabase.auth.getUser();
             if (user) {
-              const { data: profile } = await supabase
+              // Try user_id first (actual column name), fallback to id
+              let { data: profile, error: profileError } = await supabase
                 .from('profiles')
                 .select('is_seller')
-                .eq('id', user.id) // Use 'id' - it's the primary key
+                .eq('user_id', user.id)
                 .single();
+              
+              // If that fails, try id
+              if (profileError && profileError.code === 'PGRST116') {
+                const retry = await supabase
+                  .from('profiles')
+                  .select('is_seller')
+                  .eq('id', user.id)
+                  .single();
+                profile = retry.data;
+                profileError = retry.error;
+              }
               
               // If seller but profile incomplete, redirect to onboarding
               if (profile?.is_seller) {
-                const { data: checkProfile } = await supabase
+                let { data: checkProfile } = await supabase
                   .from('profiles')
                   .select('display_name, location_city')
-                  .eq('id', user.id) // Use 'id' - it's the primary key
+                  .eq('user_id', user.id)
                   .single();
+                
+                // If that fails, try id
+                if (!checkProfile) {
+                  const retry = await supabase
+                    .from('profiles')
+                    .select('display_name, location_city')
+                    .eq('id', user.id)
+                    .single();
+                  checkProfile = retry.data;
+                }
                 
                 // If missing required seller fields, go to onboarding
                 if (!checkProfile?.location_city || !checkProfile?.display_name) {
@@ -95,19 +117,41 @@ function AuthCallbackContent() {
             // Check if user is a seller and needs onboarding
             const { data: { user } } = await supabase.auth.getUser();
             if (user) {
-              const { data: profile } = await supabase
+              // Try user_id first (actual column name), fallback to id
+              let { data: profile, error: profileError } = await supabase
                 .from('profiles')
                 .select('is_seller')
-                .eq('id', user.id) // Use 'id' - it's the primary key
+                .eq('user_id', user.id)
                 .single();
+              
+              // If that fails, try id
+              if (profileError && profileError.code === 'PGRST116') {
+                const retry = await supabase
+                  .from('profiles')
+                  .select('is_seller')
+                  .eq('id', user.id)
+                  .single();
+                profile = retry.data;
+                profileError = retry.error;
+              }
               
               // If seller but profile incomplete, redirect to onboarding
               if (profile?.is_seller) {
-                const { data: checkProfile } = await supabase
+                let { data: checkProfile } = await supabase
                   .from('profiles')
                   .select('display_name, location_city')
-                  .eq('id', user.id) // Use 'id' - it's the primary key
+                  .eq('user_id', user.id)
                   .single();
+                
+                // If that fails, try id
+                if (!checkProfile) {
+                  const retry = await supabase
+                    .from('profiles')
+                    .select('display_name, location_city')
+                    .eq('id', user.id)
+                    .single();
+                  checkProfile = retry.data;
+                }
                 
                 // If missing required seller fields, go to onboarding
                 if (!checkProfile?.location_city || !checkProfile?.display_name) {
