@@ -45,16 +45,25 @@ function LoginForm() {
         }
 
         // Otherwise, check user's role and redirect accordingly
+        console.log("🔍 Login: Checking profile for user:", user.id);
         const { data: profile, error: profileError } = await supabase
           .from("profiles")
           .select("is_seller, display_name, location_city")
           .eq("id", user.id) // Use 'id' not 'user_id' - it's the primary key
           .single();
 
+        console.log("📊 Login: Profile query result:", { profile, error: profileError });
+
         // If profile exists and user is a seller, redirect to seller dashboard
         // The seller dashboard will check if onboarding is complete and redirect if needed
         if (profileError) {
-          console.error("Profile fetch error:", profileError);
+          console.error("❌ Login: Profile fetch error:", profileError);
+          console.error("Error details:", {
+            message: profileError.message,
+            code: profileError.code,
+            details: profileError.details,
+            hint: profileError.hint
+          });
           // If profile doesn't exist or error, still try to redirect based on user
           // But default to browse for now
           router.push("/browse");
@@ -62,11 +71,13 @@ function LoginForm() {
           return;
         }
 
-        if (profile && profile.is_seller) {
+        if (profile && profile.is_seller === true) {
+          console.log("✅ Login: User is seller, redirecting to /seller");
           router.push("/seller");
           setIsLoading(false);
           return;
         } else {
+          console.log("ℹ️ Login: User is not seller, redirecting to /browse");
           router.push("/browse");
           setIsLoading(false);
           return;

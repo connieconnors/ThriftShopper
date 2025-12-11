@@ -51,6 +51,8 @@ export default function SellerDashboard() {
     if (!user) return;
 
     try {
+      console.log('🔍 Checking seller profile for user:', user.id);
+      
       // Check if seller profile is set up
       // Note: profiles.id is the primary key and references auth.users(id)
       const { data: profile, error: profileError } = await supabase
@@ -59,35 +61,64 @@ export default function SellerDashboard() {
         .eq('id', user.id) // Use 'id' - it's the primary key that references auth.users(id)
         .single();
 
+      console.log('📊 Profile query result:', { profile, error: profileError });
+
       if (profileError) {
-        console.error('Error fetching profile:', profileError);
+        console.error('❌ Error fetching profile:', profileError);
+        console.error('Error details:', {
+          message: profileError.message,
+          code: profileError.code,
+          details: profileError.details,
+          hint: profileError.hint
+        });
         // If profile doesn't exist, redirect to onboarding
         router.push('/seller/onboarding');
         return;
       }
 
+      if (!profile) {
+        console.error('❌ Profile is null/undefined');
+        router.push('/seller/onboarding');
+        return;
+      }
+
+      // Check if values are empty strings (which are falsy in JS)
+      const hasDisplayName = profile.display_name && profile.display_name.trim().length > 0;
+      const hasLocationCity = profile.location_city && profile.location_city.trim().length > 0;
+      const isSeller = profile.is_seller === true;
+
+      console.log('✅ Profile check:', {
+        isSeller,
+        hasDisplayName,
+        hasLocationCity,
+        displayNameValue: profile.display_name,
+        locationCityValue: profile.location_city
+      });
+
       // If not a seller, redirect to browse (they shouldn't be here)
-      if (!profile?.is_seller) {
-        console.log('User is not a seller, redirecting to browse');
+      if (!isSeller) {
+        console.log('⚠️ User is not a seller, redirecting to browse');
         router.push('/browse');
         return;
       }
 
       // If seller but missing key info, redirect to onboarding
-      if (!profile?.display_name || !profile?.location_city) {
-        console.log('Seller profile incomplete, redirecting to onboarding', {
-          hasDisplayName: !!profile?.display_name,
-          hasLocationCity: !!profile?.location_city
+      if (!hasDisplayName || !hasLocationCity) {
+        console.log('⚠️ Seller profile incomplete, redirecting to onboarding', {
+          hasDisplayName,
+          hasLocationCity,
+          displayName: profile.display_name,
+          locationCity: profile.location_city
         });
         router.push('/seller/onboarding');
         return;
       }
 
       // Profile is complete, fetch seller data
-      console.log('Seller profile complete, loading dashboard');
+      console.log('✅ Seller profile complete, loading dashboard');
       fetchSellerData();
     } catch (err) {
-      console.error('Error in checkOnboardingAndFetchData:', err);
+      console.error('❌ Error in checkOnboardingAndFetchData:', err);
       // No profile exists or error, redirect to onboarding
       router.push('/seller/onboarding');
     }
