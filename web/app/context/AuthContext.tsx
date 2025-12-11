@@ -46,9 +46,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signUp = async (email: string, password: string) => {
+    // Use the current origin for email redirect (works for both localhost and Vercel)
+    const emailRedirectTo = typeof window !== 'undefined' 
+      ? `${window.location.origin}/auth/callback`
+      : undefined;
+    
     const { error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        emailRedirectTo: emailRedirectTo,
+      },
     });
     return { error: error as Error | null };
   };

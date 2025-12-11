@@ -35,9 +35,17 @@ export default function SignUpPage() {
 
     try {
       // Sign up directly with Supabase to get full response
+      // Use the current origin for email redirect (works for both localhost and Vercel)
+      const emailRedirectTo = typeof window !== 'undefined' 
+        ? `${window.location.origin}/auth/callback`
+        : undefined;
+      
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          emailRedirectTo: emailRedirectTo,
+        },
       });
       
       if (signUpError) {
