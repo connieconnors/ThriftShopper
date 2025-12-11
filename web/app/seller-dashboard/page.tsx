@@ -116,7 +116,7 @@ export default function SellerDashboard() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-navy mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4" style={{ borderColor: '#191970', borderTopColor: 'transparent' }}></div>
           <p style={{ color: '#6b7280' }}>Loading dashboard...</p>
         </div>
       </div>
