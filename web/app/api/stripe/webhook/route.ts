@@ -64,7 +64,7 @@ async function handleAccountUpdated(account: Stripe.Account) {
     // Find the profile with this Stripe account ID
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
-      .select("id")
+      .select("user_id")
       .eq("stripe_account_id", account.id)
       .single();
 
@@ -81,13 +81,13 @@ async function handleAccountUpdated(account: Stripe.Account) {
       onboardingStatus = "needs_verification";
     }
 
-    // Update the profile
+    // Update the profile using user_id (the actual column name)
     await supabase
       .from("profiles")
       .update({ stripe_onboarding_status: onboardingStatus })
-      .eq("id", profile.id);
+      .eq("user_id", profile.user_id);
 
-    console.log(`Updated profile ${profile.id} with onboarding status: ${onboardingStatus}`);
+    console.log(`Updated profile ${profile.user_id} with onboarding status: ${onboardingStatus}`);
   } catch (error) {
     console.error("Error handling account.updated:", error);
   }
