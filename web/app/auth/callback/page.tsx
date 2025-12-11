@@ -50,7 +50,7 @@ function AuthCallbackContent() {
               // Try user_id first (actual column name), fallback to id
               let { data: profile, error: profileError } = await supabase
                 .from('profiles')
-                .select('is_seller')
+                .select('is_seller, display_name, location_city')
                 .eq('user_id', user.id)
                 .single();
               
@@ -58,33 +58,43 @@ function AuthCallbackContent() {
               if (profileError && profileError.code === 'PGRST116') {
                 const retry = await supabase
                   .from('profiles')
-                  .select('is_seller')
+                  .select('is_seller, display_name, location_city')
                   .eq('id', user.id)
                   .single();
                 profile = retry.data;
                 profileError = retry.error;
               }
               
+              // If profile doesn't exist, create it
+              if (profileError || !profile) {
+                console.log('Profile does not exist, creating it...');
+                const displayName = user.email?.split('@')[0] || 'User';
+                const { error: createError } = await supabase
+                  .from('profiles')
+                  .insert({
+                    user_id: user.id,
+                    email: user.email,
+                    display_name: displayName,
+                  });
+                
+                if (createError) {
+                  console.error('Error creating profile:', createError);
+                } else {
+                  console.log('✅ Profile created successfully');
+                  // Re-fetch profile
+                  const { data: newProfile } = await supabase
+                    .from('profiles')
+                    .select('is_seller, display_name, location_city')
+                    .eq('user_id', user.id)
+                    .single();
+                  profile = newProfile;
+                }
+              }
+              
               // If seller but profile incomplete, redirect to onboarding
               if (profile?.is_seller) {
-                let { data: checkProfile } = await supabase
-                  .from('profiles')
-                  .select('display_name, location_city')
-                  .eq('user_id', user.id)
-                  .single();
-                
-                // If that fails, try id
-                if (!checkProfile) {
-                  const retry = await supabase
-                    .from('profiles')
-                    .select('display_name, location_city')
-                    .eq('id', user.id)
-                    .single();
-                  checkProfile = retry.data;
-                }
-                
                 // If missing required seller fields, go to onboarding
-                if (!checkProfile?.location_city || !checkProfile?.display_name) {
+                if (!profile?.location_city || !profile?.display_name) {
                   router.push('/seller/onboarding');
                   return;
                 }
@@ -120,7 +130,7 @@ function AuthCallbackContent() {
               // Try user_id first (actual column name), fallback to id
               let { data: profile, error: profileError } = await supabase
                 .from('profiles')
-                .select('is_seller')
+                .select('is_seller, display_name, location_city')
                 .eq('user_id', user.id)
                 .single();
               
@@ -128,33 +138,43 @@ function AuthCallbackContent() {
               if (profileError && profileError.code === 'PGRST116') {
                 const retry = await supabase
                   .from('profiles')
-                  .select('is_seller')
+                  .select('is_seller, display_name, location_city')
                   .eq('id', user.id)
                   .single();
                 profile = retry.data;
                 profileError = retry.error;
               }
               
+              // If profile doesn't exist, create it
+              if (profileError || !profile) {
+                console.log('Profile does not exist, creating it...');
+                const displayName = user.email?.split('@')[0] || 'User';
+                const { error: createError } = await supabase
+                  .from('profiles')
+                  .insert({
+                    user_id: user.id,
+                    email: user.email,
+                    display_name: displayName,
+                  });
+                
+                if (createError) {
+                  console.error('Error creating profile:', createError);
+                } else {
+                  console.log('✅ Profile created successfully');
+                  // Re-fetch profile
+                  const { data: newProfile } = await supabase
+                    .from('profiles')
+                    .select('is_seller, display_name, location_city')
+                    .eq('user_id', user.id)
+                    .single();
+                  profile = newProfile;
+                }
+              }
+              
               // If seller but profile incomplete, redirect to onboarding
               if (profile?.is_seller) {
-                let { data: checkProfile } = await supabase
-                  .from('profiles')
-                  .select('display_name, location_city')
-                  .eq('user_id', user.id)
-                  .single();
-                
-                // If that fails, try id
-                if (!checkProfile) {
-                  const retry = await supabase
-                    .from('profiles')
-                    .select('display_name, location_city')
-                    .eq('id', user.id)
-                    .single();
-                  checkProfile = retry.data;
-                }
-                
                 // If missing required seller fields, go to onboarding
-                if (!checkProfile?.location_city || !checkProfile?.display_name) {
+                if (!profile?.location_city || !profile?.display_name) {
                   router.push('/seller/onboarding');
                   return;
                 }
