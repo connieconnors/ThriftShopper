@@ -14,6 +14,7 @@ import {
 import { supabase } from "../../lib/supabaseClient";
 import { StandaloneMoodWheel } from "../../components/StandaloneMoodWheel";
 import { TSLogo } from "../../components/TSLogo";
+import TSAccountDrawer from "../../components/TSAccountDrawer";
 import { useWhisperTranscription } from "../../hooks/useWhisperTranscription";
 import { Mic, Loader2, Bookmark } from "lucide-react";
 import { normalizeTagColumn } from "../../lib/utils/tagNormalizer";
@@ -41,6 +42,7 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
   const [searchResults, setSearchResults] = useState<Listing[] | null>(null);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [selectedMoods, setSelectedMoods] = useState<string[]>([]);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   
   const containerRef = useRef<HTMLDivElement>(null);
   const touchStartY = useRef(0);
@@ -622,13 +624,16 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
 
       {/* ===== DASHBOARD/TS BUTTON (Bottom Right) ===== */}
       <button
-        onClick={() => router.push('/seller')}
-        className="fixed bottom-6 right-6 z-10 w-12 h-12 rounded-full shadow-lg transition-all hover:scale-110 flex items-center justify-center"
+        onClick={() => setIsDrawerOpen(true)}
+        className="fixed bottom-6 right-6 z-10 w-10 h-10 rounded-full shadow-lg transition-all hover:scale-110 flex items-center justify-center opacity-70 hover:opacity-100"
         style={{ backgroundColor: COLORS.navy }}
-        aria-label="Seller Dashboard"
+        aria-label="Account"
       >
-        <TSLogo size={24} primaryColor="#ffffff" accentColor={COLORS.gold} />
+        <TSLogo size={18} primaryColor="#ffffff" accentColor={COLORS.gold} />
       </button>
+
+      {/* Account Drawer */}
+      <TSAccountDrawer isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} />
 
       {/* ===== COUNTER (Bottom Center) ===== */}
       <div 
