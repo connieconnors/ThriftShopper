@@ -424,8 +424,8 @@ export function StandaloneMoodWheel({ selectedMoods, onMoodsChange }: Standalone
                 padding: '8px 20px',
                 width: '100%', 
                 flexShrink: 0,
-                backgroundColor: 'rgba(25, 25, 7, 0.9)',
-                borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+                backgroundColor: 'white',
+                borderTop: '1px solid rgba(0,0,0,0.06)',
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center'
