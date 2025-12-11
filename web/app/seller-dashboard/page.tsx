@@ -23,6 +23,8 @@ export default function SellerDashboard() {
   }, [user]);
 
   const fetchDashboardData = async () => {
+    if (!user) return; // Guard clause for TypeScript
+    
     try {
       // Fetch profile with Stripe info (using user_id - the actual column name)
       const { data: profileData, error: profileError } = await supabase
@@ -38,7 +40,7 @@ export default function SellerDashboard() {
       const { data: listingsData, error: listingsError } = await supabase
         .from('listings')
         .select('*')
-        .eq('seller_id', user.id)
+        .eq('seller_id', user!.id)
         .order('created_at', { ascending: false });
 
       if (listingsError) throw listingsError;
