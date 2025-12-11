@@ -40,6 +40,8 @@ export default function SignUpPage() {
         ? `${window.location.origin}/auth/callback`
         : undefined;
       
+      console.log('🔍 Signup: emailRedirectTo =', emailRedirectTo);
+      
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
@@ -48,7 +50,14 @@ export default function SignUpPage() {
         },
       });
       
+      console.log('📊 Signup result:', { 
+        hasUser: !!signUpData?.user, 
+        hasSession: !!signUpData?.session,
+        error: signUpError 
+      });
+      
       if (signUpError) {
+        console.error('❌ Signup error:', signUpError);
         setError(signUpError.message);
         setIsLoading(false);
         return;
