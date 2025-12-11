@@ -4,19 +4,16 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../context/AuthContext";
 import { Loader2 } from "lucide-react";
+import SellerUploadForm from "../components/SellerUploadForm";
 
 export default function SellPage() {
   const router = useRouter();
   const { user, isLoading } = useAuth();
 
   useEffect(() => {
-    // Redirect to seller dashboard - upload should be part of dashboard
-    if (!isLoading) {
-      if (user) {
-        router.push("/seller");
-      } else {
-        router.push("/login?redirect=/seller");
-      }
+    // Redirect to login if not authenticated
+    if (!isLoading && !user) {
+      router.push("/login?redirect=/sell");
     }
   }, [user, isLoading, router]);
 
@@ -28,5 +25,13 @@ export default function SellPage() {
     );
   }
 
-  return null;
+  if (!user) {
+    return null; // Will redirect
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <SellerUploadForm />
+    </div>
+  );
 }
