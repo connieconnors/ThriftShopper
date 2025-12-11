@@ -31,11 +31,23 @@ export default function SellerDashboard() {
     if (!user) return;
     
     try {
-      const { data: profile, error } = await supabase
+      // Try user_id first (actual column name), fallback to id
+      let { data: profile, error } = await supabase
         .from('profiles')
         .select('is_seller, display_name, location_city')
-        .eq('id', user.id)
+        .eq('user_id', user.id)
         .single();
+      
+      // If that fails, try id
+      if (error && error.code === 'PGRST116') {
+        const retry = await supabase
+          .from('profiles')
+          .select('is_seller, display_name, location_city')
+          .eq('id', user.id)
+          .single();
+        profile = retry.data;
+        error = retry.error;
+      }
       
       if (error) {
         console.error('Error checking seller status:', error);

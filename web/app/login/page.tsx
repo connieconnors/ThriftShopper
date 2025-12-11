@@ -26,11 +26,23 @@ function LoginForm() {
       console.log("🔍 Login: User already logged in, checking profile...");
       const checkAndRedirect = async () => {
         try {
-          const { data: profile, error } = await supabase
+          // Try user_id first (actual column name), fallback to id
+          let { data: profile, error } = await supabase
             .from("profiles")
             .select("is_seller")
-            .eq("id", user.id)
+            .eq("user_id", user.id)
             .single();
+          
+          // If that fails, try id
+          if (error && error.code === 'PGRST116') {
+            const retry = await supabase
+              .from("profiles")
+              .select("is_seller")
+              .eq("id", user.id)
+              .single();
+            profile = retry.data;
+            error = retry.error;
+          }
           
           console.log("📊 Login: Profile check result:", { profile, error });
           
@@ -83,11 +95,23 @@ function LoginForm() {
 
         // Otherwise, check user's role and redirect accordingly
         console.log("🔍 Login: Checking profile for user:", user.id);
-        const { data: profile, error: profileError } = await supabase
+        // Try user_id first (actual column name), fallback to id
+        let { data: profile, error: profileError } = await supabase
           .from("profiles")
           .select("is_seller, display_name, location_city")
-          .eq("id", user.id) // Use 'id' not 'user_id' - it's the primary key
+          .eq("user_id", user.id)
           .single();
+        
+        // If that fails, try id
+        if (profileError && profileError.code === 'PGRST116') {
+          const retry = await supabase
+            .from("profiles")
+            .select("is_seller, display_name, location_city")
+            .eq("id", user.id)
+            .single();
+          profile = retry.data;
+          profileError = retry.error;
+        }
 
         console.log("📊 Login: Profile query result:", { profile, error: profileError });
 

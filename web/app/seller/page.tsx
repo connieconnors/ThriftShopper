@@ -54,12 +54,23 @@ export default function SellerDashboard() {
       console.log('🔍 Checking seller profile for user:', user.id);
       
       // Check if seller profile is set up
-      // Note: profiles.id is the primary key and references auth.users(id)
-      const { data: profile, error: profileError } = await supabase
+      // Try user_id first (actual column name), fallback to id
+      let { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('is_seller, display_name, location_city')
-        .eq('id', user.id) // Use 'id' - it's the primary key that references auth.users(id)
+        .eq('user_id', user.id)
         .single();
+      
+      // If that fails, try id
+      if (profileError && profileError.code === 'PGRST116') {
+        const retry = await supabase
+          .from('profiles')
+          .select('is_seller, display_name, location_city')
+          .eq('id', user.id)
+          .single();
+        profile = retry.data;
+        profileError = retry.error;
+      }
 
       console.log('📊 Profile query result:', { profile, error: profileError });
 
