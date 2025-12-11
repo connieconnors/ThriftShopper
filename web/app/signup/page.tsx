@@ -50,8 +50,24 @@ export default function SignUpPage() {
         console.log("Auto sign-in note:", signInError.message);
       }
 
+      // Wait a moment for session to be established
+      await new Promise(resolve => setTimeout(resolve, 500));
+
       // Get the user ID from the session
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user }, error: getUserError } = await supabase.auth.getUser();
+      
+      if (getUserError) {
+        console.error("Error getting user:", getUserError);
+        setError(`Authentication error: ${getUserError.message}`);
+        setIsLoading(false);
+        return;
+      }
+      
+      if (!user) {
+        setError("User account created but session not established. Please try logging in.");
+        setIsLoading(false);
+        return;
+      }
       
       if (user) {
         // Create display name from email (before the @)
@@ -73,7 +89,14 @@ export default function SignUpPage() {
         
         // If insert fails (profile might already exist from trigger), try update
         if (profileError) {
-          console.log("Profile insert failed, trying update:", profileError.message);
+          console.log("Profile insert failed, trying update:", profileError);
+          console.log("Error details:", {
+            message: profileError.message,
+            code: profileError.code,
+            details: profileError.details,
+            hint: profileError.hint
+          });
+          
           const { error: updateError } = await supabase
             .from("profiles")
             .update({
@@ -84,15 +107,24 @@ export default function SignUpPage() {
           
           if (updateError) {
             console.error("Error updating profile:", updateError);
-            setError(`Database error saving new user: ${updateError.message}`);
+            setError(`Database error: ${updateError.message || profileError.message}. Code: ${updateError.code || profileError.code}`);
             setIsLoading(false);
             return;
           }
         }
       }
 
-      router.push("/browse");
+      // Check if seller=true in URL and redirect accordingly
+      const urlParams = new URLSearchParams(window.location.search);
+      const isSeller = urlParams.get('seller') === 'true';
+      
+      if (isSeller) {
+        router.push("/seller/onboarding");
+      } else {
+        router.push("/browse");
+      }
     } catch (err) {
+      console.error("Signup error:", err);
       const errorMessage = err instanceof Error ? err.message : "An unexpected error occurred";
       setError(errorMessage);
       setIsLoading(false);
