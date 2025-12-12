@@ -33,6 +33,7 @@ import {
   LogOut,
   ChevronRight,
   Store,
+  HelpCircle,
 } from "lucide-react";
 
 interface Order {
@@ -705,6 +706,13 @@ export default function BuyerAccountPage() {
           >
             <MessageSquare className="h-5 w-5" />
             <span className="text-[10px]">Messages</span>
+          </Link>
+          <Link
+            href="/support"
+            className="flex flex-col items-center gap-1 text-white/70 hover:text-white transition-colors"
+          >
+            <HelpCircle className="h-5 w-5" />
+            <span className="text-[10px]">Support</span>
           </Link>
           <Link
             href="/account"

@@ -20,6 +20,9 @@ import SellerDrawer from "../../components/SellerDrawer";
 import { TSLogo } from "../../../components/TSLogo";
 import { useAuth } from "../../context/AuthContext";
 import { addRecentlyViewed } from "../../../lib/userPreferences";
+import MessagesModal from "../../../components/MessagesModal";
+import { StreamChatProvider } from "../../seller/StreamChatProvider";
+import { MessageSquare, Bookmark } from "lucide-react";
 
 interface ProductDetailsProps {
   listing: Listing;
@@ -33,6 +36,7 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
   const [showShareSuccess, setShowShareSuccess] = useState(false);
   const [showSellerDrawer, setShowSellerDrawer] = useState(false);
   const [isZoomed, setIsZoomed] = useState(false);
+  const [showMessages, setShowMessages] = useState(false);
 
   // Track recently viewed
   useEffect(() => {
@@ -118,6 +122,7 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
   ].filter(Boolean);
 
   return (
+    <StreamChatProvider>
     <main className="min-h-screen text-gray-900" style={{ backgroundColor: '#EDE7D9', fontFamily: 'Merriweather, serif' }}>
       {/* Fixed Header - Back to Browse */}
       <header className="fixed top-0 left-0 right-0 z-50 p-4 flex items-center justify-between">
@@ -361,29 +366,57 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
       {/* Fixed Bottom Action Bar */}
       <div className="fixed bottom-0 left-0 right-0 p-4 backdrop-blur-lg border-t border-gray-200" style={{ backgroundColor: 'rgba(237, 231, 217, 0.95)' }}>
         <div className="flex items-center gap-3 max-w-lg mx-auto">
+          {/* Left: Bookmark Button */}
           <FavoriteButton listingId={listing.id} variant="detail" />
 
+          {/* Center: Buy Now Button */}
           <button 
             onClick={() => router.push(`/checkout/${listing.id}`)}
-            className="flex-1 h-14 bg-white text-black font-bold text-lg rounded-full hover:bg-white/90 transition-colors"
+            className="flex-1 h-14 bg-[#191970] text-white font-bold text-lg rounded-full hover:bg-[#00006a] transition-colors shadow-md"
           >
             Buy Now
           </button>
 
-          <button
-            onClick={handleShare}
-            className="w-14 h-14 flex items-center justify-center rounded-full border-2 border-white/30 text-white hover:border-white/50 transition-colors"
-            aria-label="Share"
-          >
-            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
-              />
-            </svg>
-          </button>
+          {/* Right: Message Seller Button (if logged in and not seller) */}
+          {user && user.id !== listing.seller_id && listing.seller_id ? (
+            <button
+              onClick={() => setShowMessages(true)}
+              className="w-14 h-14 flex items-center justify-center rounded-full border-2 border-white/30 text-white hover:border-white/50 transition-colors bg-white/5"
+              aria-label="Message seller"
+            >
+              <MessageSquare className="w-6 h-6" />
+            </button>
+          ) : user && user.id === listing.seller_id ? (
+            <button
+              onClick={handleShare}
+              className="w-14 h-14 flex items-center justify-center rounded-full border-2 border-white/30 text-white hover:border-white/50 transition-colors"
+              aria-label="Share"
+            >
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
+                />
+              </svg>
+            </button>
+          ) : (
+            <button
+              onClick={handleShare}
+              className="w-14 h-14 flex items-center justify-center rounded-full border-2 border-white/30 text-white hover:border-white/50 transition-colors"
+              aria-label="Share"
+            >
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
+                />
+              </svg>
+            </button>
+          )}
         </div>
       </div>
 
@@ -400,6 +433,16 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
         sellerAvatar={sellerAvatar}
         hasTSBadge={hasTSBadge}
       />
+
+      {/* Messages Modal - opens conversation with seller */}
+      {user && listing.seller_id && (
+        <MessagesModal 
+          isOpen={showMessages} 
+          onClose={() => setShowMessages(false)}
+          initialSellerId={listing.seller_id}
+          initialListingId={listing.id}
+        />
+      )}
 
       {/* FULLSCREEN IMAGE ZOOM MODAL */}
       {isZoomed && images.length > 0 && (
@@ -504,6 +547,7 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
         </div>
       )}
     </main>
+    </StreamChatProvider>
   );
 }
 

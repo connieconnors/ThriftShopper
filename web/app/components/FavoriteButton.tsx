@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Sparkles } from "lucide-react";
+import { Sparkles, Bookmark } from "lucide-react";
 import { supabase } from "../../lib/supabaseClient";
 import { useAuth } from "../context/AuthContext";
 
@@ -187,7 +187,7 @@ export default function FavoriteButton({
     );
   }
 
-  // Detail variant for product page
+  // Detail variant for product page - uses Bookmark icon
   if (variant === "detail") {
     return (
       <button
@@ -200,7 +200,14 @@ export default function FavoriteButton({
             : "border-white/30 text-white hover:border-[#cfb53b]/50 hover:bg-white/10"
         } ${isLoading ? "opacity-50" : ""} ${className}`}
       >
-        <SparkleIcon size={24} />
+        <Bookmark
+          size={24}
+          className={`transition-transform duration-200 ${
+            isAnimating ? "scale-125" : "scale-100"
+          }`}
+          fill={isFavorited ? "currentColor" : "none"}
+          strokeWidth={isFavorited ? 0 : 2}
+        />
       </button>
     );
   }

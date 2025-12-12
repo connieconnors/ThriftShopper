@@ -5,10 +5,12 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/app/context/AuthContext';
 import { supabase } from '@/lib/supabaseClient';
 import { TSLogo } from '@/components/TSLogo';
-import { Loader2, Plus, ArrowLeft, Settings, MessageCircle, ChevronDown, ChevronUp, MoreVertical, EyeOff, Trash2, CheckCircle, LogOut } from 'lucide-react';
+import { Loader2, Plus, ArrowLeft, Settings, MessageSquare, ChevronDown, ChevronUp, MoreVertical, EyeOff, Trash2, CheckCircle, LogOut, Search, Package, HelpCircle, User } from 'lucide-react';
 import SellerMessages from './components/SellerMessages';
 import Link from 'next/link';
 import { StreamChatProvider } from './StreamChatProvider';
+import MessagesModal from '@/components/MessagesModal';
+import SupportModal from '@/components/SupportModal';
 
 interface Listing {
   id: string;
@@ -35,6 +37,9 @@ export default function SellerDashboard() {
   });
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [showMenuId, setShowMenuId] = useState<string | null>(null);
+  const [profile, setProfile] = useState<any>(null);
+  const [messagesOpen, setMessagesOpen] = useState(false);
+  const [supportOpen, setSupportOpen] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -57,7 +62,7 @@ export default function SellerDashboard() {
       // Try user_id first (actual column name), fallback to id
       let { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('is_seller, display_name, location_city')
+        .select('is_seller, display_name, location_city, avatar_url, created_at, stripe_account_id, stripe_onboarding_status')
         .eq('user_id', user.id)
         .single();
       
@@ -65,7 +70,7 @@ export default function SellerDashboard() {
       if (profileError && profileError.code === 'PGRST116') {
         const retry = await supabase
           .from('profiles')
-          .select('is_seller, display_name, location_city')
+          .select('is_seller, display_name, location_city, avatar_url, created_at, stripe_account_id, stripe_onboarding_status')
           .eq('id', user.id)
           .single();
         profile = retry.data;
@@ -133,6 +138,7 @@ export default function SellerDashboard() {
 
       // Profile is complete enough, fetch seller data
       console.log('✅ Seller profile OK, loading dashboard');
+      setProfile(profile);
       fetchSellerData();
     } catch (err) {
       console.error('❌ Error in checkOnboardingAndFetchData:', err);
@@ -239,80 +245,114 @@ export default function SellerDashboard() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#FFF8E6", fontFamily: "Merriweather, serif" }}>
+        <div className="animate-spin h-8 w-8 border-2 border-[#EFBF05] border-t-transparent rounded-full" />
       </div>
     );
   }
 
+  const getJoinYear = () => {
+    if (!profile?.created_at) return new Date().getFullYear();
+    return new Date(profile.created_at).getFullYear();
+  };
+
+  const needsStripeSetup = !profile?.stripe_account_id || profile?.stripe_onboarding_status !== 'completed';
+
   return (
     <StreamChatProvider>
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen pb-16 bg-gray-50" style={{ fontFamily: "Merriweather, serif" }}>
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
-          <Link href="/browse" className="flex items-center gap-2">
-            <ArrowLeft size={20} className="text-gray-600" />
-            <TSLogo size={28} primaryColor="#191970" accentColor="#cfb53b" />
-          </Link>
-          <span className="text-sm text-gray-600 font-medium">Seller Dashboard</span>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => {/* TODO: Open messages */}}
-              className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors relative"
-              title="Messages"
-            >
-              <MessageCircle size={20} className="text-gray-600" />
-              {/* Notification dot - uncomment when messages exist */}
-              {/* <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" /> */}
-            </button>
-            <Link
-              href="/seller/settings"
-              className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors"
-              title="Settings"
-            >
-              <Settings size={20} className="text-gray-600" />
-            </Link>
-          </div>
-        </div>
+      <header 
+        className="sticky top-0 z-40 px-4 py-2 flex items-center justify-between shadow-sm"
+        style={{ backgroundColor: "#191970" }}
+      >
+        <Link href="/browse" className="flex items-center gap-2">
+          <TSLogo size={24} primaryColor="#ffffff" accentColor="#EFBF05" />
+        </Link>
+        <Link
+          href="/browse"
+          className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors"
+          title="Back to Discovery"
+        >
+          <ArrowLeft size={20} className="text-white" />
+        </Link>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 py-6">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-          <div className="bg-white rounded-lg p-4 border border-gray-200">
-            <div className="text-2xl font-bold text-gray-900">{stats.totalListings}</div>
-            <div className="text-sm text-gray-500">Listings</div>
-          </div>
-          <div className="bg-white rounded-lg p-4 border border-gray-200">
-            <div className="text-2xl font-bold text-green-600">{stats.activeListings}</div>
-            <div className="text-sm text-gray-500">Active</div>
-          </div>
-          <div className="bg-white rounded-lg p-4 border border-gray-200">
-            <div className="text-2xl font-bold text-gray-900">{stats.totalViews}</div>
-            <div className="text-sm text-gray-500">Views</div>
-          </div>
-          <div className="bg-white rounded-lg p-4 border border-gray-200">
-            <div className="text-2xl font-bold text-blue-600">{stats.totalSales}</div>
-            <div className="text-sm text-gray-500">Sold</div>
-          </div>
-        </div>
+      <main className="max-w-4xl mx-auto px-4 py-4">
+        {/* Profile Section */}
+        {profile && (
+          <div className="bg-white rounded-xl px-4 py-4 mb-4 border border-gray-200">
+            <div className="flex items-center gap-3 mb-4">
+              <div
+                className="w-12 h-12 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0"
+                style={{ backgroundColor: "#EFBF05" }}
+              >
+                {profile.avatar_url ? (
+                  <img src={profile.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-sm font-bold text-white">
+                    {profile.display_name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || "S"}
+                  </span>
+                )}
+              </div>
+              <div className="flex-1">
+                <h1 className="text-lg font-semibold" style={{ color: "#191970" }}>
+                  {profile.display_name || "Seller Dashboard"}
+                </h1>
+                <p className="text-xs text-gray-600">Storytelling seller since {getJoinYear()}</p>
+              </div>
+            </div>
 
-        {/* Messages Section */}
-        {user && (
-          <div className="mb-6">
-            <SellerMessages
-              userId={user.id}
-              expanded={messagesExpanded}
-              onToggleExpand={() => setMessagesExpanded(!messagesExpanded)}
-            />
+            {/* Stripe Payout Setup Banner */}
+            {needsStripeSetup && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <h2 className="text-xs font-semibold text-blue-900 leading-tight mb-1">Set Up Payouts</h2>
+                    <p className="text-[10px] leading-tight" style={{ color: "#333333" }}>
+                      ThriftShopper uses Stripe to process payouts. Complete onboarding to receive proceeds.
+                    </p>
+                  </div>
+                  <button
+                    onClick={async () => {
+                      try {
+                        const { data: { session } } = await supabase.auth.getSession();
+                        if (!session) {
+                          alert('Please log in to set up payouts');
+                          return;
+                        }
+                        const response = await fetch('/api/stripe/create-account-link', { 
+                          method: 'POST',
+                          headers: {
+                            'Authorization': `Bearer ${session.access_token}`,
+                          },
+                        });
+                        const data = await response.json();
+                        if (data.url) {
+                          window.location.href = data.url;
+                        } else if (data.error) {
+                          alert(data.error);
+                        }
+                      } catch (err) {
+                        console.error('Error creating Stripe link:', err);
+                        alert('Failed to set up payouts. Please try again.');
+                      }
+                    }}
+                    style={{ backgroundColor: '#1e3a8a', color: 'white' }}
+                    className="hover:opacity-90 text-xs h-8 px-4 shrink-0 leading-none rounded-lg flex items-center justify-center transition-all font-medium shadow-sm"
+                  >
+                    Set Up Payouts
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
         {/* Add New Listing Button */}
         <Link
           href="/sell"
-          className="w-full mb-6 py-4 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all"
+          className="w-full mb-4 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg"
           style={{ 
             backgroundColor: '#191970', 
             color: 'white',
@@ -322,27 +362,52 @@ export default function SellerDashboard() {
           Add New Listing
         </Link>
 
-        {/* My Listings */}
-        <div className="bg-white rounded-lg border border-gray-200">
-          <div className="px-4 py-3 border-b border-gray-200">
-            <h2 className="font-semibold text-gray-900">My Listings</h2>
+        {/* Stats Cards - Mobile-first vertical stack */}
+        <div className="flex flex-col gap-3 mb-4">
+          <div className="bg-white rounded-lg p-4 border border-gray-200">
+            <div className="text-2xl font-bold mb-1" style={{ color: "#10b981" }}>{stats.activeListings}</div>
+            <div className="text-[11px] font-medium text-gray-600">Active Listings</div>
           </div>
+          <div className="bg-white rounded-lg p-4 border border-gray-200">
+            <div className="text-2xl font-bold mb-1" style={{ color: "#191970" }}>{stats.totalListings - stats.activeListings}</div>
+            <div className="text-[11px] font-medium text-gray-600">Drafts</div>
+          </div>
+          <div className="bg-white rounded-lg p-4 border border-gray-200">
+            <div className="text-2xl font-bold mb-1" style={{ color: "#191970" }}>{stats.totalSales}</div>
+            <div className="text-[11px] font-medium text-gray-600">Sold Items</div>
+          </div>
+          <div className="bg-white rounded-lg p-4 border border-gray-200">
+            <div className="text-2xl font-bold mb-1" style={{ color: "#EFBF05" }}>$0.00</div>
+            <div className="text-[11px] font-medium text-gray-600">Total Earnings</div>
+          </div>
+        </div>
+
+        {/* Your Listings */}
+        <div className="mb-4">
+          <h2 className="text-base font-semibold mb-3" style={{ color: "#191970" }}>
+            Your Listings
+          </h2>
           
           {listings.length === 0 ? (
-            <div className="p-8 text-center text-gray-500">
-              <p>No listings yet.</p>
-              <p className="text-sm mt-1">Click "Add New Listing" to get started!</p>
+            <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
+              <p className="text-sm text-gray-600 mb-2">
+                No listings yet.{" "}
+                <Link href="/sell" className="text-[#191970] hover:underline font-medium">
+                  Create your first listing
+                </Link>
+              </p>
             </div>
           ) : (
-            <div className="divide-y divide-gray-200">
-              {listings.map((listing) => (
-                <div
-                  key={listing.id}
-                  className="flex items-center gap-4 p-4 hover:bg-gray-50 transition-colors relative"
-                >
+            <div className="bg-white rounded-lg border border-gray-200 max-h-[500px] overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
+              <div className="space-y-2 p-2">
+                {listings.map((listing) => (
+                  <div
+                    key={listing.id}
+                    className="bg-gray-50 rounded-lg border border-gray-200 p-3 hover:shadow-sm transition-shadow relative"
+                  >
                   <Link
                     href={`/listing/${listing.id}`}
-                    className="flex items-center gap-4 flex-1 min-w-0"
+                    className="flex items-center gap-3 flex-1 min-w-0"
                   >
                     {/* Thumbnail */}
                     <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
@@ -353,7 +418,7 @@ export default function SellerDashboard() {
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-gray-400">
+                        <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
                           No image
                         </div>
                       )}
@@ -361,24 +426,24 @@ export default function SellerDashboard() {
                     
                     {/* Details */}
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-medium text-gray-900 truncate">{listing.title}</h3>
-                      <p className="text-sm text-gray-600">${listing.price?.toFixed(2) || '0.00'}</p>
+                      <h3 className="font-medium text-sm text-gray-900 truncate mb-1">{listing.title}</h3>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-xs font-semibold" style={{ color: "#191970" }}>${listing.price?.toFixed(2) || '0.00'}</p>
+                        <span 
+                          className={`text-[10px] px-2 py-0.5 rounded-full ${
+                            listing.status === 'active' 
+                              ? 'bg-green-100 text-green-700' 
+                              : listing.status === 'sold'
+                              ? 'bg-blue-100 text-blue-700'
+                              : listing.status === 'hidden'
+                              ? 'bg-yellow-100 text-yellow-700'
+                              : 'bg-gray-100 text-gray-600'
+                          }`}
+                        >
+                          {listing.status || 'draft'}
+                        </span>
+                      </div>
                     </div>
-                    
-                    {/* Status */}
-                    <span 
-                      className={`text-xs px-2 py-1 rounded-full ${
-                        listing.status === 'active' 
-                          ? 'bg-green-100 text-green-700' 
-                          : listing.status === 'sold'
-                          ? 'bg-blue-100 text-blue-700'
-                          : listing.status === 'hidden'
-                          ? 'bg-yellow-100 text-yellow-700'
-                          : 'bg-gray-100 text-gray-600'
-                      }`}
-                    >
-                      {listing.status || 'draft'}
-                    </span>
                   </Link>
 
                   {/* Actions Menu */}
@@ -450,33 +515,47 @@ export default function SellerDashboard() {
                     )}
                   </div>
                 </div>
-              ))}
+                ))}
+              </div>
             </div>
           )}
         </div>
 
-        {/* Footer Actions */}
-        <div className="mt-8 pt-6 border-t border-gray-200">
-          <div className="flex items-center justify-between">
-            <Link
-              href="/account"
-              className="text-sm text-gray-600 hover:text-[#191970] transition-colors"
-            >
-              Want to shop instead? Go to My Canvas →
-            </Link>
-            <button
-              onClick={async () => {
-                await signOut();
-                router.push('/browse');
-              }}
-              className="text-sm text-gray-500 hover:text-gray-700 transition-colors flex items-center gap-2"
-            >
-              <LogOut size={14} />
-              Sign Out
-            </button>
-          </div>
-        </div>
       </main>
+
+      {/* Footer Navigation - Simplified like v0 */}
+      <nav 
+        className="fixed bottom-0 left-0 right-0 border-t border-gray-200 px-4 py-2.5 z-30"
+        style={{ backgroundColor: "#191970" }}
+      >
+        <div className="max-w-2xl mx-auto flex items-center justify-around">
+          <button
+            onClick={() => setMessagesOpen(true)}
+            className="flex flex-col items-center gap-0.5 text-white/70 hover:text-white transition-colors"
+          >
+            <MessageSquare className="h-4 w-4" />
+            <span className="text-[10px]">Messages</span>
+          </button>
+          <button
+            onClick={() => setSupportOpen(true)}
+            className="flex flex-col items-center gap-0.5 text-white/70 hover:text-white transition-colors"
+          >
+            <HelpCircle className="h-4 w-4" />
+            <span className="text-[10px]">Support</span>
+          </button>
+          <Link
+            href="/settings"
+            className="flex flex-col items-center gap-0.5 text-white/70 hover:text-white transition-colors"
+          >
+            <Settings className="h-4 w-4" />
+            <span className="text-[10px]">Settings</span>
+          </Link>
+        </div>
+      </nav>
+
+      {/* Modals */}
+      <MessagesModal isOpen={messagesOpen} onClose={() => setMessagesOpen(false)} />
+      <SupportModal isOpen={supportOpen} onClose={() => setSupportOpen(false)} />
     </div>
     </StreamChatProvider>
   );

@@ -42,6 +42,8 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
   const [searchResults, setSearchResults] = useState<Listing[] | null>(null);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [selectedMoods, setSelectedMoods] = useState<string[]>([]);
+  const [filteredListings, setFilteredListings] = useState<Listing[]>(initialListings);
+  const [noMoodResults, setNoMoodResults] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   
   const containerRef = useRef<HTMLDivElement>(null);
@@ -55,48 +57,54 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
     router.push(`/listing/${listingId}`);
   };
 
-  // Filter listings by selected moods (client-side filtering with keyword matching)
-  const displayListings = useMemo(() => {
-    // Start with either search results or all listings
-    let filtered = searchResults ?? listings;
-    
-    // Apply mood filtering if any moods are selected
-    if (selectedMoods.length > 0) {
-      console.log('Filtering by moods:', selectedMoods);
-      filtered = filtered.filter(listing => {
-        // Normalize the listing's mood/style/intent columns
-        const listingMoods = normalizeTagColumn(listing.moods);
-        const listingStyles = normalizeTagColumn(listing.styles);
-        const listingIntents = normalizeTagColumn(listing.intents);
-        
-        console.log(`Listing "${listing.title}":`, { 
-          moods: listingMoods, 
-          styles: listingStyles, 
-          intents: listingIntents 
-        });
-        
-        // Combine all tags from the listing
-        const allTags = [...listingMoods, ...listingStyles, ...listingIntents]
-          .map(tag => tag.toLowerCase());
-        
-        // Check if ALL selected moods match tags from the listing (AND logic)
-        const matches = selectedMoods.every(selectedMood => {
-          if (typeof selectedMood !== 'string') {
-            console.warn('Invalid selectedMood type:', selectedMood);
-            return false;
-          }
-          return allTags.includes(selectedMood.toLowerCase());
-        });
-        
-        console.log(`  → Matches? ${matches}`);
-        return matches;
+  // Apply mood filter function
+  const applyMoodFilter = (moods: string[]) => {
+    // keep track of selection
+    setSelectedMoods(moods);
+
+    // If nothing selected, reset to all listings and clear error
+    if (moods.length === 0) {
+      setFilteredListings(listings);
+      setNoMoodResults(false);
+      return;
+    }
+
+    const next = listings.filter((listing) => {
+      // Normalize the listing's mood/style/intent columns
+      const listingMoods = normalizeTagColumn(listing.moods);
+      const listingStyles = normalizeTagColumn(listing.styles);
+      const listingIntents = normalizeTagColumn(listing.intents);
+      
+      // Combine all tags from the listing
+      const allTags = [...listingMoods, ...listingStyles, ...listingIntents]
+        .map(tag => tag.toLowerCase());
+      
+      // Check if ALL selected moods match tags from the listing (AND logic)
+      const matches = moods.every(selectedMood => {
+        if (typeof selectedMood !== 'string') {
+          console.warn('Invalid selectedMood type:', selectedMood);
+          return false;
+        }
+        return allTags.includes(selectedMood.toLowerCase());
       });
       
-      console.log(`Filtered from ${(searchResults ?? listings).length} to ${filtered.length} products`);
+      return matches;
+    });
+
+    if (next.length === 0) {
+      // 🔴 important: do NOT change filteredListings or currentIndex
+      setNoMoodResults(true);
+      return;
     }
-    
-    return filtered;
-  }, [searchResults, listings, selectedMoods]);
+
+    // We have results – update the feed as normal
+    setNoMoodResults(false);
+    setFilteredListings(next);
+    setCurrentIndex(0); // Reset to first card when filter changes
+  };
+
+  // Display listings: use search results if available, otherwise use filtered listings
+  const displayListings = searchResults ?? filteredListings;
   
   const currentListing = displayListings[currentIndex];
 
@@ -269,13 +277,6 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
     });
   };
 
-  const handleMoodChange = (moods: string[]) => {
-    console.log('🎨 Moods updated:', moods);
-    setSelectedMoods(moods);
-    console.log('🎨 Selected moods now:', moods);
-    // Reset to first card when mood filter changes
-    setCurrentIndex(0);
-  };
 
   // Force MoodWheel to close when user swipes to next card
   const [moodWheelKey, setMoodWheelKey] = useState(0);
@@ -284,13 +285,59 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
     setMoodWheelKey(prev => prev + 1);
   }, [currentIndex]);
 
-  if (displayListings.length === 0) {
+  // Update filteredListings when listings change (but not when mood filter changes)
+  useEffect(() => {
+    if (selectedMoods.length === 0) {
+      setFilteredListings(listings);
+      setNoMoodResults(false);
+    } else if (!noMoodResults) {
+      // Only re-apply if we're not in a "no results" state
+      // This prevents clearing the current view when listings update
+      const next = listings.filter((listing) => {
+        const listingMoods = normalizeTagColumn(listing.moods);
+        const listingStyles = normalizeTagColumn(listing.styles);
+        const listingIntents = normalizeTagColumn(listing.intents);
+        const allTags = [...listingMoods, ...listingStyles, ...listingIntents]
+          .map(tag => tag.toLowerCase());
+        return selectedMoods.every(selectedMood => {
+          if (typeof selectedMood !== 'string') return false;
+          return allTags.includes(selectedMood.toLowerCase());
+        });
+      });
+      if (next.length > 0) {
+        setFilteredListings(next);
+        setNoMoodResults(false);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [listings]);
+
+  // Track if mood filtering resulted in no results
+  const hasMoodFilter = selectedMoods.length > 0;
+  const hasNoResults = displayListings.length === 0;
+  const isMoodFilterResult = hasMoodFilter && hasNoResults && searchResults === null && noMoodResults;
+
+  if (displayListings.length === 0 && !noMoodResults) {
     return (
       <div 
         className="fixed inset-0 flex flex-col items-center justify-center px-6"
         style={{ backgroundColor: COLORS.midnightBlue, fontFamily: 'Merriweather, serif' }}
       >
         <p className="text-white text-xl mb-2">No items found</p>
+        {isMoodFilterResult && (
+          <>
+            <p className="text-white/60 text-sm mb-4">
+              for selected moods: {selectedMoods.join(', ')}
+            </p>
+            <button
+              onClick={() => setSelectedMoods([])}
+              className="px-6 py-3 rounded-full text-sm font-medium"
+              style={{ backgroundColor: COLORS.oldGold, color: COLORS.midnightBlue }}
+            >
+              Clear mood filters
+            </button>
+          </>
+        )}
         {searchResults !== null && lastSearchQuery && (
           <p className="text-white/60 text-sm mb-4">
             for "{lastSearchQuery}"
@@ -299,7 +346,7 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
         {searchResults !== null && (
           <button
             onClick={clearSearch}
-            className="px-6 py-3 rounded-full text-sm"
+            className="px-6 py-3 rounded-full text-sm font-medium"
             style={{ backgroundColor: COLORS.oldGold, color: COLORS.midnightBlue }}
           >
             Clear search
@@ -343,7 +390,7 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
         {/* Active Mood Filters */}
         {selectedMoods.length > 0 && (
           <div 
-            className="flex flex-wrap"
+            className="flex flex-wrap items-center"
             style={{
               marginTop: '20px',
               marginLeft: '20px',
@@ -354,8 +401,8 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
               <button
                 key={mood}
                 onClick={() => {
-                  setSelectedMoods(prev => prev.filter(m => m !== mood));
-                  setCurrentIndex(0);
+                  const newMoods = selectedMoods.filter(m => m !== mood);
+                  applyMoodFilter(newMoods);
                 }}
                 className="flex items-center gap-1.5 font-medium transition-all hover:opacity-80"
                 style={{
@@ -374,6 +421,14 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
                 <span style={{ fontSize: '16px', fontWeight: 'bold', lineHeight: 1 }}>×</span>
               </button>
             ))}
+            {noMoodResults && (
+              <span 
+                className="text-xs italic"
+                style={{ color: '#ffcccb', marginLeft: '8px' }}
+              >
+                No items match these moods
+              </span>
+            )}
           </div>
         )}
 
@@ -576,7 +631,11 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
       <div className="fixed right-4 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-4">
         
         {/* MOOD WHEEL BUTTON */}
-        <StandaloneMoodWheel selectedMoods={selectedMoods} onMoodsChange={handleMoodChange} />
+        <StandaloneMoodWheel 
+          selectedMoods={selectedMoods} 
+          onMoodsChange={applyMoodFilter}
+          noResults={noMoodResults}
+        />
         
         {/* BOOKMARK/FAVORITES BUTTON */}
         <button

@@ -24,16 +24,17 @@
  */
 
 import { useState, useEffect } from 'react';
-import { createPortal } from 'react-dom';
 import { 
-  X, Sparkles, Heart, Gem, Palette, Clock, Coffee, Mountain, 
+  Sparkles, Heart, Gem, Palette, Clock, Coffee, Mountain, 
   Flower2, Minus, Stars, Crown, Zap, PartyPopper, Gift, User, 
   Sofa, Archive, Package, Utensils, Lamp, Calendar, Watch, Brush, Star 
 } from 'lucide-react';
+import MoodFilterModal from './MoodFilterModal';
 
 interface StandaloneMoodWheelProps {
   selectedMoods: string[];
   onMoodsChange: (moods: string[]) => void;
+  noResults?: boolean;
 }
 
 // Muted, vintage-inspired palette - sophisticated and less "bubble gum"
@@ -75,10 +76,11 @@ const categories = {
   ],
 };
 
-export function StandaloneMoodWheel({ selectedMoods, onMoodsChange }: StandaloneMoodWheelProps) {
+export function StandaloneMoodWheel({ selectedMoods, onMoodsChange, noResults = false }: StandaloneMoodWheelProps) {
   const [showModal, setShowModal] = useState(false);
   const [activeTab, setActiveTab] = useState<'Moods' | 'Intents' | 'Styles'>('Moods');
   const [mounted, setMounted] = useState(false);
+  const [noMoodResults, setNoMoodResults] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -162,342 +164,98 @@ export function StandaloneMoodWheel({ selectedMoods, onMoodsChange }: Standalone
       </button>
 
       {/* MODAL */}
-      {showModal && mounted && createPortal(
-        <div 
-          onClick={(e) => {
-            // Prevent any clicks from bubbling to elements below
-            e.stopPropagation();
-          }}
-          onTouchStart={(e) => {
-            // Prevent touch events from bubbling
-            e.stopPropagation();
-          }}
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            zIndex: 9999,
-            display: 'flex',
-            alignItems: 'stretch',
-            justifyContent: 'flex-end'
-          }}
+      {mounted && (
+        <MoodFilterModal
+          isOpen={showModal}
+          onClose={() => setShowModal(false)}
+          onClear={() => onMoodsChange([])}
         >
-          {/* Backdrop */}
-          <div 
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowModal(false);
-            }}
-            onTouchStart={(e) => {
-              e.stopPropagation();
-            }}
-            onTouchEnd={(e) => {
-              e.stopPropagation();
-              e.preventDefault();
-              setShowModal(false);
-            }}
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              backgroundColor: 'rgba(0, 0, 0, 0.6)',
-              backdropFilter: 'blur(4px)',
-              touchAction: 'none'
-            }}
-          />
-          
-          {/* Modal Content */}
-          <div 
-            className="mood-drawer"
-            onClick={(e) => {
-              // Prevent clicks inside modal from closing it or bubbling
-              e.stopPropagation();
-            }}
-            onTouchStart={(e) => {
-              // Prevent touch events from bubbling
-              e.stopPropagation();
-            }}
-            onTouchEnd={(e) => {
-              // Prevent touch end from bubbling
-              e.stopPropagation();
-            }}
-            style={{ 
-              width: isMobile ? '85vw' : '280px', 
-              maxWidth: isMobile ? '320px' : '300px',
-              maxHeight: '90vh',
-              display: 'flex',
-              flexDirection: 'column',
-              overflow: 'hidden',
-              pointerEvents: 'auto',
-              borderRadius: isMobile ? '12px' : '16px',
-              marginTop: 'auto',
-              marginBottom: 'auto',
-              backgroundColor: 'rgba(25, 25, 7, 0.82)',
-              boxShadow: '0 12px 24px rgba(0,0,0,0.14)',
-              backdropFilter: 'blur(18px)',
-              WebkitBackdropFilter: 'blur(18px)',
-              touchAction: 'none'
-            }}
-          >
-            {/* Header */}
-            <div 
-              className="text-white" 
-              style={{ 
-                padding: '8px 12px', 
-                width: '100%',
-                height: '40px',
-                flexShrink: 0,
-                backgroundColor: '#000080',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between'
-              }}
-            >
-              <h2 style={{ fontSize: '14px', fontWeight: 600, margin: 0 }}>
-                Choose Your Vibe
-              </h2>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowModal(false);
-                }}
-                onTouchStart={(e) => {
-                  e.stopPropagation();
-                }}
-                onTouchEnd={(e) => {
-                  e.stopPropagation();
-                  e.preventDefault();
-                  setShowModal(false);
-                }}
-                style={{
-                  padding: '3px',
-                  cursor: 'pointer',
-                  backgroundColor: 'transparent',
-                  border: 'none',
-                  color: 'white',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  borderRadius: '3px',
-                  transition: 'background-color 0.2s'
-                }}
-                className="hover:bg-white/20"
-              >
-                <X style={{ width: '16px', height: '16px' }} />
-              </button>
-            </div>
-
-            {/* Tabs */}
-            <div 
-              style={{ 
-                display: 'flex', 
-                width: '100%', 
-                flexShrink: 0,
-                backgroundColor: '#F6F3EE',
-                paddingTop: '8px',
-                paddingBottom: '4px',
-                paddingLeft: isMobile ? '16px' : '16px',
-                paddingRight: isMobile ? '16px' : '16px',
-                gap: isMobile ? '12px' : '4px'
-              }}
-            >
-              {(Object.keys(categories) as Array<keyof typeof categories>).map((tab) => (
-                <button
-                  key={tab}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setActiveTab(tab);
-                  }}
-                  onTouchStart={(e) => {
-                    e.stopPropagation();
-                  }}
-                  onTouchEnd={(e) => {
-                    e.stopPropagation();
-                    e.preventDefault();
-                    setActiveTab(tab);
-                  }}
-                  style={{
-                    flex: 1,
-                    paddingBottom: '4px',
-                    fontSize: '12px',
-                    fontWeight: 500,
-                    transition: 'all 0.2s',
-                    color: activeTab === tab ? '#000080' : '#333',
-                    backgroundColor: 'transparent',
-                    borderTop: 'none',
-                    borderLeft: 'none',
-                    borderRight: 'none',
-                    borderBottom: activeTab === tab ? '2px solid #EFBF04' : '2px solid transparent',
-                    cursor: 'pointer'
-                  }}
-                >
-                  {tab}
-                </button>
-              ))}
-            </div>
-
-            {/* Mood Grid */}
-            <div style={{ 
-              padding: isMobile ? '10px 16px 0 16px' : '8px 16px 0 16px', 
-              overflowY: 'auto', 
-              maxHeight: '75vh', 
-              width: '100%'
-            }}>
-              <div style={{ 
-                display: 'grid', 
-                gridTemplateColumns: 'repeat(2, 1fr)', 
-                gap: '10px 8px',
-                width: '100%' 
-              }}>
-                {categories[activeTab].map((mood) => {
-                  const isSelected = selectedMoods.includes(mood.name);
-                  
+          {/* Tabs: Moods / Intents / Styles */}
+          <div className="w-full px-3 mt-2 mb-1">
+            <div className="flex w-full justify-center bg-black/10 rounded-full py-1">
+              <div className="
+                flex items-center justify-between 
+                gap-1 rounded-full 
+                bg-white/6 
+                px-1 py-1
+              ">
+                {['Moods','Intents','Styles'].map((tab) => {
+                  const tabKey = tab as 'Moods' | 'Intents' | 'Styles';
+                  const isActive = activeTab === tabKey;
                   return (
-                <button
-                  key={mood.name}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleMood(mood.name);
-                  }}
-                  onTouchStart={(e) => {
-                    e.stopPropagation();
-                  }}
-                  onTouchEnd={(e) => {
-                    e.stopPropagation();
-                    e.preventDefault();
-                    toggleMood(mood.name);
-                  }}
-                  className="mood-chip"
-                  style={{ 
-                    padding: '7px 10px',
-                    borderRadius: '9999px',
-                    fontSize: '12px',
-                    fontWeight: 500,
-                    color: '#FFFFFF',
-                    backgroundColor: mood.color,
-                    border: isSelected ? '2px solid #EFBF04' : '1px solid rgba(0,0,0,0.08)',
-                    boxShadow: isSelected 
-                      ? '0 4px 12px rgba(239, 191, 4, 0.4), 0 2px 6px rgba(0,0,0,0.2)' 
-                      : '0 2px 4px rgba(0,0,0,0.10)',
-                    outline: 'none',
-                    outlineOffset: '0',
-                    transition: 'all 120ms ease',
-                    cursor: 'pointer',
-                    position: 'relative',
-                    overflow: 'hidden',
-                    textAlign: 'center',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    minHeight: '34px',
-                    lineHeight: '1.2'
-                  }}
-                  onMouseEnter={(e) => {
-                    if (window.innerWidth > 767) {
-                      e.currentTarget.style.transform = 'scale(1.03)';
-                      e.currentTarget.style.boxShadow = '0 3px 8px rgba(0,0,0,0.16)';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (window.innerWidth > 767) {
-                      e.currentTarget.style.transform = 'scale(1)';
-                      e.currentTarget.style.boxShadow = isSelected 
-                        ? '0 4px 10px rgba(0,0,0,0.18)' 
-                        : '0 2px 4px rgba(0,0,0,0.10)';
-                    }
-                  }}
-                >
-                      {mood.name}
+                    <button
+                      key={tab}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setActiveTab(tabKey);
+                      }}
+                      className={`
+                        flex-1 text-center text-[11px] py-1.5 rounded-full transition-all
+                        ${isActive 
+                          ? 'bg-white/20 text-white font-semibold shadow-sm' 
+                          : 'text-white/55 hover:bg-white/10 hover:text-white'}
+                      `}
+                    >
+                      {tab}
                     </button>
                   );
                 })}
               </div>
             </div>
-
-            {/* Footer */}
-            <div 
-              style={{ 
-                padding: '8px 20px',
-                width: '100%', 
-                flexShrink: 0,
-                backgroundColor: 'white',
-                borderTop: '1px solid rgba(0,0,0,0.06)',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center'
-              }}
-            >
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onMoodsChange([]);
-                }}
-                onTouchStart={(e) => {
-                  e.stopPropagation();
-                }}
-                onTouchEnd={(e) => {
-                  e.stopPropagation();
-                  e.preventDefault();
-                  onMoodsChange([]);
-                }}
-                style={{
-                  fontSize: '12px',
-                  color: '#666',
-                  backgroundColor: 'transparent',
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontWeight: 500,
-                  padding: '3px 6px'
-                }}
-              >
-                Clear
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowModal(false);
-                }}
-                onTouchStart={(e) => {
-                  e.stopPropagation();
-                }}
-                onTouchEnd={(e) => {
-                  e.stopPropagation();
-                  e.preventDefault();
-                  setShowModal(false);
-                }}
-                style={{
-                  padding: '6px 14px',
-                  fontSize: '12px',
-                  backgroundColor: '#000080',
-                  color: 'white',
-                  borderRadius: '6px',
-                  transition: 'all 120ms ease',
-                  fontWeight: 600,
-                  border: 'none',
-                  cursor: 'pointer',
-                  boxShadow: '0 2px 5px rgba(0,0,0,0.2)'
-                }}
-                onMouseEnter={(e) => {
-                  if (window.innerWidth > 767) {
-                    e.currentTarget.style.transform = 'scale(1.03)';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (window.innerWidth > 767) {
-                    e.currentTarget.style.transform = 'scale(1)';
-                  }
-                }}
-              >
-                Done
-              </button>
-            </div>
+            
+            {/* Mobile-only helper text */}
+            <p className="mt-1.5 mb-0.5 text-[9px] text-white/50 text-center md:hidden">
+              Pick from categories: moods, intents, or styles
+            </p>
           </div>
-        </div>,
-        document.body
+
+          {/* Mood Grid */}
+          <div className="overflow-y-auto max-h-[60vh] pt-3 -mt-1">
+            <div className={`grid gap-y-2 gap-x-3 transition-all duration-150
+              ${activeTab === 'Moods' ? 'grid-cols-2' : 'grid-cols-2'}
+            `}>
+              {categories[activeTab].map((mood) => {
+                const isSelected = selectedMoods.includes(mood.name);
+                
+                return (
+                  <button
+                    key={mood.name}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleMood(mood.name);
+                    }}
+                    className={`
+                      px-3 py-[6px]
+                      rounded-full
+                      text-[11px]
+                      font-medium
+                      text-white
+                      transition-all
+                      min-h-[28px]
+                      flex items-center justify-center
+                    `}
+                    style={{
+                      backgroundColor: mood.color,
+                      border: '1px solid rgba(255,255,255,0.3)',
+                      boxShadow: isSelected
+                        ? '0 0 0 2px #EFBF04, 0 4px 10px rgba(0,0,0,0.4)'
+                        : '0 2px 4px rgba(0,0,0,0.25)',
+                    }}
+                  >
+                    {mood.name}
+                  </button>
+                );
+              })}
+            </div>
+            
+            {/* No Results Message */}
+            {noResults && (
+              <p className="mt-1 text-xs text-white/80 text-center">
+                No items match this combo yet. Try fewer moods or tap Clear.
+              </p>
+            )}
+          </div>
+        </MoodFilterModal>
       )}
     </>
   );

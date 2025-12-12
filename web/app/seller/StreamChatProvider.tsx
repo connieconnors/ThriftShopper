@@ -12,6 +12,7 @@ type StreamChatContextValue = {
   userId: string | null;
   loading: boolean;
   error: string | null;
+  isConnected: boolean; // Add connection state
 };
 
 const StreamChatContext = createContext<StreamChatContextValue | undefined>(undefined);
@@ -46,16 +47,52 @@ export function StreamChatProvider({ children }: ProviderProps) {
 
         const data = await res.json();
         if (!res.ok) {
-          // Silently fail for now; chat is optional
-          console.warn("Stream token request failed:", data?.error || res.statusText);
+          console.error("Stream token request failed:", {
+            status: res.status,
+            statusText: res.statusText,
+            error: data?.error,
+            details: data?.details
+          });
           if (isMounted) {
             setError(data?.error || "Chat unavailable");
           }
           return;
         }
 
+        // Use getInstance with the API key from the server
         chat = StreamChat.getInstance(data.apiKey);
-        await chat.connectUser({ id: data.userId }, data.token);
+        
+        // Connect user and wait for it to complete
+        try {
+          await chat.connectUser({ id: data.userId }, data.token);
+          
+          // Verify connection was successful
+          if (!chat.userID) {
+            throw new Error("Failed to connect user to Stream Chat - userID not set");
+          }
+          
+          // Wait for WebSocket connection to be established
+          // Stream Chat needs both the user token AND the WS connection
+          let retries = 0;
+          while (retries < 10 && (!chat.wsConnection || !chat.wsConnection.isHealthy)) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+            retries++;
+          }
+          
+          if (!chat.wsConnection || !chat.wsConnection.isHealthy) {
+            console.warn("Stream Chat WS connection not healthy after connect, but continuing...");
+          }
+          
+          console.log("Stream Chat connected successfully for user:", data.userId);
+          console.log("Connection state:", {
+            userID: chat.userID,
+            wsHealthy: chat.wsConnection?.isHealthy,
+            connectionID: chat.connectionID
+          });
+        } catch (connectError) {
+          console.error("Stream Chat connectUser error:", connectError);
+          throw connectError;
+        }
 
         if (!isMounted) {
           await chat.disconnectUser();
@@ -92,6 +129,7 @@ export function StreamChatProvider({ children }: ProviderProps) {
       userId: user?.id ?? null,
       loading,
       error,
+      isConnected: client ? !!client.userID : false, // Check if user is connected
     }),
     [client, user?.id, loading, error]
   );
