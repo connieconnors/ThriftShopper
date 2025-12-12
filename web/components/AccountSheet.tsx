@@ -48,6 +48,12 @@ const AccountSheet: React.FC<AccountSheetProps> = ({ isOpen, onClose }) => {
     <div
       className="fixed inset-0 z-50 flex items-end justify-center bg-black/35 backdrop-blur-sm"
       onClick={onClose}
+      onTouchStart={(e) => {
+        // Only close if touching the backdrop, not the modal content
+        if (e.target === e.currentTarget) {
+          onClose();
+        }
+      }}
     >
       {/* iOS-style action sheet */}
       <div
@@ -59,7 +65,17 @@ const AccountSheet: React.FC<AccountSheetProps> = ({ isOpen, onClose }) => {
           bg-white/95
           shadow-[0_18px_40px_rgba(0,0,0,0.35)]
         "
+        style={{ touchAction: 'pan-y' }}
         onClick={(e) => e.stopPropagation()}
+        onTouchStart={(e) => {
+          e.stopPropagation();
+        }}
+        onTouchMove={(e) => {
+          e.stopPropagation();
+        }}
+        onTouchEnd={(e) => {
+          e.stopPropagation();
+        }}
       >
         {/* Handle */}
         <div className="flex justify-center pt-8 pb-2">
