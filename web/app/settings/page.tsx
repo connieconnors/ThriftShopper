@@ -6,7 +6,7 @@ import Link from "next/link"
 import { useAuth } from "../context/AuthContext"
 import { supabase } from "../../lib/supabaseClient"
 import { TSLogo } from "@/components/TSLogo"
-import { ArrowLeft, User, MapPin, CreditCard, Bell, Shield, Plus, Trash2, Edit, ExternalLink, LogOut } from "lucide-react"
+import { ArrowLeft, User, MapPin, CreditCard, Bell, Shield, Plus, Trash2, Edit, ExternalLink, LogOut, FileText, Scale } from "lucide-react"
 
 export default function SettingsPage() {
   const router = useRouter()
@@ -57,7 +57,7 @@ export default function SettingsPage() {
         setFormData({
           display_name: profileData.display_name || "",
           email: profileData.email || user.email || "",
-          phone: profileData.phone || "",
+          phone: profileData.phone_main || profileData.phone || "", // Support both phone_main (new) and phone (legacy)
         })
       } else {
         setFormData({
@@ -90,7 +90,7 @@ export default function SettingsPage() {
           user_id: user.id,
           display_name: formData.display_name,
           email: formData.email,
-          phone: formData.phone || null,
+          phone_main: formData.phone || null, // Use phone_main (stores can have store phone and mobile)
         }, {
           onConflict: "user_id",
         })
@@ -509,6 +509,45 @@ export default function SettingsPage() {
             <button className="w-full justify-start py-2.5 text-xs rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors text-left px-3">
               Download My Data
             </button>
+          </div>
+        </div>
+
+        {/* Legal Section */}
+        <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
+          <div className="flex items-center gap-2 mb-4">
+            <Scale className="h-4 w-4" style={{ color: "#191970" }} />
+            <h2 className="text-sm font-semibold" style={{ color: "#191970" }}>
+              Legal
+            </h2>
+          </div>
+          <div className="space-y-3">
+            <a
+              href="https://thriftshopper.com/terms"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-between w-full py-2.5 text-xs rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors px-3 text-gray-700"
+            >
+              <span>Terms of Service</span>
+              <ExternalLink className="h-3 w-3 text-gray-400" />
+            </a>
+            <a
+              href="https://thriftshopper.com/privacy"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-between w-full py-2.5 text-xs rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors px-3 text-gray-700"
+            >
+              <span>Privacy Policy</span>
+              <ExternalLink className="h-3 w-3 text-gray-400" />
+            </a>
+            <a
+              href="https://thriftshopper.com/allowed-items"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-between w-full py-2.5 text-xs rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors px-3 text-gray-700"
+            >
+              <span>Allowed & Prohibited Items</span>
+              <ExternalLink className="h-3 w-3 text-gray-400" />
+            </a>
           </div>
         </div>
 

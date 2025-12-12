@@ -45,15 +45,29 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
   const [filteredListings, setFilteredListings] = useState<Listing[]>(initialListings);
   const [noMoodResults, setNoMoodResults] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   
   const containerRef = useRef<HTMLDivElement>(null);
+  
+  // Prevent hydration errors by only rendering after mount
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   const touchStartY = useRef(0);
   const touchDeltaY = useRef(0);
   const [dragOffset, setDragOffset] = useState(0);
   const [countdown, setCountdown] = useState(8);
 
+  // Haptic feedback helper (if supported)
+  const triggerHaptic = useCallback(() => {
+    if (typeof window !== 'undefined' && 'vibrate' in navigator) {
+      navigator.vibrate(10); // 10ms light vibration
+    }
+  }, []);
+
   // Navigate to product detail when card is clicked
   const handleCardClick = (listingId: string) => {
+    triggerHaptic();
     router.push(`/listing/${listingId}`);
   };
 
@@ -103,11 +117,6 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
     setCurrentIndex(0); // Reset to first card when filter changes
   };
 
-  // Display listings: use search results if available, otherwise use filtered listings
-  const displayListings = searchResults ?? filteredListings;
-  
-  const currentListing = displayListings[currentIndex];
-
   // Handle completed voice transcription
   const handleTranscriptComplete = useCallback(async (transcript: string) => {
     if (transcript.trim()) {
@@ -145,15 +154,33 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
     setIsListening(isRecording || isProcessing);
   }, [isRecording, isProcessing]);
 
-  // Keyboard navigation
+  // Display listings: use search results if available, otherwise use filtered listings
+  // Compute this early so it can be used in hooks below
+  const displayListings = searchResults ?? filteredListings;
+
+  // Keyboard navigation (client-side only to avoid hydration issues)
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "ArrowDown" || e.key === "j") goToNext();
-      if (e.key === "ArrowUp" || e.key === "k") goToPrevious();
+      if (e.key === "ArrowDown" || e.key === "j") {
+        if (currentIndex < displayListings.length - 1 && !isTransitioning) {
+          setIsTransitioning(true);
+          setCurrentIndex(prev => prev + 1);
+          setTimeout(() => setIsTransitioning(false), 400);
+        }
+      }
+      if (e.key === "ArrowUp" || e.key === "k") {
+        if (currentIndex > 0 && !isTransitioning) {
+          setIsTransitioning(true);
+          setCurrentIndex(prev => prev - 1);
+          setTimeout(() => setIsTransitioning(false), 400);
+        }
+      }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [currentIndex, displayListings.length]);
+  }, [currentIndex, displayListings.length, isTransitioning]);
 
   const goToNext = useCallback(() => {
     if (currentIndex < displayListings.length - 1 && !isTransitioning) {
@@ -180,7 +207,12 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
   const handleTouchMove = (e: TouchEvent) => {
     const delta = touchStartY.current - e.touches[0].clientY;
     touchDeltaY.current = delta;
+    // Smooth drag with momentum
     setDragOffset(-delta * 0.5);
+    // Prevent default scrolling for smoother experience
+    if (Math.abs(delta) > 5) {
+      e.preventDefault();
+    }
   };
 
   const handleTouchEnd = (e: TouchEvent) => {
@@ -312,6 +344,9 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [listings]);
 
+  // currentListing computed after all hooks
+  const currentListing = displayListings[currentIndex];
+
   // Track if mood filtering resulted in no results
   const hasMoodFilter = selectedMoods.length > 0;
   const hasNoResults = displayListings.length === 0;
@@ -363,38 +398,66 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
   const hasTSBadge = hasSellerTSBadge(currentListing);
 
   return (
-    <div
-      ref={containerRef}
-      className="fixed inset-0 overflow-hidden select-none"
-      style={{ backgroundColor: '#000', fontFamily: 'Merriweather, serif' }}
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
-    >
-      {/* ===== HEADER (matches guide spec) ===== */}
+    <>
+      {/* CSS Animations */}
+      <style jsx global>{`
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
+        }
+      `}</style>
       <div
-        className="absolute top-0 left-0 right-0 z-30 p-6"
-        style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, transparent 100%)' }}
+        ref={containerRef}
+        className="fixed inset-0 overflow-hidden select-none"
+        style={{ 
+          backgroundColor: '#000', 
+          fontFamily: 'Merriweather, serif',
+          margin: 0,
+          padding: 0,
+        }}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
       >
-        <div className="flex items-center justify-between">
-          {/* Left: TS Logo + Tagline */}
-          <div className="flex items-center gap-3">
-            <TSLogo size={40} primaryColor={COLORS.navy} accentColor={COLORS.gold} />
-            <p className="text-sm italic font-bold" style={{ color: COLORS.gold }}>
-              the magic of discovery™
-            </p>
-          </div>
+      {/* ===== TOP GRADIENT OVERLAY (for status bar readability) ===== */}
+      <div
+        className="absolute top-0 left-0 right-0 z-30 pointer-events-none"
+        style={{ 
+          height: '120px',
+          background: 'linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, transparent 100%)' 
+        }}
+      />
 
+      {/* ===== HEADER (TikTok-style, top-left, smaller) ===== */}
+      <div
+        className="absolute top-0 left-0 z-30 p-4"
+        style={{ pointerEvents: 'none' }}
+      >
+        {/* Left: TS Logo + Tagline */}
+        <div className="flex flex-col gap-1" style={{ opacity: 0.9 }}>
+          <TSLogo size={32} primaryColor={COLORS.navy} accentColor={COLORS.gold} />
+          <p 
+            className="italic font-bold leading-tight"
+            style={{ 
+              color: COLORS.gold,
+              fontSize: '11px',
+            }}
+          >
+            the magic of discovery™
+          </p>
         </div>
         
         {/* Active Mood Filters */}
         {selectedMoods.length > 0 && (
           <div 
-            className="flex flex-wrap items-center"
+            className="flex flex-wrap items-center mt-3"
             style={{
-              marginTop: '20px',
-              marginLeft: '20px',
-              gap: '8px'
+              gap: '8px',
+              pointerEvents: 'auto', // Re-enable pointer events for buttons
             }}
           >
             {selectedMoods.map(mood => (
@@ -523,67 +586,168 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
               className="absolute inset-0 w-full h-full"
               style={{
                 transform: `translateY(${offset * 100}%)`,
-                transition: 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+                transition: 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease-out',
+                opacity: offset === 0 ? 1 : 0.7,
                 zIndex: offset === 0 ? 10 : 5,
+                animation: offset === 0 ? 'fadeIn 0.3s ease-out' : 'none',
               }}
             >
-              {/* Full-bleed Background Image - Simple object-cover */}
+              {/* Full-bleed Background Image - Edge-to-edge, no margins/padding, fully tappable */}
               <div 
                 className="absolute inset-0 cursor-pointer"
-                onClick={() => offset === 0 && handleCardClick(listing.id)}
+                style={{
+                  margin: 0,
+                  padding: 0,
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  minHeight: '44px', // Accessibility: ensure tappable area
+                  minWidth: '44px',
+                }}
+                onClick={() => {
+                  if (offset === 0) {
+                    triggerHaptic();
+                    handleCardClick(listing.id);
+                  }
+                }}
+                onTouchEnd={(e) => {
+                  // Ensure tap works on touch devices
+                  if (offset === 0 && Math.abs(touchDeltaY.current) < 10) {
+                    triggerHaptic();
+                    handleCardClick(listing.id);
+                  }
+                }}
               >
                 {listingImage ? (
                   <img
                     src={listingImage}
                     alt={listing.title}
                     className="w-full h-full object-cover"
+                    style={{
+                      margin: 0,
+                      padding: 0,
+                      display: 'block',
+                      width: '100%',
+                      height: '100%',
+                    }}
                     draggable={false}
                   />
                 ) : (
                   <div 
                     className="w-full h-full flex items-center justify-center"
-                    style={{ backgroundColor: COLORS.midnightBlue }}
+                    style={{ 
+                      backgroundColor: COLORS.midnightBlue,
+                      margin: 0,
+                      padding: 0,
+                    }}
                   >
                     <span className="text-6xl opacity-30">📦</span>
                   </div>
                 )}
               </div>
 
-              {/* Dark Gradient Overlay */}
+              {/* Enhanced Gradient Overlays for text readability on both light and dark images */}
               <div 
                 className="absolute inset-0 pointer-events-none"
-                style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 50%)' }}
+                style={{ 
+                  background: `
+                    linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.4) 35%, rgba(0,0,0,0.2) 50%, transparent 70%),
+                    linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, transparent 25%)
+                  `
+                }}
               />
 
-              {/* TOP RIGHT: Clean - no buttons here (moved to bottom bar) */}
+              {/* Image Counter - Top Right (only show for current card) */}
+              {offset === 0 && (
+                <div 
+                  className="absolute pointer-events-none z-10"
+                  style={{ 
+                    top: '16px',
+                    right: '16px',
+                  }}
+                >
+                  <div 
+                    className="px-3 py-1.5 rounded-full"
+                    style={{ 
+                      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                      backdropFilter: 'blur(8px)',
+                      fontSize: '13px',
+                      color: 'rgba(255, 255, 255, 0.9)',
+                      fontWeight: '500',
+                    }}
+                  >
+                    {currentIndex + 1} / {displayListings.length}
+                  </div>
+                </div>
+              )}
 
-              {/* Product Info (bottom overlay) */}
-              <div className="absolute bottom-0 left-0 right-0 pb-28 px-6 text-white pointer-events-none">
-                {/* Title */}
-                <h1 className="text-lg font-bold mb-2 leading-tight">
+              {/* Product Info (TikTok-style bottom-left overlay) */}
+              <div 
+                className="absolute bottom-0 left-0 text-left pointer-events-none z-10"
+                style={{ 
+                  paddingLeft: '20px',
+                  paddingBottom: '24px',
+                  paddingRight: '20px',
+                  maxWidth: '80%'
+                }}
+              >
+                {/* Title (white, bold, 22-24px, with enhanced text shadow for readability) */}
+                <h1 
+                  className="font-bold leading-tight mb-1"
+                  style={{ 
+                    color: 'white',
+                    fontSize: '23px',
+                    textShadow: '0 2px 8px rgba(0,0,0,0.6), 0 1px 2px rgba(0,0,0,0.4)',
+                  }}
+                >
                   {listing.title}
                 </h1>
 
-                {/* Price */}
-                <p className="text-base font-bold mb-3" style={{ color: COLORS.oldGold }}>
+                {/* Price (gold/yellow, 20px, positioned directly under title, with text shadow) */}
+                <p 
+                  className="font-bold mb-2"
+                  style={{ 
+                    color: '#D4AF37',
+                    fontSize: '20px',
+                    textShadow: '0 2px 6px rgba(0,0,0,0.5), 0 1px 2px rgba(0,0,0,0.3)',
+                  }}
+                >
                   ${listing.price?.toFixed(2) || '0.00'}
                 </p>
 
-                {/* Description (truncated) */}
+                {/* Description (gray/white, 14px, max 2 lines with ellipsis) */}
                 {listing.description && (
-                  <p className="text-sm opacity-80 line-clamp-2 mb-3 max-w-lg">
+                  <p 
+                    className="mb-2"
+                    style={{ 
+                      fontSize: '14px',
+                      color: 'rgba(255, 255, 255, 0.9)',
+                      lineHeight: '1.4',
+                      display: '-webkit-box',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                    }}
+                  >
                     {listing.description}
                   </p>
                 )}
 
-                {/* Tags - handle both string and array */}
-                <div className="flex flex-wrap gap-2 mb-3">
+                {/* Category Tags - positioned above description (but in visual order, they're below) */}
+                <div className="flex flex-wrap gap-2 mb-2">
                   {listing.category && (
                     <span 
-                      className="px-3 py-1 text-xs font-medium rounded-full"
+                      className="px-3 rounded-full text-xs font-medium"
                       style={{ 
-                        backgroundColor: 'rgba(207, 181, 59, 0.3)',
-                        border: '1px solid #cfb53b',
+                        height: '32px',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                        backdropFilter: 'blur(4px)',
+                        color: 'white',
+                        border: '1px solid rgba(255, 255, 255, 0.3)',
                       }}
                     >
                       {listing.category}
@@ -593,10 +757,15 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
                   {normalizeTagColumn(listing.styles).slice(0, 2).map((style: string, i: number) => (
                     <span
                       key={`${style}-${i}`}
-                      className="px-3 py-1 text-xs rounded-full"
+                      className="px-3 rounded-full text-xs font-medium"
                       style={{ 
-                        backgroundColor: 'rgba(207, 181, 59, 0.3)',
-                        border: '1px solid #cfb53b',
+                        height: '32px',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                        backdropFilter: 'blur(4px)',
+                        color: 'white',
+                        border: '1px solid rgba(255, 255, 255, 0.3)',
                       }}
                     >
                       {style}
@@ -604,21 +773,40 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
                   ))}
                 </div>
 
-                {/* Seller Info */}
-                <div className="flex items-center gap-2">
+                {/* Seller Info - smaller, under category tags */}
+                <div className="flex items-center gap-2 mt-1">
                   {listingSellerAvatar ? (
-                    <img src={listingSellerAvatar} alt="" className="w-6 h-6 rounded-full object-cover" />
+                    <img 
+                      src={listingSellerAvatar} 
+                      alt="" 
+                      className="rounded-full object-cover"
+                      style={{ width: '24px', height: '24px' }}
+                    />
                   ) : (
                     <div 
-                      className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold"
-                      style={{ backgroundColor: COLORS.oldGold, color: COLORS.midnightBlue }}
+                      className="rounded-full flex items-center justify-center text-xs font-bold"
+                      style={{ 
+                        width: '24px', 
+                        height: '24px',
+                        backgroundColor: COLORS.oldGold, 
+                        color: COLORS.midnightBlue,
+                        fontSize: '10px',
+                      }}
                     >
                       {listingSellerName.charAt(0)}
                     </div>
                   )}
-                  <span className="text-sm opacity-80">Sold by {listingSellerName}</span>
+                  <span 
+                    className="text-xs"
+                    style={{ 
+                      color: 'rgba(255, 255, 255, 0.7)',
+                      fontSize: '12px',
+                    }}
+                  >
+                    Sold by {listingSellerName}
+                  </span>
                   {listingHasTSBadge && (
-                    <img src={TS_BADGE_URL} alt="TS" className="w-4 h-4" />
+                    <img src={TS_BADGE_URL} alt="TS" className="w-3 h-3" />
                   )}
                 </div>
               </div>
@@ -627,26 +815,44 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
         })}
       </div>
 
-      {/* ===== RIGHT SIDE FLOATING BUTTONS (TikTok/Reels style) ===== */}
-      <div className="fixed right-4 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-4">
-        
+      {/* ===== RIGHT SIDE FLOATING BUTTONS (TikTok-style) ===== */}
+      <div 
+        className="fixed z-20 flex flex-col"
+        style={{ 
+          right: '16px',
+          top: '50%',
+          transform: 'translateY(-20%)', // Slightly below center
+          gap: '16px'
+        }}
+      >
         {/* MOOD WHEEL BUTTON */}
-        <StandaloneMoodWheel 
-          selectedMoods={selectedMoods} 
-          onMoodsChange={applyMoodFilter}
-          noResults={noMoodResults}
-        />
+        <div className="relative">
+          <StandaloneMoodWheel 
+            selectedMoods={selectedMoods} 
+            onMoodsChange={applyMoodFilter}
+            noResults={noMoodResults}
+          />
+        </div>
         
         {/* BOOKMARK/FAVORITES BUTTON */}
         <button
           onClick={() => currentListing && toggleFavorite(currentListing.id)}
-          className="w-12 h-12 rounded-full hover:opacity-90 transition-all shadow-lg relative flex items-center justify-center"
-          style={{ backgroundColor: '#000080' }}
+          className="rounded-full hover:opacity-90 transition-all relative flex items-center justify-center"
+          style={{ 
+            width: '48px',
+            height: '48px',
+            backgroundColor: 'rgba(255, 255, 255, 0.2)',
+            backdropFilter: 'blur(8px)',
+            border: '1px solid rgba(255, 255, 255, 0.3)',
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+          }}
           aria-label="Favorites"
         >
           <Bookmark 
             className="w-6 h-6"
             style={{
+              width: '24px',
+              height: '24px',
               color: currentListing && favorites.has(currentListing.id) ? COLORS.gold : 'white',
               fill: currentListing && favorites.has(currentListing.id) ? COLORS.gold : 'none',
             }}
@@ -665,14 +871,32 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
 
         {/* VOICE SEARCH BUTTON */}
         <button
-          onClick={toggleVoice}
+          onClick={() => {
+            triggerHaptic();
+            toggleVoice();
+          }}
+          onTouchStart={triggerHaptic}
           disabled={!isVoiceSupported}
-          className="w-12 h-12 rounded-full hover:opacity-90 transition-all shadow-lg relative flex items-center justify-center"
-          style={{ backgroundColor: '#000080' }}
+          className="rounded-full hover:opacity-90 transition-all relative flex items-center justify-center disabled:opacity-50 active:scale-95"
+          style={{ 
+            width: '48px',
+            height: '48px',
+            minWidth: '44px', // Accessibility: ensure 44px touch target
+            minHeight: '44px',
+            backgroundColor: 'rgba(255, 255, 255, 0.2)',
+            backdropFilter: 'blur(8px)',
+            border: '1px solid rgba(255, 255, 255, 0.3)',
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+            touchAction: 'manipulation', // Improve touch responsiveness
+          }}
           aria-label="Voice search"
         >
           <Mic 
             className="w-6 h-6 text-white"
+            style={{
+              width: '24px',
+              height: '24px',
+            }}
           />
           {/* Recording indicator */}
           {isRecording && (
@@ -694,15 +918,7 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
       {/* Account Sheet */}
       <AccountSheet isOpen={accountOpen} onClose={() => setAccountOpen(false)} />
 
-      {/* ===== COUNTER (Bottom Center) ===== */}
-      <div 
-        className="fixed bottom-6 left-1/2 -translate-x-1/2 z-10 px-4 py-2 rounded-full"
-        style={{ backgroundColor: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(10px)' }}
-      >
-        <span className="text-sm" style={{ color: COLORS.oldGold }}>
-          {currentIndex + 1} / {displayListings.length}
-        </span>
-      </div>
     </div>
+    </>
   );
 }

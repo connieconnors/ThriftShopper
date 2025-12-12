@@ -204,8 +204,48 @@ export default function MessagesModal({ isOpen, onClose, initialSellerId, initia
 
     const setupChannel = async () => {
       try {
+        // Ensure client is fully connected before proceeding
+        if (!client.userID) {
+          console.warn("Stream Chat client userID not set, cannot setup channel");
+          return;
+        }
+
+        // Wait for WebSocket to be healthy if needed
+        if (client.wsConnection && !client.wsConnection.isHealthy) {
+          console.log("Waiting for Stream Chat WebSocket to be healthy...");
+          let retries = 0;
+          while (retries < 10 && (!client.wsConnection || !client.wsConnection.isHealthy)) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+            retries++;
+          }
+        }
+
         // Find or create a channel with the selected user
-        const channelId = [user.id, selectedConversation].sort().join('-');
+        // Create a deterministic channel ID that's <= 64 characters
+        // Hash the two user IDs together to create a shorter, unique ID
+        const userIds = [user.id, selectedConversation].sort();
+        const combined = userIds.join('-');
+        
+        // Simple hash function to create a shorter ID (max 64 chars)
+        // If combined is already short enough, use it; otherwise hash it
+        let channelId: string;
+        if (combined.length <= 64) {
+          channelId = combined;
+        } else {
+          // Create a hash from the combined string
+          // Using a simple approach: take first 16 chars of each UUID (without dashes) + dash
+          const hash1 = userIds[0].replace(/-/g, '').substring(0, 16);
+          const hash2 = userIds[1].replace(/-/g, '').substring(0, 16);
+          channelId = `${hash1}-${hash2}`;
+          
+          // If still too long, truncate
+          if (channelId.length > 64) {
+            channelId = channelId.substring(0, 64);
+          }
+        }
+        
+        console.log("Creating Stream Chat channel with ID:", channelId, "Length:", channelId.length);
+        
         const channelData: any = {
           members: [user.id, selectedConversation],
         };
@@ -217,18 +257,33 @@ export default function MessagesModal({ isOpen, onClose, initialSellerId, initia
         
         const channel = client.channel('messaging', channelId, channelData);
 
-        await channel.watch();
-        setChannel(channel);
+        // Watch the channel with error handling
+        try {
+          await channel.watch();
+          setChannel(channel);
 
-        // Listen for new messages
-        channel.on('message.new', () => {
+          // Listen for new messages
+          channel.on('message.new', () => {
+            setMessages([...channel.state.messages]);
+          });
+
+          // Load existing messages
           setMessages([...channel.state.messages]);
-        });
-
-        // Load existing messages
-        setMessages([...channel.state.messages]);
-      } catch (error) {
+        } catch (watchError: any) {
+          console.error("Error watching channel:", watchError);
+          // Try to query the channel instead as fallback
+          try {
+            await channel.query();
+            setChannel(channel);
+            setMessages([...channel.state.messages]);
+          } catch (queryError) {
+            console.error("Error querying channel:", queryError);
+            throw queryError;
+          }
+        }
+      } catch (error: any) {
         console.error("Error setting up channel:", error);
+        // Don't throw - just log the error so the UI doesn't break
       }
     };
 

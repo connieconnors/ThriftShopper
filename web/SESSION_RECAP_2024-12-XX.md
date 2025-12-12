@@ -51,7 +51,8 @@
 2. **Fix Orders Query** - Resolve `product_id` vs `listing_id` schema mismatch
 3. **Fix Stream Chat Channel ID Length** - Validate/truncate channel IDs
 4. **PWA Features** - Service worker, manifest, install prompt
-5. **Legal Pages** - Terms, Privacy Policy, etc.
+5. **Legal Pages** - Terms, Privacy Policy, Allowed/Prohibited Items (✅ Legal section added to Settings)
+6. **Vision API Content Moderation** - Check uploaded images for inappropriate content (user has code, needs integration)
 
 #### Low Priority (Post-Beta)
 1. **Review System** - Seller ratings and reviews

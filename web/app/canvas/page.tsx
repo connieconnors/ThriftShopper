@@ -114,51 +114,78 @@ export default function BuyerCanvasPage() {
 
         // Fetch purchases
         // Note: Orders table may have listing_id or product_id depending on schema
-        // Try simple query first, then attempt join if needed
-        const { data: ordersData, error: ordersError } = await supabase
-          .from("orders")
-          .select("id, listing_id, product_id, amount, status, created_at")
-          .eq("buyer_id", user.id)
-          .order("created_at", { ascending: false })
-          .limit(10);
-        
-        if (ordersError) {
-          console.error("Error fetching orders:", ordersError);
-          setPurchases([]);
-        } else if (ordersData && ordersData.length > 0) {
-          // If we have orders, try to fetch listing details separately
-          const listingIds = ordersData
-            .map((o: any) => o.listing_id || o.product_id)
-            .filter(Boolean);
+        // Handle gracefully if table doesn't exist or has no orders
+        try {
+          const { data: ordersData, error: ordersError } = await supabase
+            .from("orders")
+            .select("id, listing_id, product_id, amount, status, created_at")
+            .eq("buyer_id", user.id)
+            .order("created_at", { ascending: false })
+            .limit(10);
           
-          let listingsMap: Record<string, any> = {};
-          if (listingIds.length > 0) {
-            const { data: listingsData } = await supabase
-              .from("listings")
-              .select("id, title, clean_image_url, original_image_url")
-              .in("id", listingIds);
+          if (ordersError) {
+            // Only log if it's not a "table doesn't exist" or "no rows" error
+            const errorCode = ordersError.code || ordersError?.code;
+            const isTableNotFound = errorCode === '42P01';
+            const isNoRows = errorCode === 'PGRST116';
             
-            if (listingsData) {
-              listingsMap = listingsData.reduce((acc: any, listing: any) => {
-                acc[listing.id] = listing;
-                return acc;
-              }, {});
+            // Also check for common "no rows" patterns in the message
+            const errorMessage = ordersError.message || ordersError?.message || '';
+            const isNoRowsMessage = errorMessage.toLowerCase().includes('no rows') || 
+                                   errorMessage.toLowerCase().includes('not found');
+            
+            if (!isTableNotFound && !isNoRows && !isNoRowsMessage) {
+              // Only log meaningful errors
+              console.error("Error fetching orders:", {
+                message: ordersError.message || 'Unknown error',
+                code: errorCode || 'NO_CODE',
+                details: ordersError.details || null,
+                hint: ordersError.hint || null,
+                fullError: ordersError
+              });
             }
+            setPurchases([]);
+          } else if (ordersData && ordersData.length > 0) {
+            // If we have orders, try to fetch listing details separately
+            const listingIds = ordersData
+              .map((o: any) => o.listing_id || o.product_id)
+              .filter(Boolean);
+            
+            let listingsMap: Record<string, any> = {};
+            if (listingIds.length > 0) {
+              const { data: listingsData, error: listingsError } = await supabase
+                .from("listings")
+                .select("id, title, clean_image_url, original_image_url")
+                .in("id", listingIds);
+              
+              if (!listingsError && listingsData) {
+                listingsMap = listingsData.reduce((acc: any, listing: any) => {
+                  acc[listing.id] = listing;
+                  return acc;
+                }, {});
+              }
+            }
+            
+            setPurchases(
+              ordersData.map((o: any) => ({
+                ...o,
+                listing: listingsMap[o.listing_id || o.product_id] || null
+              }))
+            );
+          } else {
+            setPurchases([]);
           }
-          
-          setPurchases(
-            ordersData.map((o: any) => ({
-              ...o,
-              listing: listingsMap[o.listing_id || o.product_id] || null
-            }))
-          );
-        } else {
+        } catch (err) {
+          // Catch any unexpected errors
+          console.error("Unexpected error fetching orders:", err);
           setPurchases([]);
         }
 
-        // Load from localStorage
-        setRecentlyViewed(getRecentlyViewed(user.id));
-        setSavedMoods(getSavedMoods(user.id));
+        // Load from localStorage (only after component is mounted)
+        if (typeof window !== 'undefined') {
+          setRecentlyViewed(getRecentlyViewed(user.id));
+          setSavedMoods(getSavedMoods(user.id));
+        }
       } catch (error) {
         console.error("Error fetching canvas data:", error);
       } finally {

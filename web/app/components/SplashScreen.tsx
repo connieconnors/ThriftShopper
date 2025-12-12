@@ -10,6 +10,12 @@ interface SplashScreenProps {
 export default function SplashScreen({ autoNavigateDelay = 3000 }: SplashScreenProps) {
   const router = useRouter();
   const [isExiting, setIsExiting] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  // Prevent hydration mismatch by only rendering on client
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleEnter = useCallback(() => {
     if (isExiting) return;
@@ -21,14 +27,25 @@ export default function SplashScreen({ autoNavigateDelay = 3000 }: SplashScreenP
     }, 600);
   }, [isExiting, router]);
 
-  // Auto-navigate after delay
+  // Auto-navigate after delay (only on client)
   useEffect(() => {
+    if (!mounted) return;
+    
     const timer = setTimeout(() => {
       handleEnter();
     }, autoNavigateDelay);
 
     return () => clearTimeout(timer);
-  }, [autoNavigateDelay, handleEnter]);
+  }, [autoNavigateDelay, handleEnter, mounted]);
+
+  // Don't render until mounted to prevent hydration mismatch
+  if (!mounted) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black">
+        <div className="animate-spin h-8 w-8 border-2 border-white border-t-transparent rounded-full" />
+      </div>
+    );
+  }
 
   return (
     <div

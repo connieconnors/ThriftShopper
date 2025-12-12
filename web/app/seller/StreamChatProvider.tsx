@@ -66,15 +66,36 @@ export function StreamChatProvider({ children }: ProviderProps) {
         try {
           await chat.connectUser({ id: data.userId }, data.token);
           
+          // Wait a bit for userID to be set (sometimes it's async)
+          let userIDRetries = 0;
+          while (userIDRetries < 20 && !chat.userID) {
+            await new Promise(resolve => setTimeout(resolve, 50));
+            userIDRetries++;
+          }
+          
           // Verify connection was successful
           if (!chat.userID) {
-            throw new Error("Failed to connect user to Stream Chat - userID not set");
+            // Only log as warning if user is not logged in (expected behavior)
+            if (!user || !session) {
+              console.log("Stream Chat: Skipping connection - user not logged in");
+              if (isMounted) {
+                setLoading(false);
+              }
+              return;
+            }
+            // Only error if user IS logged in but connection failed
+            console.warn("Stream Chat: userID not set after connectUser (user is logged in)");
+            if (isMounted) {
+              setError("Failed to connect to chat - please try again");
+              setLoading(false);
+            }
+            return;
           }
           
           // Wait for WebSocket connection to be established
           // Stream Chat needs both the user token AND the WS connection
           let retries = 0;
-          while (retries < 10 && (!chat.wsConnection || !chat.wsConnection.isHealthy)) {
+          while (retries < 20 && (!chat.wsConnection || !chat.wsConnection.isHealthy)) {
             await new Promise(resolve => setTimeout(resolve, 100));
             retries++;
           }
@@ -89,9 +110,12 @@ export function StreamChatProvider({ children }: ProviderProps) {
             wsHealthy: chat.wsConnection?.isHealthy,
             connectionID: chat.connectionID
           });
-        } catch (connectError) {
+        } catch (connectError: any) {
           console.error("Stream Chat connectUser error:", connectError);
-          throw connectError;
+          if (isMounted) {
+            setError(connectError?.message || "Failed to connect to chat");
+          }
+          return;
         }
 
         if (!isMounted) {

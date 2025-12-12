@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "motion/react";
-import { Store, MapPin, Mail, Phone, Package, Loader2 } from "lucide-react";
+import { Store, MapPin, Mail, Phone, Package, Loader2, Upload, Image as ImageIcon } from "lucide-react";
 import { useAuth } from "@/app/context/AuthContext";
 import { supabase } from "@/lib/supabaseClient";
 import { TSLogo } from "@/components/TSLogo";
@@ -18,6 +18,8 @@ interface SellerProfile {
   email: string;
   phone: string;
   shippingSpeed: string;
+  avatarFile: File | null;
+  avatarPreview: string | null;
 }
 
 const US_STATES = [
@@ -45,12 +47,54 @@ export default function SellerOnboardingPage() {
     email: "",
     phone: "",
     shippingSpeed: "",
+    avatarFile: null,
+    avatarPreview: null,
   });
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
 
-  // Redirect if not logged in
+  // Redirect if not logged in, or if already a seller with complete profile
   useEffect(() => {
     if (!authLoading && !user) {
       router.push("/login?redirect=/seller/onboarding");
+      return;
+    }
+    
+    // If logged in, check if already a seller with complete profile
+    if (user && !authLoading) {
+      const checkSellerStatus = async () => {
+        try {
+          // Try user_id first (actual column name), fallback to id
+          let { data: profile, error } = await supabase
+            .from("profiles")
+            .select("is_seller, display_name, location_city")
+            .eq("user_id", user.id)
+            .single();
+          
+          // If that fails, try id
+          if (error && error.code === 'PGRST116') {
+            const retry = await supabase
+              .from("profiles")
+              .select("is_seller, display_name, location_city")
+              .eq("id", user.id)
+              .single();
+            profile = retry.data;
+            error = retry.error;
+          }
+          
+          // If already a seller with complete profile, redirect to seller dashboard
+          if (profile?.is_seller === true && profile?.location_city && profile?.display_name) {
+            router.push("/seller");
+            return;
+          }
+          
+          // If already a seller but incomplete, stay on onboarding (they need to complete it)
+          // If not a seller yet, stay on onboarding (they're becoming a seller)
+        } catch (err) {
+          console.error("Error checking seller status:", err);
+        }
+      };
+      
+      checkSellerStatus();
     }
   }, [user, authLoading, router]);
 
@@ -61,6 +105,71 @@ export default function SellerOnboardingPage() {
     }
   }, [user]);
 
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setError('Please select an image file');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Image must be less than 5MB');
+      return;
+    }
+
+    // Create preview
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setFormData(prev => ({
+        ...prev,
+        avatarFile: file,
+        avatarPreview: reader.result as string,
+      }));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const uploadAvatar = async (): Promise<string | null> => {
+    if (!formData.avatarFile || !user) return null;
+
+    setIsUploadingAvatar(true);
+    try {
+      // Upload to Supabase Storage
+      const fileExt = formData.avatarFile.name.split('.').pop();
+      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+      const filePath = `avatars/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, formData.avatarFile, {
+          cacheControl: '3600',
+          upsert: false,
+        });
+
+      if (uploadError) {
+        console.error('Avatar upload error:', uploadError);
+        throw uploadError;
+      }
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+
+      return publicUrl;
+    } catch (err) {
+      console.error('Error uploading avatar:', err);
+      setError('Failed to upload avatar image');
+      return null;
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
@@ -69,71 +178,85 @@ export default function SellerOnboardingPage() {
     setError(null);
 
     try {
+      // Upload avatar first if provided
+      let avatarUrl: string | null = null;
+      if (formData.avatarFile) {
+        avatarUrl = await uploadAvatar();
+        if (!avatarUrl && formData.avatarFile) {
+          // If upload failed but file exists, don't block submission
+          console.warn('Avatar upload failed, continuing without avatar');
+        }
+      }
+
+      // Prepare update data
+      const updateData: any = {
+        display_name: formData.storeName, // Store name maps to display_name
+        bio: formData.description,
+        location_city: formData.city,
+        location_state: formData.state,
+        location_zip: formData.zipCode,
+        email: formData.email,
+        phone_main: formData.phone || null, // Use phone_main (stores can have store phone and mobile)
+        shipping_speed: formData.shippingSpeed,
+        is_seller: true,
+      };
+
+      // Add avatar_url if we have it
+      if (avatarUrl) {
+        updateData.avatar_url = avatarUrl;
+      }
+
       // Always use UPDATE (upsert) since profile should already exist from signup
-      // If it doesn't exist, the update will fail gracefully and we can handle it
-      // Note: profiles.id is the primary key that references auth.users(id)
-      const result = await supabase
+      // Try user_id first (if column exists), then fallback to id (primary key)
+      // This matches the pattern used in seller/page.tsx and canvas/page.tsx
+      let result = await supabase
         .from("profiles")
-        .update({
+        .update(updateData)
+        .eq("user_id", user.id);
+      
+      // If that fails (user_id column might not exist or no match), try with id (primary key)
+      if (result.error) {
+        console.log('Update with user_id failed, trying with id:', result.error);
+        result = await supabase
+          .from("profiles")
+          .update(updateData)
+          .eq("id", user.id);
+      }
+
+      // If update didn't affect any rows or failed, try insert (profile doesn't exist)
+      if (result.error || (result.data === null && result.count === 0)) {
+        console.log('Update failed or no rows affected, trying insert...');
+        // Try insert with id (primary key that references auth.users(id))
+        const insertData: any = {
+          id: user.id, // Use id as primary key (references auth.users(id))
           display_name: formData.storeName,
           bio: formData.description,
           location_city: formData.city,
           location_state: formData.state,
           location_zip: formData.zipCode,
           email: formData.email,
-          phone: formData.phone || null,
-          shipping_speed: formData.shippingSpeed, // Use shipping_speed, not shipping_info
+          phone_main: formData.phone || null, // Use phone_main (stores can have store phone and mobile)
+          shipping_speed: formData.shippingSpeed,
           is_seller: true,
-        })
-        .eq("id", user.id);
+        };
 
-      // If update didn't affect any rows, try insert (profile doesn't exist)
-      if (result.error) {
-        // Update failed, try insert as fallback
-        const insertResult = await supabase
-          .from("profiles")
-          .insert({
-            id: user.id, // Use id as primary key
-            display_name: formData.storeName,
-            bio: formData.description,
-            location_city: formData.city,
-            location_state: formData.state,
-            location_zip: formData.zipCode,
-            email: formData.email,
-            phone: formData.phone || null,
-            shipping_speed: formData.shippingSpeed, // Use shipping_speed, not shipping_info
-            is_seller: true,
-          });
-        
-        if (insertResult.error) {
-          console.error("Database error:", insertResult.error);
-          throw new Error(insertResult.error.message || "Failed to save profile");
+        // Add avatar_url if we have it
+        if (avatarUrl) {
+          insertData.avatar_url = avatarUrl;
         }
-      } else if (result.data === null && result.count === 0) {
-        // Update succeeded but no rows affected, try insert
+
         const insertResult = await supabase
           .from("profiles")
-          .insert({
-            id: user.id, // Use id as primary key
-            display_name: formData.storeName,
-            bio: formData.description,
-            location_city: formData.city,
-            location_state: formData.state,
-            location_zip: formData.zipCode,
-            email: formData.email,
-            phone: formData.phone || null,
-            shipping_speed: formData.shippingSpeed, // Use shipping_speed, not shipping_info
-            is_seller: true,
-          });
+          .insert(insertData);
         
         if (insertResult.error) {
-          console.error("Database error:", insertResult.error);
+          console.error("Database error on insert:", insertResult.error);
           throw new Error(insertResult.error.message || "Failed to save profile");
         }
       }
 
       // Redirect to seller dashboard
-      router.push("/seller-dashboard");
+      router.push("/seller");
     } catch (err) {
       console.error("Error saving profile:", err);
       const errorMessage = err instanceof Error 
@@ -197,6 +320,49 @@ export default function SellerOnboardingPage() {
         )}
 
         <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-xl p-8 space-y-6">
+          {/* Avatar Upload */}
+          <div>
+            <label className="block mb-2 font-medium" style={{ color: "#191970" }}>
+              Store Avatar (Optional)
+            </label>
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                {formData.avatarPreview ? (
+                  <img
+                    src={formData.avatarPreview}
+                    alt="Avatar preview"
+                    className="w-20 h-20 rounded-full object-cover border-2 border-gray-200"
+                  />
+                ) : (
+                  <div className="w-20 h-20 rounded-full bg-gray-100 border-2 border-gray-200 flex items-center justify-center">
+                    <ImageIcon size={32} className="text-gray-400" />
+                  </div>
+                )}
+              </div>
+              <div className="flex-1">
+                <label
+                  htmlFor="avatar-upload"
+                  className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg cursor-pointer transition-colors text-sm font-medium text-gray-700"
+                >
+                  <Upload size={16} />
+                  {formData.avatarFile ? 'Change Image' : 'Upload Image'}
+                </label>
+                <input
+                  id="avatar-upload"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarChange}
+                  className="hidden"
+                  disabled={isUploadingAvatar}
+                />
+                {isUploadingAvatar && (
+                  <p className="mt-1 text-xs text-gray-500">Uploading...</p>
+                )}
+                <p className="mt-1 text-xs text-gray-500">Max 5MB, JPG/PNG</p>
+              </div>
+            </div>
+          </div>
+
           {/* Store Name */}
           <div>
             <label className="block mb-2 font-medium" style={{ color: "#191970" }}>
@@ -213,6 +379,7 @@ export default function SellerOnboardingPage() {
                 required
               />
             </div>
+            <p className="mt-1 text-xs text-gray-500">This will be your display name on ThriftShopper</p>
           </div>
 
           {/* Description */}

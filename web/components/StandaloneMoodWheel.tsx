@@ -124,14 +124,33 @@ export function StandaloneMoodWheel({ selectedMoods, onMoodsChange, noResults = 
       <button
         onClick={(e) => {
           e.stopPropagation();
+          // Haptic feedback
+          if (typeof window !== 'undefined' && 'vibrate' in navigator) {
+            navigator.vibrate(10);
+          }
           setShowModal(true);
         }}
-        className="relative group"
-        style={{ width: '48px', height: '48px' }}
+        onTouchStart={() => {
+          if (typeof window !== 'undefined' && 'vibrate' in navigator) {
+            navigator.vibrate(10);
+          }
+        }}
+        className="relative group rounded-full active:scale-95 transition-transform"
+        style={{ 
+          width: '48px', 
+          height: '48px',
+          minWidth: '44px', // Accessibility: ensure 44px touch target
+          minHeight: '44px',
+          backgroundColor: 'rgba(255, 255, 255, 0.2)',
+          backdropFilter: 'blur(8px)',
+          border: '1px solid rgba(255, 255, 255, 0.3)',
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+          touchAction: 'manipulation',
+        }}
         aria-label="Open mood selector"
       >
-        {/* Spinning color wheel */}
-        <div className="absolute inset-0 rounded-full overflow-hidden animate-spin" style={{ animationDuration: '8s' }}>
+        {/* Spinning color wheel - now inside the glass button */}
+        <div className="absolute inset-0 rounded-full overflow-hidden animate-spin opacity-80" style={{ animationDuration: '8s' }}>
           {wheelColors.map((color, index) => {
             const rotation = (360 / wheelColors.length) * index;
             return (
@@ -149,15 +168,15 @@ export function StandaloneMoodWheel({ selectedMoods, onMoodsChange, noResults = 
         </div>
 
         {/* Center white circle with icon */}
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="w-8 h-8 bg-white rounded-full shadow-lg flex items-center justify-center group-hover:scale-110 transition-transform">
-            <Sparkles className="w-4 h-4 text-indigo-600" />
+        <div className="absolute inset-0 flex items-center justify-center z-10">
+          <div className="w-6 h-6 bg-white rounded-full shadow-sm flex items-center justify-center group-hover:scale-110 transition-transform">
+            <Sparkles className="w-4 h-4 text-indigo-600" style={{ width: '20px', height: '20px' }} />
           </div>
         </div>
 
         {/* Selection badge */}
         {selectedMoods.length > 0 && (
-          <div className="absolute -top-1 -right-1 w-4 h-4 bg-indigo-600 text-white rounded-full flex items-center justify-center z-10" style={{ fontSize: '9px' }}>
+          <div className="absolute -top-1 -right-1 w-5 h-5 bg-indigo-600 text-white rounded-full flex items-center justify-center z-20 text-xs font-bold" style={{ fontSize: '10px' }}>
             {selectedMoods.length}
           </div>
         )}

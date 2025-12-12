@@ -1,14 +1,16 @@
 "use client";
 
-import { useState, FormEvent } from "react";
-import { useRouter } from "next/navigation";
+import { useState, FormEvent, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "../context/AuthContext";
 import { supabase } from "../../lib/supabaseClient";
 import { TSLogo } from "../../components/TSLogo";
+import { Loader2 } from "lucide-react";
 
-export default function SignUpPage() {
+function SignUpForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { signUp, signIn } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -16,6 +18,9 @@ export default function SignUpPage() {
   const [acceptsMarketing, setAcceptsMarketing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Check if this is a seller signup
+  const isSellerSignup = searchParams.get('seller') === 'true';
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -75,23 +80,29 @@ export default function SignUpPage() {
         if (signUpData.user) {
           const displayName = email.split("@")[0];
           
-          // Wait for trigger to create profile
-          await new Promise(resolve => setTimeout(resolve, 1500));
-          
-          // Update profile with additional fields
-          const { error: profileError } = await supabase
-            .from("profiles")
-            .update({
-              display_name: displayName,
-              accepts_marketing: acceptsMarketing,
-              is_seller: isSeller, // Set based on URL param
-            })
-            .eq("user_id", signUpData.user.id);
-          
-          if (profileError) {
-            console.error("Error updating profile:", profileError);
-            console.log("Profile doesn't exist yet, creating it...");
-            // Profile doesn't exist, create it
+          // Wait for trigger to create profile, then update it
+          // Try multiple times with increasing delays to handle race conditions
+          let profileUpdated = false;
+          for (let attempt = 0; attempt < 3; attempt++) {
+            await new Promise(resolve => setTimeout(resolve, 1000 + (attempt * 500)));
+            
+            // Try to update existing profile first
+            const { error: updateError } = await supabase
+              .from("profiles")
+              .update({
+                display_name: displayName,
+                accepts_marketing: acceptsMarketing,
+                is_seller: isSeller, // Set based on URL param
+              })
+              .eq("user_id", signUpData.user.id);
+            
+            if (!updateError) {
+              console.log(`✅ Profile updated successfully on attempt ${attempt + 1}`);
+              profileUpdated = true;
+              break;
+            }
+            
+            // If update failed, try to insert (profile might not exist yet)
             const { error: insertError } = await supabase
               .from("profiles")
               .insert({
@@ -102,12 +113,18 @@ export default function SignUpPage() {
                 accepts_marketing: acceptsMarketing,
               });
             
-            if (insertError) {
-              console.error("Error creating profile:", insertError);
-              // If insert also fails, the trigger might be broken - user will need to confirm email first
-            } else {
-              console.log("✅ Profile created successfully");
+            if (!insertError) {
+              console.log(`✅ Profile created successfully on attempt ${attempt + 1}`);
+              profileUpdated = true;
+              break;
             }
+            
+            console.log(`⚠️ Attempt ${attempt + 1} failed, retrying...`);
+          }
+          
+          if (!profileUpdated) {
+            console.error("❌ Failed to update/create profile after 3 attempts");
+            console.log("Profile will be created/updated when user confirms email");
           }
         }
         
@@ -191,8 +208,14 @@ export default function SignUpPage() {
           </div>
 
           <div className="text-center mb-8">
-            <h1 className="text-2xl font-bold mb-2" style={{ color: '#191970' }}>Create your account</h1>
-            <p className="text-gray-600">Join ThriftShopper and start discovering unique finds</p>
+            <h1 className="text-2xl font-bold mb-2" style={{ color: '#191970' }}>
+              {isSellerSignup ? 'Create Your Seller Account' : 'Create your account'}
+            </h1>
+            <p className="text-gray-600">
+              {isSellerSignup 
+                ? 'Set up your shop and start selling unique finds' 
+                : 'Join ThriftShopper and start discovering unique finds'}
+            </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -282,6 +305,18 @@ export default function SignUpPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function SignUpPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#f5f5f5" }}>
+        <Loader2 className="w-8 h-8 animate-spin" style={{ color: "#191970" }} />
+      </div>
+    }>
+      <SignUpForm />
+    </Suspense>
   );
 }
 

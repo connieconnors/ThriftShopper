@@ -550,6 +550,16 @@ export default function SellerDashboard() {
             <Settings className="h-4 w-4" />
             <span className="text-[10px]">Settings</span>
           </Link>
+          <button
+            onClick={async () => {
+              await signOut();
+              router.push('/browse');
+            }}
+            className="flex flex-col items-center gap-0.5 text-white/70 hover:text-white transition-colors"
+          >
+            <LogOut className="h-4 w-4" />
+            <span className="text-[10px]">Logout</span>
+          </button>
         </div>
       </nav>
 

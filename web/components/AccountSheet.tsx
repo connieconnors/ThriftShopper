@@ -2,6 +2,9 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/app/context/AuthContext";
+import { supabase } from "@/lib/supabaseClient";
+import { useState, useEffect } from "react";
 
 interface AccountSheetProps {
   isOpen: boolean;
@@ -10,6 +13,34 @@ interface AccountSheetProps {
 
 const AccountSheet: React.FC<AccountSheetProps> = ({ isOpen, onClose }) => {
   const router = useRouter();
+  const { user, signOut } = useAuth();
+  const [isSeller, setIsSeller] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (user && isOpen) {
+      // Check if user is a seller
+      const checkSellerStatus = async () => {
+        try {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('is_seller')
+            .eq('user_id', user.id)
+            .single();
+          
+          setIsSeller(profile?.is_seller === true);
+        } catch (err) {
+          console.error('Error checking seller status:', err);
+          setIsSeller(false);
+        } finally {
+          setLoading(false);
+        }
+      };
+      checkSellerStatus();
+    } else {
+      setLoading(false);
+    }
+  }, [user, isOpen]);
 
   if (!isOpen) return null;
 
@@ -50,44 +81,211 @@ const AccountSheet: React.FC<AccountSheetProps> = ({ isOpen, onClose }) => {
         {/* Divider */}
         <div className="mt-8 border-t border-gray-200" />
 
-        {/* Primary + secondary actions */}
-        <div className="px-6 pt-6">
-          <button
-            onClick={() => {
-              onClose();
-              router.push("/login");
-            }}
-            className="
-              w-full
-              rounded-2xl
-              bg-[#000080]
-              py-3
-              text-[15px]
-              font-semibold
-              text-white
-              shadow-sm
-              active:opacity-80
-            "
-          >
-            Sign In / Create Account
-          </button>
+        {/* Content based on auth state */}
+        {loading ? (
+          <div className="px-6 pt-6 pb-8 text-center">
+            <div className="animate-spin h-6 w-6 border-2 border-[#000080] border-t-transparent rounded-full mx-auto" />
+          </div>
+        ) : user ? (
+          /* LOGGED IN STATE */
+          <div className="px-6 pt-6">
+            {isSeller ? (
+              /* SELLER VIEW */
+              <>
+                <button
+                  onClick={() => {
+                    onClose();
+                    router.push("/seller");
+                  }}
+                  className="w-full text-left px-4 py-3 text-[15px] font-medium text-[#000080] hover:bg-gray-50 rounded-lg transition-colors"
+                >
+                  Your Listings
+                </button>
+                <button
+                  onClick={() => {
+                    onClose();
+                    router.push("/sell");
+                  }}
+                  className="w-full text-left px-4 py-3 text-[15px] font-medium text-[#000080] hover:bg-gray-50 rounded-lg transition-colors"
+                >
+                  Add New Listing
+                </button>
+                <button
+                  onClick={() => {
+                    onClose();
+                    router.push("/canvas");
+                  }}
+                  className="w-full text-left px-4 py-3 text-[15px] font-medium text-[#000080] hover:bg-gray-50 rounded-lg transition-colors"
+                >
+                  Your Saved Items
+                </button>
+                <button
+                  onClick={() => {
+                    onClose();
+                    router.push("/canvas");
+                  }}
+                  className="w-full text-left px-4 py-3 text-[15px] font-medium text-[#000080] hover:bg-gray-50 rounded-lg transition-colors"
+                >
+                  Your Messages
+                </button>
+                <div className="border-t border-gray-200 my-2" />
+                <button
+                  onClick={() => {
+                    onClose();
+                    router.push("/settings");
+                  }}
+                  className="w-full text-left px-4 py-3 text-[15px] font-medium text-[#000080] hover:bg-gray-50 rounded-lg transition-colors"
+                >
+                  Settings
+                </button>
+                <button
+                  onClick={async () => {
+                    onClose();
+                    await signOut();
+                    router.push("/browse");
+                  }}
+                  className="w-full text-left px-4 py-3 text-[15px] font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                >
+                  Sign Out
+                </button>
+              </>
+            ) : (
+              /* BUYER VIEW */
+              <>
+                <button
+                  onClick={() => {
+                    onClose();
+                    router.push("/canvas");
+                  }}
+                  className="w-full text-left px-4 py-3 text-[15px] font-medium text-[#000080] hover:bg-gray-50 rounded-lg transition-colors"
+                >
+                  Your Saved Items
+                </button>
+                <button
+                  onClick={() => {
+                    onClose();
+                    router.push("/canvas");
+                  }}
+                  className="w-full text-left px-4 py-3 text-[15px] font-medium text-[#000080] hover:bg-gray-50 rounded-lg transition-colors"
+                >
+                  Your Messages
+                </button>
+                <button
+                  onClick={() => {
+                    onClose();
+                    router.push("/seller/onboarding");
+                  }}
+                  className="w-full text-left px-4 py-3 text-[15px] font-medium text-[#000080] hover:bg-gray-50 rounded-lg transition-colors"
+                >
+                  Become a Seller
+                </button>
+                <div className="border-t border-gray-200 my-2" />
+                <button
+                  onClick={() => {
+                    onClose();
+                    router.push("/settings");
+                  }}
+                  className="w-full text-left px-4 py-3 text-[15px] font-medium text-[#000080] hover:bg-gray-50 rounded-lg transition-colors"
+                >
+                  Settings
+                </button>
+                <button
+                  onClick={async () => {
+                    onClose();
+                    await signOut();
+                    router.push("/browse");
+                  }}
+                  className="w-full text-left px-4 py-3 text-[15px] font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                >
+                  Sign Out
+                </button>
+              </>
+            )}
+          </div>
+        ) : (
+          /* LOGGED OUT STATE */
+          <div className="px-6 pt-6">
+            <button
+              onClick={() => {
+                onClose();
+                router.push("/login");
+              }}
+              className="
+                w-full
+                rounded-2xl
+                bg-[#000080]
+                py-3
+                text-[15px]
+                font-semibold
+                text-white
+                shadow-sm
+                active:opacity-80
+              "
+            >
+              Sign In / Create Account
+            </button>
 
-          <button
-            onClick={onClose}
-            className="
-              mt-4
-              w-full
-              text-[15px]
-              font-semibold
-              text-[#000080]
-              active:opacity-70
-            "
-          >
-            Continue Browsing →
-          </button>
-        </div>
+            <button
+              onClick={() => {
+                onClose();
+                router.push("/signup?seller=true");
+              }}
+              className="
+                mt-3
+                w-full
+                rounded-2xl
+                border-2
+                border-[#000080]
+                py-3
+                text-[15px]
+                font-semibold
+                text-[#000080]
+                bg-white
+                active:opacity-70
+              "
+            >
+              Become a Seller
+            </button>
 
-        {/* Bottom padding only */}
+            <button
+              onClick={onClose}
+              className="
+                mt-4
+                w-full
+                text-[15px]
+                font-semibold
+                text-[#000080]
+                active:opacity-70
+              "
+            >
+              Continue Browsing →
+            </button>
+
+            {/* Saved Items link for guests */}
+            <button
+              onClick={() => {
+                onClose();
+                router.push("/canvas");
+              }}
+              className="
+                mt-4
+                w-full
+                text-left
+                px-4
+                py-2
+                text-[14px]
+                text-[#000080]
+                hover:bg-gray-50
+                rounded-lg
+                transition-colors
+              "
+            >
+              Saved Items
+            </button>
+          </div>
+        )}
+
+        {/* Bottom padding */}
         <div className="pb-8" />
       </div>
     </div>
