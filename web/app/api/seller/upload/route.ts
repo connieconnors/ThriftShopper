@@ -49,10 +49,15 @@ export async function POST(request: NextRequest) {
       category: formData.get('category') as string | undefined,
     };
 
+    // Background removal is now optional and happens AFTER AI analysis
+    // Default to false - user can request it after seeing results
+    const removeBackground = formData.get('removeBackground') === 'true';
+
     const result = await uploadAndCreateListing(
       Buffer.from(await imageFile.arrayBuffer()),
       sellerId,
-      userInput
+      userInput,
+      { removeBackground }
     );
 
     if (!result.success) {

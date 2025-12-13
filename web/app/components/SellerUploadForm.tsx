@@ -27,7 +27,7 @@ interface UploadResult {
   };
 }
 
-type ProcessingStep = 'idle' | 'uploading' | 'removing-bg' | 'analyzing' | 'generating' | 'pricing' | 'complete';
+type ProcessingStep = 'idle' | 'uploading' | 'analyzing' | 'generating' | 'pricing' | 'complete';
 
 // Voice input button component
 interface VoiceInputButtonProps {
@@ -138,6 +138,7 @@ export default function SellerUploadForm() {
   const [isPublished, setIsPublished] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
+  const [isRemovingBackground, setIsRemovingBackground] = useState(false);
   
   // Editable fields
   const [title, setTitle] = useState('');
@@ -250,7 +251,6 @@ export default function SellerUploadForm() {
 
   const processingSteps = {
     'uploading': 'Uploading image...',
-    'removing-bg': '✨ Removing background (making it look professional)',
     'analyzing': '🔍 AI analyzing your item',
     'generating': '📝 Writing your listing',
     'pricing': '💰 Checking market prices',
@@ -304,10 +304,9 @@ export default function SellerUploadForm() {
       if (category) formData.append('category', category);
 
       // Simulate processing steps for better UX
-      setTimeout(() => setProcessingStep('removing-bg'), 500);
-      setTimeout(() => setProcessingStep('analyzing'), 2000);
-      setTimeout(() => setProcessingStep('generating'), 4000);
-      setTimeout(() => setProcessingStep('pricing'), 6000);
+      setTimeout(() => setProcessingStep('analyzing'), 500);
+      setTimeout(() => setProcessingStep('generating'), 2000);
+      setTimeout(() => setProcessingStep('pricing'), 4000);
 
       const response = await fetch('/api/seller/upload', {
         method: 'POST',
@@ -346,6 +345,57 @@ export default function SellerUploadForm() {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Upload failed');
       setProcessingStep('idle');
+    }
+  };
+
+  const handleRemoveBackground = async () => {
+    if (!selectedFile || !listingId) return;
+
+    setIsRemovingBackground(true);
+    setError('');
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session?.access_token) {
+        setError('Please log in to remove background');
+        setIsRemovingBackground(false);
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('image', selectedFile);
+      formData.append('listingId', listingId);
+
+      const response = await fetch('/api/seller/remove-background', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Background removal failed');
+      }
+
+      // Update the result with the new processed image
+      if (result) {
+        setResult({
+          ...result,
+          processedImageUrl: data.processedImageUrl,
+          backgroundRemoved: true,
+        });
+      }
+
+      // Switch to showing the processed image
+      setShowProcessedImage(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Background removal failed');
+    } finally {
+      setIsRemovingBackground(false);
     }
   };
 
@@ -646,18 +696,40 @@ export default function SellerUploadForm() {
                   </span>
                 </div>
               </div>
-              <p className={`text-sm mb-3 ${
-                showProcessedImage && result.backgroundRemoved 
-                  ? 'text-green-600' 
-                  : showProcessedImage && !result.backgroundRemoved
-                  ? 'text-orange-600'
-                  : 'text-gray-500'
-              }`}>
-                {showProcessedImage 
-                  ? (result.backgroundRemoved ? '✓ Background removed' : '○ Original (bg removal not available)')
-                  : '○ Original image'
-                }
-              </p>
+              <div className="mb-3">
+                <p className={`text-sm ${
+                  showProcessedImage && result.backgroundRemoved 
+                    ? 'text-green-600' 
+                    : showProcessedImage && !result.backgroundRemoved
+                    ? 'text-orange-600'
+                    : 'text-gray-500'
+                }`}>
+                  {showProcessedImage 
+                    ? (result.backgroundRemoved ? '✓ Background removed' : '○ Original image')
+                    : '○ Original image'
+                  }
+                </p>
+                {/* Remove Background Button - only show if not already removed */}
+                {!result.backgroundRemoved && (
+                  <button
+                    type="button"
+                    onClick={handleRemoveBackground}
+                    disabled={isRemovingBackground}
+                    className="mt-2 w-full px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    {isRemovingBackground ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Removing background...
+                      </>
+                    ) : (
+                      <>
+                        ✨ Remove Background
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
 
               {/* Additional Photos (optional) */}
               <div className="grid grid-cols-2 gap-3">

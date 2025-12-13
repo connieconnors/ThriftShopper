@@ -46,6 +46,9 @@ export async function uploadAndCreateListing(
     description?: string;
     price?: number;
     category?: string;
+  },
+  options?: {
+    removeBackground?: boolean;
   }
 ): Promise<UploadAndSaveResult> {
   try {
@@ -77,6 +80,7 @@ export async function uploadAndCreateListing(
       .getPublicUrl(originalFilename);
 
     // Step 2: Try to process with AI (but don't fail if APIs are missing)
+    // NOTE: Background removal now happens AFTER AI analysis (if requested)
     let processedImageUrl = originalUrl;
     let visionData = { 
       category: userInput?.category || 'General', 
@@ -91,21 +95,6 @@ export async function uploadAndCreateListing(
     };
     let pricingIntelligence = null;
     let backgroundRemoved = false;
-
-    // Try background removal (optional - don't fail if key missing)
-    if (process.env.REMOVE_BG_KEY) {
-      try {
-        processedImageUrl = await removeBackground(imageFile);
-        backgroundRemoved = true;
-        console.log('✓ Background removal successful');
-      } catch (e) {
-        // Background removal failed, continue with original image
-        console.error('✗ Background removal failed:', e instanceof Error ? e.message : String(e));
-        backgroundRemoved = false;
-      }
-    } else {
-      console.log('ℹ REMOVE_BG_KEY not set, skipping background removal');
-    }
 
     // Use OpenAI Vision (GPT-4o) for image analysis + listing generation + price estimation
     let aiSource = 'none';
@@ -175,6 +164,21 @@ export async function uploadAndCreateListing(
       } catch (e) {
         // eBay pricing failed, continue with AI estimate
       }
+    }
+
+    // Step 2.5: Background removal AFTER AI analysis (if requested and key is set)
+    if (options?.removeBackground && process.env.REMOVE_BG_KEY) {
+      try {
+        processedImageUrl = await removeBackground(imageFile);
+        backgroundRemoved = true;
+        console.log('✓ Background removal successful (after AI analysis)');
+      } catch (e) {
+        // Background removal failed, continue with original image
+        console.error('✗ Background removal failed:', e instanceof Error ? e.message : String(e));
+        backgroundRemoved = false;
+      }
+    } else if (options?.removeBackground && !process.env.REMOVE_BG_KEY) {
+      console.log('ℹ REMOVE_BG_KEY not set, skipping background removal');
     }
 
     // Step 3: Create listing in database
@@ -464,7 +468,7 @@ Return ONLY valid JSON in this exact format:
   }
 }
 
-async function removeBackground(imageFile: File | Buffer): Promise<string> {
+export async function removeBackground(imageFile: File | Buffer): Promise<string> {
   const formData = new FormData();
   
   if (imageFile instanceof File) {
