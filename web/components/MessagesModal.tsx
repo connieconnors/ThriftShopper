@@ -133,7 +133,8 @@ export default function MessagesModal({ isOpen, onClose, initialSellerId, initia
       // Get all channels the user is a member of
       const filter = { type: 'messaging', members: { $in: [user.id] } };
       // Stream Chat expects sort with AscDesc type (1 | -1 as literal, not number)
-      const sort: Array<{ last_message_at: -1 }> = [{ last_message_at: -1 }];
+      // Use 'as const' to make -1 a literal type instead of number
+      const sort = [{ last_message_at: -1 as const }] as const;
       const channels = await client.queryChannels(filter, sort, { limit: 20 });
       console.log("✅ Successfully queried channels:", channels.length);
 
