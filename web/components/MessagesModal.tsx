@@ -77,7 +77,6 @@ export default function MessagesModal({ isOpen, onClose, initialSellerId, initia
       console.warn("Client state:", { 
         userID: client.userID, 
         wsConnection: client.wsConnection?.isHealthy,
-        connectionID: client.connectionID 
       });
       setIsLoading(false);
       return; // Don't retry - let useEffect handle it
@@ -136,7 +135,6 @@ export default function MessagesModal({ isOpen, onClose, initialSellerId, initia
       console.log("Client state:", {
         userID: client.userID,
         wsHealthy: client.wsConnection?.isHealthy,
-        connectionID: client.connectionID
       });
       
       // Get all channels the user is a member of
@@ -175,7 +173,6 @@ export default function MessagesModal({ isOpen, onClose, initialSellerId, initia
         message: error instanceof Error ? error.message : String(error),
         userID: client.userID,
         wsHealthy: client.wsConnection?.isHealthy,
-        connectionID: client.connectionID
       });
       
       // If connection was lost, try to reconnect
