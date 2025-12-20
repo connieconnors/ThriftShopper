@@ -176,9 +176,9 @@ async function searchWithInterpretation(
     
     query = query.or(orConditions);
   } else {
-    // If no keywords, limit results to avoid fetching entire database
-    // The tag filters will narrow it down further
-    query = query.limit(100); // Get more items for tag filtering
+    // If no keywords, we need to fetch more items for tag filtering
+    // Don't apply limit yet - we'll filter client-side and then limit
+    // Fetch up to 500 items to ensure we get all matches (mood wheel filters all loaded listings)
   }
 
   // Apply price range filter
@@ -199,7 +199,14 @@ async function searchWithInterpretation(
     query = query.or(categoryConditions);
   }
 
-  query = query.limit(limit);
+  // Only apply limit if we have keywords (keyword search is already filtered)
+  // For tag-only queries, fetch more items and filter client-side, then limit
+  if (interpretation.keywords.length > 0) {
+    query = query.limit(limit);
+  } else {
+    // Fetch more items for tag filtering (same as browse page limit)
+    query = query.limit(500);
+  }
 
   const { data, error } = await query;
 
