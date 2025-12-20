@@ -156,7 +156,7 @@ export default function MessagesModal({ isOpen, onClose, initialSellerId, initia
             last_message: lastMessage?.text || 'No messages yet',
             last_message_time: lastMessage?.created_at?.toISOString() || new Date().toISOString(),
             unread_count: unreadCount || 0,
-            listing_title: ch.data?.listing_title || undefined,
+            listing_title: undefined, // Not stored in channel data - would need to fetch from listing_id if needed
           };
         })
       );
