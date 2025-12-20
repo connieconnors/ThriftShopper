@@ -132,7 +132,7 @@ export default function MessagesModal({ isOpen, onClose, initialSellerId, initia
       
       // Get all channels the user is a member of
       const filter = { type: 'messaging', members: { $in: [user.id] } };
-      const sort = { last_message_at: -1 };
+      const sort = [{ last_message_at: -1 as -1 }];
       const channels = await client.queryChannels(filter, sort, { limit: 20 });
       console.log("✅ Successfully queried channels:", channels.length);
 
