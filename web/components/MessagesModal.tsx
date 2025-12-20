@@ -98,13 +98,6 @@ export default function MessagesModal({ isOpen, onClose, initialSellerId, initia
       
       // Check if client is actually connected and ready
       // Stream Chat needs both userID and connection state
-      // Check if client has been disconnected
-      if (client.disconnectPromise) {
-        console.warn("Stream Chat client is disconnecting, waiting...");
-        await client.disconnectPromise;
-        setIsLoading(false);
-        return;
-      }
       
       // Check WebSocket connection
       if (!client.wsConnection || !client.wsConnection.isHealthy) {
