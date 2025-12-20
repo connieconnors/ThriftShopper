@@ -118,9 +118,12 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
   };
 
   // Handle completed voice transcription
+  // Keep isListening true so UI stays visible after transcription
   const handleTranscriptComplete = useCallback(async (transcript: string) => {
     if (transcript.trim()) {
       setVoiceTranscript(transcript);
+      // Keep UI visible - don't hide it
+      setIsListening(true);
       await handleSearch(transcript);
     }
   }, []);
@@ -302,8 +305,8 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
       setSearchResults([]);
     }
     
-    // Clear the transcript after search, but keep lastSearchQuery
-    setVoiceTranscript('');
+    // Don't clear transcript or hide UI - keep it visible for demo
+    // setVoiceTranscript(''); // Keep transcript visible
   };
   
   const clearSearch = () => {
