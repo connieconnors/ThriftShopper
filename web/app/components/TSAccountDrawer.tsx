@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "../context/AuthContext";
 import { supabase } from "../../lib/supabaseClient";
-import { TSLogo } from "./TSLogo";
+import { TSLogo } from "@/components/TSLogo";
 import {
   X,
   Heart,
