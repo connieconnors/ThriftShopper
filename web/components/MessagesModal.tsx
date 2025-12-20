@@ -143,7 +143,7 @@ export default function MessagesModal({ isOpen, onClose, initialSellerId, initia
           const members = Object.values(ch.state.members || {});
           const partner = members.find((m: any) => m.user_id !== user.id);
           // Ensure partnerId is always a string (required by Conversation interface)
-          const partnerId: string = partner?.user_id || ch.id || 'unknown';
+          const partnerId: string = (partner?.user_id || ch.id || 'unknown') as string;
           const partnerUser = partner?.user || await client.queryUsers({ id: partnerId }).then(r => r.users[0]);
           
           const lastMessage = ch.state.messages[ch.state.messages.length - 1];
