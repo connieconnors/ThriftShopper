@@ -159,9 +159,16 @@ async function searchWithInterpretation(
     .order('created_at', { ascending: false });
 
   // Build keyword search conditions (search across ALL text fields)
-  // Only search text fields if we have actual keywords (not if query is all tag-based)
-  if (interpretation.keywords.length > 0) {
-    const orConditions = interpretation.keywords
+  // Include tag words (moods, styles, intents) as keywords too, so they search title/description
+  const allKeywords = [
+    ...interpretation.keywords,
+    ...interpretation.moods,
+    ...interpretation.styles,
+    ...interpretation.intents
+  ];
+  
+  if (allKeywords.length > 0) {
+    const orConditions = allKeywords
       .map((keyword: string) => {
         const escaped = keyword.toLowerCase().replace(/[%_]/g, '\\$&');
         return [
