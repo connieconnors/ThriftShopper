@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/app/context/AuthContext';
 import { supabase } from '@/lib/supabaseClient';
 import { TSLogo } from '@/components/TSLogo';
-import { Loader2, Plus, ArrowLeft, Settings, MessageSquare, ChevronDown, ChevronUp, MoreVertical, EyeOff, Trash2, CheckCircle, LogOut, Search, Package, HelpCircle, User } from 'lucide-react';
+import { Loader2, Plus, ArrowLeft, Settings, MessageSquare, ChevronDown, ChevronUp, MoreVertical, EyeOff, Trash2, CheckCircle, LogOut, Search, Package, HelpCircle, User, Edit } from 'lucide-react';
 import SellerMessages from './components/SellerMessages';
 import Link from 'next/link';
 import { StreamChatProvider } from './StreamChatProvider';
@@ -474,6 +474,23 @@ export default function SellerDashboard() {
                           className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-20 overflow-hidden"
                         >
                           <div className="py-1">
+                            {(listing.status === 'active' || listing.status === 'draft') && (
+                              <>
+                                <button
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    setShowMenuId(null);
+                                    router.push(`/sell?edit=${listing.id}`);
+                                  }}
+                                  className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors flex items-center gap-2 text-gray-700"
+                                >
+                                  <Edit className="h-4 w-4" />
+                                  Edit Listing
+                                </button>
+                                <div className="border-t border-gray-200 my-1" />
+                              </>
+                            )}
                             {listing.status !== 'active' && (
                               <button
                                 onClick={(e) => handleUpdateStatus(listing.id, 'active', e)}

@@ -158,6 +158,106 @@ export default function SellerUploadForm() {
   const additionalPhotoRef1 = useRef<HTMLInputElement>(null);
   const additionalPhotoRef2 = useRef<HTMLInputElement>(null);
 
+  // Edit mode - check for listing ID in URL
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [isLoadingListing, setIsLoadingListing] = useState(false);
+
+  // Load existing listing if editing
+  useEffect(() => {
+    const loadListingForEdit = async () => {
+      if (typeof window === 'undefined' || !user) return;
+      
+      const params = new URLSearchParams(window.location.search);
+      const editListingId = params.get('edit');
+      
+      if (!editListingId) return;
+      
+      setIsEditMode(true);
+      setIsLoadingListing(true);
+      setListingId(editListingId);
+      
+      try {
+        const { data: listing, error } = await supabase
+          .from('listings')
+          .select('*')
+          .eq('id', editListingId)
+          .eq('seller_id', user.id) // Security: only load own listings
+          .single();
+        
+        if (error) throw error;
+        if (!listing) {
+          setError('Listing not found');
+          setIsLoadingListing(false);
+          return;
+        }
+        
+        // Pre-populate all fields
+        setTitle(listing.title || '');
+        setDescription(listing.description || '');
+        setPrice(listing.price ? listing.price.toString() : '');
+        setCategory(listing.category || '');
+        setCondition(listing.condition || '');
+        setSpecifications(listing.specifications || '');
+        
+        // Combine moods, styles, and intents into keywords
+        // Handle both array and JSON string formats from database
+        const parseArrayField = (field: any): string[] => {
+          if (!field) return [];
+          if (Array.isArray(field)) return field;
+          if (typeof field === 'string') {
+            try {
+              const parsed = JSON.parse(field);
+              return Array.isArray(parsed) ? parsed : [];
+            } catch {
+              return [];
+            }
+          }
+          return [];
+        };
+        
+        const moods = parseArrayField(listing.moods);
+        const styles = parseArrayField(listing.styles);
+        const intents = parseArrayField(listing.intents);
+        
+        const allKeywords = [...moods, ...styles, ...intents];
+        setKeywords(allKeywords.join(', '));
+        
+        // Set images
+        if (listing.clean_image_url) {
+          setPreviewUrl(listing.clean_image_url);
+          setOriginalImageUrl(listing.original_image_url || listing.clean_image_url);
+          setShowProcessedImage(true);
+        } else if (listing.original_image_url) {
+          setPreviewUrl(listing.original_image_url);
+          setOriginalImageUrl(listing.original_image_url);
+          setShowProcessedImage(false);
+        }
+        
+        setAdditionalPhoto1(listing.additional_image_url || '');
+        setAdditionalPhoto2(listing.additional_image_two_url || '');
+        
+        // Create a result object to show the form in edit mode
+        setResult({
+          processedImageUrl: listing.clean_image_url || listing.original_image_url || '',
+          backgroundRemoved: !!listing.clean_image_url,
+          suggestedTitle: listing.title || '',
+          suggestedDescription: listing.description || '',
+          detectedCategory: listing.category || '',
+          detectedAttributes: allKeywords, // This should be an array for the tags display
+        });
+        
+        setProcessingStep('complete');
+      } catch (err) {
+        console.error('Error loading listing:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load listing');
+      } finally {
+        setIsLoadingListing(false);
+      }
+    };
+    
+    loadListingForEdit();
+  }, [user]);
+
   // Voice input handlers - MUST be before any returns (React Hooks rules)
   const handleTitleVoice = useCallback((transcript: string) => {
     setTitle(prev => prev ? `${prev} ${transcript}` : transcript);
@@ -213,7 +313,7 @@ export default function SellerUploadForm() {
   };
 
   // Show login prompt if not authenticated
-  if (authLoading) {
+  if (authLoading || isLoadingListing) {
     return (
       <div className="max-w-4xl mx-auto p-6 flex items-center justify-center min-h-[400px]">
         <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
@@ -453,6 +553,12 @@ export default function SellerUploadForm() {
 
       setIsPublished(true);
       // Don't auto-redirect - let user choose next action
+      // In edit mode, refresh the page to show updated status
+      if (isEditMode) {
+        setTimeout(() => {
+          router.push('/seller-dashboard');
+        }, 1500);
+      }
 
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to publish');
@@ -521,6 +627,20 @@ export default function SellerUploadForm() {
     }
   };
 
+  const handleReplacePhoto = () => {
+    // Reset only photo-related state, keep form data
+    setSelectedFile(null);
+    setPreviewUrl('');
+    setProcessingStep('idle');
+    setResult(null);
+    setOriginalImageUrl('');
+    setShowProcessedImage(true);
+    setError('');
+    // Keep all form fields (title, description, price, etc.)
+    // Keep listingId if in edit mode
+    // Keep additional photos
+  };
+
   const resetForm = () => {
     setSelectedFile(null);
     setPreviewUrl('');
@@ -541,6 +661,7 @@ export default function SellerUploadForm() {
     setIsSaved(false);
     setAdditionalPhoto1('');
     setAdditionalPhoto2('');
+    setIsEditMode(false);
   };
 
   return (
@@ -608,13 +729,25 @@ export default function SellerUploadForm() {
                   alt="Preview"
                   className="w-full max-h-96 object-contain rounded-lg border border-gray-200"
                 />
-                <button
-                  onClick={resetForm}
-                  className="absolute top-2 right-2 bg-gray-400/80 text-white rounded-full p-1.5 hover:bg-gray-600 transition-colors"
-                  title="Remove image"
-                >
-                  <X size={14} />
-                </button>
+                <div className="absolute top-2 right-2 flex gap-2">
+                  <button
+                    onClick={() => {
+                      handleReplacePhoto();
+                      fileInputRef.current?.click();
+                    }}
+                    className="bg-white/90 text-gray-700 rounded-lg px-3 py-1.5 text-sm font-medium hover:bg-white transition-colors shadow-sm border border-gray-200"
+                    title="Replace photo"
+                  >
+                    Replace
+                  </button>
+                  <button
+                    onClick={resetForm}
+                    className="bg-gray-400/80 text-white rounded-full p-1.5 hover:bg-gray-600 transition-colors"
+                    title="Remove image and start over"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
               </div>
             )}
             
@@ -672,7 +805,7 @@ export default function SellerUploadForm() {
             className="text-2xl font-bold mb-6"
             style={{ fontFamily: 'Merriweather, serif', color: '#191970' }}
           >
-            Review Your Listing
+            {isEditMode ? 'Edit Your Listing' : 'Review Your Listing'}
           </h2>
 
           <div className="grid md:grid-cols-2 gap-8 mb-8">
@@ -709,6 +842,17 @@ export default function SellerUploadForm() {
                     : '○ Original image'
                   }
                 </p>
+                {/* Replace Photo Button */}
+                <button
+                  type="button"
+                  onClick={handleReplacePhoto}
+                  className="mt-2 w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition flex items-center justify-center gap-2 border border-gray-300"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  Replace Photo
+                </button>
                 {/* Remove Background Button - only show if not already removed */}
                 {!result.backgroundRemoved && (
                   <button
@@ -1062,10 +1206,10 @@ export default function SellerUploadForm() {
                   {isPublishing ? (
                     <>
                       <Loader2 size={18} className="animate-spin" />
-                      Publishing...
+                      {isEditMode ? 'Updating...' : 'Publishing...'}
                     </>
                   ) : (
-                    'Publish Listing'
+                    isEditMode ? 'Update Listing' : 'Publish Listing'
                   )}
                 </button>
 

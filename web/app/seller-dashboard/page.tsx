@@ -370,6 +370,22 @@ export default function SellerDashboard() {
                                 style={{ fontFamily: 'Merriweather, serif' }}
                               >
                                 <div className="py-1">
+                                  {(listing.status === 'active' || listing.status === 'draft') && (
+                                    <>
+                                      <button
+                                        onClick={() => {
+                                          setShowMenuId(null);
+                                          router.push(`/sell?edit=${listing.id}`);
+                                        }}
+                                        className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors flex items-center gap-2"
+                                        style={{ color: '#1f2937' }}
+                                      >
+                                        <Edit className="h-4 w-4" />
+                                        Edit Listing
+                                      </button>
+                                      <div className="border-t border-gray-200 my-1" />
+                                    </>
+                                  )}
                                   {listing.status !== 'active' && (
                                     <button
                                       onClick={() => handleUpdateStatus(listing.id, 'active')}

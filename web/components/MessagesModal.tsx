@@ -246,8 +246,11 @@ export default function MessagesModal({ isOpen, onClose, initialSellerId, initia
         
         console.log("Creating Stream Chat channel with ID:", channelId, "Length:", channelId.length);
         
+        // Deduplicate members to avoid "Duplicate members" error
+        const members = [user.id, selectedConversation].filter((id, index, arr) => arr.indexOf(id) === index);
+        
         const channelData: any = {
-          members: [user.id, selectedConversation],
+          members: members,
         };
         
         // Add listing context if provided
