@@ -108,7 +108,6 @@ export function StreamChatProvider({ children }: ProviderProps) {
           console.log("Connection state:", {
             userID: chat.userID,
             wsHealthy: chat.wsConnection?.isHealthy,
-            connectionID: chat.connectionID
           });
         } catch (connectError: any) {
           console.error("Stream Chat connectUser error:", connectError);
