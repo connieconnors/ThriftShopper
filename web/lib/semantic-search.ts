@@ -382,6 +382,12 @@ async function searchWithInterpretation(
     console.log('✅ After filtering:', filtered.length, 'items match all tag requirements');
     
     results = filtered.map(item => item.listing);
+    
+    // Apply limit after client-side filtering for tag-only queries
+    // This ensures we get all matches like the mood wheel does
+    if (interpretation.keywords.length === 0 && results.length > limit) {
+      results = results.slice(0, limit);
+    }
   }
 
   // If we have keywords but no results, try a broader search
