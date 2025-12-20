@@ -835,7 +835,11 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
         }}
       >
         {/* MOOD WHEEL BUTTON */}
-        <div className="relative">
+        <div 
+          className="relative"
+          onClick={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
+        >
           <StandaloneMoodWheel 
             selectedMoods={selectedMoods} 
             onMoodsChange={applyMoodFilter}
@@ -880,11 +884,16 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
 
         {/* VOICE SEARCH BUTTON */}
         <button
-          onClick={() => {
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
             triggerHaptic();
             toggleVoice();
           }}
-          onTouchStart={triggerHaptic}
+          onTouchStart={(e) => {
+            e.stopPropagation();
+            triggerHaptic();
+          }}
           disabled={!isVoiceSupported}
           className="rounded-full hover:opacity-90 transition-all relative flex items-center justify-center disabled:opacity-50 active:scale-95"
           style={{ 

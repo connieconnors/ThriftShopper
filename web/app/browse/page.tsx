@@ -19,7 +19,7 @@ export default async function Browse() {
     `)
     .eq("status", "active")
     .order("created_at", { ascending: false })
-    .limit(50);
+    .limit(100);
 
   if (error) {
     console.error("Error loading listings for /browse:", error);

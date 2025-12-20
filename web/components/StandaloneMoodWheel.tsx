@@ -130,7 +130,8 @@ export function StandaloneMoodWheel({ selectedMoods, onMoodsChange, noResults = 
           }
           setShowModal(true);
         }}
-        onTouchStart={() => {
+        onTouchStart={(e) => {
+          e.stopPropagation();
           if (typeof window !== 'undefined' && 'vibrate' in navigator) {
             navigator.vibrate(10);
           }
