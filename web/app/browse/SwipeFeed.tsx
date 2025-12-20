@@ -134,8 +134,8 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
   } = useWhisperTranscription({
     onTranscriptChange: (t) => setVoiceTranscript(t),
     onTranscriptComplete: handleTranscriptComplete,
-    silenceTimeout: 1500, // 1.5 sec silence = done talking
-    maxDuration: 8000,    // 8 sec max - auto-stop for mobile UX
+    silenceTimeout: 999999999, // Disable auto-stop on silence - user must tap mic to stop
+    maxDuration: 300000,    // 5 minutes max - very long for demo purposes
   });
 
   // Countdown timer when recording
@@ -149,10 +149,9 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
     }
   }, [isRecording]);
 
-  // Sync listening state
-  useEffect(() => {
-    setIsListening(isRecording || isProcessing);
-  }, [isRecording, isProcessing]);
+  // Keep voice UI visible until user explicitly stops recording
+  // isListening is controlled only by toggleVoice, not by recording state
+  // This ensures the UI stays visible even after recording auto-stops
 
   // Display listings: use search results if available, otherwise use filtered listings
   // Compute this early so it can be used in hooks below
@@ -252,11 +251,23 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
   }, [handleWheel]);
 
   // Voice Search - now using Whisper for reliable mobile support
+  // UI stays visible until user explicitly taps mic again
   const toggleVoice = () => {
-    if (!isRecording) {
+    if (isListening) {
+      // User is stopping - hide the UI and clear transcript
+      setIsListening(false);
       setVoiceTranscript('');
+      if (isRecording) {
+        toggleRecording(); // Stop the recording if it's still active
+      }
+    } else {
+      // User is starting - show the UI and start recording
+      setIsListening(true);
+      setVoiceTranscript('');
+      if (!isRecording) {
+        toggleRecording(); // Start recording
+      }
     }
-    toggleRecording();
   };
 
   const handleSearch = async (query: string) => {
@@ -310,12 +321,7 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
   };
 
 
-  // Force MoodWheel to close when user swipes to next card
-  const [moodWheelKey, setMoodWheelKey] = useState(0);
-  
-  useEffect(() => {
-    setMoodWheelKey(prev => prev + 1);
-  }, [currentIndex]);
+  // Removed auto-close of mood wheel on swipe - user must manually close it
 
   // Update filteredListings when listings change (but not when mood filter changes)
   useEffect(() => {
@@ -495,8 +501,8 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
           </div>
         )}
 
-        {/* Voice Transcript (appears when listening or processing) */}
-        {(isRecording || isProcessing) && (
+        {/* Voice Transcript (stays visible until user taps mic again) */}
+        {isListening && (
           <div 
             className="mt-4 h-10 px-4 flex items-center justify-between rounded-full max-w-md"
             style={{ 
