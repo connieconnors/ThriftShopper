@@ -20,6 +20,7 @@ const MoodFilterModal: React.FC<MoodFilterModalProps> = ({
     <TSModal
       isOpen={isOpen}
       onClose={onClose}
+      disableBackdropClose={true}
       title="Choose Your Vibe"
       footer={
         <div className="flex items-center justify-between">
