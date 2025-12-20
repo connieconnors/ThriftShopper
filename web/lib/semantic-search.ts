@@ -243,17 +243,44 @@ async function searchWithInterpretation(
           const listingStyles = normalizeTagColumn(listing.styles).map(s => s.toLowerCase());
           const listingIntents = normalizeTagColumn(listing.intents).map(i => i.toLowerCase());
 
-        // Check if listing matches each tag type (if that type is specified in query)
-        const matchesMood = interpretation.moods.length === 0 || 
-          interpretation.moods.some((mood: string) => listingMoods.includes(mood.toLowerCase()));
+        // Combine all tags from the listing (same as mood wheel filter)
+        const allListingTags = [...listingMoods, ...listingStyles, ...listingIntents];
+        
+        // For single-tag queries (like "whimsical"), search across ALL tag types like the mood wheel
+        // For multi-tag queries, require matching the specific tag types
+        const isSingleTagQuery = 
+          (interpretation.moods.length > 0 && interpretation.styles.length === 0 && interpretation.intents.length === 0) ||
+          (interpretation.moods.length === 0 && interpretation.styles.length > 0 && interpretation.intents.length === 0) ||
+          (interpretation.moods.length === 0 && interpretation.styles.length === 0 && interpretation.intents.length > 0);
+        
+        let matchesMood: boolean;
+        let matchesStyle: boolean;
+        let matchesIntent: boolean;
+        
+        if (isSingleTagQuery) {
+          // Single tag query: search across ALL tag types (moods, styles, intents) like mood wheel
+          const allQueryTags = [
+            ...interpretation.moods.map((m: string) => m.toLowerCase()),
+            ...interpretation.styles.map((s: string) => s.toLowerCase()),
+            ...interpretation.intents.map((i: string) => i.toLowerCase())
+          ];
+          const matchesAnyTag = allQueryTags.some((tag: string) => 
+            allListingTags.includes(tag)
+          );
+          matchesMood = matchesAnyTag;
+          matchesStyle = matchesAnyTag;
+          matchesIntent = matchesAnyTag;
+        } else {
+          // Multi-tag query: require matching specific tag types
+          matchesMood = interpretation.moods.length === 0 || 
+            interpretation.moods.some((mood: string) => listingMoods.includes(mood.toLowerCase()));
 
-        const matchesStyle = interpretation.styles.length === 0 || 
-          interpretation.styles.some((style: string) => listingStyles.includes(style.toLowerCase()));
+          matchesStyle = interpretation.styles.length === 0 || 
+            interpretation.styles.some((style: string) => listingStyles.includes(style.toLowerCase()));
 
-        // For intents: use scoring system
-        // "collectible gift" = prefer items with BOTH, but accept items with at least one
-        const matchesIntent = interpretation.intents.length === 0 || 
-          interpretation.intents.some((intent: string) => listingIntents.includes(intent.toLowerCase()));
+          matchesIntent = interpretation.intents.length === 0 || 
+            interpretation.intents.some((intent: string) => listingIntents.includes(intent.toLowerCase()));
+        }
         
         // Bonus: check if item is in the right category for "collectible"
         const matchesCategory = interpretation.categories.length === 0 ||
@@ -263,26 +290,43 @@ async function searchWithInterpretation(
 
         // Score for ranking (more matches = higher score)
         let score = 0;
-        const moodMatches = interpretation.moods.filter((mood: string) => 
-          listingMoods.includes(mood.toLowerCase())
-        ).length;
-        const styleMatches = interpretation.styles.filter((style: string) => 
-          listingStyles.includes(style.toLowerCase())
-        ).length;
-        const intentMatches = interpretation.intents.filter((intent: string) => 
-          listingIntents.includes(intent.toLowerCase())
-        ).length;
+        
+        if (isSingleTagQuery) {
+          // For single-tag queries, score based on tag matches across all types
+          const allQueryTags = [
+            ...interpretation.moods.map((m: string) => m.toLowerCase()),
+            ...interpretation.styles.map((s: string) => s.toLowerCase()),
+            ...interpretation.intents.map((i: string) => i.toLowerCase())
+          ];
+          const tagMatches = allQueryTags.filter((tag: string) => 
+            allListingTags.includes(tag)
+          ).length;
+          score = tagMatches * 3; // Higher weight for direct tag matches
+        } else {
+          // Multi-tag query: score by specific tag types
+          const moodMatches = interpretation.moods.filter((mood: string) => 
+            listingMoods.includes(mood.toLowerCase())
+          ).length;
+          const styleMatches = interpretation.styles.filter((style: string) => 
+            listingStyles.includes(style.toLowerCase())
+          ).length;
+          const intentMatches = interpretation.intents.filter((intent: string) => 
+            listingIntents.includes(intent.toLowerCase())
+          ).length;
+          
+          // Scoring: items matching MORE criteria rank higher
+          score = (moodMatches * 3) + (styleMatches * 2) + (intentMatches * 3);
+          
+          // Boost items that match ALL intents (e.g., both "collection" AND "gifting")
+          if (interpretation.intents.length > 1 && intentMatches === interpretation.intents.length) {
+            score += 5; // Bonus for matching all intents
+          }
+        }
+        
         const categoryMatches = interpretation.categories.filter((cat: string) =>
           (listing.category || '').toLowerCase().includes(cat.toLowerCase())
         ).length;
-        
-        // Scoring: items matching MORE criteria rank higher
-        score = (moodMatches * 3) + (styleMatches * 2) + (intentMatches * 3) + (categoryMatches * 2);
-        
-        // Boost items that match ALL intents (e.g., both "collection" AND "gifting")
-        if (interpretation.intents.length > 1 && intentMatches === interpretation.intents.length) {
-          score += 5; // Bonus for matching all intents
-        }
+        score += categoryMatches * 2;
 
         const passes = matchesMood && matchesStyle && matchesIntent && matchesCategory;
         
