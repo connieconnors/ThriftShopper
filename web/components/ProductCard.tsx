@@ -220,8 +220,17 @@ export function ProductCard({ product, onFavorite, onSwipeUp, onTap, isFavorited
       <div className="absolute bottom-0 left-0 right-0 p-4 pb-5 z-10">
         {/* Title */}
         <h2 
-          className="text-[10px] font-medium text-white mb-1 leading-tight"
-          style={{ fontFamily: 'Merriweather, serif' }}
+          className="text-white mb-1 leading-tight overflow-hidden"
+          style={{ 
+            fontFamily: 'Merriweather, serif',
+            fontSize: 'clamp(9px, 2.5vw, 12px)',
+            lineHeight: 1.2,
+            maxHeight: '2.4em',
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical',
+            textOverflow: 'ellipsis',
+          }}
         >
           {product.title || 'Untitled'}
         </h2>
