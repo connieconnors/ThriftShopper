@@ -223,7 +223,7 @@ export function ProductCard({ product, onFavorite, onSwipeUp, onTap, isFavorited
           className="text-white mb-1 leading-tight overflow-hidden"
           style={{ 
             fontFamily: 'Merriweather, serif',
-            fontSize: 'clamp(9px, 3.5vw, 11px)',
+            fontSize: 'clamp(1.25rem, 3vw, 1.5rem)',
             lineHeight: 1.2,
             maxHeight: '2.4em',
             display: '-webkit-box',
