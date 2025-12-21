@@ -447,17 +447,16 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
         style={{ pointerEvents: 'none' }}
       >
         {/* Left: TS Logo + Tagline */}
-        <div className="flex flex-col gap-1" style={{ opacity: 0.9 }}>
-          <TSLogo size={32} primaryColor={COLORS.navy} accentColor={COLORS.gold} />
-          <p 
-            className="italic font-bold leading-tight"
-            style={{ 
-              color: COLORS.gold,
-              fontSize: '11px',
-            }}
-          >
-            the magic of discovery™
-          </p>
+        <div 
+          style={{
+            fontFamily: 'Playfair Display, serif',
+            fontWeight: 500,
+            fontSize: '32px',
+            color: '#000080',
+            letterSpacing: '-0.04em',
+          }}
+        >
+          TS
         </div>
         
         {/* Active Mood Filters */}
