@@ -355,7 +355,6 @@ async function searchWithInterpretation(
             matchesStyle,
             matchesIntent,
             matchesCategory,
-            intentMatches: `${intentMatches}/${interpretation.intents.length}`,
             passes,
             score
           });
