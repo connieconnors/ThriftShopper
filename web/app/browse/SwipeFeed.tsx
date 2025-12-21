@@ -446,7 +446,7 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
         className="absolute top-0 left-0 z-30 p-4"
         style={{ pointerEvents: 'none' }}
       >
-        {/* Left: TS Logo + Tagline */}
+        {/* Left: TS Header */}
         <div 
           style={{
             fontFamily: 'Playfair Display, serif',
