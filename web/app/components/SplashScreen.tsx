@@ -107,7 +107,7 @@ export default function SplashScreen({ autoNavigateDelay = 3000 }: SplashScreenP
           <p 
             className="text-xl sm:text-2xl md:text-4xl lg:text-5xl tracking-widest text-center"
             style={{ 
-              fontFamily: "var(--font-merriweather), Georgia, serif",
+              fontFamily: "var(--font-playfair), Georgia, serif",
               color: "#ffffff",
               textShadow: "0 2px 10px rgba(0,0,0,0.6)",
               animation: "gentlePulse 2s ease-in-out infinite",
