@@ -22,10 +22,11 @@ export function TSLogo({
       <div 
         className="flex items-center justify-center"
         style={{ 
-          fontFamily: 'Merriweather, serif',
+          fontFamily: 'Playfair Display, serif',
           fontSize: size * 0.65,
           lineHeight: 1,
-          fontWeight: 'bold',
+          fontWeight: 500,
+          letterSpacing: '-0.04em',
           color: primaryColor,
           textShadow: `0 0 8px ${accentColor}40`,
         }}

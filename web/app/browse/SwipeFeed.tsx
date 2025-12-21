@@ -454,6 +454,7 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
             fontSize: '32px',
             color: '#000080',
             letterSpacing: '-0.04em',
+            textShadow: '0 0 1px rgba(239, 191, 4, 0.4), 0 0 1px rgba(239, 191, 4, 0.4), 0 1px 2px rgba(0,0,0,0.1)',
           }}
         >
           TS
