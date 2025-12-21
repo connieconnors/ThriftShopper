@@ -448,8 +448,9 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
       >
         {/* Left: TS Header */}
         <div 
+          className="playfair_display_8964ba03-module_UnR6xq_variable"
           style={{
-            fontFamily: 'Playfair Display, serif',
+            fontFamily: 'var(--font-playfair), serif',
             fontWeight: 500,
             fontSize: '32px',
             color: '#000080',
