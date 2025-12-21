@@ -209,17 +209,18 @@ export function ProductCard({ product, onFavorite, onSwipeUp, onTap, isFavorited
 
       {/* Bottom Gradient Overlay */}
       <div
-        className="absolute bottom-0 left-0 right-0 h-1/3 pointer-events-none"
+        className="absolute bottom-0 left-0 right-0 pointer-events-none"
         style={{
-          background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 60%, transparent 100%)',
+          height: '40%',
+          background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.5) 50%, rgba(0,0,0,0.2) 80%, transparent 100%)',
         }}
       />
 
       {/* Product Info - Bottom */}
-      <div className="absolute bottom-0 left-0 right-0 p-4 pb-6 z-10">
+      <div className="absolute bottom-0 left-0 right-0 p-4 pb-5 z-10">
         {/* Title */}
         <h2 
-          className="text-[9px] font-normal text-white mb-0.5 leading-tight"
+          className="text-[10px] font-medium text-white mb-1 leading-tight"
           style={{ fontFamily: 'Merriweather, serif' }}
         >
           {product.title || 'Untitled'}
@@ -227,7 +228,7 @@ export function ProductCard({ product, onFavorite, onSwipeUp, onTap, isFavorited
 
         {/* Price */}
         <p 
-          className="text-[8px] font-bold mb-1"
+          className="text-[9px] font-bold mb-1.5"
           style={{ color: '#cfb53b', fontFamily: 'Merriweather, serif' }}
         >
           ${(product.price ?? 0).toFixed(2)}
