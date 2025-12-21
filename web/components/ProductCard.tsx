@@ -219,7 +219,7 @@ export function ProductCard({ product, onFavorite, onSwipeUp, onTap, isFavorited
       <div className="absolute bottom-0 left-0 right-0 p-4 pb-6 z-10">
         {/* Title */}
         <h2 
-          className="text-base font-semibold text-white mb-1.5 leading-tight"
+          className="text-sm font-semibold text-white mb-1.5 leading-tight"
           style={{ fontFamily: 'Merriweather, serif' }}
         >
           {product.title || 'Untitled'}
@@ -227,7 +227,7 @@ export function ProductCard({ product, onFavorite, onSwipeUp, onTap, isFavorited
 
         {/* Price */}
         <p 
-          className="text-sm font-bold mb-2"
+          className="text-xs font-bold mb-2"
           style={{ color: '#cfb53b', fontFamily: 'Merriweather, serif' }}
         >
           ${(product.price ?? 0).toFixed(2)}
