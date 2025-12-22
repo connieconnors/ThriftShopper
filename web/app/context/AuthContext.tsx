@@ -23,10 +23,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     // Get initial session
     const getSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setSession(session);
-      setUser(session?.user ?? null);
-      setIsLoading(false);
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        // If there's a refresh token error, clear the invalid session and localStorage
+        if (error && (error.message?.includes('Refresh Token') || error.message?.includes('refresh_token'))) {
+          console.warn('Invalid refresh token detected, clearing session:', error.message);
+          // Clear localStorage to remove invalid tokens
+          if (typeof window !== 'undefined') {
+            const keys = Object.keys(localStorage);
+            keys.forEach(key => {
+              if (key.includes('supabase') || key.includes('auth')) {
+                localStorage.removeItem(key);
+              }
+            });
+          }
+          // Clear the invalid session
+          await supabase.auth.signOut();
+          setSession(null);
+          setUser(null);
+          setIsLoading(false);
+          return;
+        }
+        
+        setSession(session);
+        setUser(session?.user ?? null);
+        setIsLoading(false);
+      } catch (error) {
+        console.error('Error getting session:', error);
+        // On any error, clear session and continue
+        setSession(null);
+        setUser(null);
+        setIsLoading(false);
+      }
     };
 
     getSession();
@@ -34,9 +63,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        setIsLoading(false);
+        // Handle refresh token errors in auth state changes too
+        if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
+          setSession(session);
+          setUser(session?.user ?? null);
+          setIsLoading(false);
+        } else {
+          setSession(session);
+          setUser(session?.user ?? null);
+          setIsLoading(false);
+        }
       }
     );
 

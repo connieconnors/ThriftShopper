@@ -159,16 +159,24 @@ async function searchWithInterpretation(
     .order('created_at', { ascending: false });
 
   // Build keyword search conditions (search across ALL text fields)
-  // Include tag words (moods, styles, intents) as keywords too, so they search title/description
-  const allKeywords = [
-    ...interpretation.keywords,
-    ...interpretation.moods,
-    ...interpretation.styles,
-    ...interpretation.intents
-  ];
+  // Distinguish between real keywords (like "mug", "stereo") and tag-only queries (like "whimsical", "vintage")
+  const hasRealKeywords = interpretation.keywords.length > 0;
+  const isTagOnlyQuery = !hasRealKeywords && (
+    interpretation.moods.length > 0 || 
+    interpretation.styles.length > 0 || 
+    interpretation.intents.length > 0
+  );
   
-  if (allKeywords.length > 0) {
-    const orConditions = allKeywords
+  if (hasRealKeywords) {
+    // Real keywords: search title/description and include tags as additional search terms
+    const allSearchTerms = [
+      ...interpretation.keywords,
+      ...interpretation.moods,
+      ...interpretation.styles,
+      ...interpretation.intents
+    ];
+    
+    const orConditions = allSearchTerms
       .map((keyword: string) => {
         const escaped = keyword.toLowerCase().replace(/[%_]/g, '\\$&');
         return [
@@ -182,11 +190,10 @@ async function searchWithInterpretation(
       .join(',');
     
     query = query.or(orConditions);
-  } else {
-    // If no keywords, we need to fetch more items for tag filtering
-    // Don't apply limit yet - we'll filter client-side and then limit
-    // Fetch up to 500 items to ensure we get all matches (mood wheel filters all loaded listings)
   }
+  // For tag-only queries: don't add database filters - fetch all active items
+  // Client-side filtering will check the tags (moods, styles, intents columns)
+  // This matches how the mood wheel works - it filters all loaded listings by tags
 
   // Apply price range filter
   if (interpretation.priceRange) {
@@ -206,12 +213,13 @@ async function searchWithInterpretation(
     query = query.or(categoryConditions);
   }
 
-  // Only apply limit if we have keywords (keyword search is already filtered)
+  // Only apply limit if we have real keywords (keyword search is already filtered)
   // For tag-only queries, fetch more items and filter client-side, then limit
-  if (interpretation.keywords.length > 0) {
+  if (hasRealKeywords) {
     query = query.limit(limit);
   } else {
     // Fetch more items for tag filtering (same as browse page limit)
+    // This ensures we get all potential matches for client-side tag filtering
     query = query.limit(500);
   }
 
