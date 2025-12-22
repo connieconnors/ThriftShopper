@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback, useMemo, TouchEvent } from "react";
 import { useRouter } from "next/navigation";
+import { motion } from "motion/react";
 import { 
   Listing, 
   getSellerDisplayName, 
@@ -693,133 +694,44 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
               )}
 
               {/* Product Info (TikTok-style bottom-left overlay) */}
-              <div 
+              <motion.div 
                 className="absolute bottom-0 left-0 text-left pointer-events-none z-10"
                 style={{ 
                   paddingLeft: '20px',
-                  paddingBottom: '24px',
+                  paddingBottom: '90px',
                   paddingRight: '20px',
                   maxWidth: '80%'
                 }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: isTransitioning ? 0 : 1 }}
+                transition={{ duration: 0.3, delay: 0.3 }}
               >
-                {/* Title (white, bold, 22-24px, with enhanced text shadow for readability) */}
+                {/* Title (whisper/caption - subtle overlay) */}
                 <h1 
-                  className="font-bold leading-tight mb-1"
+                  className="mb-1"
                   style={{ 
-                    color: 'white',
-                    fontSize: '18px',
-                    textShadow: '0 2px 8px rgba(0,0,0,0.6), 0 1px 2px rgba(0,0,0,0.4)',
+                    color: 'rgba(255, 255, 255, 0.70)',
+                    fontSize: '15px',
+                    fontWeight: '500',
+                    lineHeight: '1.1',
+                    textShadow: '0 0 8px rgba(0,0,0,0.9), 0 1px 3px rgba(0,0,0,0.8)',
                   }}
                 >
                   {listing.title}
                 </h1>
 
-                {/* Price (gold/yellow, 20px, positioned directly under title, with text shadow) */}
+                {/* Price (subtle context - darker gold) */}
                 <p 
-                  className="font-bold mb-2"
+                  className="font-bold"
                   style={{ 
-                    color: '#D4AF37',
-                    fontSize: '18px',
-                    textShadow: '0 2px 6px rgba(0,0,0,0.5), 0 1px 2px rgba(0,0,0,0.3)',
+                    color: 'rgba(184, 150, 15, 0.60)',
+                    fontSize: '12px',
+                    textShadow: '0 0 8px rgba(0,0,0,0.9), 0 1px 3px rgba(0,0,0,0.8)',
                   }}
                 >
                   ${listing.price?.toFixed(2) || '0.00'}
                 </p>
-
-                {/* Description (gray/white, 14px, max 2 lines with ellipsis) */}
-                {listing.description && (
-                  <p 
-                    className="mb-2"
-                    style={{ 
-                      fontSize: '14px',
-                      color: 'rgba(255, 255, 255, 0.9)',
-                      lineHeight: '1.4',
-                      display: '-webkit-box',
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: 'vertical',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                    }}
-                  >
-                    {listing.description}
-                  </p>
-                )}
-
-                {/* Category Tags - positioned above description (but in visual order, they're below) */}
-                <div className="flex flex-wrap gap-2 mb-2">
-                  {listing.category && (
-                    <span 
-                      className="px-3 rounded-full text-xs font-medium"
-                      style={{ 
-                        height: '32px',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                        backdropFilter: 'blur(4px)',
-                        color: 'white',
-                        border: '1px solid rgba(255, 255, 255, 0.3)',
-                      }}
-                    >
-                      {listing.category}
-                    </span>
-                  )}
-                  {/* Styles - using normalizeTagColumn for consistent parsing */}
-                  {normalizeTagColumn(listing.styles).slice(0, 2).map((style: string, i: number) => (
-                    <span
-                      key={`${style}-${i}`}
-                      className="px-3 rounded-full text-xs font-medium"
-                      style={{ 
-                        height: '32px',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                        backdropFilter: 'blur(4px)',
-                        color: 'white',
-                        border: '1px solid rgba(255, 255, 255, 0.3)',
-                      }}
-                    >
-                      {style}
-                    </span>
-                  ))}
-                </div>
-
-                {/* Seller Info - smaller, under category tags */}
-                <div className="flex items-center gap-2 mt-1">
-                  {listingSellerAvatar ? (
-                    <img 
-                      src={listingSellerAvatar} 
-                      alt="" 
-                      className="rounded-full object-cover"
-                      style={{ width: '24px', height: '24px' }}
-                    />
-                  ) : (
-                    <div 
-                      className="rounded-full flex items-center justify-center text-xs font-bold"
-                      style={{ 
-                        width: '24px', 
-                        height: '24px',
-                        backgroundColor: COLORS.oldGold, 
-                        color: COLORS.midnightBlue,
-                        fontSize: '10px',
-                      }}
-                    >
-                      {listingSellerName.charAt(0)}
-                    </div>
-                  )}
-                  <span 
-                    className="text-xs"
-                    style={{ 
-                      color: 'rgba(255, 255, 255, 0.7)',
-                      fontSize: '12px',
-                    }}
-                  >
-                    Sold by {listingSellerName}
-                  </span>
-                  {listingHasTSBadge && (
-                    <img src={TS_BADGE_URL} alt="TS" className="w-3 h-3" />
-                  )}
-                </div>
-              </div>
+              </motion.div>
             </div>
           );
         })}
