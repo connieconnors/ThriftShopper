@@ -11,6 +11,7 @@ import { supabase } from "@/lib/supabaseClient";
 interface SellerProfile {
   storeName: string;
   description: string;
+  sellerInfo: string;
   city: string;
   state: string;
   zipCode: string;
@@ -46,6 +47,7 @@ export default function SellerSettingsPage() {
   const [formData, setFormData] = useState<SellerProfile>({
     storeName: "",
     description: "",
+    sellerInfo: "",
     city: "",
     state: "",
     zipCode: "",
@@ -85,7 +87,8 @@ export default function SellerSettingsPage() {
       if (data) {
         setFormData({
           storeName: data.display_name || "",
-          description: data.bio || "",
+          description: data.seller_description || "",
+          sellerInfo: data.seller_story || "",
           city: data.location_city || "",
           state: data.location_state || "",
           zipCode: data.location_zip || "",
@@ -119,7 +122,8 @@ export default function SellerSettingsPage() {
         .upsert({
           user_id: user.id,
           display_name: formData.storeName,
-          bio: formData.description,
+          seller_description: formData.description,
+          seller_story: formData.sellerInfo || null,
           location_city: formData.city,
           location_state: formData.state,
           location_zip: formData.zipCode,
@@ -228,6 +232,33 @@ export default function SellerSettingsPage() {
               className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#191970] outline-none transition-colors min-h-[100px] resize-none"
               placeholder="Tell buyers about you and what makes your shop special..."
             />
+          </div>
+
+          {/* Your Story / About Your Shop */}
+          <div>
+            <label className="block mb-2 font-medium" style={{ color: "#191970" }}>
+              Your Story <span className="text-gray-400 font-normal">(optional)</span>
+            </label>
+            <textarea
+              value={formData.sellerInfo}
+              onChange={(e) => {
+                const value = e.target.value;
+                if (value.length <= 500) {
+                  updateField("sellerInfo", value);
+                }
+              }}
+              maxLength={500}
+              className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#191970] outline-none transition-colors min-h-[100px] resize-none"
+              placeholder="Tell buyers about your shop, what you sell, or what makes your items special..."
+            />
+            <div className="flex justify-between items-center mt-1">
+              <p className="text-xs text-gray-500">
+                Tell buyers about your shop, what you sell, or what makes your items special (optional)
+              </p>
+              <p className={`text-xs ${formData.sellerInfo.length >= 500 ? 'text-red-500' : 'text-gray-400'}`}>
+                {formData.sellerInfo.length}/500
+              </p>
+            </div>
           </div>
 
           {/* Location */}

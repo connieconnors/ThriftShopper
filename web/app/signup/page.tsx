@@ -261,6 +261,44 @@ function SignUpForm() {
               />
             </div>
 
+            {/* Terms and Privacy Acknowledgment - Required */}
+            <div className="flex items-start gap-3 pt-2">
+              <input
+                type="checkbox"
+                id="accept-terms"
+                required
+                className="mt-1 w-4 h-4 rounded border-gray-300 focus:ring-2 cursor-pointer"
+                style={{ accentColor: '#191970' }}
+              />
+              <label 
+                htmlFor="accept-terms" 
+                className="text-sm text-gray-600 cursor-pointer select-none"
+              >
+                I acknowledge that I have read and agree to the{" "}
+                <a 
+                  href="https://thriftshopper.com/terms" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="font-semibold hover:underline"
+                  style={{ color: '#191970' }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  Terms of Service
+                </a>
+                {" "}and{" "}
+                <a 
+                  href="https://thriftshopper.com/privacy" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="font-semibold hover:underline"
+                  style={{ color: '#191970' }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  Privacy Policy
+                </a>
+              </label>
+            </div>
+
             {/* Marketing opt-in checkbox */}
             <div className="flex items-start gap-3 pt-2">
               <input
@@ -299,9 +337,31 @@ function SignUpForm() {
             </button>
           </form>
 
-          <p className="text-center text-xs text-gray-500 mt-6">
-            By signing up, you agree to our Terms of Service and Privacy Policy
-          </p>
+          {/* Additional Links */}
+          <div className="text-center text-xs text-gray-500 mt-6 space-y-1">
+            <p>
+              Also review our{" "}
+              <a 
+                href="https://thriftshopper.com/marketplace-guidelines" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="font-semibold hover:underline"
+                style={{ color: '#191970' }}
+              >
+                Marketplace Guidelines
+              </a>
+              {" "}and{" "}
+              <a 
+                href="https://thriftshopper.com/what-we-accept" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="font-semibold hover:underline"
+                style={{ color: '#191970' }}
+              >
+                What We Accept
+              </a>
+            </p>
+          </div>
         </div>
       </div>
     </main>

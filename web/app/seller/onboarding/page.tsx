@@ -12,6 +12,7 @@ import { TSLogo } from "@/components/TSLogo";
 interface SellerProfile {
   storeName: string;
   description: string;
+  sellerInfo: string;
   city: string;
   state: string;
   zipCode: string;
@@ -41,6 +42,7 @@ export default function SellerOnboardingPage() {
   const [formData, setFormData] = useState<SellerProfile>({
     storeName: "",
     description: "",
+    sellerInfo: "",
     city: "",
     state: "",
     zipCode: "",
@@ -190,14 +192,16 @@ export default function SellerOnboardingPage() {
 
       // Prepare update data
       const updateData: any = {
+        user_id: user.id, // Use user_id as the key column
         display_name: formData.storeName, // Store name maps to display_name
-        bio: formData.description,
+        seller_description: formData.description, // Seller Description goes to seller_description
+        seller_story: formData.sellerInfo || null, // Your Story goes to seller_story
         location_city: formData.city,
         location_state: formData.state,
         location_zip: formData.zipCode,
         email: formData.email,
         phone_main: formData.phone || null, // Use phone_main (stores can have store phone and mobile)
-        shipping_speed: formData.shippingSpeed,
+        shipping_info: formData.shippingSpeed, // Changed from shipping_speed to shipping_info
         is_seller: true,
       };
 
@@ -207,36 +211,27 @@ export default function SellerOnboardingPage() {
       }
 
       // Always use UPDATE (upsert) since profile should already exist from signup
-      // Try user_id first (if column exists), then fallback to id (primary key)
-      // This matches the pattern used in seller/page.tsx and canvas/page.tsx
+      // Use user_id as the key column (matches actual table structure)
       let result = await supabase
         .from("profiles")
         .update(updateData)
         .eq("user_id", user.id);
       
-      // If that fails (user_id column might not exist or no match), try with id (primary key)
-      if (result.error) {
-        console.log('Update with user_id failed, trying with id:', result.error);
-        result = await supabase
-          .from("profiles")
-          .update(updateData)
-          .eq("id", user.id);
-      }
-
-      // If update didn't affect any rows or failed, try insert (profile doesn't exist)
+      // If update didn't affect any rows, try insert (profile doesn't exist)
       if (result.error || (result.data === null && result.count === 0)) {
         console.log('Update failed or no rows affected, trying insert...');
-        // Try insert with id (primary key that references auth.users(id))
+        // Use user_id as the key column (not id)
         const insertData: any = {
-          id: user.id, // Use id as primary key (references auth.users(id))
+          user_id: user.id, // Use user_id as the key column
           display_name: formData.storeName,
-          bio: formData.description,
+          seller_description: formData.description, // Seller Description goes to seller_description
+          seller_story: formData.sellerInfo || null, // Your Story goes to seller_story
           location_city: formData.city,
           location_state: formData.state,
           location_zip: formData.zipCode,
           email: formData.email,
           phone_main: formData.phone || null, // Use phone_main (stores can have store phone and mobile)
-          shipping_speed: formData.shippingSpeed,
+          shipping_info: formData.shippingSpeed, // Changed from shipping_speed to shipping_info
           is_seller: true,
         };
 
@@ -380,6 +375,33 @@ export default function SellerOnboardingPage() {
               />
             </div>
             <p className="mt-1 text-xs text-gray-500">This will be your display name on ThriftShopper</p>
+          </div>
+
+          {/* Your Story / About Your Shop */}
+          <div>
+            <label className="block mb-2 font-medium" style={{ color: "#191970" }}>
+              Your Story <span className="text-gray-400 font-normal">(optional)</span>
+            </label>
+            <textarea
+              value={formData.sellerInfo}
+              onChange={(e) => {
+                const value = e.target.value;
+                if (value.length <= 500) {
+                  updateField("sellerInfo", value);
+                }
+              }}
+              maxLength={500}
+              className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#191970] outline-none transition-colors min-h-[100px] resize-none"
+              placeholder="Tell buyers about your shop, what you sell, or what makes your items special..."
+            />
+            <div className="flex justify-between items-center mt-1">
+              <p className="text-xs text-gray-500">
+                Tell buyers about your shop, what you sell, or what makes your items special (optional)
+              </p>
+              <p className={`text-xs ${formData.sellerInfo.length >= 500 ? 'text-red-500' : 'text-gray-400'}`}>
+                {formData.sellerInfo.length}/500
+              </p>
+            </div>
           </div>
 
           {/* Description */}

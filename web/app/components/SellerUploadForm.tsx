@@ -721,6 +721,16 @@ export default function SellerUploadForm() {
                   </button>
                 </p>
                 <p className="text-sm text-gray-400">PNG, JPG up to 10MB</p>
+                <p 
+                  className="text-sm mt-3"
+                  style={{ 
+                    fontFamily: "'Source Sans 3', 'Source Sans Pro', sans-serif",
+                    color: 'rgba(0, 0, 0, 0.85)',
+                    lineHeight: '1.5'
+                  }}
+                >
+                  Perfection isn't the goal — clarity and character are. Vertical photos work best.
+                </p>
               </div>
             ) : (
               <div className="relative">
@@ -947,6 +957,16 @@ export default function SellerUploadForm() {
               </div>
               <p className="text-xs text-gray-500 mt-2">
                 Add up to 2 more photos (optional)
+              </p>
+              <p 
+                className="text-xs mt-2"
+                style={{ 
+                  fontFamily: "'Source Sans 3', 'Source Sans Pro', sans-serif",
+                  color: 'rgba(0, 0, 0, 0.85)',
+                  lineHeight: '1.5'
+                }}
+              >
+                Perfection isn't the goal — clarity and character are. Vertical photos work best.
               </p>
             </div>
 

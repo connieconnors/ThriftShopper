@@ -21,7 +21,8 @@ export default async function ListingPage({ params }: ListingPageProps) {
         avatar_url,
         ts_badge,
         rating,
-        review_count
+        review_count,
+        seller_story
       )
     `)
     .eq("id", id)

@@ -86,11 +86,11 @@ export default function SellerDashboard() {
     if (!user) return; // Guard clause for TypeScript
     
     try {
-      // Fetch profile with Stripe info (using id - it's the primary key that references auth.users(id))
+      // Fetch profile with Stripe info (using user_id as the key column)
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*, stripe_account_id, stripe_onboarding_status')
-        .eq('id', user.id)
+        .eq('user_id', user.id)
         .single();
 
       if (profileError) throw profileError;
@@ -107,6 +107,13 @@ export default function SellerDashboard() {
       setListings(listingsData || []);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
+      // Log more details about the error
+      if (error instanceof Error) {
+        console.error('Error message:', error.message);
+        console.error('Error stack:', error.stack);
+      } else {
+        console.error('Error details:', JSON.stringify(error, null, 2));
+      }
     } finally {
       setLoading(false);
     }

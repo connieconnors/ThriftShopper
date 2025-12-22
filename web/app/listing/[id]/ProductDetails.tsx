@@ -11,6 +11,7 @@ import {
   hasSellerTSBadge,
   getSellerRating,
   getSellerReviewCount,
+  getSellerStory,
   getListingImages,
   getPrimaryImage,
   TS_BADGE_URL
@@ -110,9 +111,13 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
   const sellerAvatar = getSellerAvatar(listing);
   const sellerRating = getSellerRating(listing);
   const reviewCount = getSellerReviewCount(listing);
+  const sellerStory = getSellerStory(listing);
   
   // Check TS badge
   const hasTSBadge = hasSellerTSBadge(listing);
+  
+  // State for expanding seller story
+  const [isSellerStoryExpanded, setIsSellerStoryExpanded] = useState(false);
 
   // Collect all tags
   const tags = [
@@ -358,6 +363,30 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </button>
+
+          {/* Seller Story (if exists) */}
+          {sellerStory && (
+            <div className="mt-3 pt-3 border-t border-gray-100">
+              <p 
+                className={`text-sm text-gray-700 leading-relaxed ${
+                  !isSellerStoryExpanded ? 'line-clamp-2' : ''
+                }`}
+              >
+                {sellerStory}
+              </p>
+              {sellerStory.length > 150 && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsSellerStoryExpanded(!isSellerStoryExpanded);
+                  }}
+                  className="mt-2 text-sm font-medium text-[#191970] hover:text-[#000080] transition-colors"
+                >
+                  {isSellerStoryExpanded ? 'Read less' : 'Read more'}
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Seller Ratings (temporarily hidden for MVP - no reviews yet) */}

@@ -111,6 +111,16 @@ export function AddListing({ onSubmit, onCancel }: AddListingProps) {
               )}
             </div>
             <p className="text-sm text-gray-500">Upload at least one photo</p>
+            <p 
+              className="text-sm mt-2"
+              style={{ 
+                fontFamily: "'Source Sans 3', 'Source Sans Pro', sans-serif",
+                color: 'rgba(0, 0, 0, 0.85)',
+                lineHeight: '1.5'
+              }}
+            >
+              Perfection isn't the goal — clarity and character are. Vertical photos work best.
+            </p>
           </div>
 
           <div>

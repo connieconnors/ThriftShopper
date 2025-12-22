@@ -28,6 +28,7 @@ export type Listing = {
     ts_badge: string | boolean | null; // Can be "true"/"false" string or boolean
     rating: number | null;
     review_count: number | null;
+    seller_story: string | null;
   } | null;
 };
 
@@ -95,4 +96,9 @@ export function getSellerRating(listing: Listing): number | null {
 // Helper to get seller review count
 export function getSellerReviewCount(listing: Listing): number {
   return listing.profiles?.review_count ?? 0;
+}
+
+// Helper to get seller story
+export function getSellerStory(listing: Listing): string | null {
+  return listing.profiles?.seller_story || null;
 }
