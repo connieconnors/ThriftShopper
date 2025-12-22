@@ -707,7 +707,7 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
                   className="font-bold leading-tight mb-1"
                   style={{ 
                     color: 'white',
-                    fontSize: '23px',
+                    fontSize: '18px',
                     textShadow: '0 2px 8px rgba(0,0,0,0.6), 0 1px 2px rgba(0,0,0,0.4)',
                   }}
                 >
@@ -719,7 +719,7 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
                   className="font-bold mb-2"
                   style={{ 
                     color: '#D4AF37',
-                    fontSize: '20px',
+                    fontSize: '18px',
                     textShadow: '0 2px 6px rgba(0,0,0,0.5), 0 1px 2px rgba(0,0,0,0.3)',
                   }}
                 >
