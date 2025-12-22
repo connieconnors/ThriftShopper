@@ -130,14 +130,24 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
   }, []);
 
   // Whisper-based voice transcription (works on mobile!)
+  const [voiceError, setVoiceError] = useState<string | null>(null);
+  
   const {
     isRecording,
     isProcessing,
     isSupported: isVoiceSupported,
     toggleRecording,
+    error: transcriptionError,
   } = useWhisperTranscription({
-    onTranscriptChange: (t) => setVoiceTranscript(t),
+    onTranscriptChange: (t) => {
+      setVoiceTranscript(t);
+      setVoiceError(null); // Clear error when transcript updates
+    },
     onTranscriptComplete: handleTranscriptComplete,
+    onError: (error) => {
+      console.error('Voice transcription error:', error);
+      setVoiceError(error);
+    },
     silenceTimeout: 999999999, // Disable auto-stop on silence - user must tap mic to stop
     maxDuration: 300000,    // 5 minutes max - very long for demo purposes
   });
@@ -257,20 +267,25 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
   // Voice Search - now using Whisper for reliable mobile support
   // UI stays visible until user explicitly taps mic again
   const toggleVoice = () => {
+    console.log('🎤 toggleVoice called', { isListening, isRecording, isVoiceSupported });
+    
     if (isListening) {
       // User is stopping - hide the UI and clear transcript
+      console.log('🎤 Stopping voice search');
       setIsListening(false);
       setVoiceTranscript('');
+      setVoiceError(null);
       if (isRecording) {
         toggleRecording(); // Stop the recording if it's still active
       }
     } else {
       // User is starting - show the UI and start recording
+      console.log('🎤 Starting voice search');
       setIsListening(true);
       setVoiceTranscript('');
-      if (!isRecording) {
-        toggleRecording(); // Start recording
-      }
+      setVoiceError(null);
+      // Always call toggleRecording - it handles the start/stop logic
+      toggleRecording();
     }
   };
 
@@ -513,11 +528,15 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
             style={{ 
               backgroundColor: 'rgba(255,255,255,0.15)', 
               backdropFilter: 'blur(10px)',
-              border: `1px solid ${COLORS.oldGold}50`,
+              border: `1px solid ${voiceError ? '#ef4444' : COLORS.oldGold}50`,
             }}
           >
-            <p className="text-sm truncate flex-1" style={{ color: 'white' }}>
-              {isProcessing ? (
+            <p className="text-sm truncate flex-1" style={{ color: voiceError ? '#ef4444' : 'white' }}>
+              {voiceError ? (
+                <span className="flex items-center gap-2">
+                  ⚠️ {voiceError}
+                </span>
+              ) : isProcessing ? (
                 <span className="flex items-center gap-2" style={{ color: COLORS.oldGold }}>
                   <Loader2 className="w-4 h-4 animate-spin" />
                   Transcribing...
@@ -531,7 +550,7 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
               )}
             </p>
             {/* Countdown indicator */}
-            {isRecording && countdown > 0 && (
+            {isRecording && countdown > 0 && !voiceError && (
               <span 
                 className="text-xs ml-2 opacity-70"
                 style={{ color: COLORS.oldGold }}
