@@ -556,7 +556,7 @@ export default function SellerUploadForm() {
       // In edit mode, refresh the page to show updated status
       if (isEditMode) {
         setTimeout(() => {
-          router.push('/seller-dashboard');
+          router.push('/seller');
         }, 1500);
       }
 

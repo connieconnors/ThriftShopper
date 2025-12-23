@@ -399,140 +399,244 @@ export default function SellerDashboard() {
             </div>
           ) : (
             <div className="bg-white rounded-lg border border-gray-200 max-h-[500px] overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
-              <div className="space-y-2 p-2">
-                {listings.map((listing) => (
+              <div className="p-2">
+                {listings.map((listing) => {
+                  // Calculate time since posted
+                  const postedDate = new Date(listing.created_at);
+                  const daysAgo = Math.floor((Date.now() - postedDate.getTime()) / (1000 * 60 * 60 * 24));
+                  const timeAgo = daysAgo === 0 ? 'Today' : daysAgo === 1 ? '1 day ago' : `${daysAgo} days ago`;
+                  
+                  // Determine status badge color and text
+                  const getStatusBadge = () => {
+                    const status = listing.status || 'draft';
+                    if (status === 'active') {
+                      return { bg: 'bg-green-100', text: 'text-green-700', label: 'active' };
+                    } else if (status === 'sold') {
+                      // Check if there's a payment status - for now assume sold = awaiting payment
+                      return { bg: 'bg-gray-100', text: 'text-gray-700', label: 'sold' };
+                    } else if (status === 'paid') {
+                      return { bg: 'bg-blue-100', text: 'text-blue-700', label: 'paid' };
+                    } else if (status === 'shipped') {
+                      return { bg: 'bg-purple-100', text: 'text-purple-700', label: 'shipped' };
+                    } else if (status === 'hidden') {
+                      return { bg: 'bg-yellow-100', text: 'text-yellow-700', label: 'hidden' };
+                    } else {
+                      return { bg: 'bg-gray-100', text: 'text-gray-600', label: 'draft' };
+                    }
+                  };
+                  
+                  const statusBadge = getStatusBadge();
+                  
+                  return (
                   <div
                     key={listing.id}
-                    className="bg-gray-50 rounded-lg border border-gray-200 p-3 hover:shadow-sm transition-shadow relative"
+                    className="bg-gray-50 rounded-lg border border-gray-200 p-3 hover:shadow-sm transition-shadow mb-3"
+                    style={{ minHeight: '80px' }}
                   >
-                  <Link
-                    href={`/listing/${listing.id}`}
-                    className="flex items-center gap-3 flex-1 min-w-0"
-                  >
-                    {/* Thumbnail */}
-                    <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
-                      {(listing.clean_image_url || listing.original_image_url) ? (
-                        <img
-                          src={listing.clean_image_url || listing.original_image_url || ''}
-                          alt={listing.title}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
-                          No image
-                        </div>
-                      )}
-                    </div>
-                    
-                    {/* Details */}
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-medium text-sm text-gray-900 truncate mb-1">{listing.title}</h3>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <p className="text-xs font-semibold" style={{ color: "#191970" }}>${listing.price?.toFixed(2) || '0.00'}</p>
-                        <span 
-                          className={`text-[10px] px-2 py-0.5 rounded-full ${
-                            listing.status === 'active' 
-                              ? 'bg-green-100 text-green-700' 
-                              : listing.status === 'sold'
-                              ? 'bg-blue-100 text-blue-700'
-                              : listing.status === 'hidden'
-                              ? 'bg-yellow-100 text-yellow-700'
-                              : 'bg-gray-100 text-gray-600'
-                          }`}
+                    {/* Horizontal Layout: Thumbnail (left) + Text Content (right) */}
+                    <div className="flex items-start gap-3">
+                      {/* Thumbnail - 60x60px, left side */}
+                      <Link
+                        href={`/listing/${listing.id}`}
+                        className="w-[60px] h-[60px] rounded-lg overflow-hidden bg-gray-100 flex-shrink-0"
+                      >
+                        {(listing.clean_image_url || listing.original_image_url) ? (
+                          <img
+                            src={listing.clean_image_url || listing.original_image_url || ''}
+                            alt={listing.title}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-gray-400 text-[10px]">
+                            No image
+                          </div>
+                        )}
+                      </Link>
+                      
+                      {/* Right Side: Text Content aligned with top of thumbnail */}
+                      <div 
+                        className="flex-1 min-w-0 flex flex-col" 
+                        style={{ 
+                          gap: '0px', 
+                          alignSelf: 'flex-start',
+                          display: 'flex',
+                          flexDirection: 'column'
+                        }}
+                      >
+                        {/* Line 1: Title + Three-dot Menu */}
+                        <div 
+                          className="flex items-start justify-between w-full" 
+                          style={{ gap: '0px' }}
                         >
-                          {listing.status || 'draft'}
-                        </span>
-                      </div>
-                    </div>
-                  </Link>
+                          <Link
+                            href={`/listing/${listing.id}`}
+                            className="flex-1 min-w-0"
+                            style={{ 
+                              paddingRight: '16px', 
+                              maxWidth: 'calc(100% - 56px)',
+                              margin: 0,
+                              paddingTop: 0,
+                              paddingBottom: 0
+                            }}
+                          >
+                            <h3 
+                              className="text-sm font-medium text-gray-900 m-0" 
+                              style={{ 
+                                fontSize: '14px', 
+                                lineHeight: '1', 
+                                margin: 0, 
+                                padding: 0,
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                display: 'block'
+                              }}
+                            >
+                              {listing.title}
+                            </h3>
+                          </Link>
+                          
+                          {/* Three-dot Menu - Top Right */}
+                          <div 
+                            className="relative flex-shrink-0" 
+                            style={{ 
+                              alignSelf: 'flex-start', 
+                              marginTop: 0,
+                              marginBottom: 0
+                            }}
+                          >
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setShowMenuId(showMenuId === listing.id ? null : listing.id);
+                              }}
+                              disabled={updatingId === listing.id}
+                              className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
+                              aria-label="More options"
+                              style={{ margin: 0, padding: '8px' }}
+                            >
+                              {updatingId === listing.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+                              ) : (
+                                <MoreVertical className="h-4 w-4 text-gray-500" />
+                              )}
+                            </button>
 
-                  {/* Actions Menu */}
-                  <div className="relative flex-shrink-0">
-                    <button
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        setShowMenuId(showMenuId === listing.id ? null : listing.id);
-                      }}
-                      disabled={updatingId === listing.id}
-                      className="p-2 rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50"
-                    >
-                      {updatingId === listing.id ? (
-                        <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
-                      ) : (
-                        <MoreVertical className="h-4 w-4 text-gray-600" />
-                      )}
-                    </button>
-
-                    {showMenuId === listing.id && (
-                      <>
-                        <div
-                          className="fixed inset-0 z-10"
-                          onClick={() => setShowMenuId(null)}
-                        />
-                        <div
-                          className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-20 overflow-hidden"
-                        >
-                          <div className="py-1">
-                            {(listing.status === 'active' || listing.status === 'draft') && (
+                            {showMenuId === listing.id && (
                               <>
-                                <button
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    setShowMenuId(null);
-                                    router.push(`/sell?edit=${listing.id}`);
-                                  }}
-                                  className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors flex items-center gap-2 text-gray-700"
+                                <div
+                                  className="fixed inset-0 z-10"
+                                  onClick={() => setShowMenuId(null)}
+                                />
+                                <div
+                                  className="absolute right-0 top-11 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-20 overflow-hidden"
                                 >
-                                  <Edit className="h-4 w-4" />
-                                  Edit Listing
-                                </button>
-                                <div className="border-t border-gray-200 my-1" />
+                                  <div className="py-1">
+                                    {(listing.status === 'active' || listing.status === 'draft') && (
+                                      <>
+                                        <button
+                                          onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            setShowMenuId(null);
+                                            router.push(`/sell?edit=${listing.id}`);
+                                          }}
+                                          className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors flex items-center gap-2 text-gray-700"
+                                        >
+                                          <Edit className="h-4 w-4" />
+                                          Edit Listing
+                                        </button>
+                                        <div className="border-t border-gray-200 my-1" />
+                                      </>
+                                    )}
+                                    {listing.status !== 'active' && (
+                                      <button
+                                        onClick={(e) => handleUpdateStatus(listing.id, 'active', e)}
+                                        className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors flex items-center gap-2 text-gray-700"
+                                      >
+                                        <CheckCircle className="h-4 w-4" />
+                                        Mark as Active
+                                      </button>
+                                    )}
+                                    {listing.status !== 'sold' && (
+                                      <button
+                                        onClick={(e) => handleUpdateStatus(listing.id, 'sold', e)}
+                                        className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors flex items-center gap-2 text-gray-700"
+                                      >
+                                        <CheckCircle className="h-4 w-4" />
+                                        Mark as Sold
+                                      </button>
+                                    )}
+                                    {listing.status !== 'hidden' && (
+                                      <button
+                                        onClick={(e) => handleUpdateStatus(listing.id, 'hidden', e)}
+                                        className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors flex items-center gap-2 text-gray-700"
+                                      >
+                                        <EyeOff className="h-4 w-4" />
+                                        Hide Listing
+                                      </button>
+                                    )}
+                                    <div className="border-t border-gray-200 my-1" />
+                                    <button
+                                      onClick={(e) => handleDelete(listing.id, e)}
+                                      className="w-full text-left px-4 py-2 text-sm hover:bg-red-50 transition-colors flex items-center gap-2 text-red-600"
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                      Delete Permanently
+                                    </button>
+                                  </div>
+                                </div>
                               </>
                             )}
-                            {listing.status !== 'active' && (
-                              <button
-                                onClick={(e) => handleUpdateStatus(listing.id, 'active', e)}
-                                className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors flex items-center gap-2 text-gray-700"
-                              >
-                                <CheckCircle className="h-4 w-4" />
-                                Mark as Active
-                              </button>
-                            )}
-                            {listing.status !== 'sold' && (
-                              <button
-                                onClick={(e) => handleUpdateStatus(listing.id, 'sold', e)}
-                                className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors flex items-center gap-2 text-gray-700"
-                              >
-                                <CheckCircle className="h-4 w-4" />
-                                Mark as Sold
-                              </button>
-                            )}
-                            {listing.status !== 'hidden' && (
-                              <button
-                                onClick={(e) => handleUpdateStatus(listing.id, 'hidden', e)}
-                                className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors flex items-center gap-2 text-gray-700"
-                              >
-                                <EyeOff className="h-4 w-4" />
-                                Hide Listing
-                              </button>
-                            )}
-                            <div className="border-t border-gray-200 my-1" />
-                            <button
-                              onClick={(e) => handleDelete(listing.id, e)}
-                              className="w-full text-left px-4 py-2 text-sm hover:bg-red-50 transition-colors flex items-center gap-2 text-red-600"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                              Delete Permanently
-                            </button>
                           </div>
                         </div>
-                      </>
-                    )}
+
+                        {/* Line 2: Price (16px, medium weight) + Status Badge */}
+                        <div 
+                          className="flex items-center gap-2" 
+                          style={{ 
+                            margin: 0, 
+                            marginTop: '2px',
+                            padding: 0
+                          }}
+                        >
+                          <Link
+                            href={`/listing/${listing.id}`}
+                            className="text-base font-medium leading-tight"
+                            style={{ color: "#191970", fontSize: '16px', margin: 0, padding: 0 }}
+                          >
+                            ${listing.price?.toFixed(2) || '0.00'}
+                          </Link>
+                          <span 
+                            className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${statusBadge.bg} ${statusBadge.text}`}
+                            style={{ margin: 0, padding: '2px 6px' }}
+                          >
+                            {statusBadge.label}
+                          </span>
+                        </div>
+
+                        {/* Line 3: Timestamp (or payment status for sold items) */}
+                        <div 
+                          className="text-[11px] text-gray-500"
+                          style={{ 
+                            margin: 0, 
+                            marginTop: '2px',
+                            padding: 0,
+                            lineHeight: '1.2'
+                          }}
+                        >
+                          {listing.status === 'sold' ? (
+                            <span>Posted {timeAgo} • Awaiting payment</span>
+                          ) : (
+                            <span>Posted {timeAgo}</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}

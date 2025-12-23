@@ -29,7 +29,14 @@ export default async function ListingPage({ params }: ListingPageProps) {
     .single();
 
   if (error || !data) {
-    console.error("Error loading listing:", error);
+    console.error("Error loading listing:", {
+      error,
+      id,
+      errorMessage: error?.message,
+      errorCode: error?.code,
+      errorDetails: error?.details,
+      errorHint: error?.hint
+    });
     return (
       <main className="min-h-screen bg-black text-white flex items-center justify-center">
         <div className="text-center p-8">
