@@ -221,46 +221,6 @@ export default function SellerSettingsPage() {
             </div>
           </div>
 
-          {/* Description */}
-          <div>
-            <label className="block mb-2 font-medium" style={{ color: "#191970" }}>
-              Seller Description
-            </label>
-            <textarea
-              value={formData.description}
-              onChange={(e) => updateField("description", e.target.value)}
-              className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#191970] outline-none transition-colors min-h-[100px] resize-none"
-              placeholder="Tell buyers about you and what makes your shop special..."
-            />
-          </div>
-
-          {/* Your Story / About Your Shop */}
-          <div>
-            <label className="block mb-2 font-medium" style={{ color: "#191970" }}>
-              Your Story <span className="text-gray-400 font-normal">(optional)</span>
-            </label>
-            <textarea
-              value={formData.sellerInfo}
-              onChange={(e) => {
-                const value = e.target.value;
-                if (value.length <= 500) {
-                  updateField("sellerInfo", value);
-                }
-              }}
-              maxLength={500}
-              className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#191970] outline-none transition-colors min-h-[100px] resize-none"
-              placeholder="Tell buyers about your shop, what you sell, or what makes your items special..."
-            />
-            <div className="flex justify-between items-center mt-1">
-              <p className="text-xs text-gray-500">
-                Tell buyers about your shop, what you sell, or what makes your items special (optional)
-              </p>
-              <p className={`text-xs ${formData.sellerInfo.length >= 500 ? 'text-red-500' : 'text-gray-400'}`}>
-                {formData.sellerInfo.length}/500
-              </p>
-            </div>
-          </div>
-
           {/* Location */}
           <div>
             <label className="block mb-2 font-medium" style={{ color: "#191970" }}>
@@ -329,6 +289,46 @@ export default function SellerSettingsPage() {
                   className="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#191970] outline-none transition-colors"
                   placeholder="Phone (optional)"
                 />
+              </div>
+            </div>
+
+            {/* Description */}
+            <div className="mt-3">
+              <label className="block mb-2 font-medium" style={{ color: "#191970" }}>
+                Description
+              </label>
+              <textarea
+                value={formData.description}
+                onChange={(e) => updateField("description", e.target.value)}
+                className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#191970] outline-none transition-colors min-h-[100px] resize-none"
+                placeholder="Tell buyers about you and what makes your shop special..."
+              />
+            </div>
+
+            {/* Your Story */}
+            <div className="mt-3">
+              <label className="block mb-2 font-medium" style={{ color: "#191970" }}>
+                Your Story <span className="text-gray-400 font-normal">(optional)</span>
+              </label>
+              <textarea
+                value={formData.sellerInfo}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (value.length <= 500) {
+                    updateField("sellerInfo", value);
+                  }
+                }}
+                maxLength={500}
+                className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#191970] outline-none transition-colors min-h-[100px] resize-none"
+                placeholder="Tell buyers about your shop, what you sell, or what makes your items special..."
+              />
+              <div className="flex justify-between items-center mt-1">
+                <p className="text-xs text-gray-500">
+                  Tell buyers about your shop, what you sell, or what makes your items special (optional)
+                </p>
+                <p className={`text-xs ${formData.sellerInfo.length >= 500 ? 'text-red-500' : 'text-gray-400'}`}>
+                  {formData.sellerInfo.length}/500
+                </p>
               </div>
             </div>
           </div>

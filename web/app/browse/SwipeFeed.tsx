@@ -17,6 +17,7 @@ import { StandaloneMoodWheel } from "../../components/StandaloneMoodWheel";
 import { TSLogo } from "../../components/TSLogo";
 import AccountSheet from "../../components/AccountSheet";
 import { useWhisperTranscription } from "../../hooks/useWhisperTranscription";
+import { useAuth } from "../context/AuthContext";
 import { Mic, Loader2, Bookmark } from "lucide-react";
 import { normalizeTagColumn } from "../../lib/utils/tagNormalizer";
 
@@ -34,6 +35,7 @@ const COLORS = {
 
 export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
   const router = useRouter();
+  const { user } = useAuth();
   const [listings, setListings] = useState<Listing[]>(initialListings);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -54,6 +56,46 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Load favorites from database when user is logged in
+  useEffect(() => {
+    if (user?.id) {
+      const loadFavorites = async () => {
+        try {
+          const { data, error } = await supabase
+            .from('favorites')
+            .select('listing_id')
+            .eq('user_id', user.id);
+
+          if (error) {
+            // Only log if it's a real error, not just "no rows"
+            if (error.code !== 'PGRST116' && error.message && !error.message.toLowerCase().includes('no rows')) {
+              console.error('Error loading favorites:', error);
+            }
+            // Clear favorites on error
+            setFavorites(new Set());
+            return;
+          }
+
+          if (data && data.length > 0) {
+            const favoriteIds = new Set(data.map(fav => fav.listing_id).filter(Boolean));
+            setFavorites(favoriteIds);
+          } else {
+            // No favorites found - clear the set
+            setFavorites(new Set());
+          }
+        } catch (err) {
+          console.error('Error loading favorites:', err);
+          setFavorites(new Set());
+        }
+      };
+
+      loadFavorites();
+    } else {
+      // User logged out - clear favorites
+      setFavorites(new Set());
+    }
+  }, [user?.id]); // Only depend on user.id to avoid unnecessary re-renders
   const touchStartY = useRef(0);
   const touchDeltaY = useRef(0);
   const [dragOffset, setDragOffset] = useState(0);
@@ -300,9 +342,21 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
     setLastSearchQuery(query.trim());
 
     try {
-      // Use semantic search with OpenAI interpretation
-      const { semanticSearch } = await import('@/lib/semantic-search');
-      const { listings, interpretation } = await semanticSearch(query.trim(), { limit: 24 });
+      // Use semantic search API route (server-side, has access to OPENAI_API_KEY)
+      const response = await fetch('/api/search/semantic', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ query: query.trim(), limit: 24 }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Search failed' }));
+        throw new Error(errorData.error || `Search failed: ${response.statusText}`);
+      }
+
+      const { listings, interpretation } = await response.json();
       
       console.log('🔍 Search query:', query);
       console.log('📊 Found listings:', listings.length);
@@ -326,17 +380,72 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
   };
   
   const clearSearch = () => {
+    // Before clearing, capture the current listing ID from search results
+    const currentDisplayListings = searchResults ?? filteredListings;
+    const currentListingId = currentDisplayListings[currentIndex]?.id;
+    
     setSearchResults(null);
     setLastSearchQuery('');
-    setCurrentIndex(0);
+    setVoiceTranscript('');
+    
+    // If we have a current listing, try to find it in filteredListings and maintain position
+    if (currentListingId && filteredListings.length > 0) {
+      const newIndex = filteredListings.findIndex(listing => listing.id === currentListingId);
+      if (newIndex >= 0) {
+        setCurrentIndex(newIndex);
+      } else {
+        // If current listing not found in filteredListings, stay at current index if valid
+        // or go to 0 if current index is out of bounds
+        if (currentIndex >= filteredListings.length) {
+          setCurrentIndex(0);
+        }
+        // Otherwise, keep currentIndex as is - don't change it
+      }
+    }
   };
 
-  const toggleFavorite = (id: string) => {
-    setFavorites(prev => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
+  const toggleFavorite = async (id: string) => {
+    // If not logged in, redirect to login
+    if (!user) {
+      router.push(`/login?redirect=${encodeURIComponent(window.location.pathname)}`);
+      return;
+    }
+
+    const isCurrentlyFavorited = favorites.has(id);
+    const newFavorites = new Set(favorites);
+    
+    // Optimistic update
+    if (isCurrentlyFavorited) {
+      newFavorites.delete(id);
+    } else {
+      newFavorites.add(id);
+    }
+    setFavorites(newFavorites);
+
+    // Update database
+    try {
+      if (isCurrentlyFavorited) {
+        // Remove from favorites
+        const { error } = await supabase
+          .from('favorites')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('listing_id', id);
+
+        if (error) throw error;
+      } else {
+        // Add to favorites
+        const { error } = await supabase
+          .from('favorites')
+          .insert({ user_id: user.id, listing_id: id });
+
+        if (error) throw error;
+      }
+    } catch (err) {
+      console.error('Error updating favorite:', err);
+      // Revert optimistic update on error
+      setFavorites(favorites);
+    }
   };
 
 
@@ -531,7 +640,11 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
               border: `1px solid ${voiceError ? '#ef4444' : COLORS.oldGold}50`,
             }}
           >
-            <p className="text-sm truncate flex-1" style={{ color: voiceError ? '#ef4444' : 'white' }}>
+            <p 
+              className="text-sm truncate flex-1" 
+              style={{ color: voiceError ? '#ef4444' : 'white', cursor: voiceTranscript && !isProcessing ? 'pointer' : 'default' }}
+              onClick={voiceTranscript && !isProcessing ? clearSearch : undefined}
+            >
               {voiceError ? (
                 <span className="flex items-center gap-2">
                   ⚠️ {voiceError}
@@ -803,8 +916,8 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
             }}
           />
           
-          {/* Favorites count badge */}
-          {favorites.size > 0 && (
+          {/* Favorites count badge - only show when logged in */}
+          {user && favorites.size > 0 && (
             <span 
               className="absolute -top-1 -right-1 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center"
               style={{ backgroundColor: '#ef4444' }}

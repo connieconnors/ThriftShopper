@@ -23,13 +23,22 @@ export default async function Browse() {
       )
     `)
     .eq("status", "active")
-    .order("created_at", { ascending: false })
     .limit(100);
   
   // Log for debugging
   if (data) {
     console.log(`[Browse] Loaded ${data.length} active listings`);
   }
+
+  // Shuffle listings randomly for variety on each page load
+  const shuffleArray = <T,>(array: T[]): T[] => {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  };
 
   if (error) {
     console.error("Error loading listings for /browse:", error);
@@ -50,7 +59,7 @@ export default async function Browse() {
     );
   }
 
-  const listings = (data ?? []) as Listing[];
+  const listings = shuffleArray((data ?? []) as Listing[]);
 
   if (listings.length === 0) {
     return (

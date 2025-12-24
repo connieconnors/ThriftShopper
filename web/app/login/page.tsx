@@ -257,6 +257,15 @@ function LoginForm() {
                   required
                 />
               </div>
+              <div className="mt-2 text-right">
+                <Link
+                  href="/forgot-password"
+                  className="text-sm hover:underline"
+                  style={{ color: "#191970" }}
+                >
+                  Forgot password?
+                </Link>
+              </div>
             </div>
 
             <motion.button

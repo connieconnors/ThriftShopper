@@ -45,7 +45,8 @@ export async function semanticSearch(
     };
   } catch (error) {
     console.error('Semantic search error:', error);
-    // Fallback to basic keyword search
+    // Fallback to basic keyword search with local interpretation
+    // This handles simple queries like "whimsical" or "vintage" without OpenAI
     return fallbackKeywordSearch(query, limit);
   }
 }
@@ -55,6 +56,11 @@ export async function semanticSearch(
  * Extracts: keywords, moods, styles, intents, categories, price hints
  */
 async function interpretQuery(query: string) {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) {
+    throw new Error('OpenAI API key not configured');
+  }
+
   const prompt = `You are a search assistant for a vintage/secondhand marketplace called ThriftShopper.
 Analyze this search query and extract structured information to help find relevant items.
 
@@ -92,7 +98,7 @@ IMPORTANT:
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+      'Authorization': `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
       model: 'gpt-4o-mini', // Faster and cheaper for this task
@@ -108,10 +114,18 @@ IMPORTANT:
   });
 
   if (!response.ok) {
-    throw new Error(`OpenAI API error: ${response.statusText}`);
+    const errorText = await response.text().catch(() => response.statusText);
+    console.error('OpenAI API error:', response.status, errorText);
+    throw new Error(`OpenAI API error: ${response.status} ${errorText}`);
   }
 
   const data = await response.json();
+  
+  if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+    console.error('Invalid OpenAI response:', data);
+    throw new Error('Invalid OpenAI API response');
+  }
+  
   const content = data.choices[0].message.content.trim();
   
   // Extract JSON from markdown code blocks if present
@@ -443,8 +457,9 @@ async function fallbackKeywordSearch(
  * Handles common search terms
  */
 function localInterpretQuery(query: string): Awaited<ReturnType<typeof interpretQuery>> {
-  const lowerQuery = query.toLowerCase();
-  const words = lowerQuery.split(/\s+/).filter(w => w.length > 2);
+  const lowerQuery = query.toLowerCase().trim();
+  // Split by spaces and filter out very short words, but keep single-word queries
+  const words = lowerQuery.split(/\s+/).filter(w => w.length > 0);
   
   const interpretation = {
     keywords: [] as string[],

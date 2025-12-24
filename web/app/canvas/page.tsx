@@ -124,26 +124,36 @@ export default function BuyerCanvasPage() {
             .limit(10);
           
           if (ordersError) {
-            // Only log if it's not a "table doesn't exist" or "no rows" error
-            const errorCode = ordersError.code || ordersError?.code;
+            // Check if error is an empty object or has no meaningful content
+            const errorCode = ordersError?.code;
+            const errorMessage = ordersError?.message || '';
+            const errorDetails = ordersError?.details;
+            const errorHint = ordersError?.hint;
+            
+            // Check if error is completely empty (no properties or all properties are null/undefined/empty)
+            const isEmptyError = (!errorCode && !errorMessage && !errorDetails && !errorHint) ||
+                                 (typeof ordersError === 'object' && 
+                                  ordersError !== null &&
+                                  Object.keys(ordersError).length === 0);
+            
+            // Check for common "no rows" or "table not found" scenarios
             const isTableNotFound = errorCode === '42P01';
             const isNoRows = errorCode === 'PGRST116';
-            
-            // Also check for common "no rows" patterns in the message
-            const errorMessage = ordersError.message || ordersError?.message || '';
             const isNoRowsMessage = errorMessage.toLowerCase().includes('no rows') || 
-                                   errorMessage.toLowerCase().includes('not found');
+                                   errorMessage.toLowerCase().includes('not found') ||
+                                   errorMessage.toLowerCase().includes('relation') ||
+                                   errorMessage.toLowerCase().includes('does not exist');
             
-            if (!isTableNotFound && !isNoRows && !isNoRowsMessage) {
-              // Only log meaningful errors
+            // Only log if it's a meaningful error (not empty, not table not found, not no rows)
+            if (!isEmptyError && !isTableNotFound && !isNoRows && !isNoRowsMessage && errorMessage) {
               console.error("Error fetching orders:", {
-                message: ordersError.message || 'Unknown error',
+                message: errorMessage,
                 code: errorCode || 'NO_CODE',
-                details: ordersError.details || null,
-                hint: ordersError.hint || null,
-                fullError: ordersError
+                details: errorDetails || null,
+                hint: errorHint || null
               });
             }
+            // Silently handle empty errors or expected "no data" scenarios
             setPurchases([]);
           } else if (ordersData && ordersData.length > 0) {
             // If we have orders, try to fetch listing details separately

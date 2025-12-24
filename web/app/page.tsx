@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 
 // Dynamically import SplashScreen with SSR disabled to prevent hydration errors
-const SplashScreen = dynamic(() => import("./components/SplashScreen"), {
+const SplashScreen = dynamic(() => import("./components/splash-screen"), {
   ssr: false,
   loading: () => (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black">
@@ -13,8 +13,8 @@ const SplashScreen = dynamic(() => import("./components/SplashScreen"), {
 });
 
 export default function Home() {
-  // 4 seconds to appreciate the splash, then into discovery
-  return <SplashScreen autoNavigateDelay={4000} />;
+  // Static splash screen - user swipes up to continue
+  return <SplashScreen />;
 }
 
 

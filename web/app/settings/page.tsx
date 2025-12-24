@@ -20,6 +20,8 @@ export default function SettingsPage() {
     display_name: "",
     email: "",
     phone: "",
+    seller_description: "",
+    seller_story: "",
   })
   const [preferences, setPreferences] = useState({
     email_notifications: true,
@@ -58,12 +60,16 @@ export default function SettingsPage() {
           display_name: profileData.display_name || "",
           email: profileData.email || user.email || "",
           phone: profileData.phone_main || profileData.phone || "", // Support both phone_main (new) and phone (legacy)
+          seller_description: profileData.seller_description || "",
+          seller_story: profileData.seller_story || "",
         })
       } else {
         setFormData({
           display_name: "",
           email: user.email || "",
           phone: "",
+          seller_description: "",
+          seller_story: "",
         })
       }
 
@@ -91,6 +97,8 @@ export default function SettingsPage() {
           display_name: formData.display_name,
           email: formData.email,
           phone_main: formData.phone || null, // Use phone_main (stores can have store phone and mobile)
+          seller_description: formData.seller_description || null,
+          seller_story: formData.seller_story || null,
         }, {
           onConflict: "user_id",
         })
@@ -200,6 +208,48 @@ export default function SettingsPage() {
                 placeholder="+1 (555) 123-4567"
               />
             </div>
+            {userType === "seller" && (
+              <>
+                <div>
+                  <label htmlFor="description" className="text-xs text-gray-600 mb-1.5 block">
+                    Description
+                  </label>
+                  <textarea
+                    id="description"
+                    value={formData.seller_description}
+                    onChange={(e) => setFormData({ ...formData, seller_description: e.target.value })}
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#191970]/20 min-h-[80px] resize-none"
+                    placeholder="Tell buyers about you and what makes your shop special..."
+                  />
+                </div>
+                <div>
+                  <label htmlFor="story" className="text-xs text-gray-600 mb-1.5 block">
+                    Your Story <span className="text-gray-400 font-normal">(optional)</span>
+                  </label>
+                  <textarea
+                    id="story"
+                    value={formData.seller_story}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (value.length <= 500) {
+                        setFormData({ ...formData, seller_story: value });
+                      }
+                    }}
+                    maxLength={500}
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#191970]/20 min-h-[80px] resize-none"
+                    placeholder="Tell buyers about your shop, what you sell, or what makes your items special..."
+                  />
+                  <div className="flex justify-between items-center mt-1">
+                    <p className="text-[10px] text-gray-500">
+                      Tell buyers about your shop, what you sell, or what makes your items special (optional)
+                    </p>
+                    <p className={`text-[10px] ${(formData.seller_story?.length || 0) >= 500 ? 'text-red-500' : 'text-gray-400'}`}>
+                      {formData.seller_story?.length || 0}/500
+                    </p>
+                  </div>
+                </div>
+              </>
+            )}
             <button
               onClick={handleSaveProfile}
               className="w-full mt-2 py-2 text-xs font-medium rounded-lg transition-colors"

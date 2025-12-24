@@ -54,39 +54,98 @@ export function MoodWheel({ onMoodChange, selectedMoods }: MoodWheelProps) {
     );
   }
 
-  // Show first 6 moods in the compact wheel
-  const compactMoods = moods.slice(0, 6);
-
   return (
     <div className="relative">
-      {/* Compact Wheel Button */}
+      {/* Hybrid Wheel Button */}
       <motion.button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-16 h-16 rounded-full flex items-center justify-center shadow-lg relative overflow-hidden"
+        className="relative w-16 h-16 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50 rounded-full transition-transform duration-300 hover:scale-105"
         whileTap={{ scale: 0.95 }}
+        aria-label="Open discovery wheel"
       >
-        <svg className="absolute inset-0 w-full h-full" viewBox="0 0 64 64">
-          {compactMoods.map((mood, index) => {
-            const startAngle = (index * 60 - 90) * (Math.PI / 180);
-            const endAngle = ((index + 1) * 60 - 90) * (Math.PI / 180);
-            const x1 = 32 + Math.cos(startAngle) * 32;
-            const y1 = 32 + Math.sin(startAngle) * 32;
-            const x2 = 32 + Math.cos(endAngle) * 32;
-            const y2 = 32 + Math.sin(endAngle) * 32;
-            
-            return (
-              <path
-                key={mood.name}
-                d={`M 32 32 L ${x1} ${y1} A 32 32 0 0 1 ${x2} ${y2} Z`}
-                fill={mood.color}
+        <svg
+          viewBox="0 0 120 120"
+          className="w-full h-full drop-shadow-lg"
+        >
+          {/* Outer gold frame */}
+          <circle cx="60" cy="60" r="58" fill="none" stroke="url(#hybridGold)" strokeWidth="2" />
+
+          {/* Outer ring - deep navy blue */}
+          <circle cx="60" cy="60" r="55" fill="#1E3A8A" opacity="0.95" />
+
+          {/* Middle-outer ring - royal blue */}
+          <circle cx="60" cy="60" r="47" fill="#1E40AF" opacity="0.95" />
+
+          {/* Middle ring - vibrant blue */}
+          <circle cx="60" cy="60" r="39" fill="#2563EB" opacity="0.95" />
+
+          {/* Inner ring - bright blue */}
+          <circle cx="60" cy="60" r="31" fill="#3B82F6" opacity="0.95" />
+
+          {/* Center circle - light blue */}
+          <circle cx="60" cy="60" r="23" fill="#60A5FA" opacity="0.98" />
+
+          {/* Radial lines emanating from center */}
+          {[0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330].map((angle) => (
+            <line
+              key={angle}
+              x1="60"
+              y1="60"
+              x2={60 + 20 * Math.cos((angle * Math.PI) / 180)}
+              y2={60 + 20 * Math.sin((angle * Math.PI) / 180)}
+              stroke="url(#hybridGold)"
+              strokeWidth="1"
+              opacity="0.8"
+            />
+          ))}
+
+          {/* Decorative dots on rings - multi-mode indicators */}
+          {[0, 45, 90, 135, 180, 225, 270, 315].map((angle) => (
+            <g key={`dots-${angle}`}>
+              <circle
+                cx={60 + 51 * Math.cos((angle * Math.PI) / 180)}
+                cy={60 + 51 * Math.sin((angle * Math.PI) / 180)}
+                r="2"
+                fill="#FFD700"
+                opacity="0.9"
+              />
+              <circle
+                cx={60 + 43 * Math.cos((angle * Math.PI) / 180)}
+                cy={60 + 43 * Math.sin((angle * Math.PI) / 180)}
+                r="1.5"
+                fill="#FBBF24"
+                opacity="0.8"
+              />
+              <circle
+                cx={60 + 35 * Math.cos((angle * Math.PI) / 180)}
+                cy={60 + 35 * Math.sin((angle * Math.PI) / 180)}
+                r="1"
+                fill="#FCD34D"
                 opacity="0.7"
               />
-            );
-          })}
-          <circle cx="32" cy="32" r="20" fill="#191970" />
+            </g>
+          ))}
+
+          {/* Center starburst pattern */}
+          {[0, 72, 144, 216, 288].map((angle) => (
+            <circle
+              key={`center-${angle}`}
+              cx={60 + 12 * Math.cos((angle * Math.PI) / 180)}
+              cy={60 + 12 * Math.sin((angle * Math.PI) / 180)}
+              r="1.5"
+              fill="#FFFFFF"
+              opacity="0.8"
+            />
+          ))}
+
+          <defs>
+            <linearGradient id="hybridGold">
+              <stop offset="0%" stopColor="#FFD700" />
+              <stop offset="50%" stopColor="#FDB931" />
+              <stop offset="100%" stopColor="#FFD700" />
+            </linearGradient>
+          </defs>
         </svg>
-        
-        <span className="text-2xl relative z-10">✨</span>
       </motion.button>
 
       {/* Expanded Grid */}

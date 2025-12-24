@@ -23,7 +23,7 @@
  * }
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useId } from 'react';
 import { 
   Sparkles, Heart, Gem, Palette, Clock, Coffee, Mountain, 
   Flower2, Minus, Stars, Crown, Zap, PartyPopper, Gift, User, 
@@ -81,6 +81,9 @@ export function StandaloneMoodWheel({ selectedMoods, onMoodsChange, noResults = 
   const [activeTab, setActiveTab] = useState<'Moods' | 'Intents' | 'Styles'>('Moods');
   const [mounted, setMounted] = useState(false);
   const [noMoodResults, setNoMoodResults] = useState(false);
+  
+  // Unique gradient ID using useId() to avoid hydration mismatches
+  const gradientId = useId();
 
   useEffect(() => {
     setMounted(true);
@@ -94,17 +97,6 @@ export function StandaloneMoodWheel({ selectedMoods, onMoodsChange, noResults = 
     }
   };
 
-  // 8 vibrant colors for the spinning wheel segments
-  const wheelColors = [
-    '#FF6B6B', // Red
-    '#FFB84D', // Orange
-    '#FFE66D', // Yellow
-    '#4ECDC4', // Teal
-    '#45B7D1', // Light Blue
-    '#6C5CE7', // Purple
-    '#A8E6CF', // Mint
-    '#FF8ED4', // Pink
-  ];
 
   // Detect if mobile for responsive styling
   const [isMobile, setIsMobile] = useState(false);
@@ -120,7 +112,7 @@ export function StandaloneMoodWheel({ selectedMoods, onMoodsChange, noResults = 
 
   return (
     <>
-      {/* MOOD WHEEL BUTTON */}
+      {/* HYBRID WHEEL BUTTON */}
       <button
         onClick={(e) => {
           e.stopPropagation();
@@ -136,44 +128,115 @@ export function StandaloneMoodWheel({ selectedMoods, onMoodsChange, noResults = 
             navigator.vibrate(10);
           }
         }}
-        className="relative group rounded-full active:scale-95 transition-transform"
+        className="relative group rounded-full active:scale-95 transition-transform focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
         style={{ 
           width: '48px', 
           height: '48px',
           minWidth: '44px', // Accessibility: ensure 44px touch target
           minHeight: '44px',
-          backgroundColor: 'rgba(255, 255, 255, 0.2)',
-          backdropFilter: 'blur(8px)',
-          border: '1px solid rgba(255, 255, 255, 0.3)',
-          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
           touchAction: 'manipulation',
         }}
         aria-label="Open mood selector"
       >
-        {/* Spinning color wheel - now inside the glass button */}
-        <div className="absolute inset-0 rounded-full overflow-hidden animate-spin opacity-80" style={{ animationDuration: '8s' }}>
-          {wheelColors.map((color, index) => {
-            const rotation = (360 / wheelColors.length) * index;
+        <svg
+          viewBox="0 0 120 120"
+          className="w-full h-full drop-shadow-lg animate-spin"
+          style={{ animationDuration: '8s' }}
+        >
+          <defs>
+            <linearGradient id={gradientId}>
+              <stop offset="0%" stopColor="#FFD700" />
+              <stop offset="50%" stopColor="#FDB931" />
+              <stop offset="100%" stopColor="#FFD700" />
+            </linearGradient>
+          </defs>
+          
+          {/* Outer gold frame */}
+          <circle cx="60" cy="60" r="58" fill="none" stroke={`url(#${gradientId})`} strokeWidth="2" />
+
+          {/* Outer ring - deep navy blue */}
+          <circle cx="60" cy="60" r="55" fill="#1E3A8A" opacity="0.95" />
+
+          {/* Middle-outer ring - royal blue */}
+          <circle cx="60" cy="60" r="47" fill="#1E40AF" opacity="0.95" />
+
+          {/* Middle ring - vibrant blue */}
+          <circle cx="60" cy="60" r="39" fill="#2563EB" opacity="0.95" />
+
+          {/* Inner ring - bright blue */}
+          <circle cx="60" cy="60" r="31" fill="#3B82F6" opacity="0.95" />
+
+          {/* Center circle - light blue */}
+          <circle cx="60" cy="60" r="23" fill="#60A5FA" opacity="0.98" />
+
+          {/* Radial lines emanating from center */}
+          {[0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330].map((angle) => {
+            const angleRad = (angle * Math.PI) / 180;
+            const round = (n: number) => Math.round(n * 100) / 100;
             return (
-              <div
-                key={index}
-                className="absolute inset-0 origin-center"
-                style={{
-                  transform: `rotate(${rotation}deg)`,
-                  clipPath: `polygon(50% 50%, 50% 0%, 100% 0%)`,
-                  backgroundColor: color,
-                }}
+              <line
+                key={angle}
+                x1="60"
+                y1="60"
+                x2={round(60 + 20 * Math.cos(angleRad))}
+                y2={round(60 + 20 * Math.sin(angleRad))}
+                stroke={`url(#${gradientId})`}
+                strokeWidth="1"
+                opacity="0.8"
               />
             );
           })}
-        </div>
 
-        {/* Center white circle with icon */}
-        <div className="absolute inset-0 flex items-center justify-center z-10">
-          <div className="w-6 h-6 bg-white rounded-full shadow-sm flex items-center justify-center group-hover:scale-110 transition-transform">
-            <Sparkles className="w-4 h-4 text-indigo-600" style={{ width: '20px', height: '20px' }} />
-          </div>
-        </div>
+          {/* Decorative dots on rings - multi-mode indicators */}
+          {[0, 45, 90, 135, 180, 225, 270, 315].map((angle) => {
+            const angleRad = (angle * Math.PI) / 180;
+            const cos = Math.cos(angleRad);
+            const sin = Math.sin(angleRad);
+            // Round to 2 decimal places to avoid hydration mismatches
+            const round = (n: number) => Math.round(n * 100) / 100;
+            return (
+              <g key={`dots-${angle}`}>
+                <circle
+                  cx={round(60 + 51 * cos)}
+                  cy={round(60 + 51 * sin)}
+                  r="2"
+                  fill="#FFD700"
+                  opacity="0.9"
+                />
+                <circle
+                  cx={round(60 + 43 * cos)}
+                  cy={round(60 + 43 * sin)}
+                  r="1.5"
+                  fill="#FBBF24"
+                  opacity="0.8"
+                />
+                <circle
+                  cx={round(60 + 35 * cos)}
+                  cy={round(60 + 35 * sin)}
+                  r="1"
+                  fill="#FCD34D"
+                  opacity="0.7"
+                />
+              </g>
+            );
+          })}
+
+          {/* Center starburst pattern */}
+          {[0, 72, 144, 216, 288].map((angle) => {
+            const angleRad = (angle * Math.PI) / 180;
+            const round = (n: number) => Math.round(n * 100) / 100;
+            return (
+              <circle
+                key={`center-${angle}`}
+                cx={round(60 + 12 * Math.cos(angleRad))}
+                cy={round(60 + 12 * Math.sin(angleRad))}
+                r="1.5"
+                fill="#FFFFFF"
+                opacity="0.8"
+              />
+            );
+          })}
+        </svg>
 
         {/* Selection badge */}
         {selectedMoods.length > 0 && (

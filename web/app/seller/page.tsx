@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/app/context/AuthContext';
 import { supabase } from '@/lib/supabaseClient';
 import { TSLogo } from '@/components/TSLogo';
-import { Loader2, Plus, ArrowLeft, Settings, MessageSquare, ChevronDown, ChevronUp, MoreVertical, EyeOff, Trash2, CheckCircle, LogOut, Search, Package, HelpCircle, User, Edit } from 'lucide-react';
+import { Loader2, Plus, ArrowLeft, Settings, MessageSquare, ChevronDown, ChevronUp, MoreVertical, EyeOff, Trash2, CheckCircle, LogOut, Search, Package, HelpCircle, User, Edit, Bookmark } from 'lucide-react';
 import SellerMessages from './components/SellerMessages';
 import Link from 'next/link';
 import { StreamChatProvider } from './StreamChatProvider';
@@ -670,6 +670,13 @@ export default function SellerDashboard() {
           >
             <Settings className="h-4 w-4" />
             <span className="text-[10px]">Settings</span>
+          </Link>
+          <Link
+            href="/canvas"
+            className="flex flex-col items-center gap-0.5 text-white/70 hover:text-white transition-colors"
+          >
+            <Bookmark className="h-4 w-4" />
+            <span className="text-[10px]">Favorites</span>
           </Link>
           <button
             onClick={async () => {
