@@ -258,7 +258,7 @@ export default function TSAccountDrawer({ isOpen, onClose }: TSAccountDrawerProp
                 <span>Become a Seller</span>
               </Link>
               <Link
-                href="/account/settings"
+                href="/settings"
                 onClick={onClose}
                 className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-50 transition-colors"
               >

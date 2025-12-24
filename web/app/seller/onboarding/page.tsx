@@ -301,7 +301,7 @@ export default function SellerOnboardingPage() {
             Let&apos;s get you started selling on ThriftShopper
           </p>
           <Link
-            href="/account"
+            href="/canvas"
             className="mt-4 inline-block text-sm text-[#191970] hover:underline"
           >
             Want to shop instead? Go to My Canvas →
