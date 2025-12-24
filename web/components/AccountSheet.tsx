@@ -16,29 +16,40 @@ const AccountSheet: React.FC<AccountSheetProps> = ({ isOpen, onClose }) => {
   const { user, signOut } = useAuth();
   const [isSeller, setIsSeller] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [justOpened, setJustOpened] = useState(false);
 
   useEffect(() => {
-    if (user && isOpen) {
-      // Check if user is a seller
-      const checkSellerStatus = async () => {
-        try {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('is_seller')
-            .eq('user_id', user.id)
-            .single();
-          
-          setIsSeller(profile?.is_seller === true);
-        } catch (err) {
-          console.error('Error checking seller status:', err);
-          setIsSeller(false);
-        } finally {
-          setLoading(false);
-        }
-      };
-      checkSellerStatus();
-    } else {
-      setLoading(false);
+    if (isOpen) {
+      // Set flag to prevent immediate closure on mobile
+      setJustOpened(true);
+      const timer = setTimeout(() => {
+        setJustOpened(false);
+      }, 300); // 300ms delay before allowing backdrop to close
+      
+      if (user) {
+        // Check if user is a seller
+        const checkSellerStatus = async () => {
+          try {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('is_seller')
+              .eq('user_id', user.id)
+              .single();
+            
+            setIsSeller(profile?.is_seller === true);
+          } catch (err) {
+            console.error('Error checking seller status:', err);
+            setIsSeller(false);
+          } finally {
+            setLoading(false);
+          }
+        };
+        checkSellerStatus();
+      } else {
+        setLoading(false);
+      }
+      
+      return () => clearTimeout(timer);
     }
   }, [user, isOpen]);
 
@@ -47,10 +58,18 @@ const AccountSheet: React.FC<AccountSheetProps> = ({ isOpen, onClose }) => {
   return (
     <div
       className="fixed inset-0 z-50 flex items-end justify-center bg-black/35 backdrop-blur-sm"
-      onClick={onClose}
+      onClick={(e) => {
+        // Only close if clicking the backdrop, not the modal content
+        // Prevent immediate closure on mobile
+        if (e.target === e.currentTarget && !justOpened) {
+          onClose();
+        }
+      }}
       onTouchStart={(e) => {
         // Only close if touching the backdrop, not the modal content
-        if (e.target === e.currentTarget) {
+        // Prevent immediate closure on mobile
+        if (e.target === e.currentTarget && !justOpened) {
+          e.preventDefault();
           onClose();
         }
       }}

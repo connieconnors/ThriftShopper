@@ -3,7 +3,8 @@ import { createClient } from "@supabase/supabase-js";
 import { StreamChat } from "stream-chat";
 
 // Stream Chat uses App ID (also called API Key) and Secret
-// Support multiple naming conventions (including NEXT_PUBLIC_ for client-side usage)
+// Prefer server-side only variables, fall back to NEXT_PUBLIC if needed
+// IMPORTANT: STREAM_APP_ID and STREAM_API_KEY are the same thing - use whichever you have
 const STREAM_API_KEY = process.env.STREAM_API_KEY 
   || process.env.STREAM_APP_ID 
   || process.env.NEXT_PUBLIC_STREAM_API_KEY 
@@ -25,14 +26,16 @@ export async function GET(req: NextRequest) {
     const hasSecret = !!(STREAM_API_SECRET || process.env.STREAM_SECRET);
     
     console.log("🔵 Env vars check:", {
-      STREAM_API_KEY: !!STREAM_API_KEY,
+      STREAM_API_KEY: !!process.env.STREAM_API_KEY,
       STREAM_APP_ID: !!process.env.STREAM_APP_ID,
       NEXT_PUBLIC_STREAM_API_KEY: !!process.env.NEXT_PUBLIC_STREAM_API_KEY,
       NEXT_PUBLIC_STREAM_APP_ID: !!process.env.NEXT_PUBLIC_STREAM_APP_ID,
-      STREAM_API_SECRET: !!STREAM_API_SECRET,
+      STREAM_API_SECRET: !!process.env.STREAM_API_SECRET,
       STREAM_SECRET: !!process.env.STREAM_SECRET,
       hasApiKey,
-      hasSecret
+      hasSecret,
+      resolvedApiKey: STREAM_API_KEY ? `${STREAM_API_KEY.substring(0, 8)}...` : 'missing',
+      resolvedSecret: STREAM_API_SECRET ? 'present' : 'missing'
     });
     
     if (!STREAM_API_KEY || !STREAM_API_SECRET) {
@@ -80,6 +83,13 @@ export async function GET(req: NextRequest) {
     console.log("✅ Supabase user verified:", user.id);
 
     console.log("🔵 Creating Stream Chat server client...");
+    console.log("🔵 Using API Key (first 8 chars):", STREAM_API_KEY?.substring(0, 8) || 'missing');
+    console.log("🔵 Using Secret (present?):", STREAM_API_SECRET ? 'yes' : 'no');
+    
+    if (!STREAM_API_KEY || !STREAM_API_SECRET) {
+      throw new Error("Stream Chat API key or secret is missing");
+    }
+    
     const serverClient = StreamChat.getInstance(
       STREAM_API_KEY,
       STREAM_API_SECRET
@@ -93,8 +103,14 @@ export async function GET(req: NextRequest) {
         name: user.email || "ThriftShopper user",
       });
       console.log("✅ User upserted to Stream Chat");
-    } catch (upsertError) {
+    } catch (upsertError: any) {
       console.error("❌ Stream Chat upsertUser error:", upsertError);
+      console.error("❌ Error details:", {
+        code: upsertError?.code,
+        message: upsertError?.message,
+        status: upsertError?.status,
+        apiKeyUsed: STREAM_API_KEY?.substring(0, 8) || 'missing'
+      });
       throw upsertError;
     }
 
@@ -107,13 +123,25 @@ export async function GET(req: NextRequest) {
       userId: user.id,
       apiKey: STREAM_API_KEY,
     });
-  } catch (error) {
-    console.error("Stream token route error:", error);
-    console.error("Error details:", error instanceof Error ? error.message : String(error));
+  } catch (error: any) {
+    console.error("❌ Stream token route error:", error);
+    console.error("❌ Error details:", {
+      message: error instanceof Error ? error.message : String(error),
+      code: error?.code,
+      status: error?.status,
+      response: error?.response
+    });
+    
+    // Return more detailed error information
+    const errorMessage = error?.message || String(error);
+    const errorDetails = error?.response?.error || errorMessage;
+    
     return NextResponse.json(
       { 
         error: "Failed to generate Stream token",
-        details: error instanceof Error ? error.message : String(error)
+        details: errorDetails,
+        code: error?.code,
+        status: error?.status
       },
       { status: 500 }
     );

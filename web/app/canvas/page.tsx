@@ -20,6 +20,7 @@ import {
   ChevronDown,
   ChevronUp,
   Settings,
+  X,
 } from "lucide-react";
 import MessagesModal from "@/components/MessagesModal";
 import SupportModal from "@/components/SupportModal";
@@ -218,6 +219,37 @@ export default function BuyerCanvasPage() {
   const [showBadges, setShowBadges] = useState(false);
   const [messagesOpen, setMessagesOpen] = useState(false);
   const [supportOpen, setSupportOpen] = useState(false);
+  const [removingBookmarkId, setRemovingBookmarkId] = useState<string | null>(null);
+
+  // Remove bookmark function
+  const removeBookmark = async (listingId: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (!user) return;
+    
+    setRemovingBookmarkId(listingId);
+    
+    try {
+      const { error } = await supabase
+        .from("favorites")
+        .delete()
+        .eq("user_id", user.id)
+        .eq("listing_id", listingId);
+
+      if (error) {
+        console.error("Error removing bookmark:", error);
+        return;
+      }
+
+      // Update local state
+      setFavorites((prev) => prev.filter((item) => item.id !== listingId));
+    } catch (err) {
+      console.error("Error removing bookmark:", err);
+    } finally {
+      setRemovingBookmarkId(null);
+    }
+  };
 
   // Show loading state until mounted to prevent hydration mismatch
   if (!mounted || authLoading || isLoading) {
@@ -389,9 +421,9 @@ export default function BuyerCanvasPage() {
         </div>
       </div>
 
-      {/* Favorites, Purchases, and Badges Section */}
+      {/* Bookmarks, Purchases, and Badges Section */}
       <div className="px-4 pb-20 space-y-3 -mt-3">
-        {/* Favorites */}
+        {/* Bookmarks */}
         <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
           <button
             onClick={() => setShowFavorites(!showFavorites)}
@@ -399,7 +431,7 @@ export default function BuyerCanvasPage() {
           >
             <div className="flex items-center gap-2">
               <h2 className="text-sm font-semibold" style={{ color: "#191970" }}>
-                Favorites
+                Bookmarks
               </h2>
               <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">{favorites.length}</span>
             </div>
@@ -412,16 +444,32 @@ export default function BuyerCanvasPage() {
           {showFavorites && (
             <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-gray-100">
               {favorites.length === 0 ? (
-                <p className="text-xs text-gray-400 italic">No favorites yet — start exploring!</p>
+                <p className="text-xs text-gray-400 italic">No bookmarks yet — start exploring!</p>
               ) : (
                 favorites.slice(0, 10).map((item) => (
-                  <Link
+                  <div
                     key={item.id}
-                    href={`/listing/${item.id}`}
-                    className="px-3 py-1.5 rounded-full border border-gray-200 bg-gray-50 flex items-center gap-1.5 hover:bg-gray-100 hover:border-[#EFBF05] transition-all shadow-sm"
+                    className="relative group"
                   >
-                    <span className="text-xs text-gray-700">{item.title}</span>
-                  </Link>
+                    <Link
+                      href={`/listing/${item.id}`}
+                      className="px-3 py-1.5 pr-7 rounded-full border border-gray-200 bg-gray-50 flex items-center gap-1.5 hover:bg-gray-100 hover:border-[#EFBF05] transition-all shadow-sm"
+                    >
+                      <span className="text-xs text-gray-700">{item.title}</span>
+                    </Link>
+                    <button
+                      onClick={(e) => removeBookmark(item.id, e)}
+                      disabled={removingBookmarkId === item.id}
+                      className="absolute top-0 right-0 -mt-1 -mr-1 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-red-600 transition-opacity disabled:opacity-50"
+                      aria-label="Remove bookmark"
+                    >
+                      {removingBookmarkId === item.id ? (
+                        <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <X className="h-3 w-3" />
+                      )}
+                    </button>
+                  </div>
                 ))
               )}
             </div>

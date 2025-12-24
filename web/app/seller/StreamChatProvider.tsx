@@ -45,26 +45,67 @@ export function StreamChatProvider({ children }: ProviderProps) {
           },
         });
 
-        const data = await res.json();
-        if (!res.ok) {
-          console.error("Stream token request failed:", {
+        let data;
+        try {
+          data = await res.json();
+        } catch (jsonError) {
+          console.error("Stream token request failed - invalid JSON response:", {
             status: res.status,
             statusText: res.statusText,
-            error: data?.error,
-            details: data?.details
+            jsonError
           });
           if (isMounted) {
-            setError(data?.error || "Chat unavailable");
+            setError("Chat unavailable - server error");
+          }
+          return;
+        }
+
+        if (!res.ok) {
+          console.error("❌ Stream token request failed:", {
+            status: res.status,
+            statusText: res.statusText,
+            error: data?.error || "Unknown error",
+            details: data?.details || "No details provided",
+            fullResponse: data
+          });
+          if (isMounted) {
+            // Show more helpful error message
+            const errorMsg = data?.error || data?.details || "Chat unavailable";
+            setError(errorMsg);
           }
           return;
         }
 
         // Use getInstance with the API key from the server
+        // IMPORTANT: getInstance must be called with the API key BEFORE connectUser
+        if (!data.apiKey) {
+          throw new Error("API key not provided by server");
+        }
+        
         chat = StreamChat.getInstance(data.apiKey);
+        
+        console.log("🔵 Stream Chat: Connecting user with token...", {
+          userId: data.userId,
+          hasToken: !!data.token,
+          apiKey: data.apiKey ? 'present' : 'missing',
+          apiKeyLength: data.apiKey?.length || 0
+        });
+        
+        // Verify token exists
+        if (!data.token) {
+          throw new Error("Token not provided by server");
+        }
         
         // Connect user and wait for it to complete
         try {
           await chat.connectUser({ id: data.userId }, data.token);
+          console.log("🔵 Stream Chat: connectUser call completed");
+          
+          // Immediately verify tokens are set
+          if (!chat.tokenManager || !chat.tokenManager.token) {
+            throw new Error("Tokens not set after connectUser - API key may be mismatched");
+          }
+          console.log("✅ Stream Chat: Tokens verified after connectUser");
           
           // Wait a bit for userID to be set (sometimes it's async)
           let userIDRetries = 0;
@@ -72,6 +113,8 @@ export function StreamChatProvider({ children }: ProviderProps) {
             await new Promise(resolve => setTimeout(resolve, 50));
             userIDRetries++;
           }
+          
+          console.log("🔵 Stream Chat: After connectUser, userID:", chat.userID, "retries:", userIDRetries);
           
           // Verify connection was successful
           if (!chat.userID) {
@@ -110,9 +153,18 @@ export function StreamChatProvider({ children }: ProviderProps) {
             wsHealthy: chat.wsConnection?.isHealthy,
           });
         } catch (connectError: any) {
-          console.error("Stream Chat connectUser error:", connectError);
+          console.error("❌ Stream Chat connectUser error:", connectError);
+          console.error("Error details:", {
+            message: connectError?.message,
+            name: connectError?.name,
+            stack: connectError?.stack,
+            userId: data?.userId,
+            hasToken: !!data?.token,
+            hasApiKey: !!data?.apiKey
+          });
           if (isMounted) {
             setError(connectError?.message || "Failed to connect to chat");
+            setLoading(false);
           }
           return;
         }
@@ -122,11 +174,22 @@ export function StreamChatProvider({ children }: ProviderProps) {
           return;
         }
 
+        console.log("✅ Stream Chat: Setting client in state", {
+          userID: chat.userID,
+          wsHealthy: chat.wsConnection?.isHealthy
+        });
         setClient(chat);
+        setError(null); // Clear any previous errors
       } catch (err) {
-        console.error("StreamChat init error:", err);
+        console.error("❌ StreamChat init error:", err);
+        console.error("Error details:", {
+          message: err instanceof Error ? err.message : String(err),
+          name: err instanceof Error ? err.name : 'Unknown',
+          stack: err instanceof Error ? err.stack : undefined
+        });
         if (isMounted) {
           setError("Chat unavailable");
+          setClient(null); // Ensure client is null on error
         }
       } finally {
         if (isMounted) {

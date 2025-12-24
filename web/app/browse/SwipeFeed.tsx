@@ -49,6 +49,7 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
   const [noMoodResults, setNoMoodResults] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [showProductInfo, setShowProductInfo] = useState(false);
   
   const containerRef = useRef<HTMLDivElement>(null);
   
@@ -221,6 +222,7 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
       if (e.key === "ArrowDown" || e.key === "j") {
         if (currentIndex < displayListings.length - 1 && !isTransitioning) {
           setIsTransitioning(true);
+          setShowProductInfo(false); // Hide immediately on swipe
           setCurrentIndex(prev => prev + 1);
           setTimeout(() => setIsTransitioning(false), 400);
         }
@@ -228,6 +230,7 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
       if (e.key === "ArrowUp" || e.key === "k") {
         if (currentIndex > 0 && !isTransitioning) {
           setIsTransitioning(true);
+          setShowProductInfo(false); // Hide immediately on swipe
           setCurrentIndex(prev => prev - 1);
           setTimeout(() => setIsTransitioning(false), 400);
         }
@@ -240,6 +243,7 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
   const goToNext = useCallback(() => {
     if (currentIndex < displayListings.length - 1 && !isTransitioning) {
       setIsTransitioning(true);
+      setShowProductInfo(false); // Hide immediately on swipe
       setCurrentIndex(prev => prev + 1);
       setTimeout(() => setIsTransitioning(false), 400);
     }
@@ -248,6 +252,7 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
   const goToPrevious = useCallback(() => {
     if (currentIndex > 0 && !isTransitioning) {
       setIsTransitioning(true);
+      setShowProductInfo(false); // Hide immediately on swipe
       setCurrentIndex(prev => prev - 1);
       setTimeout(() => setIsTransitioning(false), 400);
     }
@@ -825,19 +830,20 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
                 </div>
               )}
 
-              {/* Product Info (TikTok-style bottom-left overlay) */}
-              <motion.div 
-                className="absolute bottom-0 left-0 text-left pointer-events-none z-10"
-                style={{ 
-                  paddingLeft: '20px',
-                  paddingBottom: '90px',
-                  paddingRight: '20px',
-                  maxWidth: '80%'
-                }}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: isTransitioning ? 0 : 1 }}
-                transition={{ duration: 0.3, delay: 0.3 }}
-              >
+              {/* Product Info (TikTok-style bottom-left overlay) - only show if user lingers */}
+              {offset === 0 && (
+                <motion.div 
+                  className="absolute bottom-0 left-0 text-left pointer-events-none z-10"
+                  style={{ 
+                    paddingLeft: '20px',
+                    paddingBottom: '90px',
+                    paddingRight: '20px',
+                    maxWidth: '80%'
+                  }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: showProductInfo && !isTransitioning ? 1 : 0 }}
+                  transition={{ duration: 0.3 }}
+                >
                 {/* Title (whisper/caption - subtle overlay) */}
                 <h1 
                   className="mb-1"
@@ -864,6 +870,7 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
                   ${listing.price?.toFixed(2) || '0.00'}
                 </p>
               </motion.div>
+              )}
             </div>
           );
         })}
@@ -970,7 +977,16 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
 
       {/* ===== DASHBOARD/TS BUTTON (Bottom Right) ===== */}
       <button
-        onClick={() => setAccountOpen(true)}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setAccountOpen(true);
+        }}
+        onTouchStart={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setAccountOpen(true);
+        }}
         className="fixed bottom-6 right-6 z-10 w-10 h-10 rounded-full shadow-lg transition-all hover:scale-110 flex items-center justify-center opacity-70 hover:opacity-100"
         style={{ backgroundColor: COLORS.navy }}
         aria-label="Account"

@@ -37,18 +37,21 @@ export default function MessagesModal({ isOpen, onClose, initialSellerId, initia
   const [isSending, setIsSending] = useState(false);
 
   useEffect(() => {
-    if (isOpen && user && client && isConnected) {
-      // Client is connected, safe to query
+    // Only run on client side to avoid hydration issues
+    if (typeof window === 'undefined') return;
+    
+    if (isOpen && user && client && isConnected && client.userID && client.wsConnection?.isHealthy) {
+      // Client is fully connected, safe to query
       loadConversations();
     } else if (isOpen && user && client && !isConnected && !streamLoading) {
       // Client exists but not connected yet, wait a bit
       const timer = setTimeout(() => {
-        if (client.userID) {
+        if (client && client.userID && client.wsConnection?.isHealthy) {
           loadConversations();
         } else {
           setIsLoading(false);
         }
-      }, 1000);
+      }, 2000);
       return () => clearTimeout(timer);
     } else if (isOpen && user && !client && !streamLoading) {
       // Stream Chat not available, show empty state
@@ -128,7 +131,18 @@ export default function MessagesModal({ isOpen, onClose, initialSellerId, initia
       console.log("Client state:", {
         userID: client.userID,
         wsHealthy: client.wsConnection?.isHealthy,
+        connected: !!client.userID && client.wsConnection?.isHealthy,
       });
+      
+      // Final safety check before querying - ensure client is fully connected
+      if (!client.userID || !client.wsConnection?.isHealthy) {
+        console.error("Cannot query channels: client not fully connected", {
+          userID: client.userID,
+          wsHealthy: client.wsConnection?.isHealthy
+        });
+        setIsLoading(false);
+        return;
+      }
       
       // Get all channels the user is a member of
       const filter = { type: 'messaging', members: { $in: [user.id] } };
@@ -162,17 +176,22 @@ export default function MessagesModal({ isOpen, onClose, initialSellerId, initia
       );
 
       setConversations(convs);
-    } catch (error) {
-      console.error("❌ Error loading conversations:", error);
-      console.error("Error details:", {
-        message: error instanceof Error ? error.message : String(error),
-        userID: client.userID,
-        wsHealthy: client.wsConnection?.isHealthy,
-      });
-      
-      // If connection was lost, try to reconnect
-      if (error instanceof Error && error.message.includes("token")) {
-        console.warn("Connection lost, may need to reconnect");
+    } catch (error: any) {
+      // Handle Stream Chat specific errors - don't log as errors if it's just not connected
+      if (error?.message?.includes('tokens are not set') || error?.message?.includes('connectUser')) {
+        // This is expected if Stream Chat isn't configured or connection failed
+        // Don't show as error, just set empty state
+        console.log("Stream Chat not connected - messaging unavailable");
+        setConversations([]);
+        setIsLoading(false);
+        return;
+      } else {
+        console.error("❌ Error loading conversations:", error);
+        console.error("Error details:", {
+          message: error instanceof Error ? error.message : String(error),
+          userID: client?.userID,
+          wsHealthy: client?.wsConnection?.isHealthy,
+        });
       }
       
       setConversations([]);
@@ -188,28 +207,25 @@ export default function MessagesModal({ isOpen, onClose, initialSellerId, initia
       return;
     }
 
-    // Ensure client is connected before setting up channel
+    // Ensure client is fully connected before setting up channel
+    // Must have both userID and healthy WebSocket connection
     if (!client.userID) {
-      console.warn("Stream Chat client not connected, cannot setup channel");
+      console.warn("Stream Chat client not connected (no userID), cannot setup channel");
+      return;
+    }
+
+    if (!client.wsConnection || !client.wsConnection.isHealthy) {
+      console.warn("Stream Chat WebSocket not healthy, waiting...");
+      // Wait a bit and retry - but don't set up channel yet
       return;
     }
 
     const setupChannel = async () => {
       try {
-        // Ensure client is fully connected before proceeding
-        if (!client.userID) {
-          console.warn("Stream Chat client userID not set, cannot setup channel");
+        // Final check: ensure client is still connected
+        if (!client || !client.userID || !client.wsConnection?.isHealthy) {
+          console.error("Stream Chat client not connected, cannot setup channel");
           return;
-        }
-
-        // Wait for WebSocket to be healthy if needed
-        if (client.wsConnection && !client.wsConnection.isHealthy) {
-          console.log("Waiting for Stream Chat WebSocket to be healthy...");
-          let retries = 0;
-          while (retries < 10 && (!client.wsConnection || !client.wsConnection.isHealthy)) {
-            await new Promise(resolve => setTimeout(resolve, 100));
-            retries++;
-          }
         }
 
         // Find or create a channel with the selected user
@@ -250,6 +266,12 @@ export default function MessagesModal({ isOpen, onClose, initialSellerId, initia
           channelData.listing_id = initialListingId;
         }
         
+        // Final check before creating channel
+        if (!client.userID || !client.wsConnection?.isHealthy) {
+          console.error("Stream Chat client disconnected before channel setup");
+          return;
+        }
+
         const channel = client.channel('messaging', channelId, channelData);
 
         // Watch the channel with error handling
@@ -265,20 +287,32 @@ export default function MessagesModal({ isOpen, onClose, initialSellerId, initia
           // Load existing messages
           setMessages([...channel.state.messages]);
         } catch (watchError: any) {
+          // Check if it's a connection error
+          if (watchError?.message?.includes('tokens are not set') || watchError?.message?.includes('connectUser')) {
+            console.warn("Stream Chat not connected - cannot watch channel");
+            return;
+          }
           console.error("Error watching channel:", watchError);
           // Try to query the channel instead as fallback
           try {
             await channel.query();
             setChannel(channel);
             setMessages([...channel.state.messages]);
-          } catch (queryError) {
+          } catch (queryError: any) {
+            if (queryError?.message?.includes('tokens are not set') || queryError?.message?.includes('connectUser')) {
+              console.warn("Stream Chat not connected - cannot query channel");
+              return;
+            }
             console.error("Error querying channel:", queryError);
-            throw queryError;
           }
         }
       } catch (error: any) {
+        // Don't log connection errors as errors - they're expected if Stream Chat isn't configured
+        if (error?.message?.includes('tokens are not set') || error?.message?.includes('connectUser')) {
+          console.log("Stream Chat not connected - channel setup skipped");
+          return;
+        }
         console.error("Error setting up channel:", error);
-        // Don't throw - just log the error so the UI doesn't break
       }
     };
 
