@@ -33,7 +33,28 @@ export function StreamChatProvider({ children }: ProviderProps) {
 
     async function init() {
       if (!user || !session) return;
-      if (client) return;
+      
+      // Only skip if client exists AND is properly connected
+      if (client && client.userID && client.userID === user.id) {
+        console.log("🔵 Stream Chat: Client already connected, skipping init", {
+          userId: client.userID
+        });
+        return;
+      }
+      
+      // If client exists but isn't connected to the current user, we need to reconnect
+      if (client && (!client.userID || client.userID !== user.id)) {
+        console.log("🔵 Stream Chat: Client exists but not connected to current user, reconnecting", {
+          clientUserId: client.userID || 'none',
+          currentUserId: user.id
+        });
+        try {
+          await client.disconnectUser();
+        } catch (e) {
+          // Ignore disconnect errors
+        }
+        setClient(null); // Clear the client so we can create a new one
+      }
 
       setLoading(true);
       setError(null);
@@ -84,11 +105,29 @@ export function StreamChatProvider({ children }: ProviderProps) {
         
         chat = StreamChat.getInstance(data.apiKey);
         
+        // If there's already a connected user, disconnect first (important for switching users)
+        if (chat.userID && chat.userID !== data.userId && chat.userID !== user?.id) {
+          console.log("🔵 Stream Chat: Disconnecting previous user before connecting new one", {
+            previousUserId: chat.userID,
+            newUserId: data.userId || user?.id
+          });
+          try {
+            await chat.disconnectUser();
+            // Wait a moment for disconnect to complete
+            await new Promise(resolve => setTimeout(resolve, 100));
+          } catch (disconnectError) {
+            console.warn("⚠️ Stream Chat: Error disconnecting previous user:", disconnectError);
+            // Continue anyway - might already be disconnected
+          }
+        }
+        
         console.log("🔵 Stream Chat: Connecting user with token...", {
           userId: data.userId,
+          userIdFromAuth: user?.id,
           hasToken: !!data.token,
           apiKey: data.apiKey ? 'present' : 'missing',
-          apiKeyLength: data.apiKey?.length || 0
+          apiKeyLength: data.apiKey?.length || 0,
+          currentClientUserId: chat.userID || 'none'
         });
         
         // Verify token exists
@@ -97,9 +136,25 @@ export function StreamChatProvider({ children }: ProviderProps) {
         }
         
         // Connect user and wait for it to complete
+        // Ensure we have a valid user ID - use data.userId from API, fallback to user.id from auth
+        const userIdToConnect = data.userId || user?.id;
+        
+        if (!userIdToConnect) {
+          throw new Error("No user ID available for Stream Chat connection");
+        }
+        
+        console.log("🔵 Stream Chat: Connecting with user ID:", userIdToConnect, {
+          fromApi: !!data.userId,
+          fromAuth: !!user?.id,
+          match: data.userId === user?.id
+        });
+        
         try {
-          await chat.connectUser({ id: data.userId }, data.token);
-          console.log("🔵 Stream Chat: connectUser call completed");
+          // Ensure user ID is a string (Stream Chat requirement)
+          const userIdString = String(userIdToConnect);
+          
+          await chat.connectUser({ id: userIdString }, data.token);
+          console.log("🔵 Stream Chat: connectUser call completed for user:", userIdString);
           
           // Immediately verify tokens are set
           if (!chat.tokenManager || !chat.tokenManager.token) {
@@ -127,12 +182,26 @@ export function StreamChatProvider({ children }: ProviderProps) {
               return;
             }
             // Only error if user IS logged in but connection failed
-            console.warn("Stream Chat: userID not set after connectUser (user is logged in)");
+            console.error("❌ Stream Chat: userID not set after connectUser (user is logged in)", {
+              userIdAttempted: userIdString,
+              userIdFromApi: data.userId,
+              userIdFromAuth: user?.id,
+              hasToken: !!data.token,
+              tokenLength: data.token?.length || 0
+            });
             if (isMounted) {
               setError("Failed to connect to chat - please try again");
               setLoading(false);
             }
             return;
+          }
+          
+          // Verify the connected user ID matches what we expected
+          if (chat.userID !== userIdString) {
+            console.warn("⚠️ Stream Chat: Connected userID doesn't match expected", {
+              expected: userIdString,
+              actual: chat.userID
+            });
           }
           
           // Wait for WebSocket connection to be established
