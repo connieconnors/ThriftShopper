@@ -31,6 +31,7 @@ import {
   getRecentlyViewed,
   getSavedSearches,
   getSavedMoods,
+  addSavedSearch,
 } from "../../lib/userPreferences";
 
 interface Profile {
@@ -49,6 +50,8 @@ export default function BuyerCanvasPage() {
   const [purchases, setPurchases] = useState<any[]>([]);
   const [recentlyViewed, setRecentlyViewed] = useState<ReturnType<typeof getRecentlyViewed>>([]);
   const [savedMoods, setSavedMoods] = useState<ReturnType<typeof getSavedMoods>>([]);
+  const [savedSearches, setSavedSearches] = useState<ReturnType<typeof getSavedSearches>>([]);
+  const [vibeInput, setVibeInput] = useState("");
   const [isLoading, setIsLoading] = useState(true);
 
   // Prevent hydration mismatch
@@ -196,6 +199,7 @@ export default function BuyerCanvasPage() {
         if (typeof window !== 'undefined') {
           setRecentlyViewed(getRecentlyViewed(user.id));
           setSavedMoods(getSavedMoods(user.id));
+          setSavedSearches(getSavedSearches(user.id));
         }
       } catch (error) {
         console.error("Error fetching canvas data:", error);
@@ -316,11 +320,19 @@ export default function BuyerCanvasPage() {
             <input
               type="text"
               placeholder="What's your treasure vibe today?"
+              value={vibeInput}
+              onChange={(e) => setVibeInput(e.target.value)}
               className="w-full bg-gray-50 rounded-full px-4 py-3 pr-14 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#191970]/20 border border-gray-200"
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
-                  const query = (e.target as HTMLInputElement).value;
-                  if (query.trim()) {
+                  const query = vibeInput.trim();
+                  if (query) {
+                    // Save the search
+                    if (user) {
+                      addSavedSearch(user.id, query);
+                      setSavedSearches(getSavedSearches(user.id));
+                    }
+                    // Navigate to browse with search
                     router.push(`/browse?search=${encodeURIComponent(query)}`);
                   }
                 }
