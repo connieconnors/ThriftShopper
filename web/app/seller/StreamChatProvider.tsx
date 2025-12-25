@@ -32,7 +32,36 @@ export function StreamChatProvider({ children }: ProviderProps) {
     let isMounted = true;
 
     async function init() {
-      if (!user || !session) return;
+      // CRITICAL: Verify user and session exist before proceeding
+      if (!user || !session) {
+        console.log("🔵 Stream Chat: Skipping init - user or session missing", {
+          hasUser: !!user,
+          hasSession: !!session,
+          userId: user?.id || 'none'
+        });
+        return;
+      }
+      
+      // CRITICAL: Verify user.id exists before proceeding
+      if (!user.id) {
+        console.error("❌ Stream Chat: User object exists but user.id is missing", {
+          user: user,
+          userKeys: user ? Object.keys(user) : [],
+          hasEmail: !!user?.email
+        });
+        if (isMounted) {
+          setError("User ID not available - cannot connect to chat");
+          setLoading(false);
+        }
+        return;
+      }
+      
+      console.log("🔵 Stream Chat: Initializing connection", {
+        userId: user.id,
+        userEmail: user.email,
+        hasSession: !!session,
+        sessionToken: session?.access_token ? 'present' : 'missing'
+      });
       
       // Only skip if client exists AND is properly connected
       if (client && client.userID && client.userID === user.id) {
@@ -156,25 +185,69 @@ export function StreamChatProvider({ children }: ProviderProps) {
         }
         
         // Connect user and wait for it to complete
-        // Ensure we have a valid user ID - use data.userId from API, fallback to user.id from auth
+        // CRITICAL: Ensure we have a valid user ID before connecting
+        // Prefer data.userId from API (most reliable), fallback to user.id from auth context
         const userIdToConnect = data.userId || user?.id;
         
-        if (!userIdToConnect) {
-          throw new Error("No user ID available for Stream Chat connection");
+        // Validate user ID exists and is not undefined/null/empty
+        if (!userIdToConnect || userIdToConnect === 'undefined' || userIdToConnect === 'null') {
+          console.error("❌ Stream Chat: Invalid user ID for connection", {
+            dataUserId: data.userId,
+            authUserId: user?.id,
+            userIdToConnect: userIdToConnect,
+            userObject: user,
+            hasUser: !!user,
+            hasSession: !!session
+          });
+          throw new Error("No valid user ID available for Stream Chat connection");
         }
         
-        console.log("🔵 Stream Chat: Connecting with user ID:", userIdToConnect, {
+        // Ensure user ID is a string (Stream Chat requirement)
+        const userIdString = String(userIdToConnect).trim();
+        
+        // Final validation: ensure the string is not empty after trimming
+        if (!userIdString || userIdString.length === 0) {
+          console.error("❌ Stream Chat: User ID is empty after string conversion", {
+            original: userIdToConnect,
+            stringified: userIdString
+          });
+          throw new Error("User ID is empty - cannot connect to Stream Chat");
+        }
+        
+        console.log("🔵 Stream Chat: Connecting with user ID:", userIdString, {
           fromApi: !!data.userId,
           fromAuth: !!user?.id,
-          match: data.userId === user?.id
+          apiUserId: data.userId,
+          authUserId: user?.id,
+          match: data.userId === user?.id,
+          userIdType: typeof userIdString,
+          userIdLength: userIdString.length,
+          tokenLength: data.token?.length || 0
         });
         
         try {
-          // Ensure user ID is a string (Stream Chat requirement)
-          const userIdString = String(userIdToConnect);
+          // CRITICAL: Verify user ID is valid before calling connectUser
+          if (!userIdString || userIdString === 'undefined' || userIdString === 'null') {
+            throw new Error(`Invalid user ID: ${userIdString}`);
+          }
+          
+          console.log("🔵 Stream Chat: Calling connectUser with:", {
+            userId: userIdString,
+            hasToken: !!data.token,
+            tokenLength: data.token?.length || 0
+          });
           
           await chat.connectUser({ id: userIdString }, data.token);
           console.log("🔵 Stream Chat: connectUser call completed for user:", userIdString);
+          
+          // Immediately verify the userID was set correctly
+          console.log("🔵 Stream Chat: Verifying userID after connectUser:", {
+            chatUserID: chat.userID,
+            expectedUserID: userIdString,
+            match: chat.userID === userIdString,
+            hasTokenManager: !!chat.tokenManager,
+            hasToken: !!chat.tokenManager?.token
+          });
           
           // Immediately verify tokens are set
           if (!chat.tokenManager || !chat.tokenManager.token) {
@@ -189,7 +262,29 @@ export function StreamChatProvider({ children }: ProviderProps) {
             userIDRetries++;
           }
           
-          console.log("🔵 Stream Chat: After connectUser, userID:", chat.userID, "retries:", userIDRetries);
+          console.log("🔵 Stream Chat: After connectUser, userID:", chat.userID, "retries:", userIDRetries, {
+            expectedUserID: userIdString,
+            actualUserID: chat.userID,
+            match: chat.userID === userIdString,
+            hasTokenManager: !!chat.tokenManager,
+            hasToken: !!chat.tokenManager?.token
+          });
+          
+          // CRITICAL: If userID is still not set after retries, log detailed error
+          if (!chat.userID) {
+            console.error("❌ Stream Chat: userID not set after connectUser and retries", {
+              userIdAttempted: userIdString,
+              userIdFromApi: data.userId,
+              userIdFromAuth: user?.id,
+              tokenProvided: !!data.token,
+              tokenLength: data.token?.length || 0,
+              apiKeyProvided: !!data.apiKey,
+              chatUserID: chat.userID || 'none',
+              hasTokenManager: !!chat.tokenManager,
+              tokenManagerToken: !!chat.tokenManager?.token,
+              wsHealthy: chat.wsConnection?.isHealthy
+            });
+          }
           
           // Wait for WebSocket connection to be established
           // Stream Chat needs both the user token AND the WS connection
