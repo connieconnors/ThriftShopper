@@ -42,6 +42,8 @@ export default function MessagesModal({ isOpen, onClose, initialSellerId, initia
   // Track if channel has been created for current selectedConversation to prevent duplicate creation
   const channelCreatedFor = useRef<string | null>(null);
   const isSettingUpChannel = useRef(false);
+  // Track if channel is fully set up to prevent isLoading resets
+  const isChannelReady = useRef(false);
 
   useEffect(() => {
     // Only run on client side to avoid hydration issues
@@ -50,6 +52,7 @@ export default function MessagesModal({ isOpen, onClose, initialSellerId, initia
     // Reset state when modal closes
     if (!isOpen) {
       hasLoadedConversations.current = false;
+      isChannelReady.current = false;
       setIsLoading(true);
       if (connectionCheckInterval.current) {
         clearInterval(connectionCheckInterval.current);
@@ -74,8 +77,8 @@ export default function MessagesModal({ isOpen, onClose, initialSellerId, initia
           console.log("✅ MessagesModal: Client fully connected, loading conversations");
           hasLoadedConversations.current = true;
           loadConversations();
-        } else {
-          // Already loaded, ensure loading state is false
+        } else if (isChannelReady.current) {
+          // Channel is ready and conversations loaded - never reset to loading
           setIsLoading(false);
         }
         // Clear any existing interval
@@ -84,8 +87,8 @@ export default function MessagesModal({ isOpen, onClose, initialSellerId, initia
           connectionCheckInterval.current = null;
         }
       } else if (streamLoading) {
-        // Still loading connection, keep loading state only if not already loaded
-        if (!hasLoadedConversations.current) {
+        // Still loading connection, keep loading state only if not already loaded and channel not ready
+        if (!hasLoadedConversations.current && !isChannelReady.current) {
           console.log("⏳ MessagesModal: Waiting for Stream Chat connection...");
           setIsLoading(true);
         }
@@ -137,7 +140,7 @@ export default function MessagesModal({ isOpen, onClose, initialSellerId, initia
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, user, client, streamLoading, isConnected]);
+  }, [isOpen, user, client, streamLoading]); // Removed isConnected to prevent re-renders when messages arrive
   
   // Debug effect to track connection state changes (helps identify loop cause)
   useEffect(() => {
@@ -303,6 +306,7 @@ export default function MessagesModal({ isOpen, onClose, initialSellerId, initia
       setMessages([]);
       channelCreatedFor.current = null;
       isSettingUpChannel.current = false;
+      isChannelReady.current = false;
       return;
     }
 
@@ -429,8 +433,10 @@ export default function MessagesModal({ isOpen, onClose, initialSellerId, initia
           // This prevents the useEffect from triggering again
           channelCreatedFor.current = selectedConversation;
           isSettingUpChannel.current = false;
+          isChannelReady.current = true; // Mark channel as ready
           
           setChannel(channel);
+          setIsLoading(false); // Ensure loading is false once channel is ready
 
           // Listen for new messages
           channel.on('message.new', () => {
@@ -459,8 +465,10 @@ export default function MessagesModal({ isOpen, onClose, initialSellerId, initia
             await channel.query();
             channelCreatedFor.current = selectedConversation;
             isSettingUpChannel.current = false;
+            isChannelReady.current = true; // Mark channel as ready
             setChannel(channel);
             setMessages([...channel.state.messages]);
+            setIsLoading(false); // Ensure loading is false once channel is ready
           } catch (queryError: any) {
             isSettingUpChannel.current = false;
             if (queryError?.message?.includes('tokens are not set') || queryError?.message?.includes('connectUser')) {
@@ -488,6 +496,12 @@ export default function MessagesModal({ isOpen, onClose, initialSellerId, initia
     if (client && user && client.userID && client.wsConnection?.isHealthy) {
       setupChannel();
     }
+    
+    // Cleanup function to prevent state updates after unmount
+    return () => {
+      // Don't reset flags here - we want to keep channel state if conversation doesn't change
+      // Only cleanup if component unmounts or conversation changes
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedConversation]); // CRITICAL: Only depend on selectedConversation, not client or user to prevent infinite loop
 
@@ -576,8 +590,8 @@ export default function MessagesModal({ isOpen, onClose, initialSellerId, initia
       onClose={onClose}
       title="Messages"
     >
-      {/* Show loading while connecting or initializing */}
-      {isLoading || streamLoading || !client || !client?.userID || !client?.tokenManager?.token || !isConnected || !client?.wsConnection?.isHealthy ? (
+      {/* Show loading while connecting or initializing - but NOT if channel is ready */}
+      {!isChannelReady.current && (isLoading || streamLoading || !client || !client?.userID || !client?.tokenManager?.token || !client?.wsConnection?.isHealthy) ? (
         <div className="flex flex-col items-center justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-white/70 mb-3" />
           <p className="text-sm text-white/70">Connecting to chat...</p>
@@ -683,22 +697,22 @@ export default function MessagesModal({ isOpen, onClose, initialSellerId, initia
                   if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
                     // Only send if client is connected
-                    if (client && client.userID && client.tokenManager?.token && isConnected) {
+                    if (isChannelReady.current && channel && client && client.userID && client.tokenManager?.token) {
                       handleSendMessage();
                     }
                   }
                 }}
                 placeholder={
-                  !client || !client.userID || !isConnected || !client.wsConnection?.isHealthy
+                  !isChannelReady.current || !channel
                     ? "Connecting to chat..."
                     : "Type a message..."
                 }
                 disabled={
+                  !isChannelReady.current || 
+                  !channel ||
                   !client || 
                   !client.userID || 
-                  !client.tokenManager?.token || 
-                  !isConnected ||
-                  !client.wsConnection?.isHealthy
+                  !client.tokenManager?.token
                 }
                 className="flex-1 px-3 py-2 rounded-lg bg-white/10 text-white text-sm placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#EFBF05]/50 disabled:opacity-50 disabled:cursor-not-allowed"
               />
@@ -707,16 +721,16 @@ export default function MessagesModal({ isOpen, onClose, initialSellerId, initia
               disabled={
                 !newMessage.trim() || 
                 isSending || 
+                !isChannelReady.current ||
+                !channel ||
                 !client || 
                 !client.userID || 
-                !client.tokenManager?.token ||
-                !isConnected ||
-                !client.wsConnection?.isHealthy
+                !client.tokenManager?.token
               }
               className="w-9 h-9 rounded-lg flex items-center justify-center transition-colors disabled:opacity-50"
               style={{ backgroundColor: "#191970" }}
               title={
-                !client || !client.userID || !isConnected
+                !isChannelReady.current || !channel
                   ? "Connecting to chat..."
                   : !newMessage.trim()
                   ? "Type a message"
