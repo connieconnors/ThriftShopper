@@ -341,13 +341,7 @@ export default function SellerDashboard() {
           shipping_phone,
           tracking_number,
           created_at,
-          updated_at,
-          listings:listing_id (
-            id,
-            title,
-            clean_image_url,
-            original_image_url
-          )
+          updated_at
         `)
         .eq('seller_id', user.id)
         .order('created_at', { ascending: false });
@@ -356,7 +350,31 @@ export default function SellerDashboard() {
         console.error('Error fetching orders:', ordersError);
         setOrders([]);
       } else {
-        setOrders(ordersData || []);
+        // Fetch listings separately and merge
+        const listingIds = ordersData?.map((o: any) => o.listing_id).filter(Boolean) || [];
+        let listingsMap: Record<string, any> = {};
+        
+        if (listingIds.length > 0) {
+          const { data: listingsData } = await supabase
+            .from('listings')
+            .select('id, title, clean_image_url, original_image_url')
+            .in('id', listingIds);
+          
+          if (listingsData) {
+            listingsMap = listingsData.reduce((acc: Record<string, any>, listing: any) => {
+              acc[listing.id] = listing;
+              return acc;
+            }, {});
+          }
+        }
+        
+        // Merge listings into orders
+        const ordersWithListings = (ordersData || []).map((order: any) => ({
+          ...order,
+          listings: listingsMap[order.listing_id] || null
+        }));
+        
+        setOrders(ordersWithListings);
       }
       
       // Calculate stats

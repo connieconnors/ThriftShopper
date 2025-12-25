@@ -35,6 +35,8 @@ export default function MessagesModal({ isOpen, onClose, initialSellerId, initia
   const [newMessage, setNewMessage] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
+  // Store queried channels so we can reuse them instead of creating new ones
+  const [queriedChannels, setQueriedChannels] = useState<any[]>([]);
   
   // Track if we've already loaded conversations to prevent re-triggering
   const hasLoadedConversations = useRef(false);
@@ -310,6 +312,32 @@ export default function MessagesModal({ isOpen, onClose, initialSellerId, initia
       return;
     }
 
+    // CRITICAL: First, try to find existing channel from queried channels
+    // This prevents creating duplicate channels when clicking on existing conversations
+    const existingChannel = queriedChannels.find((ch: any) => {
+      const members = Object.values(ch.state.members || {});
+      const partner = members.find((m: any) => m.user_id === selectedConversation);
+      return partner !== undefined;
+    });
+
+    if (existingChannel) {
+      console.log("✅ MessagesModal: Found existing channel, reusing it");
+      channelCreatedFor.current = selectedConversation;
+      isChannelReady.current = true;
+      
+      setChannel(existingChannel);
+      setIsLoading(false);
+      
+      // Listen for new messages
+      existingChannel.on('message.new', () => {
+        setMessages([...existingChannel.state.messages]);
+      });
+      
+      // Load existing messages
+      setMessages([...existingChannel.state.messages]);
+      return;
+    }
+
     // CRITICAL: Prevent duplicate channel creation
     // Only create channel once per selectedConversation
     if (channelCreatedFor.current === selectedConversation) {
@@ -348,7 +376,7 @@ export default function MessagesModal({ isOpen, onClose, initialSellerId, initia
           return;
         }
 
-        // Find or create a channel with the selected user
+        // If no existing channel found, create a new one
         // Create a deterministic channel ID that's <= 64 characters
         // Hash the two user IDs together to create a shorter, unique ID
         const userIds = [user.id, selectedConversation].sort();
@@ -372,7 +400,7 @@ export default function MessagesModal({ isOpen, onClose, initialSellerId, initia
           }
         }
         
-        console.log("Creating Stream Chat channel with ID:", channelId, "Length:", channelId.length);
+        console.log("Creating new Stream Chat channel with ID:", channelId, "Length:", channelId.length);
         
         // Deduplicate members to avoid "Duplicate members" error
         const members = [user.id, selectedConversation].filter((id, index, arr) => arr.indexOf(id) === index);
@@ -503,7 +531,7 @@ export default function MessagesModal({ isOpen, onClose, initialSellerId, initia
       // Only cleanup if component unmounts or conversation changes
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedConversation]); // CRITICAL: Only depend on selectedConversation, not client or user to prevent infinite loop
+  }, [selectedConversation, queriedChannels]); // Include queriedChannels so we can find existing channels
 
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !user || !channel) return;
