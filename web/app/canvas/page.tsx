@@ -315,7 +315,7 @@ export default function BuyerCanvasPage() {
           <div className="relative">
             <input
               type="text"
-              placeholder="What's your treasure vibe?"
+              placeholder="What's your treasure vibe today?"
               className="w-full bg-gray-50 rounded-full px-4 py-3 pr-14 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#191970]/20 border border-gray-200"
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
@@ -371,24 +371,32 @@ export default function BuyerCanvasPage() {
             </p>
             <div className="flex gap-2 mb-4">
               <button
-                disabled
-                className="flex-1 h-8 text-xs gap-1.5 rounded-lg border border-gray-200 flex items-center justify-center bg-gray-50 text-gray-600 hover:bg-gray-100 transition-colors"
+                onClick={() => {
+                  // TODO: Implement image upload functionality
+                  alert("Image upload coming soon!");
+                }}
+                className="flex-1 h-8 text-xs gap-1.5 rounded-lg border border-gray-200 flex items-center justify-center bg-white text-gray-700 hover:bg-gray-50 hover:border-[#191970] transition-colors cursor-pointer"
               >
                 <Upload className="h-3.5 w-3.5" />
                 Add Image
               </button>
               <button
-                disabled
-                className="flex-1 h-8 text-xs gap-1.5 rounded-lg border border-gray-200 flex items-center justify-center bg-gray-50 text-gray-600 hover:bg-gray-100 transition-colors"
+                onClick={() => {
+                  // TODO: Implement voice note functionality
+                  alert("Voice notes coming soon!");
+                }}
+                className="flex-1 h-8 text-xs gap-1.5 rounded-lg border border-gray-200 flex items-center justify-center bg-white text-gray-700 hover:bg-gray-50 hover:border-[#191970] transition-colors cursor-pointer"
               >
                 <Mic className="h-3.5 w-3.5" />
                 Voice Note
               </button>
             </div>
-            {/* Blank canvas area */}
-            <div className="min-h-[60px] bg-gray-50/50 rounded-lg border-2 border-dashed border-gray-200 flex items-center justify-center">
-              <p className="text-[10px] text-gray-400 italic">Your canvas awaits...</p>
-            </div>
+            {/* Text box for notes */}
+            <textarea
+              placeholder="I'd really love to find another..."
+              className="w-full min-h-[80px] bg-white rounded-lg px-3 py-2 text-xs placeholder:text-gray-400 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#191970]/20 focus:border-[#191970] resize-none"
+              rows={4}
+            />
           </div>
 
           {/* Stories */}
@@ -399,24 +407,12 @@ export default function BuyerCanvasPage() {
             <p className="text-xs text-gray-600 leading-relaxed mb-5">
               Share the story behind your treasures
             </p>
-            <div className="flex gap-2 mb-4">
-              <input
-                type="text"
-                placeholder="Tell your story..."
-                disabled
-                className="flex-1 bg-gray-50 rounded-lg px-3 py-2 text-xs placeholder:text-gray-400 border border-gray-200"
-              />
-              <button
-                disabled
-                className="h-8 w-8 shrink-0 rounded-lg border border-gray-200 flex items-center justify-center bg-gray-50 hover:bg-gray-100 transition-colors"
-              >
-                <Mic className="h-3.5 w-3.5 text-gray-400" />
-              </button>
-            </div>
-            {/* Blank canvas area */}
-            <div className="min-h-[60px] bg-gray-50/50 rounded-lg border-2 border-dashed border-gray-200 flex items-center justify-center">
-              <p className="text-[10px] text-gray-400 italic">Your stories await...</p>
-            </div>
+            {/* Text box for stories */}
+            <textarea
+              placeholder="This reminded me of that time..."
+              className="w-full min-h-[120px] bg-white rounded-lg px-3 py-2 text-xs placeholder:text-gray-400 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#191970]/20 focus:border-[#191970] resize-none"
+              rows={6}
+            />
           </div>
         </div>
       </div>
@@ -502,10 +498,20 @@ export default function BuyerCanvasPage() {
                 purchases.map((order) => (
                   <Link
                     key={order.id}
-                    href={`/listing/${order.listing_id}`}
+                    href={`/orders/${order.id}`}
                     className="px-3 py-1.5 rounded-full border border-gray-200 bg-gray-50 flex items-center gap-1.5 hover:bg-gray-100 hover:border-[#EFBF05] transition-all shadow-sm"
                   >
                     <span className="text-xs text-gray-700">{order.listing?.title || "Item"}</span>
+                    {order.status && (
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
+                        order.status === 'paid' ? 'bg-blue-100 text-blue-700' :
+                        order.status === 'shipped' ? 'bg-purple-100 text-purple-700' :
+                        order.status === 'delivered' ? 'bg-green-100 text-green-700' :
+                        'bg-gray-100 text-gray-700'
+                      }`}>
+                        {order.status}
+                      </span>
+                    )}
                   </Link>
                 ))
               )}

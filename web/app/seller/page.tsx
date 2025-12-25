@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/app/context/AuthContext';
 import { supabase } from '@/lib/supabaseClient';
 import { TSLogo } from '@/components/TSLogo';
-import { Loader2, Plus, ArrowLeft, Settings, MessageSquare, ChevronDown, ChevronUp, MoreVertical, EyeOff, Trash2, CheckCircle, LogOut, Search, Package, HelpCircle, User, Edit, Bookmark } from 'lucide-react';
+import { Loader2, Plus, ArrowLeft, Settings, MessageSquare, ChevronDown, ChevronUp, MoreVertical, EyeOff, Trash2, CheckCircle, LogOut, Search, Package, HelpCircle, User, Edit, Bookmark, Truck, PackageCheck } from 'lucide-react';
 import SellerMessages from './components/SellerMessages';
 import Link from 'next/link';
 import { StreamChatProvider } from './StreamChatProvider';
@@ -22,11 +22,172 @@ interface Listing {
   created_at: string;
 }
 
+interface OrderCardProps {
+  order: any;
+  onUpdate: () => void;
+}
+
+function OrderCard({ order, onUpdate }: OrderCardProps) {
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [showTrackingInput, setShowTrackingInput] = useState(false);
+  const [trackingNumber, setTrackingNumber] = useState(order.tracking_number || '');
+
+  const getStatusBadge = () => {
+    const status = order.status || 'paid';
+    if (status === 'paid') {
+      return { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Paid - Ready to Ship' };
+    } else if (status === 'shipped') {
+      return { bg: 'bg-purple-100', text: 'text-purple-700', label: 'Shipped' };
+    } else if (status === 'delivered') {
+      return { bg: 'bg-green-100', text: 'text-green-700', label: 'Delivered' };
+    } else {
+      return { bg: 'bg-gray-100', text: 'text-gray-700', label: status };
+    }
+  };
+
+  const handleMarkShipped = async () => {
+    if (!trackingNumber.trim() && !showTrackingInput) {
+      setShowTrackingInput(true);
+      return;
+    }
+
+    if (trackingNumber.trim()) {
+      setIsUpdating(true);
+      try {
+        const response = await fetch('/api/orders/update-status', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            orderId: order.id,
+            status: 'shipped',
+            trackingNumber: trackingNumber.trim(),
+          }),
+        });
+
+        const data = await response.json();
+        if (data.error) {
+          alert(data.error);
+        } else {
+          onUpdate();
+        }
+      } catch (error) {
+        console.error('Error updating order:', error);
+        alert('Failed to update order. Please try again.');
+      } finally {
+        setIsUpdating(false);
+      }
+    }
+  };
+
+  const statusBadge = getStatusBadge();
+  const listing = order.listings || {};
+  const imageUrl = listing.clean_image_url || listing.original_image_url;
+  const orderDate = new Date(order.created_at);
+  const daysAgo = Math.floor((Date.now() - orderDate.getTime()) / (1000 * 60 * 60 * 24));
+  const timeAgo = daysAgo === 0 ? 'Today' : daysAgo === 1 ? '1 day ago' : `${daysAgo} days ago`;
+
+  return (
+    <Link href={`/orders/${order.id}`} className="block">
+      <div className="bg-gray-50 rounded-lg border border-gray-200 p-3 hover:border-[#191970] transition-colors">
+        <div className="flex gap-3">
+          {/* Thumbnail */}
+          {imageUrl && (
+            <img
+              src={imageUrl}
+              alt={listing.title || 'Order item'}
+              className="w-16 h-16 rounded-lg object-cover flex-shrink-0"
+            />
+          )}
+          
+          {/* Order Info */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start justify-between gap-2 mb-1">
+              <h3 className="text-sm font-medium text-gray-900 truncate">
+                {listing.title || 'Order Item'}
+              </h3>
+            <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${statusBadge.bg} ${statusBadge.text} whitespace-nowrap`}>
+              {statusBadge.label}
+            </span>
+          </div>
+          
+          <p className="text-xs text-gray-600 mb-1">
+            ${order.amount?.toFixed(2) || '0.00'}
+          </p>
+          
+          <p className="text-[10px] text-gray-500 mb-2">
+            Ordered {timeAgo}
+          </p>
+
+          {/* Shipping Address */}
+          {(order.shipping_name || order.shipping_city) && (
+            <div className="text-[10px] text-gray-600 mb-2">
+              <p className="font-medium">Ship to:</p>
+              <p>{order.shipping_name}</p>
+              <p>{order.shipping_city}, {order.shipping_state} {order.shipping_zip}</p>
+            </div>
+          )}
+
+          {/* Tracking Number */}
+          {order.tracking_number && (
+            <div className="text-[10px] text-gray-600 mb-2">
+              <p className="font-medium">Tracking:</p>
+              <p className="font-mono">{order.tracking_number}</p>
+            </div>
+          )}
+
+          {/* Actions */}
+          {order.status === 'paid' && (
+            <div className="space-y-2">
+              {showTrackingInput && (
+                <input
+                  type="text"
+                  placeholder="Enter tracking number"
+                  value={trackingNumber}
+                  onChange={(e) => setTrackingNumber(e.target.value)}
+                  className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#191970]/20"
+                />
+              )}
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleMarkShipped();
+                }}
+                disabled={isUpdating}
+                className="w-full py-1.5 px-3 text-xs font-medium rounded-lg transition-colors flex items-center justify-center gap-1.5"
+                style={{ 
+                  backgroundColor: '#191970', 
+                  color: 'white',
+                  opacity: isUpdating ? 0.6 : 1
+                }}
+              >
+                {isUpdating ? (
+                  <>
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    Updating...
+                  </>
+                ) : (
+                  <>
+                    <Truck className="h-3 w-3" />
+                    {showTrackingInput ? 'Mark as Shipped' : 'Add Tracking & Ship'}
+                  </>
+                )}
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+    </Link>
+  );
+}
+
 export default function SellerDashboard() {
   const { user, isLoading: authLoading, signOut } = useAuth();
   const router = useRouter();
   
   const [listings, setListings] = useState<Listing[]>([]);
+  const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [messagesExpanded, setMessagesExpanded] = useState(false);
   const [stats, setStats] = useState({
@@ -40,6 +201,7 @@ export default function SellerDashboard() {
   const [profile, setProfile] = useState<any>(null);
   const [messagesOpen, setMessagesOpen] = useState(false);
   const [supportOpen, setSupportOpen] = useState(false);
+  const [showOrders, setShowOrders] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -114,10 +276,10 @@ export default function SellerDashboard() {
         fullProfile: profile
       });
 
-      // If not a seller, redirect to browse (they shouldn't be here)
+      // If not a seller, redirect to onboarding to become a seller
       if (!isSeller) {
-        console.log('⚠️ User is not a seller, redirecting to browse');
-        router.push('/browse');
+        console.log('⚠️ User is not a seller, redirecting to onboarding');
+        router.push('/seller/onboarding');
         return;
       }
 
@@ -162,15 +324,51 @@ export default function SellerDashboard() {
 
       setListings(listingsData || []);
       
+      // Fetch seller's orders
+      const { data: ordersData, error: ordersError } = await supabase
+        .from('orders')
+        .select(`
+          id,
+          listing_id,
+          buyer_id,
+          amount,
+          status,
+          shipping_name,
+          shipping_address,
+          shipping_city,
+          shipping_state,
+          shipping_zip,
+          shipping_phone,
+          tracking_number,
+          created_at,
+          updated_at,
+          listings:listing_id (
+            id,
+            title,
+            clean_image_url,
+            original_image_url
+          )
+        `)
+        .eq('seller_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (ordersError) {
+        console.error('Error fetching orders:', ordersError);
+        setOrders([]);
+      } else {
+        setOrders(ordersData || []);
+      }
+      
       // Calculate stats
       const active = listingsData?.filter(l => l.status === 'active').length || 0;
       const sold = listingsData?.filter(l => l.status === 'sold').length || 0;
+      const paidOrders = ordersData?.filter((o: any) => o.status === 'paid' || o.status === 'shipped').length || 0;
       
       setStats({
         totalListings: listingsData?.length || 0,
         activeListings: active,
         totalViews: 0, // Would need a views table
-        totalSales: sold,
+        totalSales: sold + paidOrders,
       });
 
     } catch (err) {
@@ -245,9 +443,11 @@ export default function SellerDashboard() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#FFF8E6", fontFamily: "Merriweather, serif" }}>
-        <div className="animate-spin h-8 w-8 border-2 border-[#EFBF05] border-t-transparent rounded-full" />
-      </div>
+      <StreamChatProvider>
+        <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#FFF8E6", fontFamily: "Merriweather, serif" }}>
+          <div className="animate-spin h-8 w-8 border-2 border-[#EFBF05] border-t-transparent rounded-full" />
+        </div>
+      </StreamChatProvider>
     );
   }
 
@@ -349,18 +549,20 @@ export default function SellerDashboard() {
           </div>
         )}
 
-        {/* Add New Listing Button */}
-        <Link
-          href="/sell"
-          className="w-full mb-4 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg"
-          style={{ 
-            backgroundColor: '#191970', 
-            color: 'white',
-          }}
-        >
-          <Plus size={20} />
-          Add New Listing
-        </Link>
+        {/* Add New Listing Button - Sticky */}
+        <div className="sticky top-[56px] z-30 mb-4 bg-gray-50 pb-2">
+          <Link
+            href="/sell"
+            className="w-full py-3 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg"
+            style={{ 
+              backgroundColor: '#191970', 
+              color: 'white',
+            }}
+          >
+            <Plus size={20} />
+            Add New Listing
+          </Link>
+        </div>
 
         {/* Stats Cards - Mobile-first vertical stack */}
         <div className="flex flex-col gap-3 mb-4">
@@ -380,6 +582,43 @@ export default function SellerDashboard() {
             <div className="text-2xl font-bold mb-1" style={{ color: "#EFBF05" }}>$0.00</div>
             <div className="text-[11px] font-medium text-gray-600">Total Earnings</div>
           </div>
+        </div>
+
+        {/* Orders Section */}
+        <div className="mb-4">
+          <button
+            onClick={() => setShowOrders(!showOrders)}
+            className="flex items-center justify-between w-full mb-3"
+          >
+            <h2 className="text-base font-semibold" style={{ color: "#191970" }}>
+              Orders
+            </h2>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+                {orders.filter((o: any) => o.status === 'paid' || o.status === 'shipped').length}
+              </span>
+              {showOrders ? (
+                <ChevronUp className="h-5 w-5 text-gray-400" />
+              ) : (
+                <ChevronDown className="h-5 w-5 text-gray-400" />
+              )}
+            </div>
+          </button>
+          {showOrders && (
+            <div className="bg-white rounded-lg border border-gray-200 max-h-[500px] overflow-y-auto mb-4" style={{ scrollbarWidth: 'thin' }}>
+              {orders.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-sm text-gray-600">No orders yet</p>
+                </div>
+              ) : (
+                <div className="p-2 space-y-3">
+                  {orders.map((order: any) => (
+                    <OrderCard key={order.id} order={order} onUpdate={fetchSellerData} />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Your Listings */}

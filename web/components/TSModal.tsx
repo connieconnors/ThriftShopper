@@ -6,7 +6,7 @@ import { createPortal } from "react-dom";
 interface TSModalProps {
   isOpen: boolean;
   onClose: () => void;
-  title?: string;
+  title?: string | ReactNode;
   children: ReactNode;
   /** Optional helper line under the chips area, small text */
   helperText?: string;
@@ -62,9 +62,9 @@ const TSModal: React.FC<TSModalProps> = ({
           rounded-[28px]
           shadow-[0_18px_40px_rgba(0,0,0,0.45)]
           text-white
-          bg-[rgba(22,22,22,0.88)]
           overflow-hidden
         "
+        style={{ backgroundColor: '#191970' }}
         style={{ touchAction: 'pan-y' }}
         onClick={(e) => e.stopPropagation()}
         onTouchStart={(e) => {

@@ -32,6 +32,40 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Check if order already exists for this payment intent (prevent duplicates)
+    const { data: existingOrder } = await supabase
+      .from("orders")
+      .select("id, status")
+      .eq("payment_intent_id", paymentIntentId)
+      .maybeSingle();
+
+    if (existingOrder) {
+      console.log("Order already exists for this payment intent:", existingOrder.id);
+      return NextResponse.json({
+        orderId: existingOrder.id,
+        success: true,
+        message: "Order already exists",
+      });
+    }
+
+    // Check if listing is already sold (prevent double-selling)
+    if (listing.status === 'sold') {
+      // Check if there's already a paid order for this listing
+      const { data: existingListingOrder } = await supabase
+        .from("orders")
+        .select("id")
+        .eq("listing_id", listingId)
+        .in("status", ["paid", "shipped", "delivered"])
+        .maybeSingle();
+
+      if (existingListingOrder) {
+        return NextResponse.json(
+          { error: "This item has already been sold" },
+          { status: 400 }
+        );
+      }
+    }
+
     // Create order record
     const { data: order, error: orderError } = await supabase
       .from("orders")
@@ -55,6 +89,25 @@ export async function POST(request: NextRequest) {
 
     if (orderError) {
       console.error("Error creating order:", orderError);
+      
+      // Check if it's a duplicate key error
+      if (orderError.code === '23505' || orderError.message?.includes('duplicate')) {
+        // Try to find the existing order
+        const { data: existing } = await supabase
+          .from("orders")
+          .select("id")
+          .eq("payment_intent_id", paymentIntentId)
+          .maybeSingle();
+        
+        if (existing) {
+          return NextResponse.json({
+            orderId: existing.id,
+            success: true,
+            message: "Order already exists",
+          });
+        }
+      }
+      
       return NextResponse.json(
         { error: "Failed to create order" },
         { status: 500 }
