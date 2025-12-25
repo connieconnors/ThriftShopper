@@ -214,6 +214,24 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
   // Compute this early so it can be used in hooks below
   const displayListings = searchResults ?? filteredListings;
 
+  // Show product info after user pauses on a card (fade in after brief delay)
+  useEffect(() => {
+    // Reset showProductInfo when transitioning
+    if (isTransitioning) {
+      setShowProductInfo(false);
+      return;
+    }
+
+    // After transition completes, wait a brief moment (500ms) then fade in
+    const timer = setTimeout(() => {
+      if (!isTransitioning) {
+        setShowProductInfo(true);
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [currentIndex, isTransitioning]);
+
   // Keyboard navigation (client-side only to avoid hydration issues)
   useEffect(() => {
     if (typeof window === 'undefined') return;
