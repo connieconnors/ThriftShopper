@@ -40,22 +40,51 @@ export default function MessagesModal({ isOpen, onClose, initialSellerId, initia
     // Only run on client side to avoid hydration issues
     if (typeof window === 'undefined') return;
     
-    if (isOpen && user && client && isConnected && client.userID && client.wsConnection?.isHealthy) {
-      // Client is fully connected, safe to query
-      loadConversations();
-    } else if (isOpen && user && client && !isConnected && !streamLoading) {
-      // Client exists but not connected yet, wait a bit
-      const timer = setTimeout(() => {
-        if (client && client.userID && client.wsConnection?.isHealthy) {
-          loadConversations();
-        } else {
+    // Reset loading state when modal opens
+    if (isOpen) {
+      setIsLoading(true);
+    }
+    
+    // CRITICAL: Wait for full connection before allowing any operations
+    // This ensures connection happens immediately when modal opens, not when user types
+    if (isOpen && user) {
+      if (client && isConnected && client.userID && client.tokenManager?.token && client.wsConnection?.isHealthy) {
+        // Client is fully connected, safe to query
+        console.log("✅ MessagesModal: Client fully connected, loading conversations");
+        loadConversations();
+      } else if (streamLoading) {
+        // Still loading connection, keep loading state
+        console.log("⏳ MessagesModal: Waiting for Stream Chat connection...");
+        setIsLoading(true);
+      } else if (client && !isConnected) {
+        // Client exists but not connected yet, wait for connection
+        console.log("⏳ MessagesModal: Client exists but not connected, waiting...");
+        setIsLoading(true);
+        // Poll for connection with timeout
+        const checkConnection = setInterval(() => {
+          if (client && client.userID && client.tokenManager?.token && client.wsConnection?.isHealthy) {
+            console.log("✅ MessagesModal: Connection established, loading conversations");
+            clearInterval(checkConnection);
+            loadConversations();
+          }
+        }, 500);
+        
+        // Timeout after 10 seconds
+        const timeout = setTimeout(() => {
+          clearInterval(checkConnection);
+          console.error("❌ MessagesModal: Connection timeout");
           setIsLoading(false);
-        }
-      }, 2000);
-      return () => clearTimeout(timer);
-    } else if (isOpen && user && !client && !streamLoading) {
-      // Stream Chat not available, show empty state
-      setIsLoading(false);
+        }, 10000);
+        
+        return () => {
+          clearInterval(checkConnection);
+          clearTimeout(timeout);
+        };
+      } else if (!client && !streamLoading) {
+        // Stream Chat not available or not initialized
+        console.warn("⚠️ MessagesModal: Stream Chat client not available");
+        setIsLoading(false);
+      }
     }
   }, [isOpen, user, client, streamLoading, isConnected]);
 
@@ -435,9 +464,20 @@ export default function MessagesModal({ isOpen, onClose, initialSellerId, initia
       onClose={onClose}
       title="Messages"
     >
-      {isLoading || streamLoading ? (
-        <div className="flex items-center justify-center py-8">
-          <Loader2 className="h-6 w-6 animate-spin text-white/70" />
+      {/* Show loading while connecting or initializing */}
+      {isLoading || streamLoading || !client || !client?.userID || !client?.tokenManager?.token || !isConnected || !client?.wsConnection?.isHealthy ? (
+        <div className="flex flex-col items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-white/70 mb-3" />
+          <p className="text-sm text-white/70">Connecting to chat...</p>
+          {!client && (
+            <p className="text-xs text-white/50 mt-1">Initializing Stream Chat</p>
+          )}
+          {client && !client.userID && (
+            <p className="text-xs text-white/50 mt-1">Authenticating...</p>
+          )}
+          {client && client.userID && !client.wsConnection?.isHealthy && (
+            <p className="text-xs text-white/50 mt-1">Establishing connection...</p>
+          )}
         </div>
       ) : conversations.length === 0 ? (
         <div className="py-8 text-center">
@@ -519,19 +559,11 @@ export default function MessagesModal({ isOpen, onClose, initialSellerId, initia
             )}
           </div>
 
-          {/* Message input */}
-          <div className="flex flex-col gap-2 pt-2 border-t border-white/10">
-            {/* Connection status indicator */}
-            {(!client || !client.userID || !client.tokenManager?.token || !isConnected || !client.wsConnection?.isHealthy) && (
-              <div className="px-3 py-1.5 rounded-lg bg-yellow-500/20 border border-yellow-500/30">
-                <p className="text-xs text-yellow-200 flex items-center gap-1.5">
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                  Connecting to chat...
-                </p>
-              </div>
-            )}
-            <div className="flex items-center gap-2">
-              <input
+          {/* Message input - only show when fully connected */}
+          {client && client.userID && client.tokenManager?.token && isConnected && client.wsConnection?.isHealthy && (
+            <div className="flex flex-col gap-2 pt-2 border-t border-white/10">
+              <div className="flex items-center gap-2">
+                <input
                 type="text"
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
@@ -558,7 +590,7 @@ export default function MessagesModal({ isOpen, onClose, initialSellerId, initia
                 }
                 className="flex-1 px-3 py-2 rounded-lg bg-white/10 text-white text-sm placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#EFBF05]/50 disabled:opacity-50 disabled:cursor-not-allowed"
               />
-            <button
+                <button
               onClick={handleSendMessage}
               disabled={
                 !newMessage.trim() || 
@@ -584,9 +616,10 @@ export default function MessagesModal({ isOpen, onClose, initialSellerId, initia
               ) : (
                 <Send className="h-4 w-4 text-white" />
               )}
-            </button>
+                </button>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       )}
 
