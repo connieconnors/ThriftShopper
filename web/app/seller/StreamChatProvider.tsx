@@ -73,7 +73,9 @@ export function StreamChatProvider({ children }: ProviderProps) {
           console.error("Stream token request failed - invalid JSON response:", {
             status: res.status,
             statusText: res.statusText,
-            jsonError
+            jsonError,
+            userId: user?.id,
+            hasSession: !!session
           });
           if (isMounted) {
             setError("Chat unavailable - server error");
@@ -87,12 +89,30 @@ export function StreamChatProvider({ children }: ProviderProps) {
             statusText: res.statusText,
             error: data?.error || "Unknown error",
             details: data?.details || "No details provided",
-            fullResponse: data
+            fullResponse: data,
+            userId: user?.id,
+            userEmail: user?.email
           });
           if (isMounted) {
             // Show more helpful error message
             const errorMsg = data?.error || data?.details || "Chat unavailable";
             setError(errorMsg);
+          }
+          return;
+        }
+
+        // Verify the response contains required fields
+        if (!data || !data.token) {
+          console.error("❌ Stream token response missing token:", {
+            hasData: !!data,
+            hasToken: !!data?.token,
+            hasUserId: !!data?.userId,
+            hasApiKey: !!data?.apiKey,
+            responseKeys: data ? Object.keys(data) : [],
+            userId: user?.id
+          });
+          if (isMounted) {
+            setError("Chat unavailable - invalid server response");
           }
           return;
         }
@@ -198,7 +218,18 @@ export function StreamChatProvider({ children }: ProviderProps) {
           // Stream Chat sometimes sets userID asynchronously after the connection is established
           if (!hasToken) {
             // No token means connection definitely failed
-            console.error("❌ Stream Chat: No token after connectUser - connection failed");
+            console.error("❌ Stream Chat: No token after connectUser - connection failed", {
+              userIdAttempted: userIdString,
+              userIdFromApi: data.userId,
+              userIdFromAuth: user?.id,
+              tokenProvided: !!data.token,
+              tokenLength: data.token?.length || 0,
+              apiKeyProvided: !!data.apiKey,
+              chatUserID: chat.userID || 'none',
+              hasTokenManager: !!chat.tokenManager,
+              tokenManagerToken: !!chat.tokenManager?.token,
+              wsHealthy: chat.wsConnection?.isHealthy
+            });
             if (isMounted) {
               setError("Failed to connect to chat - please try again");
               setLoading(false);

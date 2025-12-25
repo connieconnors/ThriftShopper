@@ -116,13 +116,39 @@ export async function GET(req: NextRequest) {
 
     console.log("🔵 Creating Stream Chat token...");
     const token = serverClient.createToken(user.id);
-    console.log("✅ Stream Chat token created successfully");
+    console.log("✅ Stream Chat token created successfully", {
+      userId: user.id,
+      userEmail: user.email,
+      tokenLength: token?.length || 0,
+      hasToken: !!token
+    });
 
-    return NextResponse.json({
+    // Ensure all required fields are present
+    if (!token) {
+      console.error("❌ Stream Chat token creation returned null/undefined");
+      return NextResponse.json(
+        { 
+          error: "Failed to generate Stream token",
+          details: "Token creation returned null"
+        },
+        { status: 500 }
+      );
+    }
+
+    const response = {
       token,
       userId: user.id,
       apiKey: STREAM_API_KEY,
+    };
+
+    console.log("🔵 Returning Stream Chat token response", {
+      hasToken: !!response.token,
+      hasUserId: !!response.userId,
+      hasApiKey: !!response.apiKey,
+      userId: response.userId
     });
+
+    return NextResponse.json(response);
   } catch (error: any) {
     console.error("❌ Stream token route error:", error);
     console.error("❌ Error details:", {
