@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "../context/AuthContext";
@@ -21,6 +21,7 @@ import {
   ChevronUp,
   Settings,
   X,
+  Loader2,
 } from "lucide-react";
 import MessagesModal from "@/components/MessagesModal";
 import SupportModal from "@/components/SupportModal";
@@ -33,6 +34,7 @@ import {
   getSavedMoods,
   addSavedSearch,
 } from "../../lib/userPreferences";
+import { useWhisperTranscription } from "@/hooks/useWhisperTranscription";
 
 interface Profile {
   display_name: string | null;
@@ -53,6 +55,43 @@ export default function BuyerCanvasPage() {
   const [savedSearches, setSavedSearches] = useState<ReturnType<typeof getSavedSearches>>([]);
   const [vibeInput, setVibeInput] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Discovery section state
+  const [discoveryText, setDiscoveryText] = useState("");
+  const [discoveryImages, setDiscoveryImages] = useState<string[]>([]);
+  const discoveryImageInputRef = useRef<HTMLInputElement>(null);
+  
+  // Stories section state
+  const [storiesText, setStoriesText] = useState("");
+  
+  // Voice input for Discovery
+  const {
+    isRecording: isRecordingDiscovery,
+    isProcessing: isProcessingDiscovery,
+    transcript: discoveryTranscript,
+    isSupported: isVoiceSupported,
+    toggleRecording: toggleDiscoveryRecording,
+  } = useWhisperTranscription({
+    onTranscriptComplete: (text) => {
+      setDiscoveryText((prev) => (prev ? `${prev} ${text}` : text).trim());
+    },
+    silenceTimeout: 2000,
+    maxDuration: 30000,
+  });
+  
+  // Voice input for Stories
+  const {
+    isRecording: isRecordingStories,
+    isProcessing: isProcessingStories,
+    transcript: storiesTranscript,
+    toggleRecording: toggleStoriesRecording,
+  } = useWhisperTranscription({
+    onTranscriptComplete: (text) => {
+      setStoriesText((prev) => (prev ? `${prev} ${text}` : text).trim());
+    },
+    silenceTimeout: 2000,
+    maxDuration: 30000,
+  });
 
   // Prevent hydration mismatch
   useEffect(() => {
@@ -382,33 +421,80 @@ export default function BuyerCanvasPage() {
               Create boards with photos, notes, and inspiration
             </p>
             <div className="flex gap-2 mb-4">
-              <button
-                onClick={() => {
-                  // TODO: Implement image upload functionality
-                  alert("Image upload coming soon!");
+              <input
+                type="file"
+                ref={discoveryImageInputRef}
+                accept="image/*"
+                multiple
+                className="hidden"
+                onChange={(e) => {
+                  const files = Array.from(e.target.files || []);
+                  if (files.length > 0) {
+                    const newImages = files.map((file) => {
+                      return URL.createObjectURL(file);
+                    });
+                    setDiscoveryImages((prev) => [...prev, ...newImages].slice(0, 5)); // Max 5 images
+                  }
                 }}
+              />
+              <button
+                onClick={() => discoveryImageInputRef.current?.click()}
                 className="flex-1 h-8 text-xs gap-1.5 rounded-lg border border-gray-200 flex items-center justify-center bg-white text-gray-700 hover:bg-gray-50 hover:border-[#191970] transition-colors cursor-pointer"
               >
                 <Upload className="h-3.5 w-3.5" />
                 Add Image
               </button>
               <button
-                onClick={() => {
-                  // TODO: Implement voice note functionality
-                  alert("Voice notes coming soon!");
-                }}
-                className="flex-1 h-8 text-xs gap-1.5 rounded-lg border border-gray-200 flex items-center justify-center bg-white text-gray-700 hover:bg-gray-50 hover:border-[#191970] transition-colors cursor-pointer"
+                onClick={toggleDiscoveryRecording}
+                disabled={!isVoiceSupported || isProcessingDiscovery}
+                className={`flex-1 h-8 text-xs gap-1.5 rounded-lg border border-gray-200 flex items-center justify-center transition-colors cursor-pointer ${
+                  isRecordingDiscovery
+                    ? "bg-rose-500 text-white border-rose-500 animate-pulse"
+                    : isProcessingDiscovery
+                    ? "bg-violet-500 text-white border-violet-500 cursor-wait"
+                    : "bg-white text-gray-700 hover:bg-gray-50 hover:border-[#191970]"
+                } ${!isVoiceSupported ? "opacity-50 cursor-not-allowed" : ""}`}
               >
-                <Mic className="h-3.5 w-3.5" />
+                {isProcessingDiscovery ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Mic className="h-3.5 w-3.5" />
+                )}
                 Voice Note
               </button>
             </div>
+            
+            {/* Display uploaded images */}
+            {discoveryImages.length > 0 && (
+              <div className="flex gap-2 mb-3 flex-wrap">
+                {discoveryImages.map((img, index) => (
+                  <div key={index} className="relative w-16 h-16 rounded-lg overflow-hidden border border-gray-200">
+                    <img src={img} alt={`Discovery ${index + 1}`} className="w-full h-full object-cover" />
+                    <button
+                      onClick={() => {
+                        URL.revokeObjectURL(img);
+                        setDiscoveryImages((prev) => prev.filter((_, i) => i !== index));
+                      }}
+                      className="absolute top-0 right-0 w-4 h-4 bg-red-500 text-white rounded-full flex items-center justify-center text-[10px] hover:bg-red-600"
+                    >
+                      <X className="h-2.5 w-2.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            
             {/* Text box for notes */}
             <textarea
               placeholder="I'd really love to find another..."
+              value={discoveryText}
+              onChange={(e) => setDiscoveryText(e.target.value)}
               className="w-full min-h-[80px] bg-white rounded-lg px-3 py-2 text-xs placeholder:text-gray-400 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#191970]/20 focus:border-[#191970] resize-none"
               rows={4}
             />
+            {discoveryTranscript && isRecordingDiscovery && (
+              <p className="text-[10px] text-gray-500 italic mt-1">Listening: {discoveryTranscript}</p>
+            )}
           </div>
 
           {/* Stories */}
@@ -416,12 +502,45 @@ export default function BuyerCanvasPage() {
             <h3 className="text-sm font-semibold mb-2" style={{ color: "#191970" }}>
               Stories
             </h3>
-            <p className="text-xs text-gray-600 leading-relaxed mb-5">
+            <p className="text-xs text-gray-600 leading-relaxed mb-3">
               Share the story behind your treasures
             </p>
+            
+            {/* Voice input button for Stories */}
+            <div className="mb-3">
+              <button
+                onClick={toggleStoriesRecording}
+                disabled={!isVoiceSupported || isProcessingStories}
+                className={`w-full h-8 text-xs gap-1.5 rounded-lg border border-gray-200 flex items-center justify-center transition-colors ${
+                  isRecordingStories
+                    ? "bg-rose-500 text-white border-rose-500 animate-pulse"
+                    : isProcessingStories
+                    ? "bg-violet-500 text-white border-violet-500 cursor-wait"
+                    : "bg-white text-gray-700 hover:bg-gray-50 hover:border-[#191970]"
+                } ${!isVoiceSupported ? "opacity-50 cursor-not-allowed" : ""}`}
+              >
+                {isProcessingStories ? (
+                  <>
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    <span>Transcribing...</span>
+                  </>
+                ) : (
+                  <>
+                    <Mic className="h-3.5 w-3.5" />
+                    <span>{isRecordingStories ? "Stop Recording" : "Voice Input"}</span>
+                  </>
+                )}
+              </button>
+              {storiesTranscript && isRecordingStories && (
+                <p className="text-[10px] text-gray-500 italic mt-1">Listening: {storiesTranscript}</p>
+              )}
+            </div>
+            
             {/* Text box for stories */}
             <textarea
               placeholder="This reminded me of that time..."
+              value={storiesText}
+              onChange={(e) => setStoriesText(e.target.value)}
               className="w-full min-h-[120px] bg-white rounded-lg px-3 py-2 text-xs placeholder:text-gray-400 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#191970]/20 focus:border-[#191970] resize-none"
               rows={6}
             />
