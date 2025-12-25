@@ -281,9 +281,26 @@ export default function MessagesModal({ isOpen, onClose, initialSellerId, initia
           return;
         }
 
-        // Check WebSocket connection health
-        if (!client.wsConnection?.isHealthy) {
-          console.warn("Stream Chat WS connection not healthy, but continuing with channel creation");
+        // CRITICAL: Verify the connection is actually ready for operations
+        // Stream Chat needs both token AND the connection to be established
+        if (!client.wsConnection || !client.wsConnection.isHealthy) {
+          console.warn("Stream Chat WS connection not healthy, waiting before channel creation...");
+          // Wait a bit and retry
+          setTimeout(() => {
+            if (client.userID && client.tokenManager?.token && client.wsConnection?.isHealthy) {
+              setupChannel();
+            } else {
+              console.error("Stream Chat connection still not ready after wait");
+            }
+          }, 1000);
+          return;
+        }
+
+        // Additional check: verify token is actually valid by checking if client is in connected state
+        // Stream Chat SDK sets an internal connection state
+        if (!client.tokenManager.token) {
+          console.error("Cannot create channel: Token manager has no token");
+          return;
         }
 
         const channel = client.channel('messaging', channelId, channelData);
@@ -357,6 +374,18 @@ export default function MessagesModal({ isOpen, onClose, initialSellerId, initia
       console.error("Cannot send message: Client connected to different user", {
         clientUserId: client.userID,
         currentUserId: user.id
+      });
+      return;
+    }
+
+    // CRITICAL: Verify WebSocket connection is healthy before sending
+    // This is the most reliable indicator that Stream Chat is ready for operations
+    if (!client.wsConnection || !client.wsConnection.isHealthy) {
+      console.error("Cannot send message: WebSocket connection not healthy", {
+        hasWS: !!client.wsConnection,
+        isHealthy: client.wsConnection?.isHealthy,
+        userID: client.userID,
+        hasToken: !!client.tokenManager?.token
       });
       return;
     }
@@ -493,7 +522,7 @@ export default function MessagesModal({ isOpen, onClose, initialSellerId, initia
           {/* Message input */}
           <div className="flex flex-col gap-2 pt-2 border-t border-white/10">
             {/* Connection status indicator */}
-            {(!client || !client.userID || !client.tokenManager?.token || !isConnected) && (
+            {(!client || !client.userID || !client.tokenManager?.token || !isConnected || !client.wsConnection?.isHealthy) && (
               <div className="px-3 py-1.5 rounded-lg bg-yellow-500/20 border border-yellow-500/30">
                 <p className="text-xs text-yellow-200 flex items-center gap-1.5">
                   <Loader2 className="h-3 w-3 animate-spin" />
@@ -516,11 +545,17 @@ export default function MessagesModal({ isOpen, onClose, initialSellerId, initia
                   }
                 }}
                 placeholder={
-                  !client || !client.userID || !isConnected
+                  !client || !client.userID || !isConnected || !client.wsConnection?.isHealthy
                     ? "Connecting to chat..."
                     : "Type a message..."
                 }
-                disabled={!client || !client.userID || !client.tokenManager?.token || !isConnected}
+                disabled={
+                  !client || 
+                  !client.userID || 
+                  !client.tokenManager?.token || 
+                  !isConnected ||
+                  !client.wsConnection?.isHealthy
+                }
                 className="flex-1 px-3 py-2 rounded-lg bg-white/10 text-white text-sm placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#EFBF05]/50 disabled:opacity-50 disabled:cursor-not-allowed"
               />
             <button
@@ -531,7 +566,8 @@ export default function MessagesModal({ isOpen, onClose, initialSellerId, initia
                 !client || 
                 !client.userID || 
                 !client.tokenManager?.token ||
-                !isConnected
+                !isConnected ||
+                !client.wsConnection?.isHealthy
               }
               className="w-9 h-9 rounded-lg flex items-center justify-center transition-colors disabled:opacity-50"
               style={{ backgroundColor: "#191970" }}
