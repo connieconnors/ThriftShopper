@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useAuth } from "../app/context/AuthContext";
 import { useStreamChat } from "../app/seller/StreamChatProvider";
 import TSModal from "./TSModal";
@@ -35,58 +35,120 @@ export default function MessagesModal({ isOpen, onClose, initialSellerId, initia
   const [newMessage, setNewMessage] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
+  
+  // Track if we've already loaded conversations to prevent re-triggering
+  const hasLoadedConversations = useRef(false);
+  const connectionCheckInterval = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     // Only run on client side to avoid hydration issues
     if (typeof window === 'undefined') return;
     
-    // Reset loading state when modal opens
-    if (isOpen) {
+    // Reset state when modal closes
+    if (!isOpen) {
+      hasLoadedConversations.current = false;
       setIsLoading(true);
+      if (connectionCheckInterval.current) {
+        clearInterval(connectionCheckInterval.current);
+        connectionCheckInterval.current = null;
+      }
+      return;
     }
     
     // CRITICAL: Wait for full connection before allowing any operations
     // This ensures connection happens immediately when modal opens, not when user types
     if (isOpen && user) {
-      if (client && isConnected && client.userID && client.tokenManager?.token && client.wsConnection?.isHealthy) {
+      // Check if client is fully connected
+      const isFullyConnected = client && 
+        isConnected && 
+        client.userID && 
+        client.tokenManager?.token && 
+        client.wsConnection?.isHealthy;
+      
+      if (isFullyConnected) {
         // Client is fully connected, safe to query
-        console.log("✅ MessagesModal: Client fully connected, loading conversations");
-        loadConversations();
+        if (!hasLoadedConversations.current) {
+          console.log("✅ MessagesModal: Client fully connected, loading conversations");
+          hasLoadedConversations.current = true;
+          loadConversations();
+        } else {
+          // Already loaded, ensure loading state is false
+          setIsLoading(false);
+        }
+        // Clear any existing interval
+        if (connectionCheckInterval.current) {
+          clearInterval(connectionCheckInterval.current);
+          connectionCheckInterval.current = null;
+        }
       } else if (streamLoading) {
-        // Still loading connection, keep loading state
-        console.log("⏳ MessagesModal: Waiting for Stream Chat connection...");
-        setIsLoading(true);
+        // Still loading connection, keep loading state only if not already loaded
+        if (!hasLoadedConversations.current) {
+          console.log("⏳ MessagesModal: Waiting for Stream Chat connection...");
+          setIsLoading(true);
+        }
       } else if (client && !isConnected) {
         // Client exists but not connected yet, wait for connection
-        console.log("⏳ MessagesModal: Client exists but not connected, waiting...");
-        setIsLoading(true);
-        // Poll for connection with timeout
-        const checkConnection = setInterval(() => {
-          if (client && client.userID && client.tokenManager?.token && client.wsConnection?.isHealthy) {
-            console.log("✅ MessagesModal: Connection established, loading conversations");
-            clearInterval(checkConnection);
-            loadConversations();
-          }
-        }, 500);
-        
-        // Timeout after 10 seconds
-        const timeout = setTimeout(() => {
-          clearInterval(checkConnection);
-          console.error("❌ MessagesModal: Connection timeout");
-          setIsLoading(false);
-        }, 10000);
-        
-        return () => {
-          clearInterval(checkConnection);
-          clearTimeout(timeout);
-        };
+        if (!connectionCheckInterval.current) {
+          console.log("⏳ MessagesModal: Client exists but not connected, waiting...");
+          setIsLoading(true);
+          // Poll for connection with timeout
+          connectionCheckInterval.current = setInterval(() => {
+            const isNowConnected = client && 
+              client.userID && 
+              client.tokenManager?.token && 
+              client.wsConnection?.isHealthy;
+            
+            if (isNowConnected && !hasLoadedConversations.current) {
+              console.log("✅ MessagesModal: Connection established, loading conversations");
+              hasLoadedConversations.current = true;
+              if (connectionCheckInterval.current) {
+                clearInterval(connectionCheckInterval.current);
+                connectionCheckInterval.current = null;
+              }
+              loadConversations();
+            }
+          }, 500);
+          
+          // Timeout after 10 seconds
+          setTimeout(() => {
+            if (connectionCheckInterval.current) {
+              clearInterval(connectionCheckInterval.current);
+              connectionCheckInterval.current = null;
+              console.error("❌ MessagesModal: Connection timeout");
+              setIsLoading(false);
+            }
+          }, 10000);
+        }
       } else if (!client && !streamLoading) {
         // Stream Chat not available or not initialized
         console.warn("⚠️ MessagesModal: Stream Chat client not available");
         setIsLoading(false);
       }
     }
+    
+    // Cleanup on unmount or when modal closes
+    return () => {
+      if (connectionCheckInterval.current) {
+        clearInterval(connectionCheckInterval.current);
+        connectionCheckInterval.current = null;
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, user, client, streamLoading, isConnected]);
+  
+  // Debug effect to track connection state changes (helps identify loop cause)
+  useEffect(() => {
+    if (isOpen && client) {
+      console.log("🔵 MessagesModal: Connection state changed", {
+        isConnected,
+        hasUserID: !!client.userID,
+        hasToken: !!client.tokenManager?.token,
+        wsHealthy: client.wsConnection?.isHealthy,
+        hasLoaded: hasLoadedConversations.current,
+        isLoading
+      });
+    }
+  }, [isOpen, client, isConnected, isLoading]);
 
   // If initialSellerId is provided, auto-select that conversation
   useEffect(() => {
@@ -115,7 +177,10 @@ export default function MessagesModal({ isOpen, onClose, initialSellerId, initia
     }
 
     try {
-      setIsLoading(true);
+      // Only set loading if we haven't loaded yet (prevent loop when user types)
+      if (!hasLoadedConversations.current) {
+        setIsLoading(true);
+      }
       
       // Final safety check right before querying
       if (!client.userID || client.userID !== user.id) {
