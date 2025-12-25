@@ -39,6 +39,9 @@ export default function MessagesModal({ isOpen, onClose, initialSellerId, initia
   // Track if we've already loaded conversations to prevent re-triggering
   const hasLoadedConversations = useRef(false);
   const connectionCheckInterval = useRef<NodeJS.Timeout | null>(null);
+  // Track if channel has been created for current selectedConversation to prevent duplicate creation
+  const channelCreatedFor = useRef<string | null>(null);
+  const isSettingUpChannel = useRef(false);
 
   useEffect(() => {
     // Only run on client side to avoid hydration issues
@@ -298,6 +301,21 @@ export default function MessagesModal({ isOpen, onClose, initialSellerId, initia
     if (!selectedConversation || !client || !user) {
       setChannel(null);
       setMessages([]);
+      channelCreatedFor.current = null;
+      isSettingUpChannel.current = false;
+      return;
+    }
+
+    // CRITICAL: Prevent duplicate channel creation
+    // Only create channel once per selectedConversation
+    if (channelCreatedFor.current === selectedConversation) {
+      console.log("✅ MessagesModal: Channel already created for this conversation, skipping");
+      return;
+    }
+
+    // Prevent concurrent channel setup
+    if (isSettingUpChannel.current) {
+      console.log("⏳ MessagesModal: Channel setup already in progress, skipping");
       return;
     }
 
@@ -315,10 +333,14 @@ export default function MessagesModal({ isOpen, onClose, initialSellerId, initia
     }
 
     const setupChannel = async () => {
+      // Mark that we're setting up channel to prevent concurrent calls
+      isSettingUpChannel.current = true;
+      
       try {
         // Final check: ensure client is still connected
         if (!client || !client.userID || !client.wsConnection?.isHealthy) {
           console.error("Stream Chat client not connected, cannot setup channel");
+          isSettingUpChannel.current = false;
           return;
         }
 
@@ -402,6 +424,12 @@ export default function MessagesModal({ isOpen, onClose, initialSellerId, initia
         // Watch the channel with error handling
         try {
           await channel.watch();
+          
+          // CRITICAL: Mark channel as created for this conversation BEFORE setting state
+          // This prevents the useEffect from triggering again
+          channelCreatedFor.current = selectedConversation;
+          isSettingUpChannel.current = false;
+          
           setChannel(channel);
 
           // Listen for new messages
@@ -411,7 +439,15 @@ export default function MessagesModal({ isOpen, onClose, initialSellerId, initia
 
           // Load existing messages
           setMessages([...channel.state.messages]);
+          
+          console.log("✅ MessagesModal: Channel created and watched successfully", {
+            channelId,
+            selectedConversation
+          });
         } catch (watchError: any) {
+          // Reset flags on error so we can retry
+          isSettingUpChannel.current = false;
+          
           // Check if it's a connection error
           if (watchError?.message?.includes('tokens are not set') || watchError?.message?.includes('connectUser')) {
             console.warn("Stream Chat not connected - cannot watch channel");
@@ -421,9 +457,12 @@ export default function MessagesModal({ isOpen, onClose, initialSellerId, initia
           // Try to query the channel instead as fallback
           try {
             await channel.query();
+            channelCreatedFor.current = selectedConversation;
+            isSettingUpChannel.current = false;
             setChannel(channel);
             setMessages([...channel.state.messages]);
           } catch (queryError: any) {
+            isSettingUpChannel.current = false;
             if (queryError?.message?.includes('tokens are not set') || queryError?.message?.includes('connectUser')) {
               console.warn("Stream Chat not connected - cannot query channel");
               return;
@@ -432,6 +471,9 @@ export default function MessagesModal({ isOpen, onClose, initialSellerId, initia
           }
         }
       } catch (error: any) {
+        // Reset flags on error
+        isSettingUpChannel.current = false;
+        
         // Don't log connection errors as errors - they're expected if Stream Chat isn't configured
         if (error?.message?.includes('tokens are not set') || error?.message?.includes('connectUser')) {
           console.log("Stream Chat not connected - channel setup skipped");
@@ -441,8 +483,13 @@ export default function MessagesModal({ isOpen, onClose, initialSellerId, initia
       }
     };
 
-    setupChannel();
-  }, [selectedConversation, client, user]);
+    // Only call setupChannel if client and user are available
+    // This prevents the effect from running when client/user change
+    if (client && user && client.userID && client.wsConnection?.isHealthy) {
+      setupChannel();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedConversation]); // CRITICAL: Only depend on selectedConversation, not client or user to prevent infinite loop
 
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !user || !channel) return;
