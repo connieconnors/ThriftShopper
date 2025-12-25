@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
     // Fetch the listing to get seller info
     const { data: listing, error: listingError } = await supabase
       .from("listings")
-      .select("id, title, seller_id, price")
+      .select("id, title, seller_id, price, status")
       .eq("id", listingId)
       .single();
 
