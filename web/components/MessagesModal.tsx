@@ -266,10 +266,24 @@ export default function MessagesModal({ isOpen, onClose, initialSellerId, initia
           channelData.listing_id = initialListingId;
         }
         
-        // Final check before creating channel
-        if (!client.userID || !client.wsConnection?.isHealthy) {
-          console.error("Stream Chat client disconnected before channel setup");
+        // Final check before creating channel - ensure client is fully connected
+        if (!client.userID || client.userID !== user.id) {
+          console.error("Cannot create channel: Client not connected to current user", {
+            clientUserId: client.userID,
+            currentUserId: user.id
+          });
           return;
+        }
+
+        // Ensure tokens are set before creating channel
+        if (!client.tokenManager?.token) {
+          console.error("Cannot create channel: Stream Chat tokens not set");
+          return;
+        }
+
+        // Check WebSocket connection health
+        if (!client.wsConnection?.isHealthy) {
+          console.warn("Stream Chat WS connection not healthy, but continuing with channel creation");
         }
 
         const channel = client.channel('messaging', channelId, channelData);
@@ -322,6 +336,31 @@ export default function MessagesModal({ isOpen, onClose, initialSellerId, initia
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !user || !channel) return;
 
+    // CRITICAL: Check if client is connected before sending
+    if (!client) {
+      console.error("Cannot send message: Stream Chat client not available");
+      return;
+    }
+
+    if (!client.userID) {
+      console.error("Cannot send message: Stream Chat client not connected (no userID)");
+      return;
+    }
+
+    if (!client.tokenManager?.token) {
+      console.error("Cannot send message: Stream Chat tokens not set");
+      return;
+    }
+
+    // Verify client is connected to the correct user
+    if (client.userID !== user.id) {
+      console.error("Cannot send message: Client connected to different user", {
+        clientUserId: client.userID,
+        currentUserId: user.id
+      });
+      return;
+    }
+
     try {
       setIsSending(true);
       await channel.sendMessage({
@@ -329,8 +368,20 @@ export default function MessagesModal({ isOpen, onClose, initialSellerId, initia
       });
       setNewMessage("");
       // Messages will update via the channel listener
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error sending message:", error);
+      
+      // Handle specific Stream Chat connection errors
+      if (error?.message?.includes('tokens are not set') || 
+          error?.message?.includes('connectUser') ||
+          error?.message?.includes('not connected')) {
+        console.error("Stream Chat connection error when sending message:", {
+          userID: client.userID,
+          hasToken: !!client.tokenManager?.token,
+          wsHealthy: client.wsConnection?.isHealthy
+        });
+        // Could show a user-friendly error message here
+      }
     } finally {
       setIsSending(false);
     }
@@ -440,25 +491,57 @@ export default function MessagesModal({ isOpen, onClose, initialSellerId, initia
           </div>
 
           {/* Message input */}
-          <div className="flex items-center gap-2 pt-2 border-t border-white/10">
-            <input
-              type="text"
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSendMessage();
+          <div className="flex flex-col gap-2 pt-2 border-t border-white/10">
+            {/* Connection status indicator */}
+            {(!client || !client.userID || !client.tokenManager?.token || !isConnected) && (
+              <div className="px-3 py-1.5 rounded-lg bg-yellow-500/20 border border-yellow-500/30">
+                <p className="text-xs text-yellow-200 flex items-center gap-1.5">
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  Connecting to chat...
+                </p>
+              </div>
+            )}
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    // Only send if client is connected
+                    if (client && client.userID && client.tokenManager?.token && isConnected) {
+                      handleSendMessage();
+                    }
+                  }
+                }}
+                placeholder={
+                  !client || !client.userID || !isConnected
+                    ? "Connecting to chat..."
+                    : "Type a message..."
                 }
-              }}
-              placeholder="Type a message..."
-              className="flex-1 px-3 py-2 rounded-lg bg-white/10 text-white text-sm placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#EFBF05]/50"
-            />
+                disabled={!client || !client.userID || !client.tokenManager?.token || !isConnected}
+                className="flex-1 px-3 py-2 rounded-lg bg-white/10 text-white text-sm placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#EFBF05]/50 disabled:opacity-50 disabled:cursor-not-allowed"
+              />
             <button
               onClick={handleSendMessage}
-              disabled={!newMessage.trim() || isSending}
+              disabled={
+                !newMessage.trim() || 
+                isSending || 
+                !client || 
+                !client.userID || 
+                !client.tokenManager?.token ||
+                !isConnected
+              }
               className="w-9 h-9 rounded-lg flex items-center justify-center transition-colors disabled:opacity-50"
               style={{ backgroundColor: "#191970" }}
+              title={
+                !client || !client.userID || !isConnected
+                  ? "Connecting to chat..."
+                  : !newMessage.trim()
+                  ? "Type a message"
+                  : "Send message"
+              }
             >
               {isSending ? (
                 <Loader2 className="h-4 w-4 animate-spin text-white" />
@@ -466,6 +549,7 @@ export default function MessagesModal({ isOpen, onClose, initialSellerId, initia
                 <Send className="h-4 w-4 text-white" />
               )}
             </button>
+            </div>
           </div>
         </div>
       )}
