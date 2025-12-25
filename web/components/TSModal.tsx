@@ -64,8 +64,7 @@ const TSModal: React.FC<TSModalProps> = ({
           text-white
           overflow-hidden
         "
-        style={{ backgroundColor: '#191970' }}
-        style={{ touchAction: 'pan-y' }}
+        style={{ backgroundColor: '#191970', touchAction: 'pan-y' }}
         onClick={(e) => e.stopPropagation()}
         onTouchStart={(e) => {
           e.stopPropagation();
