@@ -46,6 +46,10 @@ export default function MessagesModal({ isOpen, onClose, initialSellerId, initia
   const isSettingUpChannel = useRef(false);
   // Track if channel is fully set up to prevent isLoading resets
   const isChannelReady = useRef(false);
+  // Track if we've already processed this conversation to prevent re-runs
+  const processedConversation = useRef<string | null>(null);
+  // Store channel reference to prevent re-creation
+  const channelRef = useRef<any>(null);
 
   useEffect(() => {
     // Only run on client side to avoid hydration issues
@@ -252,6 +256,18 @@ export default function MessagesModal({ isOpen, onClose, initialSellerId, initia
       // Pass undefined to use default sorting, or use proper type
       const channels = await client.queryChannels(filter, undefined, { limit: 20 });
       console.log("✅ Successfully queried channels:", channels.length);
+      
+      // Store channels for reuse when opening conversations
+      // Use functional update to prevent triggering the channel setup useEffect
+      setQueriedChannels((prev) => {
+        // Only update if channels actually changed (by comparing IDs)
+        const prevIds = new Set(prev.map((ch: any) => ch.id));
+        const newIds = new Set(channels.map((ch: any) => ch.id));
+        if (prevIds.size !== newIds.size || [...prevIds].some(id => !newIds.has(id))) {
+          return channels;
+        }
+        return prev;
+      });
 
       // Transform Stream channels to our Conversation format
       const convs: Conversation[] = await Promise.all(
@@ -309,6 +325,15 @@ export default function MessagesModal({ isOpen, onClose, initialSellerId, initia
       channelCreatedFor.current = null;
       isSettingUpChannel.current = false;
       isChannelReady.current = false;
+      processedConversation.current = null;
+      channelRef.current = null;
+      return;
+    }
+
+    // CRITICAL: If we've already processed this conversation, don't run again
+    // This prevents the useEffect from running repeatedly when state updates
+    if (processedConversation.current === selectedConversation && channelRef.current) {
+      console.log("✅ MessagesModal: Already processed this conversation, skipping");
       return;
     }
 
@@ -324,17 +349,27 @@ export default function MessagesModal({ isOpen, onClose, initialSellerId, initia
       console.log("✅ MessagesModal: Found existing channel, reusing it");
       channelCreatedFor.current = selectedConversation;
       isChannelReady.current = true;
+      processedConversation.current = selectedConversation;
+      channelRef.current = existingChannel;
       
-      setChannel(existingChannel);
-      setIsLoading(false);
-      
-      // Listen for new messages
-      existingChannel.on('message.new', () => {
+      // Only update state if channel actually changed
+      if (channel !== existingChannel) {
+        setChannel(existingChannel);
+        setIsLoading(false);
+        
+        // Listen for new messages (only add listener once)
+        // Remove any existing listeners by passing the handler
+        const messageHandler = () => {
+          if (channelRef.current === existingChannel) {
+            setMessages([...existingChannel.state.messages]);
+          }
+        };
+        existingChannel.off('message.new', messageHandler); // Remove any existing listeners
+        existingChannel.on('message.new', messageHandler);
+        
+        // Load existing messages
         setMessages([...existingChannel.state.messages]);
-      });
-      
-      // Load existing messages
-      setMessages([...existingChannel.state.messages]);
+      }
       return;
     }
 
@@ -461,15 +496,21 @@ export default function MessagesModal({ isOpen, onClose, initialSellerId, initia
           // This prevents the useEffect from triggering again
           channelCreatedFor.current = selectedConversation;
           isSettingUpChannel.current = false;
-          isChannelReady.current = true; // Mark channel as ready
+          isChannelReady.current = true;
+          processedConversation.current = selectedConversation;
+          channelRef.current = channel;
           
           setChannel(channel);
-          setIsLoading(false); // Ensure loading is false once channel is ready
+          setIsLoading(false);
 
-          // Listen for new messages
-          channel.on('message.new', () => {
-            setMessages([...channel.state.messages]);
-          });
+          // Listen for new messages (only add listener once)
+          const messageHandler = () => {
+            if (channelRef.current === channel) {
+              setMessages([...channel.state.messages]);
+            }
+          };
+          channel.off('message.new', messageHandler); // Remove any existing listeners
+          channel.on('message.new', messageHandler);
 
           // Load existing messages
           setMessages([...channel.state.messages]);
@@ -494,6 +535,8 @@ export default function MessagesModal({ isOpen, onClose, initialSellerId, initia
             channelCreatedFor.current = selectedConversation;
             isSettingUpChannel.current = false;
             isChannelReady.current = true; // Mark channel as ready
+            processedConversation.current = selectedConversation;
+            channelRef.current = channel;
             setChannel(channel);
             setMessages([...channel.state.messages]);
             setIsLoading(false); // Ensure loading is false once channel is ready
@@ -527,11 +570,13 @@ export default function MessagesModal({ isOpen, onClose, initialSellerId, initia
     
     // Cleanup function to prevent state updates after unmount
     return () => {
-      // Don't reset flags here - we want to keep channel state if conversation doesn't change
-      // Only cleanup if component unmounts or conversation changes
+      // Clean up message listeners when conversation changes
+      if (channelRef.current) {
+        channelRef.current.off('message.new');
+      }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedConversation, queriedChannels]); // Include queriedChannels so we can find existing channels
+  }, [selectedConversation]); // CRITICAL: Only depend on selectedConversation, NOT queriedChannels to prevent re-render loop
 
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !user || !channel) return;
