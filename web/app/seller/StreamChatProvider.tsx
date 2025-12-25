@@ -171,39 +171,6 @@ export function StreamChatProvider({ children }: ProviderProps) {
           
           console.log("🔵 Stream Chat: After connectUser, userID:", chat.userID, "retries:", userIDRetries);
           
-          // Verify connection was successful
-          if (!chat.userID) {
-            // Only log as warning if user is not logged in (expected behavior)
-            if (!user || !session) {
-              console.log("Stream Chat: Skipping connection - user not logged in");
-              if (isMounted) {
-                setLoading(false);
-              }
-              return;
-            }
-            // Only error if user IS logged in but connection failed
-            console.error("❌ Stream Chat: userID not set after connectUser (user is logged in)", {
-              userIdAttempted: userIdString,
-              userIdFromApi: data.userId,
-              userIdFromAuth: user?.id,
-              hasToken: !!data.token,
-              tokenLength: data.token?.length || 0
-            });
-            if (isMounted) {
-              setError("Failed to connect to chat - please try again");
-              setLoading(false);
-            }
-            return;
-          }
-          
-          // Verify the connected user ID matches what we expected
-          if (chat.userID !== userIdString) {
-            console.warn("⚠️ Stream Chat: Connected userID doesn't match expected", {
-              expected: userIdString,
-              actual: chat.userID
-            });
-          }
-          
           // Wait for WebSocket connection to be established
           // Stream Chat needs both the user token AND the WS connection
           let retries = 0;
@@ -212,14 +179,58 @@ export function StreamChatProvider({ children }: ProviderProps) {
             retries++;
           }
           
-          if (!chat.wsConnection || !chat.wsConnection.isHealthy) {
-            console.warn("Stream Chat WS connection not healthy after connect, but continuing...");
+          // Verify connection was successful
+          // Check token first (most reliable indicator), then userID, then WS health
+          const hasToken = chat.tokenManager?.token;
+          const hasUserID = !!chat.userID;
+          const hasHealthyWS = chat.wsConnection?.isHealthy;
+          
+          // If user is not logged in, skip connection (expected behavior)
+          if (!user || !session) {
+            console.log("Stream Chat: Skipping connection - user not logged in");
+            if (isMounted) {
+              setLoading(false);
+            }
+            return;
           }
           
-          console.log("Stream Chat connected successfully for user:", data.userId);
-          console.log("Connection state:", {
-            userID: chat.userID,
-            wsHealthy: chat.wsConnection?.isHealthy,
+          // If we have a token, the connection is likely successful even if userID isn't set yet
+          // Stream Chat sometimes sets userID asynchronously after the connection is established
+          if (!hasToken) {
+            // No token means connection definitely failed
+            console.error("❌ Stream Chat: No token after connectUser - connection failed");
+            if (isMounted) {
+              setError("Failed to connect to chat - please try again");
+              setLoading(false);
+            }
+            return;
+          }
+          
+          // If we have token but no userID, log a warning but continue (connection may still work)
+          if (!hasUserID) {
+            console.warn("⚠️ Stream Chat: Token set but userID not yet available (may be async)", {
+              userIdAttempted: userIdString,
+              hasToken: true,
+              wsHealthy: hasHealthyWS
+            });
+            // Don't return - continue with connection as token is set
+          } else if (chat.userID !== userIdString) {
+            // UserID doesn't match what we expected
+            console.warn("⚠️ Stream Chat: Connected userID doesn't match expected", {
+              expected: userIdString,
+              actual: chat.userID
+            });
+            // Don't return - connection might still work
+          }
+          
+          if (!hasHealthyWS) {
+            console.warn("⚠️ Stream Chat: WS connection not healthy yet, but continuing (may connect asynchronously)");
+          }
+          
+          console.log("✅ Stream Chat connected successfully for user:", userIdString, {
+            userID: chat.userID || 'pending',
+            hasToken: !!hasToken,
+            wsHealthy: hasHealthyWS || false
           });
         } catch (connectError: any) {
           console.error("❌ Stream Chat connectUser error:", connectError);
