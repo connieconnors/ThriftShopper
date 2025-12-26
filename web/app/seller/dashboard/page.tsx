@@ -1,9 +1,11 @@
 'use client';
 
-import { useEffect } from 'react';
+import { Suspense, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
-export default function SellerDashboardRedirect() {
+export const dynamic = 'force-dynamic';
+
+function SellerDashboardRedirectContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -26,6 +28,18 @@ export default function SellerDashboardRedirect() {
     <div className="min-h-screen flex items-center justify-center">
       <div className="animate-spin h-8 w-8 border-2 border-[#191970] border-t-transparent rounded-full" />
     </div>
+  );
+}
+
+export default function SellerDashboardRedirect() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin h-8 w-8 border-2 border-[#191970] border-t-transparent rounded-full" />
+      </div>
+    }>
+      <SellerDashboardRedirectContent />
+    </Suspense>
   );
 }
 
