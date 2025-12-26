@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "../../../lib/supabaseClient";
+import { sendOrderConfirmationEmail } from "../../../lib/emails/sendEmail";
+import { sendItemSoldEmail } from "../../../lib/emails/sendEmail";
 
 export async function POST(request: NextRequest) {
   try {
@@ -119,6 +121,67 @@ export async function POST(request: NextRequest) {
       .from("listings")
       .update({ status: "sold" })
       .eq("id", listingId);
+
+    // Fetch buyer and seller profiles for emails
+    const { data: buyerProfile } = await supabase
+      .from("profiles")
+      .select("email, display_name")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    const { data: sellerProfile } = await supabase
+      .from("profiles")
+      .select("email, display_name")
+      .eq("user_id", listing.seller_id)
+      .maybeSingle();
+
+    // Send emails (don't block on errors - log and continue)
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL 
+      ? `https://${process.env.VERCEL_URL || 'thriftshopper.com'}` 
+      : 'http://localhost:3000';
+
+    // Send order confirmation to buyer
+    if (buyerProfile?.email) {
+      sendOrderConfirmationEmail(buyerProfile.email, {
+        buyerName: buyerProfile.display_name || 'there',
+        orderId: order.id,
+        itemName: listing.title,
+        price: amount || listing.price,
+        shippingAddress: {
+          name: shippingInfo?.name || '',
+          address: shippingInfo?.address || '',
+          city: shippingInfo?.city || '',
+          state: shippingInfo?.state || '',
+          zip: shippingInfo?.zip || '',
+        },
+        sellerName: sellerProfile?.display_name || 'the seller',
+        orderUrl: `${baseUrl}/orders/${order.id}`,
+      }).catch((err) => {
+        console.error('Error sending order confirmation email:', err);
+      });
+    }
+
+    // Send item sold notification to seller
+    if (sellerProfile?.email) {
+      sendItemSoldEmail(sellerProfile.email, {
+        sellerName: sellerProfile.display_name || 'there',
+        itemName: listing.title,
+        price: amount || listing.price,
+        buyerName: buyerProfile?.display_name || 'a buyer',
+        shippingAddress: {
+          name: shippingInfo?.name || '',
+          address: shippingInfo?.address || '',
+          city: shippingInfo?.city || '',
+          state: shippingInfo?.state || '',
+          zip: shippingInfo?.zip || '',
+        },
+        orderId: order.id,
+        sellerDashboardUrl: `${baseUrl}/seller`,
+        shippingDays: 3, // Default to 3 days
+      }).catch((err) => {
+        console.error('Error sending item sold email:', err);
+      });
+    }
 
     return NextResponse.json({
       orderId: order.id,

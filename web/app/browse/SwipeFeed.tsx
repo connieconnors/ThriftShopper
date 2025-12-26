@@ -924,20 +924,25 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
           style={{ 
             width: '48px',
             height: '48px',
-            backgroundColor: 'rgba(255, 255, 255, 0.2)',
+            backgroundColor: currentListing && favorites.has(currentListing.id) 
+              ? 'rgba(207, 181, 59, 0.3)' 
+              : 'rgba(255, 255, 255, 0.2)',
             backdropFilter: 'blur(8px)',
-            border: '1px solid rgba(255, 255, 255, 0.3)',
+            border: currentListing && favorites.has(currentListing.id)
+              ? '1px solid rgba(207, 181, 59, 0.5)'
+              : '1px solid rgba(255, 255, 255, 0.3)',
             boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
           }}
-          aria-label="Favorites"
+          aria-label={currentListing && favorites.has(currentListing.id) ? "Remove from saved" : "Save this find"}
         >
           <Bookmark 
-            className="w-6 h-6"
+            className="w-6 h-6 transition-all"
             style={{
               width: '24px',
               height: '24px',
               color: currentListing && favorites.has(currentListing.id) ? COLORS.gold : 'white',
               fill: currentListing && favorites.has(currentListing.id) ? COLORS.gold : 'none',
+              strokeWidth: currentListing && favorites.has(currentListing.id) ? 0 : 2,
             }}
           />
           

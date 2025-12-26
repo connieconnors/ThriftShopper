@@ -79,7 +79,7 @@ export default function SplashScreen() {
           className="text-white text-4xl sm:text-5xl md:text-6xl lg:text-7xl tracking-tight font-medium"
           style={{
             fontFamily: "var(--font-playfair), Playfair Display, serif",
-            textShadow: "0 4px 20px rgba(0,0,0,0.6), 0 2px 8px rgba(0,0,0,0.4)",
+            textShadow: "0 2px 8px rgba(0,0,0,0.5), 0 1px 4px rgba(0,0,0,0.3)",
           }}
         >
           ThriftShopper
@@ -92,7 +92,7 @@ export default function SplashScreen() {
             textShadow: "0 2px 12px rgba(0,0,0,0.5)",
           }}
         >
-          the magic of discovery™
+          the magic of discovery<span style={{ color: '#EFBF04', fontSize: '0.75em', verticalAlign: 'super' }}>™</span>
         </p>
       </div>
     </div>

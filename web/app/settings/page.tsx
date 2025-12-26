@@ -589,15 +589,13 @@ export default function SettingsPage() {
               <span>Privacy Policy</span>
               <ExternalLink className="h-3 w-3 text-gray-400" />
             </a>
-            <a
-              href="https://thriftshopper.com/allowed-items"
-              target="_blank"
-              rel="noopener noreferrer"
+            <Link
+              href="/prohibited-items"
               className="flex items-center justify-between w-full py-2.5 text-xs rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors px-3 text-gray-700"
             >
               <span>Allowed & Prohibited Items</span>
               <ExternalLink className="h-3 w-3 text-gray-400" />
-            </a>
+            </Link>
           </div>
         </div>
 

@@ -587,7 +587,7 @@ export default function BuyerCanvasPage() {
                     <button
                       onClick={(e) => removeBookmark(item.id, e)}
                       disabled={removingBookmarkId === item.id}
-                      className="absolute top-0 right-0 -mt-1 -mr-1 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-red-600 transition-opacity disabled:opacity-50"
+                      className="absolute top-0 right-0 -mt-1 -mr-1 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 transition-colors disabled:opacity-50"
                       aria-label="Remove bookmark"
                     >
                       {removingBookmarkId === item.id ? (
