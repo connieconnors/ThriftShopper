@@ -30,10 +30,10 @@ export async function POST(request: NextRequest) {
       // For now, we'll verify the order belongs to the seller via the order lookup
     }
 
-    // Fetch the order to verify it exists and get seller_id, buyer_id, listing_id
+    // Fetch the order to verify it exists and get seller_id, buyer_id, listing_id, status
     const { data: order, error: orderError } = await supabase
       .from("orders")
-      .select("id, seller_id, buyer_id, listing_id, amount, tracking_number")
+      .select("id, seller_id, buyer_id, listing_id, amount, tracking_number, status")
       .eq("id", orderId)
       .single();
 
