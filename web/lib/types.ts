@@ -20,7 +20,10 @@ export type Listing = {
   intents: string[];  // e.g. ["gifting", "selfish"]
   styles: string[];   // e.g. ["mid-century", "whimsical"]
   moods: string[];    // e.g. ["cozy", "surprise"]
-  // Joined from profiles table (optional)
+  // Denormalized seller data (set when listing is published)
+  seller_stripe_account_id?: string | null;
+  seller_name?: string | null;
+  // Joined from profiles table (optional, for backward compatibility)
   profiles?: {
     display_name: string | null;
     location_city: string | null;
@@ -63,7 +66,11 @@ export function getPrimaryImage(listing: Listing): string {
 }
 
 // Helper to format seller display name
+// Prefers denormalized seller_name, falls back to profiles.display_name, then "Seller"
 export function getSellerDisplayName(listing: Listing): string {
+  if (listing.seller_name) {
+    return listing.seller_name;
+  }
   if (listing.profiles?.display_name) {
     return listing.profiles.display_name;
   }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../context/AuthContext";
 import { Loader2 } from "lucide-react";
@@ -9,6 +9,11 @@ import SellerUploadForm from "../components/SellerUploadForm";
 export default function SellPage() {
   const router = useRouter();
   const { user, isLoading } = useAuth();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     // Redirect to login if not authenticated
@@ -16,6 +21,11 @@ export default function SellPage() {
       router.push("/login?redirect=/sell");
     }
   }, [user, isLoading, router]);
+
+  // Don't render anything until component is mounted (client-only)
+  if (!mounted) {
+    return null;
+  }
 
   if (isLoading) {
     return (

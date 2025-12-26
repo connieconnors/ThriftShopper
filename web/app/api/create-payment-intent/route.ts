@@ -8,7 +8,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 
 export async function POST(request: NextRequest) {
   try {
-    const { listingId, shippingInfo } = await request.json();
+    const { listingId, shippingInfo, userId } = await request.json();
 
     if (!listingId) {
       return NextResponse.json(
@@ -17,10 +17,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Fetch the listing to get the price and seller info
+    // Fetch the listing to get the price and denormalized seller Stripe info
     const { data: listing, error: listingError } = await supabase
       .from("listings")
-      .select("id, title, price, seller_id, status")
+      .select("id, title, price, seller_id, status, seller_stripe_account_id")
       .eq("id", listingId)
       .single();
 
@@ -38,49 +38,52 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get seller's profile with Stripe account info and founding seller status
-    // Note: seller_id in listings table = user_id in profiles table
-    const { data: sellerProfile, error: profileError } = await supabase
+    // Beta gating: Check if seller has completed Stripe setup
+    // Use denormalized seller_stripe_account_id from listing (no profile fetch needed)
+    if (!listing.seller_stripe_account_id) {
+      console.warn("❌ Listing missing seller_stripe_account_id:", listingId);
+      return NextResponse.json(
+        { 
+          error: "Seller has not completed payout setup.",
+          code: "STRIPE_NOT_COMPLETE"
+        },
+        { status: 409 }
+      );
+    }
+
+    // Verify Stripe account status directly from Stripe API
+    try {
+      const account = await stripe.accounts.retrieve(listing.seller_stripe_account_id);
+      const isStripeConnectedEnough = account.details_submitted === true || account.charges_enabled === true;
+
+      if (!isStripeConnectedEnough) {
+        return NextResponse.json(
+          { 
+            error: "Seller has not completed payout setup.",
+            code: "STRIPE_NOT_COMPLETE"
+          },
+          { status: 409 }
+        );
+      }
+    } catch (stripeError: any) {
+      console.error("❌ Error verifying Stripe account:", stripeError);
+      // If we can't verify, err on the side of caution
+      return NextResponse.json(
+        { 
+          error: "Seller has not completed payout setup.",
+          code: "STRIPE_NOT_COMPLETE"
+        },
+        { status: 409 }
+      );
+    }
+
+    // Fetch seller profile ONLY for founding seller status and transaction fee (not for Stripe account)
+    // This is safe because we're only reading fee-related fields, not sensitive Stripe data
+    const { data: sellerProfile } = await supabase
       .from("profiles")
-      .select("user_id, stripe_account_id, stripe_onboarding_status, is_founding_seller, founding_seller_start_date, transaction_fee_percent")
+      .select("is_founding_seller, founding_seller_start_date, transaction_fee_percent")
       .eq("user_id", listing.seller_id)
       .maybeSingle();
-
-    if (profileError) {
-      console.error("Error fetching seller profile:", profileError);
-      return NextResponse.json(
-        { error: "Failed to fetch seller information" },
-        { status: 500 }
-      );
-    }
-
-    if (!sellerProfile) {
-      return NextResponse.json(
-        { error: "Seller profile not found" },
-        { status: 404 }
-      );
-    }
-
-    // Check if seller has completed Stripe onboarding
-    if (sellerProfile.stripe_onboarding_status !== "completed") {
-      return NextResponse.json(
-        { 
-          error: "Seller has not completed payout setup. Please contact the seller.",
-          requiresStripeSetup: true 
-        },
-        { status: 400 }
-      );
-    }
-
-    if (!sellerProfile.stripe_account_id) {
-      return NextResponse.json(
-        { 
-          error: "Seller's Stripe account is not configured",
-          requiresStripeSetup: true 
-        },
-        { status: 400 }
-      );
-    }
 
     // Calculate amount in cents (Stripe requires cents)
     const amountInCents = Math.round(listing.price * 100);
@@ -89,7 +92,7 @@ export async function POST(request: NextRequest) {
     let platformFeePercent = 0.04; // Default 4% for regular sellers
     let platformFeeAmount = 0;
     
-    if (sellerProfile.is_founding_seller && sellerProfile.founding_seller_start_date) {
+    if (sellerProfile?.is_founding_seller && sellerProfile.founding_seller_start_date) {
       // Check if founding seller is still within 6-month period
       const sixMonthsAgo = new Date();
       sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
@@ -106,7 +109,7 @@ export async function POST(request: NextRequest) {
       }
     } else {
       // Regular seller - use their transaction_fee_percent or default 4%
-      platformFeePercent = sellerProfile.transaction_fee_percent || 0.04;
+      platformFeePercent = sellerProfile?.transaction_fee_percent || 0.04;
       platformFeeAmount = Math.round(amountInCents * platformFeePercent);
     }
     
@@ -119,7 +122,7 @@ export async function POST(request: NextRequest) {
       amount: amountInCents,
       currency: "usd",
       transfer_data: {
-        destination: sellerProfile.stripe_account_id, // Seller's Stripe Connect account
+        destination: listing.seller_stripe_account_id, // Use denormalized Stripe account ID from listing
       },
       automatic_payment_methods: {
         enabled: true,
@@ -128,11 +131,13 @@ export async function POST(request: NextRequest) {
         listing_id: listingId,
         listing_title: listing.title,
         seller_id: listing.seller_id,
-        seller_stripe_account: sellerProfile.stripe_account_id,
+        seller_stripe_account: listing.seller_stripe_account_id,
         platform_fee: platformFeeAmount.toString(),
         platform_fee_percent: platformFeePercent.toString(),
         seller_amount: sellerAmount.toString(),
-        is_founding_seller: sellerProfile.is_founding_seller ? "true" : "false",
+        is_founding_seller: sellerProfile?.is_founding_seller ? "true" : "false",
+        // Include buyer_id for webhook fallback
+        buyer_id: userId || "",
         shipping_name: shippingInfo?.name || "",
         shipping_address: shippingInfo?.address || "",
         shipping_city: shippingInfo?.city || "",

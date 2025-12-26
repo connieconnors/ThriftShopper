@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/app/context/AuthContext';
 import { supabase } from '@/lib/supabaseClient';
 import { TSLogo } from '@/components/TSLogo';
@@ -185,6 +185,7 @@ function OrderCard({ order, onUpdate }: OrderCardProps) {
 export default function SellerDashboard() {
   const { user, isLoading: authLoading, signOut } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   
   const [listings, setListings] = useState<Listing[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
@@ -214,6 +215,91 @@ export default function SellerDashboard() {
     }
   }, [user, authLoading]);
 
+  // Check Stripe status when stripe_success is in URL
+  useEffect(() => {
+    const stripeSuccess = searchParams?.get('stripe_success');
+    const stripeRefresh = searchParams?.get('stripe_refresh');
+    
+    if (user && (stripeSuccess || stripeRefresh)) {
+      console.log('🔄 Stripe redirect detected, checking status...');
+      checkStripeStatus();
+      
+      // Clean up URL params after checking status
+      if (stripeSuccess || stripeRefresh) {
+        // Small delay to ensure status check completes
+        setTimeout(() => {
+          router.replace('/seller', { scroll: false });
+        }, 500);
+      }
+    }
+  }, [user, searchParams]);
+
+  const checkStripeStatus = async () => {
+    if (!user) return;
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        console.error('❌ No session found for Stripe status check');
+        return;
+      }
+
+      console.log('🔍 Checking Stripe account status...');
+      
+      const response = await fetch('/api/stripe/account-status', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (data.error) {
+        console.error('❌ Error checking Stripe status:', data.error);
+        return;
+      }
+
+      console.log('✅ Stripe status check result:', {
+        profile_id: user.id,
+        stripe_account_id: data.account_id,
+        charges_enabled: data.charges_enabled,
+        payouts_enabled: data.payouts_enabled,
+        details_submitted: data.details_submitted,
+      });
+
+      // Update profile state with new Stripe status
+      setProfile((prev: any) => ({
+        ...prev,
+        stripe_charges_enabled: data.charges_enabled,
+        stripe_payouts_enabled: data.payouts_enabled,
+        stripe_details_submitted: data.details_submitted,
+        stripe_account_id: data.account_id || prev?.stripe_account_id,
+      }));
+
+      // Also refresh from database to get updated values (only if columns exist)
+      try {
+        const { data: updatedProfile } = await supabase
+          .from('profiles')
+          .select('stripe_account_id, stripe_charges_enabled, stripe_payouts_enabled, stripe_details_submitted, stripe_onboarded_at')
+          .eq('user_id', user.id)
+          .single();
+
+        if (updatedProfile) {
+          setProfile((prev: any) => ({
+            ...prev,
+            ...updatedProfile,
+          }));
+        }
+      } catch (err) {
+        // Columns may not exist yet - that's okay, we'll just use the data from the API response
+        console.log('⚠️ Could not fetch Stripe status columns (may not exist yet)');
+      }
+    } catch (err) {
+      console.error('❌ Error in checkStripeStatus:', err);
+    }
+  };
+
   const checkOnboardingAndFetchData = async () => {
     if (!user) return;
 
@@ -222,6 +308,7 @@ export default function SellerDashboard() {
       
       // Check if seller profile is set up
       // Try user_id first (actual column name), fallback to id
+      // Note: Stripe status columns may not exist yet if SQL migration hasn't been run
       let { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('is_seller, display_name, location_city, avatar_url, created_at, stripe_account_id, stripe_onboarding_status')
@@ -234,6 +321,18 @@ export default function SellerDashboard() {
           .from('profiles')
           .select('is_seller, display_name, location_city, avatar_url, created_at, stripe_account_id, stripe_onboarding_status')
           .eq('id', user.id)
+          .single();
+        profile = retry.data;
+        profileError = retry.error;
+      }
+
+      // If query failed due to missing columns, try again without Stripe status columns
+      if (profileError && (profileError.message?.includes('column') || profileError.code === '42703')) {
+        console.log('⚠️ Stripe status columns may not exist, retrying without them...');
+        const retry = await supabase
+          .from('profiles')
+          .select('is_seller, display_name, location_city, avatar_url, created_at, stripe_account_id, stripe_onboarding_status')
+          .eq('user_id', user.id)
           .single();
         profile = retry.data;
         profileError = retry.error;
@@ -301,6 +400,12 @@ export default function SellerDashboard() {
       // Profile is complete enough, fetch seller data
       console.log('✅ Seller profile OK, loading dashboard');
       setProfile(profile);
+      
+      // Check Stripe status if account_id exists
+      if (profile.stripe_account_id) {
+        await checkStripeStatus();
+      }
+      
       fetchSellerData();
     } catch (err) {
       console.error('❌ Error in checkOnboardingAndFetchData:', err);
@@ -346,22 +451,25 @@ export default function SellerDashboard() {
         .eq('seller_id', user.id)
         .order('created_at', { ascending: false });
 
+      let finalOrdersData: any[] = [];
+
       if (ordersError) {
         console.error('Error fetching orders:', ordersError);
         setOrders([]);
-      } else {
+        finalOrdersData = []; // Ensure it's initialized even on error
+      } else if (ordersData) {
         // Fetch listings separately and merge
-        const listingIds = ordersData?.map((o: any) => o.listing_id).filter(Boolean) || [];
+        const listingIds = ordersData.map((o: any) => o.listing_id).filter(Boolean) || [];
         let listingsMap: Record<string, any> = {};
         
         if (listingIds.length > 0) {
-          const { data: listingsData } = await supabase
+          const { data: orderListingsData } = await supabase
             .from('listings')
             .select('id, title, clean_image_url, original_image_url')
             .in('id', listingIds);
           
-          if (listingsData) {
-            listingsMap = listingsData.reduce((acc: Record<string, any>, listing: any) => {
+          if (orderListingsData) {
+            listingsMap = orderListingsData.reduce((acc: Record<string, any>, listing: any) => {
               acc[listing.id] = listing;
               return acc;
             }, {});
@@ -369,18 +477,18 @@ export default function SellerDashboard() {
         }
         
         // Merge listings into orders
-        const ordersWithListings = (ordersData || []).map((order: any) => ({
+        finalOrdersData = ordersData.map((order: any) => ({
           ...order,
           listings: listingsMap[order.listing_id] || null
         }));
         
-        setOrders(ordersWithListings);
+        setOrders(finalOrdersData);
       }
       
       // Calculate stats
       const active = listingsData?.filter(l => l.status === 'active').length || 0;
       const sold = listingsData?.filter(l => l.status === 'sold').length || 0;
-      const paidOrders = ordersData?.filter((o: any) => o.status === 'paid' || o.status === 'shipped').length || 0;
+      const paidOrders = finalOrdersData.filter((o: any) => o.status === 'paid' || o.status === 'shipped').length || 0;
       
       setStats({
         totalListings: listingsData?.length || 0,
@@ -401,21 +509,56 @@ export default function SellerDashboard() {
     e.stopPropagation();
     
     if (!user) return;
+
+    // If publishing (setting to active), use the API route which enforces Stripe check
+    if (newStatus === 'active' && !isStripeConnectedEnough) {
+      alert('Connect payouts with Stripe to publish listings.');
+      return;
+    }
     
     setUpdatingId(listingId);
     setShowMenuId(null);
 
     try {
-      const { error } = await supabase
-        .from('listings')
-        .update({ 
-          status: newStatus,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', listingId)
-        .eq('seller_id', user.id);
+      // If publishing, use the API route
+      if (newStatus === 'active') {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          throw new Error('Not authenticated');
+        }
 
-      if (error) throw error;
+        const publishResponse = await fetch('/api/listings/publish', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({ listingId }),
+        });
+
+        const publishData = await publishResponse.json();
+
+        if (!publishResponse.ok) {
+          if (publishData.code === 'STRIPE_NOT_COMPLETE') {
+            alert('Connect payouts with Stripe to publish listings.');
+          } else {
+            alert(publishData.error || 'Failed to publish listing');
+          }
+          return;
+        }
+      } else {
+        // For other status changes, use direct update
+        const { error } = await supabase
+          .from('listings')
+          .update({ 
+            status: newStatus,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', listingId)
+          .eq('seller_id', user.id);
+
+        if (error) throw error;
+      }
 
       // Refresh listings
       await fetchSellerData();
@@ -474,7 +617,14 @@ export default function SellerDashboard() {
     return new Date(profile.created_at).getFullYear();
   };
 
-  const needsStripeSetup = !profile?.stripe_account_id || profile?.stripe_onboarding_status !== 'completed';
+  // Beta gating: Stripe connected enough = stripe_account_id exists AND (details_submitted OR charges_enabled)
+  const hasStripeAccount = !!profile?.stripe_account_id;
+  const isStripeConnectedEnough = hasStripeAccount && 
+    (profile?.stripe_details_submitted === true || profile?.stripe_charges_enabled === true);
+  const needsStripeSetup = !hasStripeAccount || (!profile?.stripe_charges_enabled && !profile?.stripe_details_submitted);
+  
+  // Show "Payments Connected ✓" if fully connected
+  const isStripeFullyConnected = profile?.stripe_charges_enabled === true || profile?.stripe_details_submitted === true;
 
   return (
     <StreamChatProvider>
@@ -521,14 +671,14 @@ export default function SellerDashboard() {
               </div>
             </div>
 
-            {/* Stripe Payout Setup Banner */}
-            {needsStripeSetup && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
+            {/* Stripe Payment Status Banner */}
+            {!isStripeConnectedEnough ? (
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-3">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
-                    <h2 className="text-xs font-semibold text-blue-900 leading-tight mb-1">Set Up Payouts</h2>
+                    <h2 className="text-xs font-semibold text-amber-900 leading-tight mb-1">Almost ready to sell</h2>
                     <p className="text-[10px] leading-tight" style={{ color: "#333333" }}>
-                      ThriftShopper uses Stripe to process payouts. Complete onboarding to receive proceeds.
+                      You can draft listings now. Connect payouts before you publish.
                     </p>
                   </div>
                   <button
@@ -556,14 +706,26 @@ export default function SellerDashboard() {
                         alert('Failed to set up payouts. Please try again.');
                       }
                     }}
-                    style={{ backgroundColor: '#1e3a8a', color: 'white' }}
+                    style={{ backgroundColor: '#191970', color: 'white' }}
                     className="hover:opacity-90 text-xs h-8 px-4 shrink-0 leading-none rounded-lg flex items-center justify-center transition-all font-medium shadow-sm"
                   >
-                    Set Up Payouts
+                    Finish payout setup
                   </button>
                 </div>
               </div>
-            )}
+            ) : isStripeFullyConnected ? (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-3">
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  <div className="flex-1">
+                    <h2 className="text-xs font-semibold text-green-900 leading-tight">Payments Connected ✓</h2>
+                    <p className="text-[10px] leading-tight text-green-700">
+                      Your Stripe account is set up and ready to receive payouts.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : null}
           </div>
         )}
 
@@ -809,8 +971,21 @@ export default function SellerDashboard() {
                                     )}
                                     {listing.status !== 'active' && (
                                       <button
-                                        onClick={(e) => handleUpdateStatus(listing.id, 'active', e)}
-                                        className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors flex items-center gap-2 text-gray-700"
+                                        onClick={(e) => {
+                                          if (!isStripeConnectedEnough) {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            alert('Connect payouts with Stripe to publish listings.');
+                                            return;
+                                          }
+                                          handleUpdateStatus(listing.id, 'active', e);
+                                        }}
+                                        disabled={!isStripeConnectedEnough}
+                                        className={`w-full text-left px-4 py-2 text-sm transition-colors flex items-center gap-2 ${
+                                          !isStripeConnectedEnough 
+                                            ? 'text-gray-400 cursor-not-allowed' 
+                                            : 'hover:bg-gray-50 text-gray-700'
+                                        }`}
                                       >
                                         <CheckCircle className="h-4 w-4" />
                                         Mark as Active

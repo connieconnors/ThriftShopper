@@ -23,7 +23,15 @@ function LoginForm() {
   // If user is already logged in, redirect them appropriately
   useEffect(() => {
     if (!authLoading && user) {
-      console.log("🔍 Login: User already logged in, checking profile...");
+      console.log("🔍 Login: User already logged in, redirecting...");
+      // If there's a redirect URL, use it immediately (don't wait for profile check)
+      if (redirectTo) {
+        console.log("✅ Login: Redirecting to", redirectTo);
+        router.push(redirectTo);
+        return;
+      }
+      
+      // Only check profile if no redirect URL (to determine seller vs buyer)
       const checkAndRedirect = async () => {
         try {
           // Try user_id first (actual column name), fallback to id
@@ -31,7 +39,7 @@ function LoginForm() {
             .from("profiles")
             .select("is_seller")
             .eq("user_id", user.id)
-            .single();
+            .maybeSingle(); // Use maybeSingle to avoid errors if profile doesn't exist
           
           // If that fails, try id
           if (error && error.code === 'PGRST116') {
@@ -39,37 +47,62 @@ function LoginForm() {
               .from("profiles")
               .select("is_seller")
               .eq("id", user.id)
-              .single();
+              .maybeSingle();
             profile = retry.data;
             error = retry.error;
           }
           
-          console.log("📊 Login: Profile check result:", { profile, error });
-          
-          // Only treat as error if it has meaningful content (not just empty object)
-          if (error && (error.message || error.code || Object.keys(error).length > 0)) {
-            // Ignore "no rows" errors (PGRST116) - profile might not exist yet, that's okay
-            if (error.code === 'PGRST116') {
-              console.log("ℹ️ Login: Profile not found, redirecting to browse");
-              router.push(redirectTo || "/browse");
-              return;
+          // If profile doesn't exist, create it on-the-fly
+          if (error && error.code === 'PGRST116' || !profile) {
+            console.log("ℹ️ Login: Profile not found, creating profile for user:", user.id);
+            try {
+              // Try to create profile with user_id (actual column name)
+              const { error: createError } = await supabase
+                .from("profiles")
+                .insert({
+                  user_id: user.id,
+                  email: user.email || '',
+                  display_name: user.email?.split('@')[0] || 'User',
+                });
+              
+              if (createError) {
+                // If that fails, try with id
+                const { error: createError2 } = await supabase
+                  .from("profiles")
+                  .insert({
+                    id: user.id,
+                    email: user.email || '',
+                    display_name: user.email?.split('@')[0] || 'User',
+                  });
+                
+                if (createError2) {
+                  console.warn("⚠️ Login: Could not create profile:", createError2.message);
+                }
+              }
+            } catch (createErr) {
+              console.warn("⚠️ Login: Exception creating profile:", createErr);
             }
-            console.error("❌ Login: Error checking profile:", error);
-            // Default to browse if profile check fails
+            
+            // Redirect to redirectTo if provided, otherwise browse
             router.push(redirectTo || "/browse");
             return;
           }
           
+          // Only log actual errors (not "no rows")
+          if (error && error.code !== 'PGRST116') {
+            console.warn("⚠️ Login: Profile check warning:", error.message || error.code);
+          }
+          
           if (profile?.is_seller) {
-            console.log("✅ Login: Already logged in seller, redirecting to /seller");
+            console.log("✅ Login: Already logged in seller, redirecting to", redirectTo || "/seller");
             router.push(redirectTo || "/seller");
           } else {
-            console.log("ℹ️ Login: Already logged in buyer, redirecting to /browse");
+            console.log("ℹ️ Login: Already logged in buyer, redirecting to", redirectTo || "/browse");
             router.push(redirectTo || "/browse");
           }
         } catch (err) {
-          console.error("❌ Login: Exception checking profile:", err);
-          router.push(redirectTo || "/browse");
+          console.warn("⚠️ Login: Exception checking profile, redirecting to /browse:", err);
+          router.push("/browse");
         }
       };
       checkAndRedirect();
@@ -103,11 +136,12 @@ function LoginForm() {
         // Otherwise, check user's role and redirect accordingly
         console.log("🔍 Login: Checking profile for user:", user.id);
         // Try user_id first (actual column name), fallback to id
+        // Use maybeSingle to avoid errors if profile doesn't exist
         let { data: profile, error: profileError } = await supabase
           .from("profiles")
           .select("is_seller, display_name, location_city")
           .eq("user_id", user.id)
-          .single();
+          .maybeSingle();
         
         // If that fails, try id
         if (profileError && profileError.code === 'PGRST116') {
@@ -115,46 +149,65 @@ function LoginForm() {
             .from("profiles")
             .select("is_seller, display_name, location_city")
             .eq("id", user.id)
-            .single();
+            .maybeSingle();
           profile = retry.data;
           profileError = retry.error;
         }
 
-        console.log("📊 Login: Profile query result:", { profile, error: profileError });
-
-        // If profile exists and user is a seller, redirect to seller dashboard
-        // The seller dashboard will check if onboarding is complete and redirect if needed
-        // Only treat as error if it has meaningful content (not just empty object)
-        if (profileError && (profileError.message || profileError.code || Object.keys(profileError).length > 0)) {
-          // Ignore "no rows" errors (PGRST116) - profile might not exist yet, that's okay
-          if (profileError.code === 'PGRST116') {
-            console.log("ℹ️ Login: Profile not found, redirecting to browse");
-            router.push("/browse");
-            setIsLoading(false);
-            return;
+        // If profile doesn't exist, create it on-the-fly
+        if (profileError && profileError.code === 'PGRST116' || !profile) {
+          console.log("ℹ️ Login: Profile not found, creating profile for user:", user.id);
+          try {
+            // Try to create profile with user_id (actual column name)
+            const { error: createError } = await supabase
+              .from("profiles")
+              .insert({
+                user_id: user.id,
+                email: user.email || '',
+                display_name: user.email?.split('@')[0] || 'User',
+              });
+            
+            if (createError) {
+              // If that fails, try with id
+              const { error: createError2 } = await supabase
+                .from("profiles")
+                .insert({
+                  id: user.id,
+                  email: user.email || '',
+                  display_name: user.email?.split('@')[0] || 'User',
+                });
+              
+              if (createError2) {
+                console.warn("⚠️ Login: Could not create profile:", createError2.message);
+              }
+            }
+          } catch (createErr) {
+            console.warn("⚠️ Login: Exception creating profile:", createErr);
           }
-          console.error("❌ Login: Profile fetch error:", profileError);
-          console.error("Error details:", {
-            message: profileError.message,
-            code: profileError.code,
-            details: profileError.details,
-            hint: profileError.hint
-          });
-          // If profile doesn't exist or error, still try to redirect based on user
-          // But default to browse for now
-          router.push("/browse");
+          
+          // Redirect to redirect URL or browse
+          router.push(redirectTo || "/browse");
+          setIsLoading(false);
+          return;
+        }
+
+        // Only log actual errors (not "no rows" or expected cases)
+        if (profileError && profileError.code !== 'PGRST116') {
+          console.warn("⚠️ Login: Profile fetch warning:", profileError.message || profileError.code);
+          // Still redirect even if there's an error
+          router.push(redirectTo || "/browse");
           setIsLoading(false);
           return;
         }
 
         if (profile && profile.is_seller === true) {
-          console.log("✅ Login: User is seller, redirecting to /seller");
-          router.push("/seller");
+          console.log("✅ Login: User is seller, redirecting to", redirectTo || "/seller");
+          router.push(redirectTo || "/seller");
           setIsLoading(false);
           return;
         } else {
-          console.log("ℹ️ Login: User is not seller, redirecting to /browse");
-          router.push("/browse");
+          console.log("ℹ️ Login: User is not seller, redirecting to", redirectTo || "/browse");
+          router.push(redirectTo || "/browse");
           setIsLoading(false);
           return;
         }

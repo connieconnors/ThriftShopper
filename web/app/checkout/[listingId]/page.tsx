@@ -10,16 +10,10 @@ interface CheckoutPageProps {
 export default async function CheckoutPage({ params }: CheckoutPageProps) {
   const { listingId } = await params;
 
-  // Fetch the listing
+  // Fetch the listing (no profile join needed - seller_name is denormalized on listing)
   const { data: listing, error } = await supabase
     .from("listings")
-    .select(`
-      *,
-      profiles:seller_id (
-        display_name,
-        location_city
-      )
-    `)
+    .select("*")
     .eq("id", listingId)
     .eq("status", "active")
     .single();

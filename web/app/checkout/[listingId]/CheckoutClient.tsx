@@ -7,6 +7,7 @@ import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-
 import { getStripe } from "../../../lib/stripeClient";
 import { Listing, getPrimaryImage, getSellerDisplayName } from "../../../lib/types";
 import { useAuth } from "../../context/AuthContext";
+import { supabase } from "../../../lib/supabaseClient";
 
 interface ShippingInfo {
   name: string;
@@ -64,24 +65,42 @@ function CheckoutForm({
 
       if (paymentIntent && paymentIntent.status === "succeeded") {
         // Create order in database
+        // Note: buyer_id is now set server-side from authenticated user
+        // Get auth token from Supabase session for Authorization header
+        const { data: { session } } = await supabase.auth.getSession();
+        const authToken = session?.access_token;
+
         const orderResponse = await fetch("/api/create-order", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { 
+            "Content-Type": "application/json",
+            ...(authToken && { Authorization: `Bearer ${authToken}` }),
+          },
+          credentials: "include", // Ensure cookies are sent as fallback
           body: JSON.stringify({
             listingId: listing.id,
             paymentIntentId: paymentIntent.id,
             amount: listing.price,
             shippingInfo,
-            userId,
+            // userId removed - server gets it from auth
           }),
         });
 
         const orderData = await orderResponse.json();
 
-        if (orderData.orderId) {
+        // Fix: Check for error first, then check for orderId
+        // Only show "order creation failed" if there's an actual error
+        if (orderData.error) {
+          console.error("❌ Order creation error:", orderData.error, orderData.details);
+          setError(`Order creation failed: ${orderData.error}. Please contact support.`);
+        } else if (orderData.orderId) {
+          // Success - redirect to confirmation
+          console.log("✅ Order created successfully:", orderData.orderId);
           onSuccess(orderData.orderId);
         } else {
-          setError("Payment succeeded but order creation failed. Please contact support.");
+          // Unexpected: no error but no orderId either
+          console.error("❌ Unexpected order response:", orderData);
+          setError("Payment succeeded but order creation returned unexpected response. Please contact support.");
         }
       }
     } catch (err) {
@@ -140,7 +159,7 @@ export default function CheckoutClient({ listing }: CheckoutClientProps) {
   const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
   const [clientSecret, setClientSecret] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [step, setStep] = useState<"shipping" | "payment">("shipping");
   const [shippingInfo, setShippingInfo] = useState<ShippingInfo>({
@@ -152,9 +171,14 @@ export default function CheckoutClient({ listing }: CheckoutClientProps) {
     phone: "",
   });
 
-  // Redirect to login if not authenticated
+  // Redirect to login if not authenticated (only after auth has finished loading)
   useEffect(() => {
-    if (!authLoading && !user) {
+    // Wait for auth to finish loading before checking
+    if (authLoading) return;
+    
+    // Only redirect if we're certain user is not authenticated
+    if (!user) {
+      console.log('🔒 Checkout: User not authenticated, redirecting to login');
       router.push(`/login?redirect=/checkout/${listing.id}`);
     }
   }, [user, authLoading, router, listing.id]);
@@ -198,6 +222,7 @@ export default function CheckoutClient({ listing }: CheckoutClientProps) {
         body: JSON.stringify({
           listingId: listing.id,
           shippingInfo,
+          userId: user.id, // Include userId for payment intent metadata (webhook fallback)
         }),
       });
 
@@ -220,10 +245,6 @@ export default function CheckoutClient({ listing }: CheckoutClientProps) {
   const handlePaymentSuccess = (orderId: string) => {
     router.push(`/checkout/success?orderId=${orderId}`);
   };
-
-  useEffect(() => {
-    setIsLoading(false);
-  }, []);
 
   const stripePromise = getStripe();
 

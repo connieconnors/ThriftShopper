@@ -106,10 +106,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Create account link for onboarding
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
     const accountLink = await stripe.accountLinks.create({
       account: accountId,
-      refresh_url: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/sell?stripe_refresh=true`,
-      return_url: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/sell?stripe_success=true`,
+      refresh_url: `${baseUrl}/seller?stripe_refresh=true`,
+      return_url: `${baseUrl}/seller?stripe_success=true`,
       type: "account_onboarding",
     });
 

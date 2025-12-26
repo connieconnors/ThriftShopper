@@ -139,6 +139,7 @@ export default function SellerUploadForm() {
   const [isSaving, setIsSaving] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [isRemovingBackground, setIsRemovingBackground] = useState(false);
+  const [isStripeReady, setIsStripeReady] = useState<boolean | null>(null);
   
   // Editable fields
   const [title, setTitle] = useState('');
@@ -161,6 +162,46 @@ export default function SellerUploadForm() {
   // Edit mode - check for listing ID in URL
   const [isEditMode, setIsEditMode] = useState(false);
   const [isLoadingListing, setIsLoadingListing] = useState(false);
+
+  // Check Stripe status on mount and when listingId changes
+  useEffect(() => {
+    const checkStripeStatus = async () => {
+      if (!user || !listingId) {
+        setIsStripeReady(null);
+        return;
+      }
+
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
+
+        const response = await fetch('/api/stripe/account-status', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+        });
+
+        const data = await response.json();
+        if (data.error) {
+          setIsStripeReady(false);
+          return;
+        }
+
+        // Beta gating: Stripe connected enough = account_id exists AND (details_submitted OR charges_enabled)
+        const hasStripeAccount = !!data.account_id;
+        const isConnectedEnough = hasStripeAccount && 
+          (data.details_submitted === true || data.charges_enabled === true);
+        
+        setIsStripeReady(isConnectedEnough);
+      } catch (err) {
+        console.error('Error checking Stripe status:', err);
+        setIsStripeReady(false);
+      }
+    };
+
+    checkStripeStatus();
+  }, [user, listingId]);
 
   // Load existing listing if editing
   useEffect(() => {
@@ -505,6 +546,12 @@ export default function SellerUploadForm() {
       return;
     }
 
+    // Check Stripe status before publishing
+    if (isStripeReady === false) {
+      setError('Connect payouts with Stripe to publish listings.');
+      return;
+    }
+
     setIsPublishing(true);
     setError('');
 
@@ -533,12 +580,11 @@ export default function SellerUploadForm() {
           condition: condition || null,
           specifications: specifications || null,
           // Merge AI + seller keywords into moods and styles
-   // Categorize keywords properly
-...(() => {
-  const { styles, moods, intents } = categorizeAttributes(allKeywords);
-  return { styles, moods, intents };
-})(),
-          status: 'active',
+          ...(() => {
+            const { styles, moods, intents } = categorizeAttributes(allKeywords);
+            return { styles, moods, intents };
+          })(),
+          // Keep status as draft for now - API route will change it
           // Use processed or original image based on toggle
           clean_image_url: showProcessedImage ? result?.processedImageUrl : null,
           // Additional photos
@@ -549,6 +595,32 @@ export default function SellerUploadForm() {
 
       if (updateError) {
         throw new Error(updateError.message);
+      }
+
+      // Now call the publish API route which enforces Stripe check
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('Not authenticated');
+      }
+
+      const publishResponse = await fetch('/api/listings/publish', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ listingId }),
+      });
+
+      const publishData = await publishResponse.json();
+
+      if (!publishResponse.ok) {
+        if (publishData.code === 'STRIPE_NOT_COMPLETE') {
+          setError('Connect payouts with Stripe to publish listings.');
+        } else {
+          setError(publishData.error || 'Failed to publish listing');
+        }
+        return;
       }
 
       setIsPublished(true);
@@ -1215,13 +1287,14 @@ export default function SellerUploadForm() {
                 {/* Publish Button */}
                 <button
                   onClick={handlePublish}
-                  disabled={isPublishing || isSaving || !listingId}
+                  disabled={isPublishing || isSaving || !listingId || isStripeReady === false}
                   className="flex-1 py-3 rounded-lg font-semibold transition flex items-center justify-center gap-2 text-white"
                   style={{ 
-                    backgroundColor: isPublishing ? '#9ca3af' : '#191970',
-                    cursor: isPublishing ? 'wait' : 'pointer',
+                    backgroundColor: (isPublishing || isStripeReady === false) ? '#9ca3af' : '#191970',
+                    cursor: (isPublishing || isStripeReady === false) ? 'not-allowed' : 'pointer',
                     fontFamily: 'Merriweather, serif',
                   }}
+                  title={isStripeReady === false ? 'Connect payouts with Stripe to publish listings.' : ''}
                 >
                   {isPublishing ? (
                     <>
