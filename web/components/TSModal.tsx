@@ -45,7 +45,7 @@ const TSModal: React.FC<TSModalProps> = ({
 
   const modalContent = (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/35 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 backdrop-blur-sm py-4"
           onClick={handleBackdropClick}
           onTouchStart={(e) => {
             // Only close if touching the backdrop, not the modal content
@@ -56,13 +56,13 @@ const TSModal: React.FC<TSModalProps> = ({
         >
       <div
         className="
-          w-[92%]
-          max-w-[360px]
-          mb-4
+          w-[83%]
+          max-w-[324px]
+          max-h-[90vh]
           rounded-[28px]
           shadow-[0_18px_40px_rgba(0,0,0,0.45)]
           text-white
-          overflow-hidden
+          overflow-y-auto
         "
         style={{ backgroundColor: '#191970', touchAction: 'pan-y' }}
         onClick={(e) => e.stopPropagation()}

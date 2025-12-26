@@ -93,6 +93,21 @@ export default function BuyerCanvasPage() {
     maxDuration: 30000,
   });
 
+  // Voice input for Vibe search
+  const {
+    isRecording: isRecordingVibe,
+    isProcessing: isProcessingVibe,
+    transcript: vibeTranscript,
+    isSupported: isVibeVoiceSupported,
+    toggleRecording: toggleVibeRecording,
+  } = useWhisperTranscription({
+    onTranscriptComplete: (text) => {
+      setVibeInput(text.trim());
+    },
+    silenceTimeout: 2000,
+    maxDuration: 30000,
+  });
+
   // Prevent hydration mismatch
   useEffect(() => {
     setMounted(true);
@@ -378,14 +393,28 @@ export default function BuyerCanvasPage() {
               }}
             />
             <button
-              onClick={() => router.push("/browse")}
-              className="absolute right-2 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full flex items-center justify-center transition-colors shadow-sm hover:shadow-md"
-              style={{ backgroundColor: "#191970" }}
+              onClick={toggleVibeRecording}
+              disabled={!isVibeVoiceSupported || isProcessingVibe}
+              className={`absolute right-2 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full flex items-center justify-center transition-colors shadow-sm hover:shadow-md ${
+                isRecordingVibe
+                  ? "bg-rose-500 animate-pulse"
+                  : isProcessingVibe
+                  ? "bg-violet-500 cursor-wait"
+                  : ""
+              } ${!isVibeVoiceSupported ? "opacity-50 cursor-not-allowed" : ""}`}
+              style={!isRecordingVibe && !isProcessingVibe ? { backgroundColor: "#191970" } : {}}
             >
-              <Mic className="h-4 w-4 text-white" />
+              {isProcessingVibe ? (
+                <Loader2 className="h-4 w-4 text-white animate-spin" />
+              ) : (
+                <Mic className="h-4 w-4 text-white" />
+              )}
             </button>
           </div>
           <p className="text-[10px] text-gray-400 italic mt-1.5 ml-4">we'll keep a look out</p>
+          {vibeTranscript && isRecordingVibe && (
+            <p className="text-[10px] text-gray-500 italic mt-1 ml-4">Listening: {vibeTranscript}</p>
+          )}
         </div>
 
         {/* Vibe Tags */}
@@ -558,7 +587,7 @@ export default function BuyerCanvasPage() {
           >
             <div className="flex items-center gap-2">
               <h2 className="text-sm font-semibold" style={{ color: "#191970" }}>
-                Bookmarks
+                Favorites
               </h2>
               <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">{favorites.length}</span>
             </div>
@@ -569,35 +598,45 @@ export default function BuyerCanvasPage() {
             )}
           </button>
           {showFavorites && (
-            <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-gray-100">
+            <div className="flex flex-wrap gap-3 mt-3 pt-3 border-t border-gray-100">
               {favorites.length === 0 ? (
-                <p className="text-xs text-gray-400 italic">No bookmarks yet — start exploring!</p>
+                <p className="text-xs text-gray-400 italic">No favorites yet — start exploring!</p>
               ) : (
-                favorites.slice(0, 10).map((item) => (
-                  <div
-                    key={item.id}
-                    className="relative group"
-                  >
-                    <Link
-                      href={`/listing/${item.id}`}
-                      className="px-3 py-1.5 pr-7 rounded-full border border-gray-200 bg-gray-50 flex items-center gap-1.5 hover:bg-gray-100 hover:border-[#EFBF05] transition-all shadow-sm"
+                favorites.slice(0, 10).map((item) => {
+                  const imageUrl = getPrimaryImage(item);
+                  return (
+                    <div
+                      key={item.id}
+                      className="relative group"
                     >
-                      <span className="text-xs text-gray-700">{item.title}</span>
-                    </Link>
-                    <button
-                      onClick={(e) => removeBookmark(item.id, e)}
-                      disabled={removingBookmarkId === item.id}
-                      className="absolute top-0 right-0 -mt-1 -mr-1 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 transition-colors disabled:opacity-50"
-                      aria-label="Remove bookmark"
-                    >
-                      {removingBookmarkId === item.id ? (
-                        <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      ) : (
-                        <X className="h-3 w-3" />
-                      )}
-                    </button>
-                  </div>
-                ))
+                      <Link
+                        href={`/listing/${item.id}`}
+                        className="flex items-center gap-2 px-3 py-2 pr-8 rounded-lg border border-gray-200 bg-gray-50 hover:bg-gray-100 hover:border-[#EFBF05] transition-all shadow-sm min-w-0"
+                      >
+                        {imageUrl && (
+                          <img
+                            src={imageUrl}
+                            alt={item.title}
+                            className="w-12 h-12 rounded object-cover flex-shrink-0"
+                          />
+                        )}
+                        <span className="text-xs text-gray-700 truncate flex-1">{item.title}</span>
+                      </Link>
+                      <button
+                        onClick={(e) => removeBookmark(item.id, e)}
+                        disabled={removingBookmarkId === item.id}
+                        className="absolute top-0 right-0 -mt-1 -mr-1 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 transition-colors disabled:opacity-50 z-10"
+                        aria-label="Remove favorite"
+                      >
+                        {removingBookmarkId === item.id ? (
+                          <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <X className="h-3 w-3" />
+                        )}
+                      </button>
+                    </div>
+                  );
+                })
               )}
             </div>
           )}

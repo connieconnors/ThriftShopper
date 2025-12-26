@@ -46,7 +46,14 @@ function LoginForm() {
           
           console.log("📊 Login: Profile check result:", { profile, error });
           
-          if (error) {
+          // Only treat as error if it has meaningful content (not just empty object)
+          if (error && (error.message || error.code || Object.keys(error).length > 0)) {
+            // Ignore "no rows" errors (PGRST116) - profile might not exist yet, that's okay
+            if (error.code === 'PGRST116') {
+              console.log("ℹ️ Login: Profile not found, redirecting to browse");
+              router.push(redirectTo || "/browse");
+              return;
+            }
             console.error("❌ Login: Error checking profile:", error);
             // Default to browse if profile check fails
             router.push(redirectTo || "/browse");
@@ -117,7 +124,15 @@ function LoginForm() {
 
         // If profile exists and user is a seller, redirect to seller dashboard
         // The seller dashboard will check if onboarding is complete and redirect if needed
-        if (profileError) {
+        // Only treat as error if it has meaningful content (not just empty object)
+        if (profileError && (profileError.message || profileError.code || Object.keys(profileError).length > 0)) {
+          // Ignore "no rows" errors (PGRST116) - profile might not exist yet, that's okay
+          if (profileError.code === 'PGRST116') {
+            console.log("ℹ️ Login: Profile not found, redirecting to browse");
+            router.push("/browse");
+            setIsLoading(false);
+            return;
+          }
           console.error("❌ Login: Profile fetch error:", profileError);
           console.error("Error details:", {
             message: profileError.message,
