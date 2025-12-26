@@ -30,19 +30,16 @@ interface OrderCardProps {
 function OrderCard({ order, onUpdate }: OrderCardProps) {
   const [isUpdating, setIsUpdating] = useState(false);
   const [showTrackingInput, setShowTrackingInput] = useState(false);
-  const [trackingNumber, setTrackingNumber] = useState(order.tracking_number || '');
+  // Note: tracking_number column doesn't exist in orders table yet
+  const [trackingNumber, setTrackingNumber] = useState('');
 
   const getStatusBadge = () => {
-    const status = order.status || 'paid';
-    if (status === 'paid') {
-      return { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Paid - Ready to Ship' };
-    } else if (status === 'shipped') {
+    // If shipped_at exists, show "Shipped"
+    if (order.shipped_at) {
       return { bg: 'bg-purple-100', text: 'text-purple-700', label: 'Shipped' };
-    } else if (status === 'delivered') {
-      return { bg: 'bg-green-100', text: 'text-green-700', label: 'Delivered' };
-    } else {
-      return { bg: 'bg-gray-100', text: 'text-gray-700', label: status };
     }
+    // Otherwise show "Paid"
+    return { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Paid' };
   };
 
   const handleMarkShipped = async () => {
@@ -58,7 +55,7 @@ function OrderCard({ order, onUpdate }: OrderCardProps) {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            orderId: order.id,
+            orderId: order.orderId,
             status: 'shipped',
             trackingNumber: trackingNumber.trim(),
           }),
@@ -80,107 +77,165 @@ function OrderCard({ order, onUpdate }: OrderCardProps) {
   };
 
   const statusBadge = getStatusBadge();
-  const listing = order.listings || {};
-  const imageUrl = listing.clean_image_url || listing.original_image_url;
+  const listing = order.listing;
+  const thumbnailUrl = listing?.image ?? null;
+  const listingTitle = listing?.title ?? 'Sold item';
   const orderDate = new Date(order.created_at);
   const daysAgo = Math.floor((Date.now() - orderDate.getTime()) / (1000 * 60 * 60 * 24));
   const timeAgo = daysAgo === 0 ? 'Today' : daysAgo === 1 ? '1 day ago' : `${daysAgo} days ago`;
 
   return (
-    <Link href={`/orders/${order.id}`} className="block">
-      <div className="bg-gray-50 rounded-lg border border-gray-200 p-3 hover:border-[#191970] transition-colors">
-        <div className="flex gap-3">
-          {/* Thumbnail */}
-          {imageUrl && (
-            <img
-              src={imageUrl}
-              alt={listing.title || 'Order item'}
-              className="w-16 h-16 rounded-lg object-cover flex-shrink-0"
-            />
-          )}
-          
-          {/* Order Info */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between gap-2 mb-1">
-              <h3 className="text-sm font-medium text-gray-900 truncate">
-                {listing.title || 'Order Item'}
-              </h3>
-            <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${statusBadge.bg} ${statusBadge.text} whitespace-nowrap`}>
-              {statusBadge.label}
-            </span>
+    <Link href={`/orders/${order.orderId}`} className="block">
+      <div
+        className="bg-gray-50 rounded-lg border border-gray-200 p-3 hover:shadow-sm transition-shadow mb-3"
+        style={{ minHeight: '80px' }}
+      >
+        {/* Horizontal Layout: Thumbnail (left) + Text Content (right) */}
+        <div className="flex items-start gap-3">
+          {/* Thumbnail - 60x60px, left side */}
+          <div className="w-[60px] h-[60px] rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
+            {thumbnailUrl ? (
+              <img
+                src={thumbnailUrl}
+                alt={listingTitle}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).style.display = 'none';
+                }}
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-gray-400 text-[10px]">
+                No image
+              </div>
+            )}
           </div>
           
-          <p className="text-xs text-gray-600 mb-1">
-            ${order.amount?.toFixed(2) || '0.00'}
-          </p>
-          
-          <p className="text-[10px] text-gray-500 mb-2">
-            Ordered {timeAgo}
-          </p>
-
-          {/* Shipping Address */}
-          {(order.shipping_name || order.shipping_city) && (
-            <div className="text-[10px] text-gray-600 mb-2">
-              <p className="font-medium">Ship to:</p>
-              <p>{order.shipping_name}</p>
-              <p>{order.shipping_city}, {order.shipping_state} {order.shipping_zip}</p>
-            </div>
-          )}
-
-          {/* Tracking Number */}
-          {order.tracking_number && (
-            <div className="text-[10px] text-gray-600 mb-2">
-              <p className="font-medium">Tracking:</p>
-              <p className="font-mono">{order.tracking_number}</p>
-            </div>
-          )}
-
-          {/* Actions */}
-          {order.status === 'paid' && (
-            <div className="space-y-2">
-              {showTrackingInput && (
-                <input
-                  type="text"
-                  placeholder="Enter tracking number"
-                  value={trackingNumber}
-                  onChange={(e) => setTrackingNumber(e.target.value)}
-                  className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#191970]/20"
-                />
-              )}
-              <button
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  handleMarkShipped();
-                }}
-                disabled={isUpdating}
-                className="w-full py-1.5 px-3 text-xs font-medium rounded-lg transition-colors flex items-center justify-center gap-1.5"
+          {/* Right Side: Text Content aligned with top of thumbnail */}
+          <div 
+            className="flex-1 min-w-0 flex flex-col" 
+            style={{ 
+              gap: '0px', 
+              alignSelf: 'flex-start',
+              display: 'flex',
+              flexDirection: 'column'
+            }}
+          >
+            {/* Line 1: Title + Status Badge */}
+            <div 
+              className="flex items-start justify-between w-full" 
+              style={{ gap: '0px' }}
+            >
+              <h3 
+                className="text-sm font-medium text-gray-900 m-0 flex-1 min-w-0" 
                 style={{ 
-                  backgroundColor: '#191970', 
-                  color: 'white',
-                  opacity: isUpdating ? 0.6 : 1
+                  fontSize: '14px', 
+                  lineHeight: '1', 
+                  margin: 0, 
+                  padding: 0,
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  display: 'block'
                 }}
               >
-                {isUpdating ? (
-                  <>
-                    <Loader2 className="h-3 w-3 animate-spin" />
-                    Updating...
-                  </>
-                ) : (
-                  <>
-                    <Truck className="h-3 w-3" />
-                    {showTrackingInput ? 'Mark as Shipped' : 'Add Tracking & Ship'}
-                  </>
-                )}
-              </button>
+                {listingTitle}
+              </h3>
+              
+              {/* Status Badge - Top Right */}
+              <span 
+                className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${statusBadge.bg} ${statusBadge.text} whitespace-nowrap flex-shrink-0`}
+                style={{ margin: 0, padding: '2px 6px' }}
+              >
+                {statusBadge.label}
+              </span>
             </div>
-          )}
+
+            {/* Line 2: Price */}
+            <div 
+              className="flex items-center gap-2" 
+              style={{ 
+                margin: 0, 
+                marginTop: '2px',
+                padding: 0
+              }}
+            >
+              <span
+                className="text-base font-medium leading-tight"
+                style={{ color: "#191970", fontSize: '16px', margin: 0, padding: 0 }}
+              >
+                ${typeof order.amount === 'number' ? order.amount.toFixed(2) : (parseFloat(String(order.amount || '0')) || 0).toFixed(2)}
+              </span>
+            </div>
+
+            {/* Line 3: Timestamp */}
+            <div 
+              className="text-[11px] text-gray-500"
+              style={{ 
+                margin: 0, 
+                marginTop: '2px',
+                padding: 0,
+                lineHeight: '1.2'
+              }}
+            >
+              <span>Ordered {timeAgo}</span>
+            </div>
+
+            {/* Actions - Only show for paid orders that haven't been shipped */}
+            {order.status === 'paid' && !order.shipped_at && (
+              <div className="mt-2 space-y-2">
+                {showTrackingInput && (
+                  <input
+                    type="text"
+                    placeholder="Enter tracking number"
+                    value={trackingNumber}
+                    onChange={(e) => setTrackingNumber(e.target.value)}
+                    onClick={(e) => e.stopPropagation()}
+                    className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#191970]/20"
+                  />
+                )}
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleMarkShipped();
+                  }}
+                  disabled={isUpdating}
+                  className="w-full py-1.5 px-3 text-xs font-medium rounded-lg transition-colors flex items-center justify-center gap-1.5"
+                  style={{ 
+                    backgroundColor: '#191970', 
+                    color: 'white',
+                    opacity: isUpdating ? 0.6 : 1
+                  }}
+                >
+                  {isUpdating ? (
+                    <>
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      Updating...
+                    </>
+                  ) : (
+                    <>
+                      <Truck className="h-3 w-3" />
+                      {showTrackingInput ? 'Mark as Shipped' : 'Add Tracking & Ship'}
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
-    </div>
     </Link>
   );
 }
+
+const parseMoney = (v: unknown) => {
+  if (v == null) return 0;
+  const s = String(v).replace(/[^0-9.-]/g, "");
+  const n = Number(s);
+  if (!Number.isFinite(n)) return 0;
+  // If it looks like cents (e.g., 2000 for $20), convert to dollars
+  return n >= 1000 ? n / 100 : n;
+};
 
 export default function SellerDashboard() {
   const { user, isLoading: authLoading, signOut } = useAuth();
@@ -188,14 +243,15 @@ export default function SellerDashboard() {
   const searchParams = useSearchParams();
   
   const [listings, setListings] = useState<Listing[]>([]);
-  const [orders, setOrders] = useState<any[]>([]);
+  const [soldOrders, setSoldOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [messagesExpanded, setMessagesExpanded] = useState(false);
   const [stats, setStats] = useState({
     totalListings: 0,
     activeListings: 0,
     totalViews: 0,
-    totalSales: 0,
+    soldCount: 0,
+    totalEarnings: 0,
   });
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [showMenuId, setShowMenuId] = useState<string | null>(null);
@@ -220,19 +276,22 @@ export default function SellerDashboard() {
     const stripeSuccess = searchParams?.get('stripe_success');
     const stripeRefresh = searchParams?.get('stripe_refresh');
     
-    if (user && (stripeSuccess || stripeRefresh)) {
+    if (user && profile && (stripeSuccess || stripeRefresh)) {
       console.log('🔄 Stripe redirect detected, checking status...');
-      checkStripeStatus();
+      // Wait a bit for profile to be fully loaded, then check status
+      const checkStatus = async () => {
+        await checkStripeStatus();
+        // Refresh profile data after status check
+        await checkOnboardingAndFetchData();
+      };
+      checkStatus();
       
       // Clean up URL params after checking status
-      if (stripeSuccess || stripeRefresh) {
-        // Small delay to ensure status check completes
-        setTimeout(() => {
-          router.replace('/seller', { scroll: false });
-        }, 500);
-      }
+      setTimeout(() => {
+        router.replace('/seller', { scroll: false });
+      }, 1000); // Give more time for status check to complete
     }
-  }, [user, searchParams]);
+  }, [user, profile, searchParams]);
 
   const checkStripeStatus = async () => {
     if (!user) return;
@@ -269,27 +328,54 @@ export default function SellerDashboard() {
       });
 
       // Update profile state with new Stripe status
-      setProfile((prev: any) => ({
-        ...prev,
-        stripe_charges_enabled: data.charges_enabled,
-        stripe_payouts_enabled: data.payouts_enabled,
-        stripe_details_submitted: data.details_submitted,
-        stripe_account_id: data.account_id || prev?.stripe_account_id,
-      }));
+      setProfile((prev: any) => {
+        const updated = {
+          ...prev,
+          stripe_charges_enabled: data.charges_enabled,
+          stripe_payouts_enabled: data.payouts_enabled,
+          stripe_details_submitted: data.details_submitted,
+          stripe_account_id: data.account_id || prev?.stripe_account_id,
+        };
+        console.log('📝 Updated profile state with Stripe status:', {
+          has_account: !!updated.stripe_account_id,
+          charges_enabled: updated.stripe_charges_enabled,
+          details_submitted: updated.stripe_details_submitted,
+          is_connected_enough: !!(updated.stripe_account_id && (updated.stripe_details_submitted || updated.stripe_charges_enabled)),
+        });
+        return updated;
+      });
 
       // Also refresh from database to get updated values (only if columns exist)
       try {
-        const { data: updatedProfile } = await supabase
+        const { data: updatedProfile, error: refreshError } = await supabase
           .from('profiles')
           .select('stripe_account_id, stripe_charges_enabled, stripe_payouts_enabled, stripe_details_submitted, stripe_onboarded_at')
           .eq('user_id', user.id)
-          .single();
+          .maybeSingle(); // Use maybeSingle to handle missing columns gracefully
+        
+        if (refreshError) {
+          // If columns don't exist, that's okay - we already have the data from the API
+          if (refreshError.code === '42703' || refreshError.message?.includes('column')) {
+            console.log('⚠️ Stripe status columns may not exist yet, using API response data');
+          } else {
+            console.error('❌ Error refreshing profile:', refreshError);
+          }
+        }
 
         if (updatedProfile) {
-          setProfile((prev: any) => ({
-            ...prev,
-            ...updatedProfile,
-          }));
+          setProfile((prev: any) => {
+            const merged = {
+              ...prev,
+              ...updatedProfile,
+            };
+            console.log('📝 Merged database profile with Stripe status:', {
+              has_account: !!merged.stripe_account_id,
+              charges_enabled: merged.stripe_charges_enabled,
+              details_submitted: merged.stripe_details_submitted,
+              is_connected_enough: !!(merged.stripe_account_id && (merged.stripe_details_submitted || merged.stripe_charges_enabled)),
+            });
+            return merged;
+          });
         }
       } catch (err) {
         // Columns may not exist yet - that's okay, we'll just use the data from the API response
@@ -401,9 +487,21 @@ export default function SellerDashboard() {
       console.log('✅ Seller profile OK, loading dashboard');
       setProfile(profile);
       
-      // Check Stripe status if account_id exists
-      if (profile.stripe_account_id) {
+      // Always check Stripe status if account_id exists (or if stripe_success is in URL)
+      const stripeSuccess = searchParams?.get('stripe_success');
+      const stripeRefresh = searchParams?.get('stripe_refresh');
+      if (profile.stripe_account_id || stripeSuccess || stripeRefresh) {
+        console.log('🔄 Checking Stripe status on profile load...');
         await checkStripeStatus();
+        // Re-fetch profile after status check to get updated values
+        const { data: refreshedProfile } = await supabase
+          .from('profiles')
+          .select('stripe_account_id, stripe_charges_enabled, stripe_payouts_enabled, stripe_details_submitted, stripe_onboarded_at, display_name, location_city, avatar_url, is_seller, created_at')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        if (refreshedProfile) {
+          setProfile(refreshedProfile);
+        }
       }
       
       fetchSellerData();
@@ -419,86 +517,78 @@ export default function SellerDashboard() {
 
     try {
       // Fetch seller's listings
-      const { data: listingsData, error } = await supabase
+      const { data: listingsData, error: listingsError } = await supabase
         .from('listings')
         .select('id, title, price, status, original_image_url, clean_image_url, created_at')
         .eq('seller_id', user.id)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (listingsError) throw listingsError;
 
       setListings(listingsData || []);
       
-      // Fetch seller's orders
+      // Fetch seller's orders - MINIMAL query
       const { data: ordersData, error: ordersError } = await supabase
-        .from('orders')
-        .select(`
-          id,
-          listing_id,
-          buyer_id,
-          amount,
-          status,
-          shipping_name,
-          shipping_address,
-          shipping_city,
-          shipping_state,
-          shipping_zip,
-          shipping_phone,
-          tracking_number,
-          created_at,
-          updated_at
-        `)
-        .eq('seller_id', user.id)
-        .order('created_at', { ascending: false });
+        .from("orders")
+        .select("id, created_at, seller_id, status, shipped_at, amount, listing_id")
+        .eq("seller_id", user.id)
+        .order("created_at", { ascending: false });
 
-      let finalOrdersData: any[] = [];
+      if (ordersError) throw ordersError;
 
-      if (ordersError) {
-        console.error('Error fetching orders:', ordersError);
-        setOrders([]);
-        finalOrdersData = []; // Ensure it's initialized even on error
-      } else if (ordersData) {
-        // Fetch listings separately and merge
-        const listingIds = ordersData.map((o: any) => o.listing_id).filter(Boolean) || [];
-        let listingsMap: Record<string, any> = {};
-        
-        if (listingIds.length > 0) {
-          const { data: orderListingsData } = await supabase
-            .from('listings')
-            .select('id, title, clean_image_url, original_image_url')
-            .in('id', listingIds);
-          
-          if (orderListingsData) {
-            listingsMap = orderListingsData.reduce((acc: Record<string, any>, listing: any) => {
-              acc[listing.id] = listing;
-              return acc;
-            }, {});
-          }
-        }
-        
-        // Merge listings into orders
-        finalOrdersData = ordersData.map((order: any) => ({
-          ...order,
-          listings: listingsMap[order.listing_id] || null
-        }));
-        
-        setOrders(finalOrdersData);
-      }
+      // Filter for paid orders only
+      const paidOrders = (ordersData ?? []).filter(o => String(o.status).toLowerCase() === "paid");
+      const totalEarnings = paidOrders.reduce((sum, o) => sum + (typeof o.amount === "number" ? o.amount : parseFloat(String(o.amount))), 0);
+      
+      // Fetch listings for these orders
+      const listingIds = paidOrders.map(o => o.listing_id).filter(Boolean);
+      const { data: soldListings } = await supabase
+        .from("listings")
+        .select("id, title, price, clean_image_url, staged_image_url")
+        .in("id", listingIds as any);
+      
+      const soldMap = new Map((soldListings ?? []).map(l => [l.id, l]));
+      
+      const soldCards = paidOrders.map(o => {
+        const l = soldMap.get(o.listing_id);
+        return {
+          orderId: o.id,
+          status: o.shipped_at ? "shipped" : o.status,
+          amount: o.amount,
+          shipped_at: o.shipped_at,
+          created_at: o.created_at,
+          listing: l ? {
+            id: l.id,
+            title: l.title,
+            price: l.price,
+            image: l.clean_image_url ?? l.staged_image_url ?? null,
+          } : null
+        };
+      });
+      
+      setSoldOrders(soldCards);
       
       // Calculate stats
       const active = listingsData?.filter(l => l.status === 'active').length || 0;
-      const sold = listingsData?.filter(l => l.status === 'sold').length || 0;
-      const paidOrders = finalOrdersData.filter((o: any) => o.status === 'paid' || o.status === 'shipped').length || 0;
       
-      setStats({
+      setStats(prev => ({
+        ...prev,
         totalListings: listingsData?.length || 0,
         activeListings: active,
         totalViews: 0, // Would need a views table
-        totalSales: sold + paidOrders,
-      });
+        soldCount: paidOrders.length,
+        totalEarnings,
+      }));
 
-    } catch (err) {
-      console.error('Error fetching seller data:', err);
+    } catch (err: any) {
+      console.error('Error fetching seller data:', {
+        message: err?.message,
+        details: err?.details,
+        hint: err?.hint,
+        code: err?.code,
+        status: err?.status,
+        error: err
+      });
     } finally {
       setLoading(false);
     }
@@ -548,7 +638,7 @@ export default function SellerDashboard() {
         }
       } else {
         // For other status changes, use direct update
-        const { error } = await supabase
+        const { error: updateStatusError } = await supabase
           .from('listings')
           .update({ 
             status: newStatus,
@@ -557,7 +647,7 @@ export default function SellerDashboard() {
           .eq('id', listingId)
           .eq('seller_id', user.id);
 
-        if (error) throw error;
+        if (updateStatusError) throw updateStatusError;
       }
 
       // Refresh listings
@@ -584,13 +674,13 @@ export default function SellerDashboard() {
     setShowMenuId(null);
 
     try {
-      const { error } = await supabase
+      const { error: deleteError } = await supabase
         .from('listings')
         .delete()
         .eq('id', listingId)
         .eq('seller_id', user.id);
 
-      if (error) throw error;
+      if (deleteError) throw deleteError;
 
       // Refresh listings
       await fetchSellerData();
@@ -625,6 +715,17 @@ export default function SellerDashboard() {
   
   // Show "Payments Connected ✓" if fully connected
   const isStripeFullyConnected = profile?.stripe_charges_enabled === true || profile?.stripe_details_submitted === true;
+  
+  // Debug logging for Stripe status
+  console.log('🔍 Stripe status check:', {
+    hasStripeAccount,
+    stripe_account_id: profile?.stripe_account_id,
+    stripe_charges_enabled: profile?.stripe_charges_enabled,
+    stripe_details_submitted: profile?.stripe_details_submitted,
+    isStripeConnectedEnough,
+    isStripeFullyConnected,
+    shouldShowSetupBanner: !isStripeConnectedEnough,
+  });
 
   return (
     <StreamChatProvider>
@@ -755,11 +856,13 @@ export default function SellerDashboard() {
             <div className="text-[11px] font-medium text-gray-600">Drafts</div>
           </div>
           <div className="bg-white rounded-lg p-4 border border-gray-200">
-            <div className="text-2xl font-bold mb-1" style={{ color: "#191970" }}>{stats.totalSales}</div>
+            <div className="text-2xl font-bold mb-1" style={{ color: "#191970" }}>{stats.soldCount}</div>
             <div className="text-[11px] font-medium text-gray-600">Sold Items</div>
           </div>
           <div className="bg-white rounded-lg p-4 border border-gray-200">
-            <div className="text-2xl font-bold mb-1" style={{ color: "#EFBF05" }}>$0.00</div>
+            <div className="text-2xl font-bold mb-1" style={{ color: "#EFBF05" }}>
+              ${stats.totalEarnings.toFixed(2)}
+            </div>
             <div className="text-[11px] font-medium text-gray-600">Total Earnings</div>
           </div>
         </div>
@@ -775,7 +878,7 @@ export default function SellerDashboard() {
             </h2>
             <div className="flex items-center gap-2">
               <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
-                {orders.filter((o: any) => o.status === 'paid' || o.status === 'shipped').length}
+                {soldOrders.length}
               </span>
               {showOrders ? (
                 <ChevronUp className="h-5 w-5 text-gray-400" />
@@ -786,14 +889,14 @@ export default function SellerDashboard() {
           </button>
           {showOrders && (
             <div className="bg-white rounded-lg border border-gray-200 max-h-[500px] overflow-y-auto mb-4" style={{ scrollbarWidth: 'thin' }}>
-              {orders.length === 0 ? (
+              {soldOrders.length === 0 ? (
                 <div className="text-center py-8">
                   <p className="text-sm text-gray-600">No orders yet</p>
                 </div>
               ) : (
-                <div className="p-2 space-y-3">
-                  {orders.map((order: any) => (
-                    <OrderCard key={order.id} order={order} onUpdate={fetchSellerData} />
+                <div className="p-2">
+                  {soldOrders.map((order: any) => (
+                    <OrderCard key={order.orderId} order={order} onUpdate={fetchSellerData} />
                   ))}
                 </div>
               )}

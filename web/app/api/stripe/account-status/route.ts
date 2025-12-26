@@ -8,6 +8,15 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 
 export async function POST(request: NextRequest) {
   try {
+    // Validate environment variables
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      console.error("❌ Missing Supabase environment variables");
+      return NextResponse.json(
+        { error: "Server configuration error" },
+        { status: 500 }
+      );
+    }
+
     // Get the session from Authorization header
     const authHeader = request.headers.get("authorization");
     if (!authHeader) {
@@ -20,14 +29,22 @@ export async function POST(request: NextRequest) {
     // Get user from Authorization header token
     const token = authHeader.replace("Bearer ", "");
     
+    if (!token) {
+      return NextResponse.json(
+        { error: "Unauthorized - Invalid token" },
+        { status: 401 }
+      );
+    }
+    
     // Create an authenticated Supabase client with the user's token
     const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
       {
         global: {
           headers: {
             Authorization: `Bearer ${token}`,
+            apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY, // Explicitly set apikey header
           },
         },
       }

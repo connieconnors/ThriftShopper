@@ -31,9 +31,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Fetch the order to verify it exists and get seller_id, buyer_id, listing_id, status
+    // Note: tracking_number column doesn't exist yet, so we don't select it
     const { data: order, error: orderError } = await supabase
       .from("orders")
-      .select("id, seller_id, buyer_id, listing_id, amount, tracking_number, status")
+      .select("id, seller_id, buyer_id, listing_id, amount, status")
       .eq("id", orderId)
       .single();
 
@@ -66,10 +67,11 @@ export async function POST(request: NextRequest) {
       updated_at: new Date().toISOString(),
     };
 
-    // Add tracking number if provided and status is shipped
-    if (status === 'shipped' && trackingNumber) {
-      updateData.tracking_number = trackingNumber.trim();
-    }
+    // Note: tracking_number column doesn't exist in orders table yet
+    // TODO: Add tracking_number column to orders table if needed
+    // if (status === 'shipped' && trackingNumber) {
+    //   updateData.tracking_number = trackingNumber.trim();
+    // }
 
     const { data: updatedOrder, error: updateError } = await supabase
       .from("orders")
@@ -114,16 +116,17 @@ export async function POST(request: NextRequest) {
           .maybeSingle();
 
         if (buyerProfile?.email) {
+          // Note: tracking_number column doesn't exist yet
           // Generate tracking URL (basic - can be enhanced with carrier detection)
-          const trackingUrl = updatedOrder.tracking_number 
-            ? `https://tools.usps.com/go/TrackConfirmAction?qtc_tLabels1=${updatedOrder.tracking_number}`
+          const trackingUrl = trackingNumber 
+            ? `https://tools.usps.com/go/TrackConfirmAction?qtc_tLabels1=${trackingNumber}`
             : undefined;
 
           sendItemShippedEmail(buyerProfile.email, {
             buyerName: buyerProfile.display_name || 'there',
             orderId: order.id,
             itemName: listing?.title || 'your item',
-            trackingNumber: updatedOrder.tracking_number || '',
+            trackingNumber: trackingNumber || '',
             carrierName: undefined, // Can be enhanced to detect carrier from tracking number
             trackingUrl,
             estimatedDelivery: undefined, // Can be calculated or provided by seller
