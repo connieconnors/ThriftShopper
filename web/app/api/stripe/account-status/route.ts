@@ -117,24 +117,6 @@ export async function POST(request: NextRequest) {
           stripe_details_submitted: account.details_submitted,
         };
 
-        // Set onboarded_at if details are submitted and it wasn't set before
-        if (account.details_submitted) {
-          try {
-            const { data: currentProfile } = await supabase
-              .from("profiles")
-              .select("stripe_onboarded_at")
-              .eq("user_id", user.id)
-              .single();
-            
-            if (!currentProfile?.stripe_onboarded_at) {
-              updateData.stripe_onboarded_at = new Date().toISOString();
-            }
-          } catch (err) {
-            // Column may not exist yet - that's okay
-            console.log("⚠️ stripe_onboarded_at column may not exist yet");
-          }
-        }
-
         const updateResult = await supabase
           .from("profiles")
           .update(updateData)
