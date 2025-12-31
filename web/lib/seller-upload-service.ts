@@ -1258,7 +1258,7 @@ Return the following JSON structure:
     "reason": "1 short sentence explaining why"
   },
   "listing_copy": {
-    "title": "softly worded title; hedge if uncertain",
+    "title": "softly worded title; hedge if uncertain. IMPORTANT: If you detect a brand name in text_cues or visual evidence (e.g., 'Lily Pulitzer', 'Coach', visible logos/markings), ALWAYS include the brand name prominently in the title (at the start or early). Brand names are crucial for buyer discovery and should not be omitted.",
     "description": "1-2 sentences placing object in buyer's context. Answer at least one: Where might this live? (shelf, desk, display, collection) Who would be drawn to it? (collector, nostalgia buyer, gift) What feeling does it evoke? Do NOT mention condition, wear, age, patina, or 'wear consistent with age' unless seller explicitly provides condition notes. Do NOT infer condition from images. Do NOT restate obvious visual facts. Buyer-facing context only.",
     "ask_for_confirmation": "ONE short sentence asking for a specific photo or detail IF needed"
   },
