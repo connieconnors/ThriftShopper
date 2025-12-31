@@ -639,21 +639,59 @@ export async function uploadAndCreateListing(
     console.log('Background removal status:', processedImageUrlResult.status);
 
     // Extract results from Promise.allSettled responses (order matches parallelTasks array)
-    const openAIEnrichment = openAIResult.status === 'fulfilled' ? openAIResult.value : null;
-    const googleVisionData = googleResult.status === 'fulfilled' ? googleResult.value : null;
+    // Type guard: ensure openAIEnrichment is the expected object type (not string or other types)
+    type OpenAIEnrichmentType = {
+      title: string;
+      description: string;
+      category: string;
+      attributes: string[];
+      estimatedPrice: number | null;
+      styles?: string[];
+      moods?: string[];
+      intents?: string[];
+      era?: string;
+    };
+    
+    const openAIEnrichment: OpenAIEnrichmentType | null = 
+      openAIResult.status === 'fulfilled' && 
+      openAIResult.value && 
+      typeof openAIResult.value === 'object' &&
+      'title' in openAIResult.value
+        ? (openAIResult.value as OpenAIEnrichmentType)
+        : null;
+        
+    type GoogleVisionDataType = {
+      title: string;
+      category: string;
+      attributes: string[];
+      brandInfo?: string;
+    };
+    
+    const googleVisionData: GoogleVisionDataType | null = googleResult.status === 'fulfilled' && 
+      googleResult.value &&
+      typeof googleResult.value === 'object' &&
+      'title' in googleResult.value
+        ? (googleResult.value as GoogleVisionDataType)
+        : null;
     
     // Log what we got from OpenAI for debugging
-    console.log('🔍 OpenAI enrichment result:', {
-      hasData: !!openAIEnrichment,
-      hasTitle: !!openAIEnrichment?.title,
-      hasDescription: !!openAIEnrichment?.description,
-      hasCategory: !!openAIEnrichment?.category,
-      hasEstimatedPrice: !!openAIEnrichment?.estimatedPrice,
-      estimatedPrice: openAIEnrichment?.estimatedPrice,
-      category: openAIEnrichment?.category,
-      title: openAIEnrichment?.title || 'MISSING',
-    });
-    const processedImageUrl = processedImageUrlResult.status === 'fulfilled' && processedImageUrlResult.value
+    if (openAIEnrichment) {
+      console.log('🔍 OpenAI enrichment result:', {
+        hasData: true,
+        hasTitle: !!openAIEnrichment.title,
+        hasDescription: !!openAIEnrichment.description,
+        hasCategory: !!openAIEnrichment.category,
+        hasEstimatedPrice: !!openAIEnrichment.estimatedPrice,
+        estimatedPrice: openAIEnrichment.estimatedPrice,
+        category: openAIEnrichment.category,
+        title: openAIEnrichment.title || 'MISSING',
+      });
+    } else {
+      console.log('🔍 OpenAI enrichment result: null');
+    }
+    const processedImageUrl: string = (processedImageUrlResult.status === 'fulfilled' && 
+      processedImageUrlResult.value && 
+      typeof processedImageUrlResult.value === 'string')
       ? processedImageUrlResult.value
       : originalUrl;
     const backgroundRemoved = processedImageUrlResult.status === 'fulfilled' && processedImageUrlResult.value !== null;
@@ -876,16 +914,34 @@ Return ONLY valid JSON:
     const [pricingResult, categorizationResult, embeddingResult] = await Promise.allSettled(postProcessingTasks);
     console.timeEnd('Post-Processing (Pricing + Categorization + Embedding)');
     
-    // Extract results
-    let pricingIntelligence = null;
-    if (pricingResult.status === 'fulfilled' && pricingResult.value) {
-      pricingIntelligence = pricingResult.value; // Already has source attached
-      console.log(`💰 Pricing from ${pricingResult.value.source}:`, pricingIntelligence);
+    // Extract results with proper typing
+    type PricingIntelligenceType = {
+      minPrice: number;
+      maxPrice: number;
+      avgPrice: number;
+      recentSales: number;
+      source: 'firstdibs' | 'etsy' | 'ebay' | 'apify' | 'ai_estimate';
+    };
+    
+    let pricingIntelligence: PricingIntelligenceType | null = null;
+    if (pricingResult.status === 'fulfilled' && pricingResult.value && 
+        typeof pricingResult.value === 'object' && 'source' in pricingResult.value) {
+      pricingIntelligence = pricingResult.value as PricingIntelligenceType;
+      console.log(`💰 Pricing from ${pricingIntelligence.source}:`, pricingIntelligence);
     }
     
-    const categorized = categorizationResult.status === 'fulfilled' 
-      ? categorizationResult.value 
-      : { styles: [], moods: [], intents: [] };
+    type CategorizedType = {
+      styles: string[];
+      moods: string[];
+      intents: string[];
+    };
+    
+    const categorized: CategorizedType = categorizationResult.status === 'fulfilled' && 
+      categorizationResult.value &&
+      typeof categorizationResult.value === 'object' &&
+      'styles' in categorizationResult.value
+        ? (categorizationResult.value as CategorizedType)
+        : { styles: [], moods: [], intents: [] };
     
     const embedding = embeddingResult.status === 'fulfilled' 
       ? embeddingResult.value 
@@ -902,10 +958,10 @@ Return ONLY valid JSON:
       finalPrice = userInput.price;
       priceBasis = 'ebay'; // User input treated as explicit
       priceConfidence = 1.0;
-    } else if (pricingIntelligence) {
-      // External pricing source (eBay) found - use it (no stabilization)
+    } else if (pricingIntelligence && pricingIntelligence.avgPrice) {
+      // External pricing source (1st Dibs/Etsy/eBay/Apify) found - use it (no stabilization)
       finalPrice = pricingIntelligence.avgPrice;
-      priceBasis = 'ebay';
+      priceBasis = 'ebay'; // Price basis tracks external source, but we use 'ebay' for database compatibility
       priceConfidence = pricingIntelligence.recentSales > 0 ? 0.9 : 0.7; // Higher confidence with sales data
     } else if (openAIEnrichment?.estimatedPrice) {
       // AI estimate available - check if stabilization should apply
@@ -924,7 +980,7 @@ Return ONLY valid JSON:
         !pricingIntelligence; // No eBay pricing found
       // Note: hasNewImage check is skipped since URL comparison is unreliable with new filenames
 
-      if (shouldStabilize && existingListing.price) {
+      if (shouldStabilize && existingListing && existingListing.price) {
         // Apply price stabilization: clamp to ±20% of existing price
         const existingPrice = existingListing.price;
         const minPrice = existingPrice * 0.8;
@@ -1073,7 +1129,7 @@ Return ONLY valid JSON:
         detectedAttributes: visionData.attributes,
         pricingIntelligence: (() => {
           // Use existing pricingIntelligence if available
-          if (pricingIntelligence) {
+          if (pricingIntelligence && 'minPrice' in pricingIntelligence) {
             console.log('💰 Using existing pricingIntelligence:', pricingIntelligence);
             return {
               minPrice: pricingIntelligence.minPrice,
