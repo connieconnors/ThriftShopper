@@ -61,8 +61,20 @@ export async function POST(request: NextRequest) {
     );
 
     if (!result.success) {
+      console.error('❌ Upload failed:', result.error);
       return NextResponse.json({ error: result.error }, { status: 500 });
     }
+
+    // Log response structure for debugging
+    console.log('✅ Upload success - Response structure:', {
+      hasListingId: !!result.listingId,
+      hasData: !!result.data,
+      hasTitle: !!(result.data?.suggestedTitle),
+      hasDescription: !!(result.data?.suggestedDescription),
+      hasCategory: !!(result.data?.detectedCategory),
+      title: result.data?.suggestedTitle || 'MISSING',
+      description: result.data?.suggestedDescription ? 'present' : 'MISSING',
+    });
 
     return NextResponse.json(result);
   } catch (error) {
