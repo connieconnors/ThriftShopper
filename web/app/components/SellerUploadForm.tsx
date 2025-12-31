@@ -4,12 +4,13 @@
 'use client';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { Mic, Loader2, X, LogIn } from 'lucide-react';
+import { Mic, Loader2, X, LogIn, ArrowLeft } from 'lucide-react';
 import { TSLogo } from '@/components/TSLogo';
 import { useWhisperTranscription } from '@/hooks/useWhisperTranscription';
 import { useAuth } from '@/app/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
+import Link from 'next/link';
 
 interface UploadResult {
   processedImageUrl: string;
@@ -129,6 +130,7 @@ export default function SellerUploadForm() {
   const [processingStep, setProcessingStep] = useState<ProcessingStep>('idle');
   const [result, setResult] = useState<UploadResult | null>(null);
   const [error, setError] = useState<string>('');
+  const uploadInProgressRef = useRef(false); // Prevent duplicate uploads
   
   // Listing tracking
   const [listingId, setListingId] = useState<string | null>(null);
@@ -398,7 +400,7 @@ export default function SellerUploadForm() {
     'complete': '✅ Ready to review!',
   };
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -418,11 +420,40 @@ export default function SellerUploadForm() {
     setPreviewUrl(URL.createObjectURL(file));
     setError('');
     setResult(null);
+    
+    // Clear form fields when selecting a new image to ensure fresh AI analysis
+    // This prevents old values from interfering with new AI suggestions
+    if (!listingId) {
+      // Only clear if not in edit mode (no existing listing)
+      setTitle('');
+      setDescription('');
+      setCategory('');
+      setPrice('');
+    }
+
+    // OPTIMIZATION: Start upload and AI analysis immediately when file is selected
+    // This makes the AI feel "instant" because it's working while the user is looking at the preview
+    if (!listingId && !uploadInProgressRef.current) {
+      // Only auto-start if not in edit mode and no upload is in progress
+      // Small delay to ensure state is updated
+      setTimeout(() => {
+        if (file) { // Double-check file still exists
+          handleUpload();
+        }
+      }, 100);
+    }
   };
 
   const handleUpload = async () => {
     if (!selectedFile) return;
+    
+    // Prevent duplicate uploads
+    if (uploadInProgressRef.current) {
+      console.log('⚠️ Upload already in progress, skipping duplicate call');
+      return;
+    }
 
+    uploadInProgressRef.current = true;
     setProcessingStep('uploading');
     setError('');
 
@@ -439,10 +470,9 @@ export default function SellerUploadForm() {
       const formData = new FormData();
       formData.append('image', selectedFile);
       
-      // Add any user-provided inputs
-      if (title) formData.append('title', title);
-      if (description) formData.append('description', description);
-      if (category) formData.append('category', category);
+      // Don't send title/description/category on upload - let AI always generate fresh suggestions
+      // This ensures AI analysis runs every time, even on subsequent uploads
+      // User can edit the AI-generated fields after they're populated
 
       // Simulate processing steps for better UX
       setTimeout(() => setProcessingStep('analyzing'), 500);
@@ -459,12 +489,26 @@ export default function SellerUploadForm() {
 
       const data = await response.json();
 
+      // Debug logging
+      console.log('📥 Upload response received:', {
+        ok: response.ok,
+        success: data.success,
+        hasListingId: !!data.listingId,
+        hasData: !!data.data,
+        dataKeys: data.data ? Object.keys(data.data) : [],
+        title: data.data?.suggestedTitle || 'MISSING',
+        description: data.data?.suggestedDescription ? 'present' : 'MISSING',
+      });
+
       if (!response.ok) {
         throw new Error(data.error || 'Upload failed');
       }
 
+      if (!data.success) {
+        throw new Error(data.error || 'Upload failed');
+      }
+
       setProcessingStep('complete');
-      setResult(data.data);
       
       // Store listing ID and original image for toggle
       if (data.listingId) {
@@ -473,19 +517,57 @@ export default function SellerUploadForm() {
       // Store original image URL (the preview URL before processing)
       setOriginalImageUrl(previewUrl);
       
-      // Pre-fill the form with AI suggestions
-      setTitle(data.data?.suggestedTitle || '');
-      setDescription(data.data?.suggestedDescription || '');
-      setCategory(data.data?.detectedCategory || '');
-      
-      // Suggest a price based on eBay data
-      if (data.data?.pricingIntelligence) {
-        setPrice(data.data.pricingIntelligence.avgPrice.toString());
+      // Set result for display
+      if (data.data) {
+        setResult(data.data);
+        
+        // Pre-fill the form with AI suggestions - only if data exists and is non-empty
+        const title = data.data.suggestedTitle;
+        const description = data.data.suggestedDescription;
+        const category = data.data.detectedCategory;
+        
+        if (title && title.trim() && title !== 'New Listing') {
+          setTitle(title);
+          console.log('✅ Set title:', title);
+        } else {
+          console.warn('⚠️ No valid title in response:', title);
+        }
+        
+        if (description && description.trim()) {
+          setDescription(description);
+          console.log('✅ Set description');
+        } else {
+          console.warn('⚠️ No valid description in response');
+        }
+        
+        if (category && category.trim()) {
+          setCategory(category);
+          console.log('✅ Set category:', category);
+        } else {
+          console.warn('⚠️ No valid category in response');
+        }
+        
+        // Suggest a price based on eBay data or AI estimate
+        if (data.data.pricingIntelligence?.avgPrice) {
+          setPrice(data.data.pricingIntelligence.avgPrice.toString());
+          console.log('✅ Set price from pricingIntelligence:', data.data.pricingIntelligence.avgPrice);
+        } else if (data.data.suggestedPrice) {
+          setPrice(data.data.suggestedPrice.toString());
+          console.log('✅ Set price from suggestedPrice:', data.data.suggestedPrice);
+        } else {
+          console.warn('⚠️ No price in response');
+        }
+      } else {
+        // No data returned - this shouldn't happen but handle gracefully
+        console.error('❌ No data in upload response:', data);
+        setError('Upload completed but no AI analysis data was returned. Please try again.');
       }
 
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Upload failed');
       setProcessingStep('idle');
+    } finally {
+      uploadInProgressRef.current = false;
     }
   };
 
@@ -546,12 +628,8 @@ export default function SellerUploadForm() {
       return;
     }
 
-    // Check Stripe status before publishing
-    if (isStripeReady === false) {
-      setError('Connect payouts with Stripe to publish listings.');
-      return;
-    }
-
+    // Stripe is now optional for publishing (beta mode)
+    // Sellers can publish without Stripe, but buyers can't checkout without it
     setIsPublishing(true);
     setError('');
 
@@ -615,11 +693,7 @@ export default function SellerUploadForm() {
       const publishData = await publishResponse.json();
 
       if (!publishResponse.ok) {
-        if (publishData.code === 'STRIPE_NOT_COMPLETE') {
-          setError('Connect payouts with Stripe to publish listings.');
-        } else {
-          setError(publishData.error || 'Failed to publish listing');
-        }
+        setError(publishData.error || 'Failed to publish listing');
         return;
       }
 
@@ -1287,14 +1361,14 @@ export default function SellerUploadForm() {
                 {/* Publish Button */}
                 <button
                   onClick={handlePublish}
-                  disabled={isPublishing || isSaving || !listingId || isStripeReady === false}
+                  disabled={isPublishing || isSaving || !listingId}
                   className="flex-1 py-3 rounded-lg font-semibold transition flex items-center justify-center gap-2 text-white"
                   style={{ 
-                    backgroundColor: (isPublishing || isStripeReady === false) ? '#9ca3af' : '#191970',
-                    cursor: (isPublishing || isStripeReady === false) ? 'not-allowed' : 'pointer',
+                    backgroundColor: (isPublishing) ? '#9ca3af' : '#191970',
+                    cursor: (isPublishing) ? 'not-allowed' : 'pointer',
                     fontFamily: 'Merriweather, serif',
                   }}
-                  title={isStripeReady === false ? 'Connect payouts with Stripe to publish listings.' : ''}
+                  title={isStripeReady === false ? 'Note: Connect Stripe to receive payments when buyers purchase.' : ''}
                 >
                   {isPublishing ? (
                     <>
@@ -1348,6 +1422,16 @@ export default function SellerUploadForm() {
             >
               Start Over
             </button>
+
+            {/* Return to Dashboard Link */}
+            <Link
+              href="/seller"
+              className="flex items-center justify-center gap-2 px-4 py-3 text-gray-600 hover:text-[#191970] transition-colors font-medium"
+              style={{ fontFamily: 'Merriweather, serif' }}
+            >
+              <ArrowLeft size={18} />
+              Return to Seller Dashboard
+            </Link>
           </div>
         </div>
       )}

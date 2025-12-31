@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check Stripe status - Beta gating: must have stripe_account_id AND (details_submitted OR charges_enabled)
+    // Get profile for denormalizing seller data (Stripe is optional for publishing in beta)
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
       .select("stripe_account_id, stripe_details_submitted, stripe_charges_enabled, display_name")
@@ -82,61 +82,34 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const hasStripeAccount = !!profile.stripe_account_id;
-    const isStripeConnectedEnough = hasStripeAccount && 
-      (profile.stripe_details_submitted === true || profile.stripe_charges_enabled === true);
-
-    if (!isStripeConnectedEnough) {
-      // If we have an account ID but status might be stale, refresh from Stripe
-      if (hasStripeAccount) {
-        try {
-          const account = await stripe.accounts.retrieve(profile.stripe_account_id);
-          const isActuallyConnected = account.details_submitted === true || account.charges_enabled === true;
-          
-          if (!isActuallyConnected) {
-            return NextResponse.json(
-              { 
-                error: "Connect payouts with Stripe to publish listings.",
-                code: "STRIPE_NOT_COMPLETE"
-              },
-              { status: 403 }
-            );
-          }
-          
-          // Update profile with fresh status
-          await supabase
-            .from("profiles")
-            .update({
-              stripe_details_submitted: account.details_submitted,
-              stripe_charges_enabled: account.charges_enabled,
-              stripe_payouts_enabled: account.payouts_enabled,
-            })
-            .eq("user_id", user.id);
-        } catch (stripeError) {
-          return NextResponse.json(
-            { 
-              error: "Connect payouts with Stripe to publish listings.",
-              code: "STRIPE_NOT_COMPLETE"
-            },
-            { status: 403 }
-          );
-        }
-      } else {
-        return NextResponse.json(
-          { 
-            error: "Connect payouts with Stripe to publish listings.",
-            code: "STRIPE_NOT_COMPLETE"
-          },
-          { status: 403 }
-        );
+    // OPTIONAL: If seller has Stripe, refresh status from Stripe API (but don't require it)
+    let stripeAccountId = profile.stripe_account_id;
+    if (stripeAccountId) {
+      try {
+        const account = await stripe.accounts.retrieve(stripeAccountId);
+        const isActuallyConnected = account.details_submitted === true || account.charges_enabled === true;
+        
+        // Update profile with fresh status (if we have Stripe account)
+        await supabase
+          .from("profiles")
+          .update({
+            stripe_details_submitted: account.details_submitted,
+            stripe_charges_enabled: account.charges_enabled,
+            stripe_payouts_enabled: account.payouts_enabled,
+          })
+          .eq("user_id", user.id);
+      } catch (stripeError) {
+        // If Stripe verification fails, that's ok - seller can still publish without Stripe
+        console.warn('⚠️ Stripe account verification failed (optional):', stripeError);
+        stripeAccountId = null; // Don't use stale/invalid account ID
       }
     }
 
-    // Update listing status to active AND denormalize seller Stripe data
+    // Update listing status to active AND denormalize seller data (Stripe is optional)
     const updateData: any = {
       status: 'active',
       updated_at: new Date().toISOString(),
-      seller_stripe_account_id: profile.stripe_account_id, // Denormalize for checkout
+      seller_stripe_account_id: stripeAccountId || null, // Denormalize for checkout (null if no Stripe)
       seller_name: profile.display_name || null, // Denormalize seller name for UI
     };
 

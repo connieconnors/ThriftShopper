@@ -660,12 +660,8 @@ export default function SellerPageClient() {
     
     if (!user) return;
 
-    // If publishing (setting to active), use the API route which enforces Stripe check
-    if (newStatus === 'active' && !isStripeConnectedEnough) {
-      alert('Connect payouts with Stripe to publish listings.');
-      return;
-    }
-    
+    // Stripe is now optional for publishing (beta mode)
+    // If publishing, use the API route
     setUpdatingId(listingId);
     setShowMenuId(null);
 
@@ -689,11 +685,7 @@ export default function SellerPageClient() {
         const publishData = await publishResponse.json();
 
         if (!publishResponse.ok) {
-          if (publishData.code === 'STRIPE_NOT_COMPLETE') {
-            alert('Connect payouts with Stripe to publish listings.');
-          } else {
-            alert(publishData.error || 'Failed to publish listing');
-          }
+          alert(publishData.error || 'Failed to publish listing');
           return;
         }
       } else {
@@ -833,9 +825,9 @@ export default function SellerPageClient() {
               <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-3">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
-                    <h2 className="text-xs font-semibold text-amber-900 leading-tight mb-1">Almost ready to sell</h2>
+                    <h2 className="text-xs font-semibold text-amber-900 leading-tight mb-1">Ready to sell</h2>
                     <p className="text-[10px] leading-tight" style={{ color: "#333333" }}>
-                      You can draft listings now. Connect payouts before you publish.
+                      Connect payouts to receive payments when buyers purchase your items.
                     </p>
                   </div>
                   <button
@@ -1231,20 +1223,11 @@ export default function SellerPageClient() {
                                     {listing.status !== 'active' && (
                                       <button
                                         onClick={(e) => {
-                                          if (!isStripeConnectedEnough) {
-                                            e.preventDefault();
-                                            e.stopPropagation();
-                                            alert('Connect payouts with Stripe to publish listings.');
-                                            return;
-                                          }
+                                          e.preventDefault();
+                                          e.stopPropagation();
                                           handleUpdateStatus(listing.id, 'active', e);
                                         }}
-                                        disabled={!isStripeConnectedEnough}
-                                        className={`w-full text-left px-4 py-2 text-sm transition-colors flex items-center gap-2 ${
-                                          !isStripeConnectedEnough 
-                                            ? 'text-gray-400 cursor-not-allowed' 
-                                            : 'hover:bg-gray-50 text-gray-700'
-                                        }`}
+                                        className="w-full text-left px-4 py-2 text-sm transition-colors flex items-center gap-2 hover:bg-gray-50 text-gray-700"
                                       >
                                         <CheckCircle className="h-4 w-4" />
                                         Mark as Active
