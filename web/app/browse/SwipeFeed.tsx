@@ -242,7 +242,7 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
           setIsTransitioning(true);
           setShowProductInfo(false); // Hide immediately on swipe
           setCurrentIndex(prev => prev + 1);
-          setTimeout(() => setIsTransitioning(false), 400);
+          setTimeout(() => setIsTransitioning(false), 250);
         }
       }
       if (e.key === "ArrowUp" || e.key === "k") {
@@ -250,7 +250,7 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
           setIsTransitioning(true);
           setShowProductInfo(false); // Hide immediately on swipe
           setCurrentIndex(prev => prev - 1);
-          setTimeout(() => setIsTransitioning(false), 400);
+          setTimeout(() => setIsTransitioning(false), 250);
         }
       }
     };
@@ -285,8 +285,8 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
   const handleTouchMove = (e: TouchEvent) => {
     const delta = touchStartY.current - e.touches[0].clientY;
     touchDeltaY.current = delta;
-    // Smooth drag with momentum
-    setDragOffset(-delta * 0.5);
+    // Direct drag tracking for more responsive feel (like TikTok)
+    setDragOffset(-delta * 0.8);
     // Prevent default scrolling for smoother experience
     if (Math.abs(delta) > 5) {
       e.preventDefault();
@@ -732,7 +732,7 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
         className="relative w-full h-full"
         style={{
           transform: `translateY(${dragOffset}px)`,
-          transition: dragOffset === 0 ? 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)' : 'none',
+          transition: dragOffset === 0 ? 'transform 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94)' : 'none',
         }}
       >
         {displayListings.map((listing, index) => {
@@ -752,7 +752,7 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
               className="absolute inset-0 w-full h-full"
               style={{
                 transform: `translateY(${offset * 100}%)`,
-                transition: 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease-out',
+                transition: 'transform 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.2s ease-out',
                 opacity: offset === 0 ? 1 : 0.7,
                 zIndex: offset === 0 ? 10 : 5,
                 animation: offset === 0 ? 'fadeIn 0.3s ease-out' : 'none',
@@ -919,7 +919,13 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
         
         {/* BOOKMARK/FAVORITES BUTTON */}
         <button
-          onClick={() => currentListing && toggleFavorite(currentListing.id)}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (currentListing) {
+              toggleFavorite(currentListing.id);
+            }
+          }}
           className="rounded-full hover:opacity-90 transition-all relative flex items-center justify-center"
           style={{ 
             width: '48px',
