@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Playfair_Display, Merriweather } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "./context/AuthContext";
@@ -32,7 +32,6 @@ export const metadata: Metadata = {
   title: "ThriftShopper — the magic of discovery™",
   description: "Discover unique vintage and thrift finds",
   manifest: "/manifest.json",
-  themeColor: "#191970",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
@@ -45,6 +44,10 @@ export const metadata: Metadata = {
     icon: "/icon-192.png",
     apple: "/icon-192.png",
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#191970",
 };
 
 export default function RootLayout({

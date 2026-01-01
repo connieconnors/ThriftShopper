@@ -16,7 +16,6 @@ import {
   UserPlus,
   LogIn,
   HelpCircle,
-  Info,
   Plus,
   Package,
 } from "lucide-react";
@@ -160,14 +159,6 @@ export default function TSAccountDrawer({ isOpen, onClose }: TSAccountDrawerProp
                 >
                   <Heart className="w-5 h-5 text-gray-600" />
                   <span>Saved Items</span>
-                </Link>
-                <Link
-                  href="/about"
-                  onClick={onClose}
-                  className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  <Info className="w-5 h-5 text-gray-600" />
-                  <span>About ThriftShopper</span>
                 </Link>
                 <Link
                   href="/help"

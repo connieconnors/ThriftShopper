@@ -227,6 +227,9 @@ export default function SellerUploadForm() {
   const [additionalPhoto1, setAdditionalPhoto1] = useState<string>(''); // For additional_image_url
   const [additionalPhoto2, setAdditionalPhoto2] = useState<string>(''); // For additional_image_two_url
   
+  // Track AI tags that have been removed by the user
+  const [removedAITags, setRemovedAITags] = useState<Set<string>>(new Set());
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const additionalPhotoRef1 = useRef<HTMLInputElement>(null);
@@ -606,6 +609,8 @@ export default function SellerUploadForm() {
       setOriginalUserTitle(null);
       setOriginalUserCategory(null);
       setOriginalUserPrice(null);
+      // Reset removed AI tags when selecting a new file
+      setRemovedAITags(new Set());
       
       // OPTION 2: Show form immediately with placeholder result
       // This allows user to start editing while AI processes in background
@@ -887,8 +892,8 @@ export default function SellerUploadForm() {
         .map(k => k.trim())
         .filter(k => k.length > 0);
 
-      // Get AI-detected attributes (already saved during upload)
-      const aiAttributes = result?.detectedAttributes || [];
+      // Get AI-detected attributes (already saved during upload), filtering out removed ones
+      const aiAttributes = (result?.detectedAttributes || []).filter(attr => !removedAITags.has(attr));
 
       // Save user-entered keywords as-is (array)
       const userKeywordsArray = sellerKeywords.length > 0 ? sellerKeywords : null;
@@ -1112,6 +1117,7 @@ export default function SellerUploadForm() {
     setOriginalImageUrl('');
     setShowProcessedImage(true);
     setError('');
+    setRemovedAITags(new Set()); // Reset removed AI tags when replacing photo
     // Keep all form fields (title, description, price, etc.)
     // Keep listingId if in edit mode
     // Keep additional photos
@@ -1144,6 +1150,7 @@ export default function SellerUploadForm() {
     setUserHasEditedDescription(false);
     setUserHasEditedCategory(false);
     setUserHasEditedPrice(false);
+    setRemovedAITags(new Set()); // Reset removed AI tags
   };
 
   return (
@@ -1642,17 +1649,27 @@ export default function SellerUploadForm() {
               </div>
 
               {/* 4. AI Detected Tags */}
-              {result.detectedAttributes?.length > 0 && (
+              {result.detectedAttributes?.filter(attr => !removedAITags.has(attr)).length > 0 && (
                 <div>
                   <label className="block font-semibold mb-2" style={{ fontFamily: 'Merriweather, serif' }}>AI Detected Tags</label>
                   <div className="flex flex-wrap gap-1.5">
-                    {result.detectedAttributes?.map((attr, i) => (
+                    {result.detectedAttributes?.filter(attr => !removedAITags.has(attr)).map((attr, i) => (
                       <span
                         key={i}
-                        className="px-2 py-0.5 rounded-full text-xs"
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs"
                         style={{ backgroundColor: 'rgba(207, 181, 59, 0.1)', color: '#4b5563', border: '1px solid rgba(207, 181, 59, 0.3)' }}
                       >
                         {attr}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setRemovedAITags(prev => new Set(prev).add(attr));
+                          }}
+                          className="ml-0.5 hover:bg-gray-300/50 rounded-full p-0.5 transition-colors"
+                          aria-label={`Remove ${attr}`}
+                        >
+                          <X size={10} className="text-gray-600" />
+                        </button>
                       </span>
                     ))}
                   </div>

@@ -294,13 +294,6 @@ export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
               <span>Privacy Policy</span>
               <ExternalLink className="h-3 w-3" />
             </a>
-            <a
-              href="/about"
-              className="flex items-center justify-between text-xs text-white/60 hover:text-white transition-colors"
-            >
-              <span>About ThriftShopper</span>
-              <ExternalLink className="h-3 w-3" />
-            </a>
           </div>
         </div>
       </div>
