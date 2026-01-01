@@ -6,6 +6,7 @@ export type Listing = {
   seller_id: string;
   title: string;
   description: string | null;
+  story_text: string | null;
   price: number;
   category: string | null;
   original_image_url: string | null;
@@ -20,6 +21,8 @@ export type Listing = {
   intents: string[];  // e.g. ["gifting", "selfish"]
   styles: string[];   // e.g. ["mid-century", "whimsical"]
   moods: string[];    // e.g. ["cozy", "surprise"]
+  keywords: string[] | null;  // User-entered keywords (raw, before categorization)
+  ai_suggested_keywords: string[] | null;  // AI-detected attributes
   // Denormalized seller data (set when listing is published)
   seller_stripe_account_id?: string | null;
   seller_name?: string | null;

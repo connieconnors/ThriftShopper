@@ -1097,6 +1097,9 @@ Return ONLY valid JSON:
       clean_image_url: processedImageUrl !== originalUrl ? processedImageUrl : null,
       staged_image_url: null,
       status: 'draft',
+      // Save AI-detected attributes as-is
+      ai_suggested_keywords: visionData.attributes && visionData.attributes.length > 0 ? visionData.attributes : null,
+      keywords: null, // User keywords will be added when seller edits/saves
       styles: categorized.styles || [],
       moods: categorized.moods || [],
       intents: categorized.intents || [],

@@ -30,14 +30,59 @@ interface UploadResult {
 
 type ProcessingStep = 'idle' | 'uploading' | 'analyzing' | 'generating' | 'pricing' | 'complete';
 
+// Inline AI suggestion bar component
+function AISuggestionBar({ 
+  pendingText, 
+  isPreviewing, 
+  onTogglePreview, 
+  onReplace 
+}: { 
+  pendingText: string | null; 
+  isPreviewing: boolean; 
+  onTogglePreview: () => void; 
+  onReplace: () => void;
+}) {
+  if (!pendingText) return null;
+  
+  return (
+    <div className="mt-2 p-2.5 bg-blue-50 border border-blue-200 rounded-lg text-sm">
+      <div className="flex items-center justify-between gap-3">
+        <span className="text-blue-800">AI draft ready</span>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={onTogglePreview}
+            className="text-blue-700 hover:text-blue-900 underline font-medium"
+          >
+            {isPreviewing ? 'Hide Preview' : 'Preview'}
+          </button>
+          <button
+            type="button"
+            onClick={onReplace}
+            className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 font-medium transition"
+          >
+            Replace
+          </button>
+        </div>
+      </div>
+      {isPreviewing && (
+        <div className="mt-2 p-2 bg-white border border-blue-200 rounded text-gray-700 text-xs">
+          {pendingText}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // Voice input button component
 interface VoiceInputButtonProps {
   onTranscript: (text: string) => void;
   disabled?: boolean;
   className?: string;
+  ariaLabel?: string;
 }
 
-function VoiceInputButton({ onTranscript, disabled, className = '' }: VoiceInputButtonProps) {
+function VoiceInputButton({ onTranscript, disabled, className = '', ariaLabel }: VoiceInputButtonProps) {
   const {
     isRecording,
     isProcessing,
@@ -68,6 +113,7 @@ function VoiceInputButton({ onTranscript, disabled, className = '' }: VoiceInput
         ${className}
       `}
       title={isRecording ? 'Stop recording' : 'Voice input'}
+      aria-label={ariaLabel || (isRecording ? 'Stop recording' : 'Voice input')}
     >
       {isProcessing ? (
         <Loader2 size={18} className="animate-spin" />
@@ -146,11 +192,36 @@ export default function SellerUploadForm() {
   // Editable fields
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [story, setStory] = useState('');
   const [price, setPrice] = useState('');
   const [category, setCategory] = useState('');
   const [condition, setCondition] = useState('');
   const [specifications, setSpecifications] = useState('');
   const [keywords, setKeywords] = useState(''); // For moods/styles
+  
+  // Track if user has manually edited fields (to avoid overwriting their input)
+  const [userHasEditedTitle, setUserHasEditedTitle] = useState(false);
+  const [userHasEditedDescription, setUserHasEditedDescription] = useState(false);
+  const [userHasEditedCategory, setUserHasEditedCategory] = useState(false);
+  const [userHasEditedPrice, setUserHasEditedPrice] = useState(false);
+  
+  // Store pending AI suggestions when user has edited (for Preview/Replace)
+  const [pendingAITitle, setPendingAITitle] = useState<string | null>(null);
+  const [pendingAIDescription, setPendingAIDescription] = useState<string | null>(null);
+  const [pendingAICategory, setPendingAICategory] = useState<string | null>(null);
+  const [pendingAIPrice, setPendingAIPrice] = useState<string | null>(null);
+  
+  // Track preview state for each field
+  const [previewingTitle, setPreviewingTitle] = useState(false);
+  const [previewingDescription, setPreviewingDescription] = useState(false);
+  const [previewingCategory, setPreviewingCategory] = useState(false);
+  const [previewingPrice, setPreviewingPrice] = useState(false);
+  
+  // Store user's original text before they replace with AI (for revert functionality)
+  const [originalUserDescription, setOriginalUserDescription] = useState<string | null>(null);
+  const [originalUserTitle, setOriginalUserTitle] = useState<string | null>(null);
+  const [originalUserCategory, setOriginalUserCategory] = useState<string | null>(null);
+  const [originalUserPrice, setOriginalUserPrice] = useState<string | null>(null);
   
   // Additional photos
   const [additionalPhoto1, setAdditionalPhoto1] = useState<string>(''); // For additional_image_url
@@ -160,6 +231,13 @@ export default function SellerUploadForm() {
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const additionalPhotoRef1 = useRef<HTMLInputElement>(null);
   const additionalPhotoRef2 = useRef<HTMLInputElement>(null);
+  const storyTextareaRef = useRef<HTMLTextAreaElement>(null);
+  
+  // Use refs to track field values at the moment AI result arrives (prevents race conditions)
+  const descriptionValueRef = useRef<string>('');
+  const titleValueRef = useRef<string>('');
+  const categoryValueRef = useRef<string>('');
+  const priceValueRef = useRef<string>('');
 
   // Edit mode - check for listing ID in URL
   const [isEditMode, setIsEditMode] = useState(false);
@@ -234,9 +312,27 @@ export default function SellerUploadForm() {
           return;
         }
         
+        // Log what we're loading from database
+        console.log('📥 [Edit Mode] Loaded from database:', {
+          listingId: listing.id,
+          title: listing.title,
+          description: listing.description,
+          story_text: listing.story_text,
+          price: listing.price,
+          category: listing.category,
+          condition: listing.condition,
+          specifications: listing.specifications,
+          keywords: listing.keywords,
+          ai_suggested_keywords: listing.ai_suggested_keywords,
+          moods: listing.moods,
+          styles: listing.styles,
+          intents: listing.intents,
+        });
+
         // Pre-populate all fields
         setTitle(listing.title || '');
         setDescription(listing.description || '');
+        setStory(listing.story_text || '');
         setPrice(listing.price ? listing.price.toString() : '');
         setCategory(listing.category || '');
         setCondition(listing.condition || '');
@@ -258,12 +354,43 @@ export default function SellerUploadForm() {
           return [];
         };
         
+        // Load keywords from database
+        const dbKeywords = parseArrayField(listing.keywords);
+        const dbAiSuggested = parseArrayField(listing.ai_suggested_keywords);
+        
+        // For display in the keywords field, combine user keywords with categorized ones
+        // (fallback to categorized if keywords column is empty for backwards compatibility)
         const moods = parseArrayField(listing.moods);
         const styles = parseArrayField(listing.styles);
         const intents = parseArrayField(listing.intents);
         
-        const allKeywords = [...moods, ...styles, ...intents];
-        setKeywords(allKeywords.join(', '));
+        // Prefer user-entered keywords if they exist, otherwise use categorized ones
+        let keywordsToDisplay: string;
+        let keywordsArrayForDisplay: string[];
+        if (dbKeywords.length > 0) {
+          keywordsToDisplay = dbKeywords.join(', ');
+          keywordsArrayForDisplay = dbKeywords;
+        } else {
+          // Fallback: combine categorized keywords for display
+          keywordsArrayForDisplay = [...moods, ...styles, ...intents];
+          keywordsToDisplay = keywordsArrayForDisplay.join(', ');
+        }
+        setKeywords(keywordsToDisplay);
+
+        // Log what we're displaying in the UI
+        console.log('🖥️ [Edit Mode] Displaying in UI:', {
+          title: listing.title || '',
+          description: listing.description || '',
+          story: listing.story_text || '',
+          price: listing.price ? listing.price.toString() : '',
+          category: listing.category || '',
+          condition: listing.condition || '',
+          specifications: listing.specifications || '',
+          keywordsDisplay: keywordsToDisplay,
+          parsedMoods: moods,
+          parsedStyles: styles,
+          parsedIntents: intents,
+        });
         
         // Set images
         if (listing.clean_image_url) {
@@ -279,6 +406,9 @@ export default function SellerUploadForm() {
         setAdditionalPhoto1(listing.additional_image_url || '');
         setAdditionalPhoto2(listing.additional_image_two_url || '');
         
+        // Use AI suggested keywords for detectedAttributes, or fallback to categorized keywords
+        const detectedAttributes = dbAiSuggested.length > 0 ? dbAiSuggested : keywordsArrayForDisplay;
+        
         // Create a result object to show the form in edit mode
         setResult({
           processedImageUrl: listing.clean_image_url || listing.original_image_url || '',
@@ -286,7 +416,7 @@ export default function SellerUploadForm() {
           suggestedTitle: listing.title || '',
           suggestedDescription: listing.description || '',
           detectedCategory: listing.category || '',
-          detectedAttributes: allKeywords, // This should be an array for the tags display
+          detectedAttributes: detectedAttributes, // Use AI suggested keywords or categorized keywords
         });
         
         setProcessingStep('complete');
@@ -309,6 +439,23 @@ export default function SellerUploadForm() {
   const handleDescriptionVoice = useCallback((transcript: string) => {
     setDescription(prev => prev ? `${prev} ${transcript}` : transcript);
   }, []);
+
+  const handleStoryVoice = useCallback((transcript: string) => {
+    setStory(prev => prev ? `${prev} ${transcript}` : transcript);
+  }, []);
+
+  // Auto-grow textarea for Story field
+  useEffect(() => {
+    const textarea = storyTextareaRef.current;
+    if (!textarea) return;
+
+    // Reset height to auto to get the correct scrollHeight
+    textarea.style.height = 'auto';
+    // Set minimum height equivalent to 3 rows (approximately 72px with padding)
+    const minHeight = 72; // 3 rows * ~24px line-height
+    // Set height to scrollHeight or minHeight, whichever is larger
+    textarea.style.height = `${Math.max(textarea.scrollHeight, minHeight)}px`;
+  }, [story]);
 
   const handleCategoryVoice = useCallback((transcript: string) => {
     setCategory(transcript);
@@ -416,36 +563,104 @@ export default function SellerUploadForm() {
       return;
     }
 
-    setSelectedFile(file);
-    setPreviewUrl(URL.createObjectURL(file));
-    setError('');
-    setResult(null);
+    console.log('📁 handleFileSelect called', { 
+      hasFile: !!file, 
+      listingId, 
+      uploadInProgress: uploadInProgressRef.current 
+    });
     
-    // Clear form fields when selecting a new image to ensure fresh AI analysis
-    // This prevents old values from interfering with new AI suggestions
+    setSelectedFile(file);
+    const preview = URL.createObjectURL(file);
+    setPreviewUrl(preview);
+    setOriginalImageUrl(preview);
+    setError('');
+    
+    // Clear form fields and reset edit tracking when selecting a new image
     if (!listingId) {
-      // Only clear if not in edit mode (no existing listing)
       setTitle('');
       setDescription('');
+      setStory('');
       setCategory('');
       setPrice('');
+      // Reset refs
+      titleValueRef.current = '';
+      descriptionValueRef.current = '';
+      categoryValueRef.current = '';
+      priceValueRef.current = '';
+      setUserHasEditedTitle(false);
+      setUserHasEditedDescription(false);
+      setUserHasEditedCategory(false);
+      setUserHasEditedPrice(false);
+      // Clear pending AI suggestions
+      setPendingAITitle(null);
+      setPendingAIDescription(null);
+      setPendingAICategory(null);
+      setPendingAIPrice(null);
+      // Clear preview states
+      setPreviewingTitle(false);
+      setPreviewingDescription(false);
+      setPreviewingCategory(false);
+      setPreviewingPrice(false);
+      // Clear original user text storage
+      setOriginalUserDescription(null);
+      setOriginalUserTitle(null);
+      setOriginalUserCategory(null);
+      setOriginalUserPrice(null);
+      
+      // OPTION 2: Show form immediately with placeholder result
+      // This allows user to start editing while AI processes in background
+      console.log('📝 Setting placeholder result to show form immediately');
+      setResult({
+        processedImageUrl: preview,
+        backgroundRemoved: false,
+        suggestedTitle: '',
+        suggestedDescription: '',
+        detectedCategory: '',
+        detectedAttributes: [],
+      });
+      // Don't set processingStep here - let it stay 'idle' until upload actually starts
+      // This way the manual button will show if auto-upload fails
+    } else {
+      // In edit mode, don't show result immediately
+      setResult(null);
     }
 
     // OPTIMIZATION: Start upload and AI analysis immediately when file is selected
-    // This makes the AI feel "instant" because it's working while the user is looking at the preview
+    // User can now start editing while AI processes in background
+    console.log('🔍 Checking if upload should start...', { 
+      listingId, 
+      uploadInProgress: uploadInProgressRef.current,
+      shouldStart: !listingId && !uploadInProgressRef.current 
+    });
     if (!listingId && !uploadInProgressRef.current) {
-      // Only auto-start if not in edit mode and no upload is in progress
+      console.log('📋 File selected, will start upload in 100ms...', { 
+        hasFile: !!file, 
+        listingId, 
+        uploadInProgress: uploadInProgressRef.current 
+      });
       // Small delay to ensure state is updated
+      // Use the file parameter directly (closure captures it correctly)
+      const fileToUpload = file;
       setTimeout(() => {
-        if (file) { // Double-check file still exists
-          handleUpload();
-        }
+        console.log('⏰ Timeout fired, starting upload...', { 
+          hasFile: !!fileToUpload,
+          uploadInProgress: uploadInProgressRef.current 
+        });
+        // File is captured in closure, but we need to use state - but state might not be ready
+        // So we'll check state in handleUpload itself
+        handleUpload();
       }, 100);
+    } else {
+      console.log('⏭️ Skipping auto-upload:', { hasListingId: !!listingId, uploadInProgress: uploadInProgressRef.current });
     }
   };
 
   const handleUpload = async () => {
-    if (!selectedFile) return;
+    console.log('🔵 handleUpload called', { hasSelectedFile: !!selectedFile });
+    if (!selectedFile) {
+      console.log('❌ handleUpload called but no selectedFile');
+      return;
+    }
     
     // Prevent duplicate uploads
     if (uploadInProgressRef.current) {
@@ -453,6 +668,7 @@ export default function SellerUploadForm() {
       return;
     }
 
+    console.log('🚀 Starting upload process...');
     uploadInProgressRef.current = true;
     setProcessingStep('uploading');
     setError('');
@@ -464,6 +680,7 @@ export default function SellerUploadForm() {
       if (!session?.access_token) {
         setError('Please log in to create a listing');
         setProcessingStep('idle');
+        uploadInProgressRef.current = false; // Reset ref before returning
         return;
       }
 
@@ -479,6 +696,7 @@ export default function SellerUploadForm() {
       setTimeout(() => setProcessingStep('generating'), 2000);
       setTimeout(() => setProcessingStep('pricing'), 4000);
 
+      console.log('📤 Sending upload request to API...');
       const response = await fetch('/api/seller/upload', {
         method: 'POST',
         headers: {
@@ -487,7 +705,9 @@ export default function SellerUploadForm() {
         body: formData,
       });
 
+      console.log('📥 Upload response received, status:', response.status);
       const data = await response.json();
+      console.log('📥 Upload response data:', { success: data.success, hasListingId: !!data.listingId, hasData: !!data.data });
 
       // Debug logging
       console.log('📥 Upload response received:', {
@@ -521,41 +741,65 @@ export default function SellerUploadForm() {
       if (data.data) {
         setResult(data.data);
         
-        // Pre-fill the form with AI suggestions - only if data exists and is non-empty
-        const title = data.data.suggestedTitle;
-        const description = data.data.suggestedDescription;
-        const category = data.data.detectedCategory;
+        // Pre-fill the form with AI suggestions - only if user hasn't manually edited
+        // This allows user to start typing while AI processes, without overwriting their input
+        const aiTitle = data.data.suggestedTitle;
+        const aiDescription = data.data.suggestedDescription;
+        const aiCategory = data.data.detectedCategory;
         
-        if (title && title.trim() && title !== 'New Listing') {
-          setTitle(title);
-          console.log('✅ Set title:', title);
-        } else {
-          console.warn('⚠️ No valid title in response:', title);
+        // Title: Auto-fill ONLY if completely untouched + empty, otherwise store as pending
+        if (aiTitle && aiTitle.trim() && aiTitle !== 'New Listing') {
+          if (!title.trim() && !userHasEditedTitle) {
+            setTitle(aiTitle);
+            console.log('✅ Set title from AI:', aiTitle);
+          } else {
+            setPendingAITitle(aiTitle);
+            console.log('💾 Stored AI title as pending (field has content or user edited)');
+          }
         }
         
-        if (description && description.trim()) {
-          setDescription(description);
-          console.log('✅ Set description');
-        } else {
-          console.warn('⚠️ No valid description in response');
+        // Description: Auto-fill ONLY if completely untouched + empty, otherwise store as pending
+        if (aiDescription && aiDescription.trim()) {
+          // Use ref value (synchronous) to check if user has typed anything
+          // This prevents race conditions where state hasn't updated yet
+          const currentDescription = descriptionValueRef.current || description;
+          if (!currentDescription.trim() && !userHasEditedDescription) {
+            setDescription(aiDescription);
+            descriptionValueRef.current = aiDescription; // Update ref
+            console.log('✅ Set description from AI');
+          } else {
+            // Field has content OR user has edited → store as pending
+            setPendingAIDescription(aiDescription);
+            console.log('💾 Stored AI description as pending (field has content or user edited)', {
+              currentDescription: currentDescription.substring(0, 50),
+              userHasEdited: userHasEditedDescription
+            });
+          }
         }
         
-        if (category && category.trim()) {
-          setCategory(category);
-          console.log('✅ Set category:', category);
-        } else {
-          console.warn('⚠️ No valid category in response');
+        // Category: Auto-fill ONLY if completely untouched + empty, otherwise store as pending
+        if (aiCategory && aiCategory.trim()) {
+          if (!category.trim() && !userHasEditedCategory) {
+            setCategory(aiCategory);
+            console.log('✅ Set category from AI:', aiCategory);
+          } else {
+            setPendingAICategory(aiCategory);
+            console.log('💾 Stored AI category as pending (field has content or user edited)');
+          }
         }
         
-        // Suggest a price based on eBay data or AI estimate
-        if (data.data.pricingIntelligence?.avgPrice) {
-          setPrice(data.data.pricingIntelligence.avgPrice.toString());
-          console.log('✅ Set price from pricingIntelligence:', data.data.pricingIntelligence.avgPrice);
-        } else if (data.data.suggestedPrice) {
-          setPrice(data.data.suggestedPrice.toString());
-          console.log('✅ Set price from suggestedPrice:', data.data.suggestedPrice);
-        } else {
-          console.warn('⚠️ No price in response');
+        // Price: Auto-fill ONLY if completely untouched + empty, otherwise store as pending
+        const aiPrice = data.data.pricingIntelligence?.avgPrice 
+          ? data.data.pricingIntelligence.avgPrice.toString()
+          : data.data.suggestedPrice?.toString() || null;
+        if (aiPrice) {
+          if (!price.trim() && !userHasEditedPrice) {
+            setPrice(aiPrice);
+            console.log('✅ Set price from AI:', aiPrice);
+          } else {
+            setPendingAIPrice(aiPrice);
+            console.log('💾 Stored AI price as pending (field has content or user edited)');
+          }
         }
       } else {
         // No data returned - this shouldn't happen but handle gracefully
@@ -564,8 +808,11 @@ export default function SellerUploadForm() {
       }
 
     } catch (err) {
+      console.error('❌ Upload error:', err);
       setError(err instanceof Error ? err.message : 'Upload failed');
       setProcessingStep('idle');
+      // On error, keep the form visible but show the error
+      // Don't clear result - user might want to try again or edit manually
     } finally {
       uploadInProgressRef.current = false;
     }
@@ -637,43 +884,84 @@ export default function SellerUploadForm() {
       // Parse seller-added keywords
       const sellerKeywords = keywords
         .split(/[,\s]+/)
-        .map(k => k.trim().toLowerCase())
+        .map(k => k.trim())
         .filter(k => k.length > 0);
 
       // Get AI-detected attributes (already saved during upload)
-      const aiAttributes = (result?.detectedAttributes || [])
-        .map(a => a.toLowerCase());
+      const aiAttributes = result?.detectedAttributes || [];
 
-      // Merge seller keywords with AI-detected ones (unique values)
-      const allKeywords = [...new Set([...aiAttributes, ...sellerKeywords])];
+      // Save user-entered keywords as-is (array)
+      const userKeywordsArray = sellerKeywords.length > 0 ? sellerKeywords : null;
 
-      // Update the listing with any edits and set status to active
-      const { error: updateError } = await supabase
-        .from('listings')
-        .update({
+      // Save AI-suggested keywords as-is (array)
+      const aiSuggestedKeywordsArray = aiAttributes.length > 0 ? aiAttributes : null;
+
+      // Merge seller keywords with AI-detected ones (unique values, lowercase for categorization)
+      const allKeywordsForCategorization = [...new Set([
+        ...aiAttributes.map(a => a.toLowerCase()),
+        ...sellerKeywords.map(k => k.toLowerCase())
+      ])];
+
+      // Categorize keywords into styles, moods, intents
+      const { styles, moods, intents } = categorizeAttributes(allKeywordsForCategorization);
+
+      // Prepare update data
+      const updateData = {
+        title,
+        description,
+        story_text: story || null,
+        price: price ? parseFloat(price) : null,
+        category,
+        condition: condition || null,
+        specifications: specifications || null,
+        keywords: userKeywordsArray,
+        ai_suggested_keywords: aiSuggestedKeywordsArray,
+        styles,
+        moods,
+        intents,
+        // Keep status as draft for now - API route will change it
+        // Use processed or original image based on toggle
+        clean_image_url: showProcessedImage ? result?.processedImageUrl : null,
+        // Additional photos
+        additional_image_url: additionalPhoto1 || null,
+        additional_image_two_url: additionalPhoto2 || null,
+      };
+
+      // Log what we're sending to database (handlePublish)
+      console.log('📤 [handlePublish] Sending to database:', {
+        listingId,
+        updateData: {
           title,
           description,
+          story_text: story || null,
           price: price ? parseFloat(price) : null,
           category,
           condition: condition || null,
           specifications: specifications || null,
-          // Merge AI + seller keywords into moods and styles
-          ...(() => {
-            const { styles, moods, intents } = categorizeAttributes(allKeywords);
-            return { styles, moods, intents };
-          })(),
-          // Keep status as draft for now - API route will change it
-          // Use processed or original image based on toggle
-          clean_image_url: showProcessedImage ? result?.processedImageUrl : null,
-          // Additional photos
-          additional_image_url: additionalPhoto1 || null,
-          additional_image_two_url: additionalPhoto2 || null,
-        })
+          keywords: userKeywordsArray,
+          ai_suggested_keywords: aiSuggestedKeywordsArray,
+          styles,
+          moods,
+          intents,
+        },
+        inputKeywords: keywords,
+        sellerKeywords,
+        aiAttributes,
+        allKeywordsForCategorization,
+      });
+
+      // Update the listing with any edits and set status to active
+      const { error: updateError } = await supabase
+        .from('listings')
+        .update(updateData)
         .eq('id', listingId);
 
       if (updateError) {
+        console.error('❌ [handlePublish] Database update error:', updateError);
         throw new Error(updateError.message);
       }
+
+      console.log('✅ [handlePublish] Successfully saved to database');
 
       // Now call the publish API route which enforces Stripe check
       const { data: { session } } = await supabase.auth.getSession();
@@ -726,42 +1014,84 @@ export default function SellerUploadForm() {
       // Parse seller-added keywords
       const sellerKeywords = keywords
         .split(/[,\s]+/)
-        .map(k => k.trim().toLowerCase())
+        .map(k => k.trim())
         .filter(k => k.length > 0);
 
       // Get AI-detected attributes
-      const aiAttributes = (result?.detectedAttributes || [])
-        .map(a => a.toLowerCase());
+      const aiAttributes = result?.detectedAttributes || [];
 
-      // Merge keywords
-      const allKeywords = [...new Set([...aiAttributes, ...sellerKeywords])];
+      // Save user-entered keywords as-is (array)
+      const userKeywordsArray = sellerKeywords.length > 0 ? sellerKeywords : null;
 
-      // Update the listing but keep status as 'draft'
-      const { error: updateError } = await supabase
-        .from('listings')
-        .update({
+      // Save AI-suggested keywords as-is (array)
+      const aiSuggestedKeywordsArray = aiAttributes.length > 0 ? aiAttributes : null;
+
+      // Merge keywords (lowercase for categorization)
+      const allKeywordsForCategorization = [...new Set([
+        ...aiAttributes.map(a => a.toLowerCase()),
+        ...sellerKeywords.map(k => k.toLowerCase())
+      ])];
+
+      // Categorize keywords into styles, moods, intents
+      const { styles, moods, intents } = categorizeAttributes(allKeywordsForCategorization);
+
+      // Prepare update data
+      const updateData = {
+        title,
+        description,
+        story_text: story || null,
+        price: price ? parseFloat(price) : null,
+        category,
+        condition: condition || null,
+        specifications: specifications || null,
+        keywords: userKeywordsArray,
+        ai_suggested_keywords: aiSuggestedKeywordsArray,
+        styles,
+        moods,
+        intents,
+        // Keep as draft
+        status: 'draft',
+        clean_image_url: showProcessedImage ? result?.processedImageUrl : null,
+        additional_image_url: additionalPhoto1 || null,
+        additional_image_two_url: additionalPhoto2 || null,
+      };
+
+      // Log what we're sending to database (handleSaveDraft)
+      console.log('📤 [handleSaveDraft] Sending to database:', {
+        listingId,
+        updateData: {
           title,
           description,
+          story_text: story || null,
           price: price ? parseFloat(price) : null,
           category,
           condition: condition || null,
           specifications: specifications || null,
-          ...(() => {
-            const { styles, moods, intents } = categorizeAttributes(allKeywords);
-            return { styles, moods, intents };
-          })(),
-          // Keep as draft
+          keywords: userKeywordsArray,
+          ai_suggested_keywords: aiSuggestedKeywordsArray,
+          styles,
+          moods,
+          intents,
           status: 'draft',
-          clean_image_url: showProcessedImage ? result?.processedImageUrl : null,
-          additional_image_url: additionalPhoto1 || null,
-          additional_image_two_url: additionalPhoto2 || null,
-        })
+        },
+        inputKeywords: keywords,
+        sellerKeywords,
+        aiAttributes,
+        allKeywordsForCategorization,
+      });
+
+      // Update the listing but keep status as 'draft'
+      const { error: updateError } = await supabase
+        .from('listings')
+        .update(updateData)
         .eq('id', listingId);
 
       if (updateError) {
+        console.error('❌ [handleSaveDraft] Database update error:', updateError);
         throw new Error(updateError.message);
       }
 
+      console.log('✅ [handleSaveDraft] Successfully saved to database');
       setIsSaved(true);
       // Reset saved indicator after 2 seconds
       setTimeout(() => setIsSaved(false), 2000);
@@ -795,6 +1125,7 @@ export default function SellerUploadForm() {
     setError('');
     setTitle('');
     setDescription('');
+    setStory('');
     setPrice('');
     setCategory('');
     setCondition('');
@@ -808,6 +1139,11 @@ export default function SellerUploadForm() {
     setAdditionalPhoto1('');
     setAdditionalPhoto2('');
     setIsEditMode(false);
+    // Reset edit tracking
+    setUserHasEditedTitle(false);
+    setUserHasEditedDescription(false);
+    setUserHasEditedCategory(false);
+    setUserHasEditedPrice(false);
   };
 
   return (
@@ -956,6 +1292,19 @@ export default function SellerUploadForm() {
       {/* Results Section */}
       {result && (
         <div className="bg-white rounded-lg shadow-md p-8">
+          {/* Show upload button if we have placeholder data but upload hasn't started */}
+          {!result.suggestedTitle && processingStep === 'idle' && (
+            <div className="mb-6 p-5 bg-blue-50 border-2 border-blue-300 rounded-lg shadow-sm">
+              <p className="text-blue-900 mb-3 font-medium">Ready to analyze your listing with AI?</p>
+              <button
+                onClick={handleUpload}
+                className="w-full bg-blue-600 text-white py-3.5 rounded-lg font-semibold hover:bg-blue-700 transition text-lg shadow-md"
+              >
+                ✨ Let AI Create Your Listing
+              </button>
+            </div>
+          )}
+          
           {/* Header */}
           <h2 
             className="text-2xl font-bold mb-6"
@@ -1125,34 +1474,118 @@ export default function SellerUploadForm() {
                   <input
                     type="text"
                     value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    className="flex-1 border border-gray-300 rounded-lg px-4 py-2 text-[#333333]"
+                    onChange={(e) => {
+                      setTitle(e.target.value);
+                      setUserHasEditedTitle(true);
+                    }}
+                    className="flex-1 border border-gray-300 rounded-lg px-4 h-11 text-[#333333]"
                     maxLength={80}
-                    placeholder="Enter title or use voice..."
+                    placeholder={processingStep === 'analyzing' || processingStep === 'generating' ? "AI analyzing... title coming soon" : "Enter title or use voice..."}
                   />
                   <VoiceInputButton onTranscript={handleTitleVoice} />
                 </div>
                 <p className="text-xs text-gray-500 mt-1">
                   {(title || '').length}/80 characters
                 </p>
+                <AISuggestionBar
+                  pendingText={pendingAITitle}
+                  isPreviewing={previewingTitle}
+                  onTogglePreview={() => setPreviewingTitle(!previewingTitle)}
+                  onReplace={() => {
+                    if (pendingAITitle) {
+                      setTitle(pendingAITitle);
+                      setPendingAITitle(null);
+                      setPreviewingTitle(false);
+                    }
+                  }}
+                />
               </div>
 
               {/* 2. Description */}
               <div>
                 <label className="block font-semibold mb-2" style={{ fontFamily: 'Merriweather, serif' }}>Description</label>
+                <p className="text-xs text-gray-500 mb-1.5" style={{ fontFamily: "'Source Sans 3', 'Source Sans Pro', sans-serif" }}>
+                  Start typing anytime — we'll never overwrite your words.
+                </p>
                 <div className="flex gap-2 items-start">
                   <textarea
                     value={description}
-                    onChange={(e) => setDescription(e.target.value)}
+                    onChange={(e) => {
+                      const newValue = e.target.value;
+                      setDescription(newValue);
+                      descriptionValueRef.current = newValue; // Update ref immediately (synchronous)
+                      setUserHasEditedDescription(true);
+                    }}
                     className="flex-1 border border-gray-300 rounded-lg px-4 py-2 text-[#333333]"
                     rows={4}
-                    placeholder="Describe your item or use voice..."
+                    placeholder={processingStep === 'analyzing' || processingStep === 'generating' ? "AI analyzing... description coming soon" : "Describe your item or use voice..."}
                   />
                   <VoiceInputButton 
                     onTranscript={handleDescriptionVoice}
                     className="mt-1"
                   />
                 </div>
+                <AISuggestionBar
+                  pendingText={pendingAIDescription}
+                  isPreviewing={previewingDescription}
+                  onTogglePreview={() => setPreviewingDescription(!previewingDescription)}
+                  onReplace={() => {
+                    if (pendingAIDescription) {
+                      // Save user's original text before replacing
+                      setOriginalUserDescription(description || null);
+                      setDescription(pendingAIDescription);
+                      descriptionValueRef.current = pendingAIDescription;
+                      setPendingAIDescription(null);
+                      setPreviewingDescription(false);
+                    }
+                  }}
+                />
+                {/* Show revert button if user replaced their text with AI */}
+                {originalUserDescription !== null && (
+                  <div className="mt-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDescription(originalUserDescription);
+                        descriptionValueRef.current = originalUserDescription;
+                        setOriginalUserDescription(null);
+                        // Don't restore pending - user made their choice
+                      }}
+                      className="text-sm text-blue-600 hover:text-blue-800 underline font-medium"
+                    >
+                      ↶ Revert to my text
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* 2.5. Story */}
+              <div>
+                <label className="block font-semibold mb-2" style={{ fontFamily: 'Merriweather, serif' }}>
+                  Story <span className="text-gray-400 font-normal">(optional)</span>
+                </label>
+                <p className="text-xs text-gray-500 mb-1.5 leading-relaxed" style={{ fontFamily: "'Source Sans 3', 'Source Sans Pro', sans-serif" }}>
+                  A quick note in your own words — where it came from, why you loved it, or anything worth knowing.
+                </p>
+                <div className="flex gap-2 items-start">
+                  <textarea
+                    ref={storyTextareaRef}
+                    value={story}
+                    onChange={(e) => setStory(e.target.value)}
+                    className="flex-1 border border-gray-300 rounded-lg px-4 py-2 text-[#333333] resize-none overflow-hidden"
+                    rows={3}
+                    placeholder="Example: &quot;We found this during a kitchen reno and loved the warm glow. It&apos;s been wrapped and stored since—ready for its next home.&quot;"
+                    style={{ minHeight: '72px' }}
+                  />
+                  <VoiceInputButton 
+                    onTranscript={handleStoryVoice}
+                    className="mt-1"
+                    ariaLabel="Speak your story"
+                  />
+                </div>
+                <p className="text-xs text-gray-400 mt-1 leading-tight">
+                  2–4 sentences is plenty.
+                </p>
               </div>
 
               {/* 3. Price */}
@@ -1163,12 +1596,28 @@ export default function SellerUploadForm() {
                   <input
                     type="number"
                     value={price}
-                    onChange={(e) => setPrice(e.target.value)}
-                    className="w-full border border-gray-300 rounded-lg pl-8 pr-4 py-2"
+                    onChange={(e) => {
+                      setPrice(e.target.value);
+                      setUserHasEditedPrice(true);
+                    }}
+                    className="w-full border border-gray-300 rounded-lg pl-8 pr-4 h-11"
                     min="0"
                     step="0.01"
+                    placeholder={processingStep === 'analyzing' || processingStep === 'pricing' ? "AI checking prices..." : ""}
                   />
                 </div>
+                <AISuggestionBar
+                  pendingText={pendingAIPrice}
+                  isPreviewing={previewingPrice}
+                  onTogglePreview={() => setPreviewingPrice(!previewingPrice)}
+                  onReplace={() => {
+                    if (pendingAIPrice) {
+                      setPrice(pendingAIPrice);
+                      setPendingAIPrice(null);
+                      setPreviewingPrice(false);
+                    }
+                  }}
+                />
                 
                 {result.pricingIntelligence && (
                   <div className="mt-2 p-3 rounded-lg text-sm" style={{ backgroundColor: 'rgba(25, 25, 112, 0.1)' }}>
@@ -1196,12 +1645,12 @@ export default function SellerUploadForm() {
               {result.detectedAttributes?.length > 0 && (
                 <div>
                   <label className="block font-semibold mb-2" style={{ fontFamily: 'Merriweather, serif' }}>AI Detected Tags</label>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-1.5">
                     {result.detectedAttributes?.map((attr, i) => (
                       <span
                         key={i}
-                        className="px-3 py-1 rounded-full text-sm"
-                        style={{ backgroundColor: 'rgba(207, 181, 59, 0.2)', color: '#191970', border: '1px solid #cfb53b' }}
+                        className="px-2 py-0.5 rounded-full text-xs"
+                        style={{ backgroundColor: 'rgba(207, 181, 59, 0.1)', color: '#4b5563', border: '1px solid rgba(207, 181, 59, 0.3)' }}
                       >
                         {attr}
                       </span>
@@ -1215,19 +1664,25 @@ export default function SellerUploadForm() {
                 <label className="block font-semibold mb-2" style={{ fontFamily: 'Merriweather, serif' }}>
                   Add Keywords <span className="text-gray-400 font-normal">(optional)</span>
                 </label>
-                <div className="flex gap-2 mb-2">
+                <p className="text-xs text-gray-500 mb-1.5 leading-relaxed" style={{ fontFamily: "'Source Sans 3', 'Source Sans Pro', sans-serif" }}>
+                  AI suggests most keywords for you. Add 1–2 if there&apos;s something only you know — where it belongs, how it&apos;s used, or why someone would love it.
+                </p>
+                <div className="flex gap-2 mb-1.5">
                   <input
                     type="text"
                     value={keywords}
                     onChange={(e) => setKeywords(e.target.value)}
-                    className="flex-1 border border-gray-300 rounded-lg px-4 py-2 text-[#333333]"
+                    className="flex-1 border border-gray-300 rounded-lg px-4 h-11 text-[#333333]"
                     placeholder="Add a keyword..."
                   />
                   <VoiceInputButton onTranscript={handleKeywordsVoice} />
                 </div>
+                <p className="text-xs text-gray-400 italic mb-1.5 leading-tight" style={{ fontFamily: "'Source Sans 3', 'Source Sans Pro', sans-serif" }}>
+                  Think: &quot;entryway statement&quot;, &quot;warm glow&quot;, &quot;giftable&quot;, &quot;small-space friendly&quot;.
+                </p>
                 {/* Clickable keyword suggestions */}
-                <div className="flex flex-wrap gap-2 mb-2">
-                  <span className="text-xs text-gray-500 mr-1">Suggestions:</span>
+                <div className="flex flex-wrap gap-1.5">
+                  <span className="text-xs text-gray-400 mr-1">Suggestions:</span>
                   {['whimsical', 'vintage', 'elegant', 'quirky', 'rustic', 'retro', 'cozy', 'mid-century'].map((suggestion) => (
                     <button
                       key={suggestion}
@@ -1238,10 +1693,10 @@ export default function SellerUploadForm() {
                           setKeywords(currentKeywords.length > 0 ? `${keywords}, ${suggestion}` : suggestion);
                         }
                       }}
-                      className={`px-3 py-1 rounded-full text-sm border transition-all
+                      className={`px-2 py-0.5 rounded-full text-xs border transition-all
                         ${keywords.toLowerCase().includes(suggestion) 
                           ? 'text-white' 
-                          : 'bg-gray-50 border-gray-300 text-gray-600 hover:bg-gray-100'
+                          : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50 hover:border-gray-300'
                         }`}
                       style={keywords.toLowerCase().includes(suggestion) ? { backgroundColor: '#191970', borderColor: '#191970' } : {}}
                     >
@@ -1249,9 +1704,6 @@ export default function SellerUploadForm() {
                     </button>
                   ))}
                 </div>
-                <p className="text-xs text-gray-600 italic mt-2" style={{ fontFamily: 'Merriweather, serif' }}>
-                  💡 Add 1-2 moods (whimsical, nostalgic), intents (gift, collectibles), and styles (vintage, elegant) to help buyers discover your item.
-                </p>
               </div>
 
               {/* 6. Category */}
@@ -1261,12 +1713,27 @@ export default function SellerUploadForm() {
                   <input
                     type="text"
                     value={category}
-                    onChange={(e) => setCategory(e.target.value)}
-                    className="flex-1 border border-gray-300 rounded-lg px-4 py-2 text-[#333333]"
-                    placeholder="e.g., Home Decor, Vintage..."
+                    onChange={(e) => {
+                      setCategory(e.target.value);
+                      setUserHasEditedCategory(true);
+                    }}
+                    className="flex-1 border border-gray-300 rounded-lg px-4 h-11 text-[#333333]"
+                    placeholder={processingStep === 'analyzing' || processingStep === 'generating' ? "AI analyzing... category coming soon" : "e.g., Home Decor, Vintage..."}
                   />
                   <VoiceInputButton onTranscript={handleCategoryVoice} />
                 </div>
+                <AISuggestionBar
+                  pendingText={pendingAICategory}
+                  isPreviewing={previewingCategory}
+                  onTogglePreview={() => setPreviewingCategory(!previewingCategory)}
+                  onReplace={() => {
+                    if (pendingAICategory) {
+                      setCategory(pendingAICategory);
+                      setPendingAICategory(null);
+                      setPreviewingCategory(false);
+                    }
+                  }}
+                />
               </div>
 
               {/* 7. Condition */}
@@ -1277,7 +1744,7 @@ export default function SellerUploadForm() {
                 <select
                   value={condition}
                   onChange={(e) => setCondition(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2 bg-white"
+                  className="w-full border border-gray-300 rounded-lg px-4 h-11 bg-white"
                 >
                   <option value="">Select condition...</option>
                   <option value="New">New</option>

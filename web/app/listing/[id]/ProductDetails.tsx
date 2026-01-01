@@ -295,6 +295,18 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
           </div>
         )}
 
+        {/* Story (Seller's personal note about the item) */}
+        {listing.story_text && (
+          <div className="pt-2">
+            <h2 className="text-sm font-semibold text-gray-600 uppercase tracking-wider mb-2">
+              Story
+            </h2>
+            <p className="text-gray-700 leading-relaxed italic">
+              {listing.story_text}
+            </p>
+          </div>
+        )}
+
         {/* Condition */}
         {listing.condition && (
           <div>
