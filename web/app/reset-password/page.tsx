@@ -104,7 +104,7 @@ function ResetPasswordForm() {
                 className="w-20 h-20 rounded-full flex items-center justify-center"
                 style={{ backgroundColor: "#191970" }}
               >
-                <TSLogo size={48} primaryColor="#ffffff" accentColor="#cfb53b" />
+                <TSLogo size={48} primaryColor="#ffffff" accentColor="#efbf04" showStar={true} />
               </div>
             </div>
 
@@ -116,7 +116,7 @@ function ResetPasswordForm() {
               className="text-2xl font-bold text-center mb-2"
               style={{ 
                 color: "#000080", 
-                fontFamily: "var(--font-merriweather), Merriweather, serif" 
+                fontFamily: "var(--font-playfair), Playfair Display, serif" 
               }}
             >
               Password Reset
@@ -149,7 +149,7 @@ function ResetPasswordForm() {
               className="w-20 h-20 rounded-full flex items-center justify-center"
               style={{ backgroundColor: "#191970" }}
             >
-              <TSLogo size={48} primaryColor="#ffffff" accentColor="#cfb53b" />
+              <TSLogo size={48} primaryColor="#ffffff" accentColor="#efbf04" showStar={true} />
             </div>
           </div>
 
@@ -157,7 +157,7 @@ function ResetPasswordForm() {
             className="text-2xl font-bold text-center mb-2"
             style={{ 
               color: "#000080", 
-              fontFamily: "var(--font-merriweather), Merriweather, serif" 
+              fontFamily: "var(--font-playfair), Playfair Display, serif" 
             }}
           >
             Set New Password

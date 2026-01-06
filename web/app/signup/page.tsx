@@ -182,11 +182,11 @@ function SignUpForm() {
   };
 
   return (
-    <main className="min-h-screen flex flex-col" style={{ backgroundColor: '#f8f9fa', fontFamily: 'Merriweather, serif' }}>
+    <main className="min-h-screen flex flex-col" style={{ backgroundColor: '#f8f9fa' }}>
       {/* Header */}
       <header className="p-4 flex items-center justify-between" style={{ backgroundColor: '#191970' }}>
         <Link href="/browse" className="flex items-center gap-2">
-          <TSLogo size={32} primaryColor="#ffffff" accentColor="#efbf04" />
+          <TSLogo size={32} primaryColor="#ffffff" accentColor="#efbf04" showStar={false} />
           <span className="text-white font-semibold">ThriftShopper</span>
         </Link>
         <Link
@@ -203,12 +203,12 @@ function SignUpForm() {
           {/* Logo */}
           <div className="flex justify-center mb-6">
             <div className="w-20 h-20 rounded-full flex items-center justify-center" style={{ backgroundColor: '#191970' }}>
-              <TSLogo size={48} primaryColor="#ffffff" accentColor="#efbf04" />
+              <TSLogo size={48} primaryColor="#ffffff" accentColor="#efbf04" showStar={true} />
             </div>
           </div>
 
           <div className="text-center mb-8">
-            <h1 className="text-2xl font-bold mb-2" style={{ color: '#191970' }}>
+            <h1 className="text-2xl font-bold mb-2" style={{ color: '#191970', fontFamily: "var(--font-playfair), Playfair Display, serif" }}>
               {isSellerSignup ? 'Create Your Seller Account' : 'Create your account'}
             </h1>
             <p className="text-gray-600">

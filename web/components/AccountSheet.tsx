@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/context/AuthContext";
 import { supabase } from "@/lib/supabaseClient";
 import { useState, useEffect } from "react";
+import { TSLogo } from "./TSLogo";
 
 interface AccountSheetProps {
   isOpen: boolean;
@@ -103,12 +104,11 @@ const AccountSheet: React.FC<AccountSheetProps> = ({ isOpen, onClose }) => {
 
         {/* Header */}
         <div className="flex flex-col items-center px-6">
-          <div className="flex h-9 w-9 flex-col items-center justify-center rounded-full bg-[#000080] text-white">
-            <div className="text-xs font-semibold tracking-wide leading-none">TS</div>
-            <div className="text-[6px] text-[#EFBF04] leading-none mt-[-2px]">✦</div>
+          <div className="flex h-9 w-9 flex-col items-center justify-center rounded-full bg-[#000080]">
+            <TSLogo size={36} primaryColor="#ffffff" accentColor="#EFBF04" showStar={true} />
           </div>
 
-          <div className="mt-3 text-[17px] font-semibold text-[#000080]">
+          <div className="mt-3 text-[17px] font-semibold text-[#000080]" style={{ fontFamily: 'var(--font-playfair), Playfair Display, serif' }}>
             ThriftShopper
           </div>
         </div>
