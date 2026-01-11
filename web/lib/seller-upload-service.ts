@@ -162,23 +162,209 @@ function extractCanonicalBrand(tag: string): string | null {
   return cleaned;
 }
 
+// Check if a tag is redundant/duplicate with other tags
+// e.g., "shoe" is redundant if "baby & toddler shoe" exists
+function isRedundantTag(tag: string, allTags: string[]): boolean {
+  const lowerTag = tag.toLowerCase().trim();
+  const normalizeTag = (t: string) => t.toLowerCase().trim();
+  
+  for (const otherTag of allTags) {
+    if (tag === otherTag) continue; // Skip itself
+    
+    const lowerOther = normalizeTag(otherTag);
+    
+    // If this tag is a substring of another tag (and the other is longer), it's redundant
+    // e.g., "shoe" is redundant if "baby & toddler shoe" exists
+    if (lowerOther.includes(lowerTag) && lowerOther.length > lowerTag.length) {
+      // But only if the longer tag contains the shorter as a complete word or at word boundaries
+      const wordBoundaryMatch = new RegExp(`\\b${lowerTag}\\b`).test(lowerOther);
+      if (wordBoundaryMatch || lowerOther.startsWith(lowerTag + ' ') || lowerOther.endsWith(' ' + lowerTag)) {
+        return true; // This tag is redundant
+      }
+    }
+    
+    // If another tag is a substring of this tag (and this is longer), the other is redundant (handled elsewhere)
+    // But we should prefer the more specific tag, so if "baby & toddler shoe" exists, reject "shoe"
+    if (lowerTag.includes(lowerOther) && lowerTag.length > lowerOther.length) {
+      const wordBoundaryMatch = new RegExp(`\\b${lowerOther}\\b`).test(lowerTag);
+      if (wordBoundaryMatch && (lowerTag.startsWith(lowerOther + ' ') || lowerTag.endsWith(' ' + lowerOther))) {
+        // The other tag is more general, prefer the more specific one (this one)
+        // Don't reject this tag, but the other one should be rejected
+        continue;
+      }
+    }
+  }
+  
+  return false;
+}
+
+// Check if title clearly identifies item type (e.g., "coffee pot", "jug", "compote dish")
+// When item type is clear, colors/materials are less relevant for discovery
+function isItemTypeClearFromTitle(title: string): boolean {
+  const lowerTitle = title.toLowerCase().trim();
+  
+  // Common item type indicators in titles - expanded to include more item types
+  const itemTypePatterns = [
+    /\b(pot|jug|pitcher|kettle|carafe|compote|dish|bowl|plate|cup|mug|vase|jar|bottle|container)\b/,
+    /\b(shoe|boot|sandal|slipper|bootie)\b/,
+    /\b(necklace|bracelet|ring|pin|brooch|earring|pendant)\b/,
+    /\b(table|chair|desk|shelf|cabinet|dresser|sofa|chair)\b/,
+    /\b(lamp|light|fixture|chandelier|lampshade|light cover|ceiling light|pendant)\b/,
+    /\b(frame|picture frame|photo frame|mirror)\b/,
+    /\b(sculpture|statue|figurine|decor|decoration|ornament)\b/,
+    /\b(toy|top|spinning top|noisemaker|party favor|party favor)\b/,
+    // Add more item types that are common and should trigger material filtering
+    /\b(bucket|barrel|ice bucket|barrel-shaped)\b/,
+    /\b(basket|wire basket|mesh basket|storage basket)\b/,
+    /\b(candlestick|candle holder|candleholder|pair of candlesticks)\b/,
+    /\b(meat grinder|grinder|food processor)\b/,
+    /\b(holder|stand|display|rack|organizer)\b/,
+  ];
+  
+  return itemTypePatterns.some(pattern => pattern.test(lowerTitle));
+}
+
 // Check if tag passes the new validation rules:
 // Tags are NOT labels or classifications - they must serve buyer discovery ("Why would someone click this?")
 // Must reflect ONE of: collecting community, style/aesthetic, nostalgic/emotional association, buyer use/display context
-function isValidTagForDisplay(tag: string, listingTitle: string = ''): boolean {
+function isValidTagForDisplay(tag: string, listingTitle: string = '', allTags: string[] = []): boolean {
   const lowerTag = tag.toLowerCase().trim();
   const lowerTitle = listingTitle.toLowerCase().trim();
   
-  // Reject category labels
-  const categoryLabels = ['railroad name', 'toy', 'object', 'design', 'model train', 'tender car', 'train car', 'railroad', 'train', 'model', 'car', 'vehicle'];
+  // Reject entity IDs and structured data references (e.g., /m/083vt, /g/11xyz)
+  if (/^\/[mg]\//.test(tag) || tag.includes('/m/') || tag.includes('/g/')) {
+    return false;
+  }
+  
+  // Reject category labels (generic classifications that don't enhance discovery)
+  const categoryLabels = ['railroad name', 'toy', 'object', 'design', 'model train', 'tender car', 'train car', 'railroad', 'train', 'model', 'car', 'vehicle', 'earring', 'earrings'];
   if (categoryLabels.some(label => lowerTag === label || lowerTag.includes(` ${label}`) || lowerTag.includes(`${label} `))) {
     return false;
   }
   
-  // Reject obvious physical attributes (color, shape, material)
-  const physicalAttributeWords = ['color', 'colour', 'shape', 'material', 'size', 'large', 'small', 'big', 'tiny', 'red', 'blue', 'green', 'black', 'white', 'yellow', 'rectangular', 'round', 'square', 'circular', 'wood', 'metal', 'plastic', 'glass', 'fabric'];
-  if (physicalAttributeWords.some(word => lowerTag === word || lowerTag.includes(` ${word}`) || lowerTag.includes(`${word} `))) {
+  // Also reject "body jewelry" / "body jewellery" - not a valid category (case-insensitive)
+  if (lowerTag === 'body jewelry' || lowerTag === 'body jewellery' || lowerTag.includes('body jewelry') || lowerTag.includes('body jewellery')) {
     return false;
+  }
+  
+  // Reject overly abstract/philosophical tags that don't help discovery - check early before other validation
+  const abstractTags = ['facial expression', 'expression', 'emotion', 'feeling', 'happiness', 'sadness', 'joy', 'anger', 'fear', 'surprise', 'disgust', 'philosophy', 'abstract', 'concept'];
+  if (abstractTags.some(abstract => {
+    // Check for exact match or as a complete word
+    if (lowerTag === abstract) return true;
+    if (lowerTag.includes(` ${abstract} `)) return true;
+    if (lowerTag.startsWith(`${abstract} `)) return true;
+    if (lowerTag.endsWith(` ${abstract}`)) return true;
+    // Also check if it's part of a phrase (e.g., "facial expression")
+    if (abstract.includes(' ') && lowerTag.includes(abstract)) return true;
+    return false;
+  })) {
+    return false; // Reject overly abstract tags
+  }
+  
+  // Check for redundant/duplicate tags first
+  if (allTags.length > 0 && isRedundantTag(tag, allTags)) {
+    return false;
+  }
+  
+  // CRITICAL: EXCLUDE generic material keywords entirely - no buyer searches for "metal" or "iron"
+  // These materials are obvious from the image and don't enhance discovery
+  const excludedMaterials = [
+    'metal', 'iron', 'steel', 'brass', 'copper', 'aluminum', 'aluminium',
+    'wood', 'wooden', 'hardwood', 'softwood',
+    'glass',
+    'ceramic', 'porcelain',
+    'plastic',
+    'fabric', 'cloth', 'textile',
+    // Also reject material-related terms
+    'material', 'natural material', 'natural',
+  ];
+  
+  // ALWAYS reject if tag is exactly a material word (case-insensitive)
+  if (excludedMaterials.some(mat => lowerTag === mat)) {
+    return false; // Reject - generic material keyword
+  }
+  
+  // ALWAYS reject if tag starts or ends with a material word (e.g., "metal handle", "wooden box")
+  if (excludedMaterials.some(mat => {
+    return lowerTag.startsWith(`${mat} `) || lowerTag.endsWith(` ${mat}`);
+  })) {
+    return false; // Reject - material is the primary descriptor
+  }
+  
+  // Reject obvious physical attributes (color, shape, material)
+  // Tags should enhance discovery, not restate obvious facts that are already in title/description/image
+  const physicalAttributeWords = [
+    // Colors
+    'color', 'colour', 'red', 'blue', 'green', 'black', 'white', 'yellow', 'orange', 'brown', 'amber', 'purple', 'pink', 'gray', 'grey', 'silver', 'gold', 'bronze', 'copper', 'tan', 'beige', 'ivory', 'cream',
+    // Materials (already handled above, but keep for compound word detection)
+    'material', 'natural material', 'wood', 'wooden', 'hardwood', 'softwood', 'metal', 'plastic', 'glass', 'fabric', 'cloth', 'textile', 'stone', 'ceramic', 'porcelain', 'crystal', 'brass', 'bronze', 'copper', 'steel', 'iron', 'aluminum', 'aluminium', 'leather', 'canvas', 'cotton', 'wool', 'silk',
+    // Material-related terms
+    'stain', 'finish', 'paint', 'surface', 'texture', 'natural',
+    // Shapes/sizes
+    'shape', 'size', 'large', 'small', 'big', 'tiny', 'rectangular', 'round', 'square', 'circular', 'oval', 'round',
+    // Obvious descriptors
+    'transparent', 'opaque', 'solid', 'hollow',
+    // Mesh/wire patterns - these are obvious from the image
+    'mesh', 'wire'
+  ];
+  
+  const itemTypeIsClear = isItemTypeClearFromTitle(lowerTitle);
+  
+  // Check if tag is just a color/material word, or contains one prominently
+  if (physicalAttributeWords.some(word => {
+    const exactMatch = lowerTag === word;
+    const startsWith = lowerTag.startsWith(`${word} `);
+    const endsWith = lowerTag.endsWith(` ${word}`);
+    const containsAsWord = new RegExp(`\\b${word}\\b`).test(lowerTag);
+    
+    // Always reject standalone material words - already handled above, but double-check
+    if (exactMatch && excludedMaterials.includes(word)) {
+      return true; // Always reject these standalone materials
+    }
+    
+    // If item type is clear from title (e.g., "coffee pot", "jug", "picture frame"), filter colors/materials more aggressively
+    // Colors/materials don't enhance discovery when the item type is obvious - buyers can see the color in the image
+    if (exactMatch && itemTypeIsClear) {
+      // For clear item types, reject simple color/material words (e.g., "silver" for "coffee pot", "natural" for "picture frame")
+      const colorWords = ['color', 'colour', 'red', 'blue', 'green', 'black', 'white', 'yellow', 'orange', 'brown', 'amber', 'purple', 'pink', 'gray', 'grey', 'silver', 'gold', 'bronze', 'copper', 'tan', 'beige', 'ivory', 'cream'];
+      const materialWords = ['metal', 'plastic', 'glass', 'wood', 'hardwood', 'softwood', 'fabric', 'stone', 'ceramic', 'porcelain', 'crystal', 'brass', 'bronze', 'copper', 'steel', 'iron', 'aluminum', 'aluminium', 'leather', 'canvas', 'cotton', 'wool', 'silk', 'natural', 'mesh', 'wire'];
+      // Also reject generic descriptors like "natural" when item type is clear
+      const genericDescriptors = ['natural', 'material', 'mesh', 'wire'];
+      if (colorWords.includes(word) || materialWords.includes(word) || genericDescriptors.includes(word)) {
+        return true; // Reject - item type is clear, color/material/descriptor doesn't enhance discovery
+      }
+    }
+    
+    // Always reject "natural", "material", "metal", "mesh", "wire" as standalone tags - they're too vague
+    if (exactMatch && (word === 'natural' || word === 'material' || word === 'metal' || word === 'mesh' || word === 'wire')) {
+      return true; // Always reject these standalone words
+    }
+    
+    // Reject if it's the exact word, or if it's a compound like "wood stain", "orange color", etc.
+    return exactMatch || startsWith || endsWith || (containsAsWord && lowerTag.split(/\s+/).length <= 2);
+  })) {
+    return false;
+  }
+  
+  // NEW: Reject obvious item type synonyms (e.g., "candle holder" when title is "candlesticks")
+  if (lowerTitle) {
+    const itemTypeSynonyms: Record<string, string[]> = {
+      'candlestick': ['candle holder', 'candleholder'],
+      'candle holder': ['candlestick', 'candlesticks'],
+      'basket': ['wire basket', 'mesh basket'],
+      'bucket': ['barrel', 'ice bucket'],
+      'barrel': ['bucket', 'ice bucket'],
+    };
+    
+    // Check if tag is a synonym of an item type in the title
+    for (const [itemType, synonyms] of Object.entries(itemTypeSynonyms)) {
+      if (lowerTitle.includes(itemType)) {
+        if (synonyms.some(syn => lowerTag === syn || lowerTag.includes(syn))) {
+          return false; // Reject synonym - it restates the obvious item type
+        }
+      }
+    }
   }
   
   // Reject if tag restates the title or brand
@@ -233,6 +419,7 @@ function isValidTagForDisplay(tag: string, listingTitle: string = ''): boolean {
   }
   
   // 3. Nostalgic or emotional association (e.g., "cozy", "playful", "nostalgic", "childhood memory")
+  // Note: Abstract tags are already filtered out earlier in the function
   const emotionalIndicators = ['cozy', 'playful', 'nostalgic', 'nostalgia', 'sentimental', 'charming', 'whimsical', 'warm', 'comforting', 'memorable', 'childhood', 'memory'];
   if (emotionalIndicators.some(indicator => lowerTag.includes(indicator))) {
     return true;
@@ -244,7 +431,33 @@ function isValidTagForDisplay(tag: string, listingTitle: string = ''): boolean {
     return true;
   }
   
-  // If tag doesn't match any of the four discovery purposes, reject it
+  // 5. Alternative item names/uses (e.g., "biscuit jar", "tobacco jar", "ice bucket") - these enhance discovery by showing what else an item is known as or used for
+  // Accept compound terms that describe alternative uses or common names (2+ words that aren't just materials/colors)
+  const tagWords = lowerTag.split(/\s+/).filter(w => w.length > 2);
+  if (tagWords.length >= 2) {
+    // Check if it's an alternative use/name pattern (e.g., "biscuit jar", "tobacco jar", "storage basket")
+    const usePatterns = ['jar', 'bucket', 'basket', 'container', 'box', 'holder', 'storage', 'organizer', 'display', 'decor', 'accessory', 'toy', 'collectible', 'piece', 'item'];
+    if (usePatterns.some(pattern => lowerTag.includes(pattern))) {
+      // Make sure it's not just materials/colors (already filtered above, but double-check)
+      const materialWords = ['metal', 'wood', 'glass', 'plastic', 'hardwood', 'iron', 'steel', 'brass', 'copper'];
+      if (!materialWords.some(mat => tagWords.includes(mat))) {
+        return true; // Accept alternative use/name terms like "biscuit jar"
+      }
+    }
+  }
+  
+  // 6. FALLBACK: If tag passed all the rejection checks above (not a material, not redundant, not obvious),
+  // and it's a reasonable length (2+ characters), accept it as a valid discovery term
+  // This prevents over-filtering when tags are useful but don't match strict patterns
+  if (lowerTag.length >= 2 && tagWords.length > 0) {
+    // If we got this far, the tag isn't a material, isn't redundant, isn't obvious
+    // It might be a brand name, specific item type, or other useful identifier
+    // Be lenient and accept it rather than rejecting everything
+    console.log(`✅ Accepting tag as fallback (passed basic checks): "${tag}"`);
+    return true;
+  }
+  
+  // If tag doesn't match any of the discovery purposes and doesn't pass fallback, reject it
   return false;
 }
 
@@ -423,7 +636,8 @@ function rankAndSelectTags(
     // Filter out tags that don't pass validation (for id_tags and attributes)
     // Style and mood tags are assumed to already express mood/style, so skip validation
     if (!isStyleOrMood) {
-      deduped = deduped.filter(tag => isValidTagForDisplay(tag, listingTitle));
+      // Pass all tags to isValidTagForDisplay so it can check for duplicates
+      deduped = deduped.filter(tag => isValidTagForDisplay(tag, listingTitle, deduped));
     }
     
     // Score and rank tags (pass all tags for redundancy checking)
@@ -451,20 +665,46 @@ function rankAndSelectTags(
   const processedStyleTags = processTagCategory(styleTags, 3, true);
   const processedMoodTags = processTagCategory(moodTags, 3, true);
 
+  // Normalize all tags to lowercase (standardize casing)
   return {
-    idTags: processedIdTags,
-    styleTags: processedStyleTags,
-    moodTags: processedMoodTags,
+    idTags: processedIdTags.map(tag => tag.toLowerCase()),
+    styleTags: processedStyleTags.map(tag => tag.toLowerCase()),
+    moodTags: processedMoodTags.map(tag => tag.toLowerCase()),
   };
 }
 
 // Legacy function for backward compatibility (used for attributes)
 // This processes a flat list of tags without budget constraints
+// Common spelling corrections for AI-generated tags
+const spellingCorrections: Record<string, string> = {
+  'jewerlry': 'jewelry',
+  'jewelrry': 'jewelry',
+  'jewellry': 'jewelry',
+  'jewellery': 'jewelry', // British spelling -> American spelling
+  'natural material': 'natural', // But we'll filter this anyway
+};
+
 function postProcessTags(tags: string[], maxTags: number = 8): string[] {
+  // First, apply spelling corrections
+  const correctedTags = tags.map(tag => {
+    const lowerTag = tag.toLowerCase().trim();
+    if (spellingCorrections[lowerTag]) {
+      return spellingCorrections[lowerTag];
+    }
+    // Check for partial matches (e.g., "jewerlry pin" -> "jewelry pin")
+    for (const [wrong, correct] of Object.entries(spellingCorrections)) {
+      if (lowerTag.includes(wrong)) {
+        return tag.replace(new RegExp(wrong, 'gi'), correct);
+      }
+    }
+    return tag;
+  });
+  
   // Use the same normalization and filtering as rankAndSelectTags
   const normalizeTag = (tag: string): string => String(tag).toLowerCase().trim();
   
-  const allTags = [...tags];
+  // Use correctedTags instead of tags
+  const allTags = [...correctedTags];
   const normalized = allTags.map(normalizeTag).filter(tag => tag.length > 0);
   
   const seen = new Set<string>();
@@ -480,6 +720,13 @@ function postProcessTags(tags: string[], maxTags: number = 8): string[] {
   // Filter meta tags and banned tags
   const filtered = deduplicated.filter(tag => {
     const lowerTag = normalizeTag(tag);
+    
+    // Reject entity IDs (e.g., /m/083vt)
+    if (/^\/[mg]\//.test(tag) || tag.includes('/m/') || tag.includes('/g/')) return false;
+    
+    // Reject "body jewelry" / "body jewellery" (case-insensitive)
+    if (lowerTag === 'body jewelry' || lowerTag === 'body jewellery' || lowerTag.includes('body jewelry') || lowerTag.includes('body jewellery')) return false;
+    
     if (metaTagStoplist.has(lowerTag)) return false;
     if (bannedTags.has(lowerTag)) return false;
     
@@ -504,7 +751,8 @@ function postProcessTags(tags: string[], maxTags: number = 8): string[] {
     .slice(0, maxTags)
     .map(item => item.tag);
   
-  return topTags;
+  // Normalize all tags to lowercase (standardize casing)
+  return topTags.map(tag => tag.toLowerCase());
 }
 
 interface UploadAndSaveResult {
@@ -605,7 +853,23 @@ export async function uploadAndCreateListing(
       : Promise.resolve(null);
     parallelTasks.push(openAITask);
 
-    // Task 2: Google Vision Analysis (SUPPLEMENTARY - for additional tags/attributes only)
+    // Task 2: Claude Vision Analysis (PARALLEL PRIMARY - alternative analysis for better keywords)
+    // Claude Vision runs in parallel with OpenAI - may provide better keywords/tags
+    const claudeTask = process.env.ANTHROPIC_API_KEY
+      ? analyzeWithClaude(originalUrl).catch((err) => {
+          // Log error with more context for debugging
+          console.error('❌ Claude Vision failed:', {
+            error: err instanceof Error ? err.message : String(err),
+            imageUrl: originalUrl.substring(0, 100) + '...', // Log partial URL for debugging
+            hasApiKey: !!process.env.ANTHROPIC_API_KEY,
+          });
+          // Return null on failure for graceful degradation - system will use OpenAI instead
+          return null;
+        })
+      : Promise.resolve(null);
+    parallelTasks.push(claudeTask);
+
+    // Task 3: Google Vision Analysis (SUPPLEMENTARY - for additional tags/attributes only)
     // REVERT: Google Vision is SECONDARY - only adds extra tags/attributes to supplement OpenAI
     const googleVisionTask = process.env.VISION_API_KEY
       ? analyzeWithGoogleVision(originalUrl).catch((err) => {
@@ -630,11 +894,12 @@ export async function uploadAndCreateListing(
     console.time('Total Upload');
 
     // Execute all parallel tasks simultaneously
-    const [openAIResult, googleResult, processedImageUrlResult] = await Promise.allSettled(parallelTasks);
+    const [openAIResult, claudeResult, googleResult, processedImageUrlResult] = await Promise.allSettled(parallelTasks);
 
     // Timing diagnostics: End parallel processing timing and log status of each operation
     console.timeEnd('Parallel Processing');
     console.log('OpenAI status:', openAIResult.status);
+    console.log('Claude Vision status:', claudeResult.status);
     console.log('Google Vision status:', googleResult.status);
     console.log('Background removal status:', processedImageUrlResult.status);
 
@@ -658,6 +923,16 @@ export async function uploadAndCreateListing(
       typeof openAIResult.value === 'object' &&
       'title' in openAIResult.value
         ? (openAIResult.value as OpenAIEnrichmentType)
+        : null;
+    
+    // Extract Claude Vision results (same structure as OpenAI)
+    type ClaudeEnrichmentType = OpenAIEnrichmentType; // Same structure
+    const claudeEnrichment: ClaudeEnrichmentType | null = 
+      claudeResult.status === 'fulfilled' && 
+      claudeResult.value && 
+      typeof claudeResult.value === 'object' &&
+      'title' in claudeResult.value
+        ? (claudeResult.value as ClaudeEnrichmentType)
         : null;
         
     type GoogleVisionDataType = {
@@ -831,7 +1106,7 @@ Description: ${description}
 Attributes: ${attributes.join(', ')}
 
 CATEGORIZE INTO:
-- **styles**: Era (vintage, mid-century, art-deco, etc), materials (brass, ceramic, leather, etc), brands
+- **styles**: Era (vintage, mid-century, art-deco, etc), design movements, distinctive aesthetic features - AVOID generic materials (brass, glass, metal) unless they define a distinctive style
 - **moods**: Emotional vibes (whimsical, elegant, cozy, playful, romantic, quirky, etc)
 - **intents**: Use cases (gifting, home-decor, collection, functional, etc)
 
@@ -1019,11 +1294,13 @@ Return ONLY valid JSON:
     // Google Vision provides additional tags/attributes only (SUPPLEMENTARY)
     
     let visionData = {
-      category: userInput?.category || openAIEnrichment?.category || googleVisionData?.category || 'General',
+      category: userInput?.category || openAIEnrichment?.category || claudeEnrichment?.category || googleVisionData?.category || 'General',
       attributes: [] as string[],
       suggestedTitle: '',
       suggestedDescription: '',
-      suggestedPrice: openAIEnrichment?.estimatedPrice || null,
+      suggestedPrice: openAIEnrichment?.estimatedPrice || claudeEnrichment?.estimatedPrice || null,
+      styles: [] as string[],
+      moods: [] as string[],
     };
 
     let listing = {
@@ -1031,7 +1308,8 @@ Return ONLY valid JSON:
       description: userInput?.description || '',
     };
 
-    // PRIMARY SOURCE: OpenAI Vision for product identification (title, category, description, attributes)
+    // PRIMARY SOURCE: OpenAI or Claude Vision for product identification (title, category, description, attributes)
+    // Prefer OpenAI, but use Claude if OpenAI fails - both run in parallel so we can choose the best
     if (openAIEnrichment) {
       // Use OpenAI title as primary (accurate product identification)
       listing.title = openAIEnrichment.title || listing.title;
@@ -1043,39 +1321,139 @@ Return ONLY valid JSON:
 
       // Note: OpenAI price estimate is handled in price stabilization logic above
       // We don't create pricingIntelligence here to allow stabilization to work properly
+    } else if (claudeEnrichment) {
+      // FALLBACK: If OpenAI failed, use Claude Vision for product identification
+      listing.title = claudeEnrichment.title || listing.title;
+      visionData.category = claudeEnrichment.category || visionData.category;
+      listing.description = claudeEnrichment.description || listing.description;
+      visionData.attributes = claudeEnrichment.attributes || [];
+      visionData.suggestedTitle = claudeEnrichment.title || '';
+      visionData.suggestedDescription = claudeEnrichment.description || '';
+      visionData.suggestedPrice = claudeEnrichment.estimatedPrice || visionData.suggestedPrice;
     } else if (googleVisionData) {
-      // FALLBACK: If OpenAI failed, use Google Vision for basic identification
-      // REVERT: Google Vision becomes fallback only when OpenAI fails
+      // FALLBACK: If both OpenAI and Claude failed, use Google Vision for basic identification
       listing.title = googleVisionData.title || listing.title;
       visionData.category = googleVisionData.category || visionData.category;
       visionData.attributes = googleVisionData.attributes || [];
       visionData.suggestedTitle = googleVisionData.title || '';
     }
 
-    // SUPPLEMENTARY SOURCE: Google Vision adds extra tags/attributes to OpenAI's results
-    if (googleVisionData && openAIEnrichment) {
-      // Merge Google Vision attributes with OpenAI attributes (avoid duplicates)
-      // Google Vision supplements OpenAI's attributes with additional labels/tags
-      const googleAttributes = googleVisionData.attributes || [];
-      const combinedAttributes = [
-        ...visionData.attributes, // Start with OpenAI attributes (already post-processed)
-        ...googleAttributes // Add Google tags (will be post-processed below)
-      ];
-
-      // Add brand info from Google Vision if detected (supplementary information)
-      if (googleVisionData.brandInfo) {
-        combinedAttributes.push(googleVisionData.brandInfo);
+    // SUPPLEMENTARY SOURCES: Claude and Google Vision add extra tags/attributes
+    // Merge attributes from all available sources (OpenAI, Claude, Google) for best keyword coverage
+    if (openAIEnrichment || claudeEnrichment || googleVisionData) {
+      const allAttributes: string[] = [];
+      
+      // Add OpenAI attributes (primary)
+      if (openAIEnrichment?.attributes) {
+        allAttributes.push(...openAIEnrichment.attributes);
       }
-
+      
+      // Add Claude attributes (may be better for keywords - supplements OpenAI)
+      if (claudeEnrichment?.attributes) {
+        allAttributes.push(...claudeEnrichment.attributes);
+      }
+      
+      // Add Google Vision attributes (supplementary labels/tags)
+      if (googleVisionData) {
+        const googleAttributes = googleVisionData.attributes || [];
+        allAttributes.push(...googleAttributes);
+        
+        // Add brand info from Google Vision if detected
+        if (googleVisionData.brandInfo) {
+          allAttributes.push(googleVisionData.brandInfo);
+        }
+      }
+      
       // Post-process final combined attributes: normalize, deduplicate, filter, limit
-      visionData.attributes = postProcessTags(combinedAttributes, 8);
-    } else if (googleVisionData && !openAIEnrichment) {
-      // If OpenAI failed, use Google Vision attributes (post-process them)
-      const googleAttributes = googleVisionData.attributes || [];
-      const attributesToProcess = googleVisionData.brandInfo
-        ? [googleVisionData.brandInfo, ...googleAttributes]
-        : googleAttributes;
-      visionData.attributes = postProcessTags(attributesToProcess, 8);
+      // This merges all sources and removes duplicates, filters invalid tags, limits to best 8
+      const postProcessedAttributes = postProcessTags(allAttributes, 8);
+      
+      console.log('🔍 [Attributes Debug] Before final filtering:', {
+        allAttributesCount: allAttributes.length,
+        postProcessedCount: postProcessedAttributes.length,
+        postProcessedTags: postProcessedAttributes,
+        title: listing.title || 'No title',
+      });
+      
+      // CRITICAL: Explicit material keyword filtering - remove ALL generic materials
+      // This is a final safety net to catch any materials that slip through
+      const excludedMaterials = [
+        'metal', 'iron', 'steel', 'brass', 'copper', 'aluminum', 'aluminium',
+        'wood', 'wooden', 'hardwood', 'softwood',
+        'glass',
+        'ceramic', 'porcelain',
+        'plastic',
+        'fabric', 'cloth', 'textile',
+        'material', 'natural material', 'natural',
+      ];
+      
+      // First pass: Remove any tags that are exactly material words
+      let filteredAttributes = postProcessedAttributes.filter(tag => {
+        const lowerTag = tag.toLowerCase().trim();
+        if (excludedMaterials.includes(lowerTag)) {
+          console.log(`❌ [Material Filter] Removed exact material match: "${tag}"`);
+          return false;
+        }
+        // Also reject if tag starts/ends with material word (e.g., "metal handle", "wooden box")
+        if (excludedMaterials.some(mat => {
+          return lowerTag.startsWith(`${mat} `) || lowerTag.endsWith(` ${mat}`);
+        })) {
+          console.log(`❌ [Material Filter] Removed material compound: "${tag}"`);
+          return false;
+        }
+        return true;
+      });
+      
+      // Second pass: Use isValidTagForDisplay to filter materials, redundant tags, and obvious attributes
+      const beforeFilterCount = filteredAttributes.length;
+      visionData.attributes = filteredAttributes.filter(tag => {
+        const isValid = isValidTagForDisplay(tag, listing.title || '', filteredAttributes);
+        if (!isValid) {
+          console.log(`❌ [Validation Filter] Removed tag: "${tag}" (title: "${listing.title || 'No title'}")`);
+        }
+        return isValid;
+      });
+      
+      // FALLBACK: If all tags were filtered out, keep the top post-processed tags (they passed basic filtering)
+      // This prevents losing all keywords when validation is too strict
+      if (visionData.attributes.length === 0 && postProcessedAttributes.length > 0) {
+        console.warn('⚠️ All tags filtered out - using fallback: keeping top post-processed tags (excluding materials)');
+        // Even in fallback, exclude materials
+        visionData.attributes = postProcessedAttributes
+          .filter(tag => {
+            const lowerTag = tag.toLowerCase().trim();
+            return !excludedMaterials.includes(lowerTag) &&
+                   !excludedMaterials.some(mat => lowerTag.startsWith(`${mat} `) || lowerTag.endsWith(` ${mat}`));
+          })
+          .slice(0, 5); // Keep top 5 as fallback
+      }
+      
+      console.log('✅ [Attributes Debug] After final filtering:', {
+        beforeCount: beforeFilterCount,
+        afterCount: visionData.attributes.length,
+        finalTags: visionData.attributes,
+      });
+      
+      // Also merge styles and moods from OpenAI and Claude if available
+      const allStyles = new Set<string>();
+      const allMoods = new Set<string>();
+      
+      if (openAIEnrichment?.styles) {
+        openAIEnrichment.styles.forEach(style => allStyles.add(style));
+      }
+      if (claudeEnrichment?.styles) {
+        claudeEnrichment.styles.forEach(style => allStyles.add(style));
+      }
+      if (openAIEnrichment?.moods) {
+        openAIEnrichment.moods.forEach(mood => allMoods.add(mood));
+      }
+      if (claudeEnrichment?.moods) {
+        claudeEnrichment.moods.forEach(mood => allMoods.add(mood));
+      }
+      
+      // Store combined styles/moods (will be used later in the flow)
+      visionData.styles = Array.from(allStyles);
+      visionData.moods = Array.from(allMoods);
     }
 
     // Step 4: Results from parallel post-processing are already extracted above
@@ -1169,6 +1547,477 @@ Return ONLY valid JSON:
   }
 }
 
+// Claude Vision with hypotheses-based approach for buyer-first marketplace
+// Uses same structure as OpenAI for consistency - may provide better keywords/tags
+async function analyzeWithClaude(imageUrl: string): Promise<{
+  title: string;
+  description: string;
+  category: string;
+  attributes: string[];
+  estimatedPrice: number | null;
+  styles?: string[];
+  moods?: string[];
+  intents?: string[];
+  era?: string;
+}> {
+  // Use the same prompt structure as OpenAI for consistency
+  const prompt = `You are assisting a buyer-first secondhand marketplace.
+
+Your job is NOT to produce a single definitive identification.
+Your job is to surface plausible interpretations, uncertainty, and visual evidence,
+and to avoid resale boilerplate or inflated claims.
+
+You must think in hypotheses, not answers.
+
+Hard rules:
+- Return EXACTLY 3 hypotheses.
+- Do NOT claim "rare," "authentic," or a specific maker unless
+  there is clear visual evidence (mark, stamp, unmistakable pattern or silhouette).
+- For style_tags: You MAY include "vintage" or "antique" if the item appears to be from an earlier era or has vintage/antique characteristics (even without definitive proof). Style tags should reflect the aesthetic and era the item evokes, not require authentication.
+- NEVER mention condition, wear, age, patina, or "wear consistent with age" in descriptions unless seller explicitly provides condition notes. Do NOT infer condition from images.
+- If confidence is low or competing hypotheses are close, say so.
+- Favor buyer trust over seller reassurance.
+- Do NOT state the obvious (e.g., "it is black," "rectangular," "has wheels") unless that fact
+  meaningfully disambiguates hypotheses or affects buyer desirability.
+- Evidence must be DISTINCTIVE: markings, motifs, hardware, functional features,
+  era signals, maker marks, pattern signatures. (Do NOT use patina/crazing as evidence unless explicitly relevant to identification.)
+- Focus on identifying WHAT the item IS (object type, category, function) rather than WHAT it's MADE OF (material composition).
+- Materials are secondary - only mention if it's distinctive and directly relevant to identification (e.g., "marble" for a marble statue, not "glass" for a glass vase).
+- When uncertain about material (e.g., amber glass vs brass), focus on the object type and category instead.
+- Titles must avoid filler like "with marking" or "with text".
+- Output tags in 3 groups:
+  - id_tags: concrete identifiers (brand/pattern/object type) - for hidden indexing only. IMPORTANT: Think about what ELSE this item might be called or used for. For example, a barrel-shaped wooden container might be a "biscuit jar", "tobacco jar", OR "ice bucket" - include these alternative names/uses to help buyers discover items. AVOID generic materials like "wood", "metal", "glass", "iron", "hardwood" unless it's a distinctive identifier. Include alternative item names that buyers might search for (e.g., "biscuit jar", "tobacco jar", "storage basket", "display piece").
+  - style_tags: design vocabulary that aids buyer discovery. PRIORITIZE:
+    - Style/era: vintage, antique, mid-century, art deco, Victorian, retro, industrial, farmhouse, rustic, bohemian
+    - Aesthetic descriptors: elegant, whimsical, industrial, rustic, bohemian, minimalist, classic
+    - Use case: kitchen decor, entertaining, gift, collectible, farmhouse decor, home decor
+    CRITICAL: DO NOT include generic materials (metal, iron, steel, brass, copper, aluminum, wood, wooden, glass, ceramic, porcelain, plastic, fabric, cloth, textile) - these are not searchable style terms.
+  - mood_tags: emotional/nostalgic associations that aid buyer discovery (nostalgic, cozy, playful, charming, elegant, whimsical) - AVOID overly abstract tags like 'facial expression', 'happiness', 'emotion' - focus on practical discovery terms buyers actually search for.
+- Tags are NOT labels or classifications. Tags must serve buyer discovery and browsing. They should answer: "Why would someone click this?"
+- Tags must CLARIFY AND ENHANCE discovery - they should reveal something about the item that isn't obvious from the title/description/image.
+- Tags must reflect ONE of: a collecting community, a style or aesthetic, a nostalgic or emotional association, a plausible buyer use or display context.
+- PRIORITIZE practical discovery terms: "vintage", "party favors", "event lots", "collectible", "nostalgic", "playful" - terms buyers actually search for.
+- AVOID overly abstract/philosophical tags like "facial expression", "happiness", "emotion" - these don't help buyers find items.
+- If "vintage" appears in the description, include it in style_tags or mood_tags.
+- Do NOT output: category labels ("railroad name", "toy", "object", "design", "body jewelry" - NOT a valid category), obvious physical attributes (color, shape, material - colors/materials are already in the title/image and don't enhance discovery), tags that restate title/brand, construction quality descriptors, collectibility speculations, condition descriptions.
+- REMEMBER: If a buyer can see it in the image or read it in the title, don't make it a tag. Tags should add discovery value, not restate facts.
+- Tags should be written as natural phrases a human might browse, not technical descriptors.
+- If no meaningful discovery tags can be inferred, return empty arrays.
+- Do not output tags like "black color", "rectangular shape", "wheels visible", "realistic design", "detailed construction", "wear consistent with age", "miniature", "toy", "features", "design resembles", "railroad name", "model train", "tender car".
+
+Output JSON only. No prose outside JSON.
+Analyze the image(s) provided.
+
+CATEGORY TAXONOMY (choose exactly one):
+- Kitchen & Dining
+- Home Decor
+- Collectibles
+- Books & Media
+- Furniture
+- Art
+- Electronics
+- Fashion
+- Jewelry (for all jewelry items - necklaces, bracelets, rings, pins, brooches, etc. Use "Jewelry" not specific subcategories)
+- Toys & Games
+- Sports & Outdoors
+- General (only if item doesn't fit any other category)
+
+IMPORTANT: Choose the BROAD category (e.g., "Jewelry"), not specific subcategories (e.g., "earring", "necklace"). Focus on what the item IS (object type) rather than material composition or specific form variations.
+
+Return the following JSON structure:
+
+{
+  "hypotheses": [
+    {
+      "label": "plain-English object interpretation - focus on WHAT it IS (object type, function), not material or specific subcategory (e.g., 'jewelry piece' or 'brooch' not 'brass earring')",
+      "category_id": "must be EXACTLY one of the categories listed above - use BROAD category (e.g., 'Jewelry' not 'earring')",
+      "confidence_vision": 0.00,
+      "evidence": {
+        "visual_cues": ["short, concrete visual observations - focus on distinctive features, shape, function, markings. Think about what this item might ALSO be called or used for (e.g., barrel-shaped container = 'biscuit jar' or 'tobacco jar'). AVOID generic materials unless distinctive (e.g., 'amber glass' should be 'amber colored glass vessel', not just 'brass' or 'glass')"],
+        "text_cues": ["any visible text or markings, else empty array"]
+      },
+      "common_confusions": ["what this is often mistaken for"]
+    }
+  ],
+  "recommended": {
+    "choice": "label of best hypothesis OR 'needs_confirmation'",
+    "reason": "1 short sentence explaining why"
+  },
+  "listing_copy": {
+    "title": "softly worded title; hedge if uncertain. Focus on WHAT the item IS (object type, function) rather than what it's MADE OF (material). IMPORTANT: If you detect a brand name in text_cues or visual evidence (e.g., 'Lily Pulitzer', 'Coach', visible logos/markings), ALWAYS include the brand name prominently in the title (at the start or early). Brand names are crucial for buyer discovery and should not be omitted. Do NOT include material in title unless it's distinctive and necessary for identification (e.g., 'Marble Statue', not 'Glass Vase').",
+    "description": "1-2 sentences placing object in buyer's context. Answer at least one: Where might this live? (shelf, desk, display, collection) Who would be drawn to it? (collector, nostalgia buyer, gift) What feeling does it evoke? Do NOT mention condition, wear, age, patina, or 'wear consistent with age' unless seller explicitly provides condition notes. Do NOT infer condition from images. Do NOT restate obvious visual facts or material composition unless distinctive. Buyer-facing context only.",
+    "ask_for_confirmation": "ONE short sentence asking for a specific photo or detail IF needed"
+  },
+  "pricing": {
+    "estimated_range_low": number,
+    "estimated_range_high": number,
+    "rationale": "1 sentence grounded in comparable resale, not hype"
+  },
+  "id_tags": ["concrete identifiers like brand, pattern, object type - focus on WHAT it IS, not what it's made of"],
+  "style_tags": ["design vocabulary like mid-century, industrial, farmhouse, vintage, antique, lucite, retro, art-deco, modernist - PRIORITIZE era and aesthetic tags. If the item appears vintage, mid-century, or from a specific era (1940s-1980s), include those tags. NO generic materials (brass, glass, metal, wood, hardwood, iron, steel) unless they define a distinctive style. If you detect distinctive materials like lucite (for mid-century acrylic pieces), include them as style tags."],
+  "mood_tags": ["emotional vibe like nostalgic, cozy, playful, charming, whimsical - AVOID overly abstract tags like 'facial expression', 'happiness', 'emotion' - focus on practical discovery terms buyers actually search for"],
+  "seller_keywords": ["3-6 plain-language keywords like train, toy, model, decor, railroad, collectible - obvious terms ARE allowed"]
+}`;
+
+  // Fetch image and convert to base64 for Claude API
+  // Claude requires base64-encoded images
+  let imageBase64: string;
+  let imageMediaType = 'image/jpeg'; // Default, will detect from response
+  
+  try {
+    const imageResponse = await fetch(imageUrl, {
+      // Add timeout to prevent hanging
+      signal: AbortSignal.timeout(30000), // 30 second timeout
+    });
+    
+    if (!imageResponse.ok) {
+      throw new Error(`Failed to fetch image: ${imageResponse.status} ${imageResponse.statusText}`);
+    }
+    
+    // Detect content type from response headers
+    const contentType = imageResponse.headers.get('content-type');
+    if (contentType && contentType.startsWith('image/')) {
+      imageMediaType = contentType;
+    } else {
+      // Try to infer from URL extension if header missing
+      if (imageUrl.includes('.png')) imageMediaType = 'image/png';
+      else if (imageUrl.includes('.gif')) imageMediaType = 'image/gif';
+      else if (imageUrl.includes('.webp')) imageMediaType = 'image/webp';
+    }
+    
+    const imageBuffer = await imageResponse.arrayBuffer();
+    
+    // Check image size (Claude has limits - max 5MB for base64)
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (imageBuffer.byteLength > maxSize) {
+      throw new Error(`Image too large for Claude: ${Math.round(imageBuffer.byteLength / 1024)}KB (max 5MB)`);
+    }
+    
+    // Convert to base64 - Buffer is available in Node.js/Next.js server-side
+    if (typeof Buffer !== 'undefined') {
+      imageBase64 = Buffer.from(imageBuffer).toString('base64');
+    } else {
+      // Fallback for environments without Buffer (shouldn't happen in Next.js server-side)
+      throw new Error('Buffer not available - this should only run server-side');
+    }
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      console.error('⏱️ Claude image fetch timeout after 30s');
+      throw new Error('Image fetch timeout - image may be too large or network too slow');
+    }
+    console.error('❌ Failed to fetch/convert image for Claude:', error);
+    throw new Error(`Failed to process image for Claude: ${error instanceof Error ? error.message : String(error)}`);
+  }
+
+  if (!process.env.ANTHROPIC_API_KEY) {
+    throw new Error('ANTHROPIC_API_KEY not configured - Claude Vision cannot run');
+  }
+
+  let response: Response;
+  try {
+    response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': process.env.ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({
+        model: 'claude-3-5-sonnet-20241022', // Use latest Claude Sonnet for best vision quality
+        max_tokens: 4096,
+        messages: [
+          {
+            role: 'user',
+            content: [
+              { type: 'text', text: prompt },
+              {
+                type: 'image',
+                source: {
+                  type: 'base64',
+                  media_type: imageMediaType,
+                  data: imageBase64,
+                },
+              },
+            ],
+          },
+        ],
+      }),
+      // Add timeout to prevent hanging
+      signal: AbortSignal.timeout(60000), // 60 second timeout for API call
+    });
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      console.error('⏱️ Claude API call timeout after 60s');
+      throw new Error('Claude API call timeout - request took too long');
+    }
+    console.error('❌ Claude API request failed:', error);
+    throw new Error(`Claude API request failed: ${error instanceof Error ? error.message : String(error)}`);
+  }
+
+  if (!response.ok) {
+    let errorText: string;
+    try {
+      errorText = await response.text();
+    } catch (e) {
+      errorText = `Failed to read error response: ${e instanceof Error ? e.message : String(e)}`;
+    }
+    
+    // Parse error response if it's JSON
+    let errorDetails: any = {};
+    try {
+      errorDetails = JSON.parse(errorText);
+    } catch {
+      // Not JSON, use raw text
+    }
+    
+    console.error('❌ Claude Vision API error:', {
+      status: response.status,
+      statusText: response.statusText,
+      error: errorText,
+      details: errorDetails,
+    });
+    
+    // Provide user-friendly error messages
+    if (response.status === 401) {
+      throw new Error('Claude API key invalid or unauthorized - check ANTHROPIC_API_KEY');
+    } else if (response.status === 429) {
+      throw new Error('Claude API rate limit exceeded - too many requests');
+    } else if (response.status === 413 || response.status === 400) {
+      throw new Error('Image too large or invalid for Claude Vision');
+    } else if (response.status >= 500) {
+      throw new Error(`Claude API server error (${response.status}) - try again later`);
+    } else {
+      throw new Error(`Claude Vision API failed: ${response.status} - ${errorDetails.error?.message || errorText || response.statusText}`);
+    }
+  }
+
+  let data: any;
+  try {
+    data = await response.json();
+  } catch (error) {
+    console.error('❌ Failed to parse Claude API JSON response:', error);
+    throw new Error('Claude API returned invalid JSON response');
+  }
+  
+  // Claude returns content as an array - extract text from first content block
+  let content = '';
+  if (Array.isArray(data.content)) {
+    const textContent = data.content.find((block: any) => block.type === 'text');
+    content = textContent?.text?.trim() || '';
+  } else if (data.content?.text) {
+    content = data.content.text.trim();
+  } else {
+    console.warn('⚠️ Claude response missing text content:', { content: data.content, keys: Object.keys(data) });
+    content = '';
+  }
+  
+  if (!content) {
+    console.error('❌ Claude returned empty content:', data);
+    throw new Error('Claude API returned empty response');
+  }
+
+  // Log raw content for debugging (helpful for troubleshooting)
+  console.log('📝 Claude raw response length:', content.length);
+  if (content.length > 2000) {
+    console.log('📝 Claude response preview (first 500 chars):', content.substring(0, 500));
+    console.log('📝 Claude response preview (last 500 chars):', content.substring(content.length - 500));
+  } else {
+    console.log('📝 Claude full response:', content);
+  }
+
+  // Clean up the response - remove markdown code blocks if present
+  content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+  
+  // Extract JSON from response
+  const firstBrace = content.indexOf('{');
+  const lastBrace = content.lastIndexOf('}');
+
+  if (firstBrace !== -1 && lastBrace !== -1) {
+    content = content.substring(firstBrace, lastBrace + 1);
+  }
+
+  // Try to fix common JSON issues before parsing
+  try {
+    // Remove trailing commas before closing braces/brackets
+    content = content.replace(/,(\s*[}\]])/g, '$1');
+  } catch (e) {
+    console.warn('⚠️ JSON cleanup failed, proceeding with original:', e);
+  }
+
+  let parsed;
+  try {
+    parsed = JSON.parse(content);
+    
+    // Use the same parsing logic as OpenAI for consistency
+    const recommendedChoice = parsed.recommended?.choice || '';
+    const recommendedHypothesis = parsed.hypotheses?.find((h: any) => h.label === recommendedChoice) || parsed.hypotheses?.[0];
+    
+    const title = parsed.listing_copy?.title || recommendedHypothesis?.label || 'New Listing';
+    const description = parsed.listing_copy?.description || '';
+    const listingTitle = title;
+    
+    let category = 'General';
+    if (recommendedHypothesis?.category_id) {
+      category = recommendedHypothesis.category_id;
+    } else if (parsed.hypotheses && Array.isArray(parsed.hypotheses)) {
+      for (const hypothesis of parsed.hypotheses) {
+        if (hypothesis.category_id) {
+          category = hypothesis.category_id;
+          break;
+        }
+      }
+    }
+    if (category === 'General' && parsed.category) {
+      category = parsed.category;
+    }
+    
+    const validCategories = [
+      'Kitchen & Dining', 'Home Decor', 'Collectibles', 'Books & Media',
+      'Furniture', 'Art', 'Electronics', 'Fashion', 'Jewelry',
+      'Toys & Games', 'Sports & Outdoors', 'General'
+    ];
+    if (!validCategories.includes(category)) {
+      console.warn('⚠️ Invalid category from Claude:', category, '- defaulting to General');
+      category = 'General';
+    }
+    
+    // Extract tag groups - same structure as OpenAI
+    const idTags = Array.isArray(parsed.id_tags) ? parsed.id_tags : [];
+    const styleTags = Array.isArray(parsed.style_tags) ? parsed.style_tags : [];
+    const moodTags = Array.isArray(parsed.mood_tags) ? parsed.mood_tags : [];
+    
+    const cleanTags = (tags: any[]): string[] => {
+      return tags.map((tag: any) => {
+        let cleaned = String(tag).trim();
+        cleaned = cleaned.replace(/^[\["\s]+|[\]"\s]+$/g, '');
+        cleaned = cleaned.replace(/["\[\]]/g, '');
+        cleaned = cleaned.replace(/,([^\s])/g, ', $1');
+        return cleaned;
+      }).filter((tag: string) => {
+        if (tag.length === 0) return false;
+        if (/^\/[mg]\//.test(tag) || tag.includes('/m/') || tag.includes('/g/')) return false;
+        const lowerTag = tag.toLowerCase();
+        if (lowerTag === 'body jewelry' || lowerTag === 'body jewellery' || lowerTag.includes('body jewelry') || lowerTag.includes('body jewellery')) return false;
+        return true;
+      });
+    };
+    
+    const cleanIdTags = cleanTags(idTags);
+    const cleanStyleTags = cleanTags(styleTags);
+    const cleanMoodTags = cleanTags(moodTags);
+    
+    // Filter visual cues for materials/colors (same as OpenAI)
+    const commonMaterialWords = new Set([
+      'brass', 'bronze', 'copper', 'gold', 'silver', 'metal', 'steel', 'iron', 'aluminum', 'aluminium',
+      'glass', 'crystal', 'amber', 'plastic', 'ceramic', 'porcelain', 'stone', 'marble', 'granite',
+      'wood', 'hardwood', 'softwood', 'oak', 'maple', 'mahogany', 'pine', 'fabric', 'cloth', 'leather', 'canvas', 'cotton', 'wool', 'silk',
+      'material', 'surface', 'finish', 'paint', 'stain'
+    ]);
+    const commonColorWords = new Set([
+      'red', 'blue', 'green', 'black', 'white', 'yellow', 'orange', 'brown', 'amber', 'purple', 'pink', 
+      'gray', 'grey', 'silver', 'gold', 'bronze', 'copper', 'tan', 'beige', 'ivory', 'cream', 'color', 'colour'
+    ]);
+    
+    const allVisualCues: string[] = [];
+    if (parsed.hypotheses && Array.isArray(parsed.hypotheses)) {
+      parsed.hypotheses.forEach((hypothesis: any) => {
+        if (hypothesis.evidence?.visual_cues && Array.isArray(hypothesis.evidence.visual_cues)) {
+          const filteredCues = hypothesis.evidence.visual_cues.filter((cue: any) => {
+            const lowerCue = String(cue).toLowerCase().trim();
+            if (commonMaterialWords.has(lowerCue) || commonColorWords.has(lowerCue)) {
+              return false;
+            }
+            const words = lowerCue.split(/\s+/);
+            if (words.length <= 2 && (words.some(w => commonMaterialWords.has(w)) || words.some(w => commonColorWords.has(w)))) {
+              return false;
+            }
+            if (words.length === 2) {
+              if ((commonColorWords.has(words[0]) && (commonMaterialWords.has(words[1]) || commonColorWords.has(words[1]))) ||
+                  (commonMaterialWords.has(words[0]) && (commonMaterialWords.has(words[1]) || commonColorWords.has(words[1])))) {
+                return false;
+              }
+            }
+            return true;
+          });
+          allVisualCues.push(...filteredCues);
+        }
+        if (hypothesis.evidence?.text_cues && Array.isArray(hypothesis.evidence.text_cues)) {
+          allVisualCues.push(...hypothesis.evidence.text_cues);
+        }
+      });
+    }
+    
+    // Rank and select tags using same system as OpenAI
+    const rankedTags = rankAndSelectTags(cleanIdTags, cleanStyleTags, cleanMoodTags, listingTitle);
+    
+    const processedStyles = rankedTags.styleTags;
+    const processedMoods = rankedTags.moodTags;
+    
+    // Filter materials from id_tags before they become attributes
+    const filteredIdTags = rankedTags.idTags.filter(tag => {
+      const lowerTag = tag.toLowerCase().trim();
+      const materialWords = ['wood', 'hardwood', 'metal', 'plastic', 'glass', 'ceramic', 'porcelain', 'stone', 'brass', 'bronze', 'copper', 'steel', 'iron', 'aluminum', 'fabric', 'leather', 'canvas', 'cotton', 'wool', 'silk'];
+      if (materialWords.some(mat => lowerTag === mat || lowerTag.includes(mat))) {
+        return false;
+      }
+      return true;
+    });
+    
+    const combinedAttributes = new Set([
+      ...filteredIdTags,
+      ...allVisualCues.map((cue: any) => String(cue).trim()).filter((cue: string) => cue.length > 0)
+    ]);
+    
+    let attributesArray = Array.from(combinedAttributes);
+    attributesArray = deduplicateBrandTags(attributesArray);
+    attributesArray = attributesArray.filter(tag => isValidTagForDisplay(tag, listingTitle, attributesArray));
+    const processedAttributes = postProcessTags(attributesArray, 8);
+    
+    // Calculate average price from range
+    let estimatedPrice: number | null = null;
+    if (parsed.pricing?.estimated_range_low && parsed.pricing?.estimated_range_high) {
+      estimatedPrice = Math.round((parsed.pricing.estimated_range_low + parsed.pricing.estimated_range_high) / 2);
+    }
+    
+    console.log('✅ Claude Vision analysis successful:', {
+      title: title.substring(0, 50) + (title.length > 50 ? '...' : ''),
+      category,
+      attributeCount: processedAttributes.length,
+      styleCount: processedStyles.length,
+      moodCount: processedMoods.length,
+      estimatedPrice,
+    });
+    
+    return {
+      title: title,
+      description: description,
+      category: category,
+      attributes: processedAttributes,
+      estimatedPrice: estimatedPrice,
+      styles: processedStyles,
+      moods: processedMoods,
+      intents: [],
+      era: undefined,
+    };
+  } catch (e) {
+    // More detailed error logging for debugging
+    console.error('❌ Failed to parse Claude hypotheses response:', {
+      error: e instanceof Error ? e.message : String(e),
+      stack: e instanceof Error ? e.stack : undefined,
+      contentLength: content?.length || 0,
+      contentPreview: content?.substring(0, 200) || 'N/A',
+    });
+    
+    // Try to extract partial data even if full parsing fails
+    if (content && content.length > 0) {
+      console.log('🔄 Attempting partial data extraction from Claude response...');
+      // Could add fallback parsing here if needed
+    }
+    
+    throw new Error(`Failed to parse Claude response: ${e instanceof Error ? e.message : String(e)}`);
+  }
+}
+
 // OpenAI Vision with hypotheses-based approach for buyer-first marketplace
 // Returns multiple hypotheses with evidence, confidence levels, and observational language
 async function analyzeWithOpenAI(imageUrl: string): Promise<{
@@ -1192,8 +2041,9 @@ You must think in hypotheses, not answers.
 
 Hard rules:
 - Return EXACTLY 3 hypotheses.
-- Do NOT claim "rare," "antique," "vintage," "authentic," or a specific maker unless
+- Do NOT claim "rare," "authentic," or a specific maker unless
   there is clear visual evidence (mark, stamp, unmistakable pattern or silhouette).
+- For style_tags: You MAY include "vintage" or "antique" if the item appears to be from an earlier era or has vintage/antique characteristics (even without definitive proof). Style tags should reflect the aesthetic and era the item evokes, not require authentication.
 - NEVER mention condition, wear, age, patina, or "wear consistent with age" in descriptions unless seller explicitly provides condition notes. Do NOT infer condition from images.
 - If confidence is low or competing hypotheses are close, say so.
 - Favor buyer trust over seller reassurance.
@@ -1201,14 +2051,22 @@ Hard rules:
   meaningfully disambiguates hypotheses or affects buyer desirability.
 - Evidence must be DISTINCTIVE: markings, motifs, hardware, functional features,
   era signals, maker marks, pattern signatures. (Do NOT use patina/crazing as evidence unless explicitly relevant to identification.)
+- Focus on identifying WHAT the item IS (object type, category, function) rather than WHAT it's MADE OF (material composition).
+- Materials are secondary - only mention if it's distinctive and directly relevant to identification (e.g., "marble" for a marble statue, not "glass" for a glass vase).
+- When uncertain about material (e.g., amber glass vs brass), focus on the object type and category instead.
 - Titles must avoid filler like "with marking" or "with text".
 - Output tags in 3 groups:
-  - id_tags: concrete identifiers (brand/pattern/object type) - for hidden indexing only
-  - style_tags: design vocabulary that aids buyer discovery (mid-century, industrial, farmhouse)
-  - mood_tags: emotional/nostalgic associations that aid buyer discovery (nostalgic, cozy, playful)
+  - id_tags: concrete identifiers (brand/pattern/object type) - for hidden indexing only. IMPORTANT: Think about what ELSE this item might be called or used for. For example, a barrel-shaped wooden container might be a "biscuit jar", "tobacco jar", OR "ice bucket" - include these alternative names/uses to help buyers discover items. AVOID generic materials like "wood", "metal", "glass", "iron", "hardwood" unless it's a distinctive identifier. Include alternative item names that buyers might search for (e.g., "biscuit jar", "tobacco jar", "storage basket", "display piece").
+  - style_tags: design vocabulary that aids buyer discovery (mid-century, industrial, farmhouse, vintage, antique, classic, lucite, retro, art-deco, modernist). PRIORITIZE era and aesthetic tags - if an item appears vintage, mid-century, or from a specific era (1940s-1980s), include those tags. These should reflect era, aesthetic, design movement, or distinctive material styles (e.g., "lucite" for acrylic pieces from 1940s-1960s) - things buyers search for. NO generic materials (brass, glass, metal, wood, hardwood, iron, steel) unless they define a distinctive style. If you detect materials that are distinctive to an era (e.g., "lucite" for mid-century acrylic pieces), include them as style tags.
+  - mood_tags: emotional/nostalgic associations that aid buyer discovery (nostalgic, cozy, playful, charming, elegant, whimsical)
 - Tags are NOT labels or classifications. Tags must serve buyer discovery and browsing. They should answer: "Why would someone click this?"
+- Tags must CLARIFY AND ENHANCE discovery - they should reveal something about the item that isn't obvious from the title/description/image.
 - Tags must reflect ONE of: a collecting community, a style or aesthetic, a nostalgic or emotional association, a plausible buyer use or display context.
-- Do NOT output: category labels ("railroad name", "toy", "object", "design"), obvious physical attributes (color, shape, material), tags that restate title/brand, construction quality descriptors, collectibility speculations, condition descriptions.
+- PRIORITIZE practical discovery terms: "vintage", "party favors", "event lots", "collectible", "nostalgic", "playful" - terms buyers actually search for.
+- AVOID overly abstract/philosophical tags like "facial expression", "happiness", "emotion" - these don't help buyers find items.
+- If "vintage" appears in the description, include it in style_tags or mood_tags.
+- Do NOT output: category labels ("railroad name", "toy", "object", "design", "body jewelry" - NOT a valid category), obvious physical attributes (color, shape, material - colors/materials are already in the title/image and don't enhance discovery), tags that restate title/brand, construction quality descriptors, collectibility speculations, condition descriptions.
+- REMEMBER: If a buyer can see it in the image or read it in the title, don't make it a tag. Tags should add discovery value, not restate facts.
 - Tags should be written as natural phrases a human might browse, not technical descriptors.
 - If no meaningful discovery tags can be inferred, return empty arrays.
 - Do not output tags like "black color", "rectangular shape", "wheels visible", "realistic design", "detailed construction", "wear consistent with age", "miniature", "toy", "features", "design resembles", "railroad name", "model train", "tender car".
@@ -1236,21 +2094,23 @@ CATEGORY TAXONOMY (choose exactly one):
 - Art
 - Electronics
 - Fashion
-- Jewelry
+- Jewelry (for all jewelry items - necklaces, bracelets, rings, pins, brooches, etc. Use "Jewelry" not specific subcategories)
 - Toys & Games
 - Sports & Outdoors
 - General (only if item doesn't fit any other category)
+
+IMPORTANT: Choose the BROAD category (e.g., "Jewelry"), not specific subcategories (e.g., "earring", "necklace"). Focus on what the item IS (object type) rather than material composition or specific form variations.
 
 Return the following JSON structure:
 
 {
   "hypotheses": [
     {
-      "label": "plain-English object interpretation",
-      "category_id": "must be EXACTLY one of the categories listed above",
+      "label": "plain-English object interpretation - focus on WHAT it IS (object type, function), not material or specific subcategory (e.g., 'jewelry piece' or 'brooch' not 'brass earring')",
+      "category_id": "must be EXACTLY one of the categories listed above - use BROAD category (e.g., 'Jewelry' not 'earring')",
       "confidence_vision": 0.00,
       "evidence": {
-        "visual_cues": ["short, concrete visual observations"],
+        "visual_cues": ["short, concrete visual observations - focus on distinctive features, shape, function, markings. Think about what this item might ALSO be called or used for (e.g., barrel-shaped container = 'biscuit jar' or 'tobacco jar'). AVOID generic materials unless distinctive (e.g., 'amber glass' should be 'amber colored glass vessel', not just 'brass' or 'glass')"],
         "text_cues": ["any visible text or markings, else empty array"]
       },
       "common_confusions": ["what this is often mistaken for"]
@@ -1261,8 +2121,8 @@ Return the following JSON structure:
     "reason": "1 short sentence explaining why"
   },
   "listing_copy": {
-    "title": "softly worded title; hedge if uncertain. IMPORTANT: If you detect a brand name in text_cues or visual evidence (e.g., 'Lily Pulitzer', 'Coach', visible logos/markings), ALWAYS include the brand name prominently in the title (at the start or early). Brand names are crucial for buyer discovery and should not be omitted.",
-    "description": "1-2 sentences placing object in buyer's context. Answer at least one: Where might this live? (shelf, desk, display, collection) Who would be drawn to it? (collector, nostalgia buyer, gift) What feeling does it evoke? Do NOT mention condition, wear, age, patina, or 'wear consistent with age' unless seller explicitly provides condition notes. Do NOT infer condition from images. Do NOT restate obvious visual facts. Buyer-facing context only.",
+    "title": "softly worded title; hedge if uncertain. Focus on WHAT the item IS (object type, function) rather than what it's MADE OF (material). IMPORTANT: If you detect a brand name in text_cues or visual evidence (e.g., 'Lily Pulitzer', 'Coach', visible logos/markings), ALWAYS include the brand name prominently in the title (at the start or early). Brand names are crucial for buyer discovery and should not be omitted. Do NOT include material in title unless it's distinctive and necessary for identification (e.g., 'Marble Statue', not 'Glass Vase').",
+    "description": "1-2 sentences placing object in buyer's context. Answer at least one: Where might this live? (shelf, desk, display, collection) Who would be drawn to it? (collector, nostalgia buyer, gift) What feeling does it evoke? Do NOT mention condition, wear, age, patina, or 'wear consistent with age' unless seller explicitly provides condition notes. Do NOT infer condition from images. Do NOT restate obvious visual facts or material composition unless distinctive. Buyer-facing context only.",
     "ask_for_confirmation": "ONE short sentence asking for a specific photo or detail IF needed"
   },
   "pricing": {
@@ -1270,9 +2130,9 @@ Return the following JSON structure:
     "estimated_range_high": number,
     "rationale": "1 sentence grounded in comparable resale, not hype"
   },
-  "id_tags": ["concrete identifiers like brand, pattern, object type"],
-  "style_tags": ["design vocabulary like mid-century, industrial, farmhouse"],
-  "mood_tags": ["emotional vibe like nostalgic, cozy, playful"],
+  "id_tags": ["concrete identifiers like brand, pattern, object type - focus on WHAT it IS, not what it's made of"],
+  "style_tags": ["design vocabulary like mid-century, industrial, farmhouse, vintage, antique, lucite, retro, art-deco, modernist - PRIORITIZE era and aesthetic tags. If the item appears vintage, mid-century, or from a specific era (1940s-1980s), include those tags. NO generic materials (brass, glass, metal, wood, hardwood, iron, steel) unless they define a distinctive style. If you detect distinctive materials like lucite (for mid-century acrylic pieces), include them as style tags."],
+  "mood_tags": ["emotional vibe like nostalgic, cozy, playful, charming, whimsical - AVOID overly abstract tags like 'facial expression', 'happiness', 'emotion' - focus on practical discovery terms buyers actually search for"],
   "seller_keywords": ["3-6 plain-language keywords like train, toy, model, decor, railroad, collectible - obvious terms ARE allowed"]
 }`;
 
@@ -1405,7 +2265,16 @@ Return the following JSON structure:
         cleaned = cleaned.replace(/["\[\]]/g, '');
         cleaned = cleaned.replace(/,([^\s])/g, ', $1');
         return cleaned;
-      }).filter((tag: string) => tag.length > 0);
+      }).filter((tag: string) => {
+        // Filter out empty strings
+        if (tag.length === 0) return false;
+        // Filter out entity IDs (e.g., /m/083vt)
+        if (/^\/[mg]\//.test(tag) || tag.includes('/m/') || tag.includes('/g/')) return false;
+        // Filter out "body jewelry" / "body jewellery" (case-insensitive)
+        const lowerTag = tag.toLowerCase();
+        if (lowerTag === 'body jewelry' || lowerTag === 'body jewellery' || lowerTag.includes('body jewelry') || lowerTag.includes('body jewellery')) return false;
+        return true;
+      });
     };
     
     const cleanIdTags = cleanTags(idTags);
@@ -1414,13 +2283,47 @@ Return the following JSON structure:
     
     // Extract attributes from evidence.visual_cues (combine with id_tags for comprehensive attributes)
     // Use id_tags as primary attributes (concrete identifiers), supplement with distinctive visual cues
+    // Filter out material-only and color-only cues to reduce focus on obvious attributes
+    // These are already in the title/description and don't enhance discovery
+    const commonMaterialWords = new Set([
+      'brass', 'bronze', 'copper', 'gold', 'silver', 'metal', 'steel', 'iron', 'aluminum', 'aluminium',
+      'glass', 'crystal', 'amber', 'plastic', 'ceramic', 'porcelain', 'stone', 'marble', 'granite',
+      'wood', 'hardwood', 'softwood', 'oak', 'maple', 'mahogany', 'pine', 'fabric', 'cloth', 'leather', 'canvas', 'cotton', 'wool', 'silk',
+      'material', 'surface', 'finish', 'paint', 'stain'
+    ]);
+    const commonColorWords = new Set([
+      'red', 'blue', 'green', 'black', 'white', 'yellow', 'orange', 'brown', 'amber', 'purple', 'pink', 
+      'gray', 'grey', 'silver', 'gold', 'bronze', 'copper', 'tan', 'beige', 'ivory', 'cream', 'color', 'colour'
+    ]);
+    
     const allVisualCues: string[] = [];
     if (parsed.hypotheses && Array.isArray(parsed.hypotheses)) {
       parsed.hypotheses.forEach((hypothesis: any) => {
         if (hypothesis.evidence?.visual_cues && Array.isArray(hypothesis.evidence.visual_cues)) {
-          allVisualCues.push(...hypothesis.evidence.visual_cues);
+          // Filter out cues that are just material/color words - these don't enhance discovery
+          const filteredCues = hypothesis.evidence.visual_cues.filter((cue: any) => {
+            const lowerCue = String(cue).toLowerCase().trim();
+            // Reject if it's just a material or color word (single word)
+            if (commonMaterialWords.has(lowerCue) || commonColorWords.has(lowerCue)) {
+              return false;
+            }
+            // Reject if it's a phrase that's primarily about materials/colors (e.g., "brass finish", "orange color", "wood stain")
+            const words = lowerCue.split(/\s+/);
+            if (words.length <= 2 && (words.some(w => commonMaterialWords.has(w)) || words.some(w => commonColorWords.has(w)))) {
+              return false;
+            }
+            // Reject if it's a compound phrase like "orange color", "brown stain", "amber glass" (when material/color is the focus)
+            if (words.length === 2) {
+              if ((commonColorWords.has(words[0]) && (commonMaterialWords.has(words[1]) || commonColorWords.has(words[1]))) ||
+                  (commonMaterialWords.has(words[0]) && (commonMaterialWords.has(words[1]) || commonColorWords.has(words[1])))) {
+                return false;
+              }
+            }
+            return true;
+          });
+          allVisualCues.push(...filteredCues);
         }
-        // Also include text cues as attributes
+        // Also include text cues as attributes (these are often brands/names, so less likely to be materials)
         if (hypothesis.evidence?.text_cues && Array.isArray(hypothesis.evidence.text_cues)) {
           allVisualCues.push(...hypothesis.evidence.text_cues);
         }
@@ -1440,8 +2343,19 @@ Return the following JSON structure:
     
     // For attributes, use ranked ID tags (max 2) plus distinctive visual cues
     // Attributes combine ID tags with visual evidence from the image analysis
+    // IMPORTANT: Filter material/color words from id_tags BEFORE they become attributes
+    const filteredIdTags = rankedTags.idTags.filter(tag => {
+      const lowerTag = tag.toLowerCase().trim();
+      // Filter out material words (including compound words like "hardwood")
+      const materialWords = ['wood', 'hardwood', 'metal', 'plastic', 'glass', 'ceramic', 'porcelain', 'stone', 'brass', 'bronze', 'copper', 'steel', 'iron', 'aluminum', 'fabric', 'leather', 'canvas', 'cotton', 'wool', 'silk'];
+      if (materialWords.some(mat => lowerTag === mat || lowerTag.includes(mat))) {
+        return false;
+      }
+      return true;
+    });
+    
     const combinedAttributes = new Set([
-      ...rankedTags.idTags, // Use ranked ID tags (max 2) instead of all cleanIdTags
+      ...filteredIdTags, // Filter materials from id_tags before adding to attributes
       ...allVisualCues.map((cue: any) => String(cue).trim()).filter((cue: string) => cue.length > 0)
     ]);
     
@@ -1449,7 +2363,8 @@ Return the following JSON structure:
     // Apply brand deduplication and validation to attributes as well
     let attributesArray = Array.from(combinedAttributes);
     attributesArray = deduplicateBrandTags(attributesArray);
-    attributesArray = attributesArray.filter(tag => isValidTagForDisplay(tag, listingTitle));
+    // Filter with duplicate detection - pass all tags so isValidTagForDisplay can check for redundancy
+    attributesArray = attributesArray.filter(tag => isValidTagForDisplay(tag, listingTitle, attributesArray));
     const processedAttributes = postProcessTags(attributesArray, 8);
     
     // Calculate average price from range

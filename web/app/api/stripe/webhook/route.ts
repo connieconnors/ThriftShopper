@@ -2,6 +2,18 @@ import Stripe from "stripe";
 import { headers } from "next/headers";
 import { createClient } from "@supabase/supabase-js";
 
+/**
+ * Stripe Webhook Handler
+ * 
+ * Route: /api/stripe/webhook
+ * 
+ * For local testing with Stripe CLI:
+ *   stripe listen --forward-to http://localhost:3000/api/stripe/webhook
+ * 
+ * Copy the webhook signing secret from Stripe CLI output and set it as:
+ *   STRIPE_WEBHOOK_SECRET=whsec_xxxxx
+ */
+
 export const runtime = "nodejs";            // IMPORTANT: Stripe SDK needs Node runtime
 export const dynamic = "force-dynamic";     // avoid caching / static optimization
 
@@ -28,7 +40,8 @@ async function createOrderFromPaymentIntent(
   const metadata = paymentIntent.metadata;
 
   // Extract order data from payment intent metadata
-  const listingId = metadata.listing_id;
+  // Support both snake_case and camelCase for listing ID
+  const listingId = metadata.listing_id || metadata.listingId;
   const sellerId = metadata.seller_id;
   const amount = paymentIntent.amount / 100; // Convert from cents
 
@@ -114,25 +127,30 @@ async function createOrderFromPaymentIntent(
     throw orderError;
   }
 
-  // Update listing status to sold
-  await supabaseAdmin
-    .from("listings")
-    .update({ status: "sold" })
-    .eq("id", listingId);
-
+  // Note: Listing status update is handled in payment_intent.succeeded handler
+  // This function only creates the order record
+  
   console.log("✅ Order created from webhook:", order.id);
 }
 
 export async function POST(req: Request) {
+  // MINIMAL TOP-OF-HANDLER LOG - This must appear if route is hit
+  console.log("🚨 [WEBHOOK] POST handler called at", new Date().toISOString());
+  console.log("🚨 [WEBHOOK] Route: /api/stripe/webhook");
+  
   const sig = (await headers()).get("stripe-signature");
   if (!sig) {
+    console.error("❌ [WEBHOOK] Missing stripe-signature header");
     return new Response("Missing stripe-signature", { status: 400 });
   }
 
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
   if (!webhookSecret) {
+    console.error("❌ [WEBHOOK] Missing STRIPE_WEBHOOK_SECRET environment variable");
     return new Response("Missing STRIPE_WEBHOOK_SECRET", { status: 500 });
   }
+
+  console.log("🔔 [WEBHOOK] Signature and secret present, verifying...");
 
   let event: Stripe.Event;
 
@@ -141,8 +159,9 @@ export async function POST(req: Request) {
     const body = await req.text();
 
     event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
+    console.log("✅ [WEBHOOK] Signature verified, event type:", event.type);
   } catch (err: any) {
-    console.error("❌ Webhook signature verification failed:", err?.message || err);
+    console.error("❌ [WEBHOOK] Signature verification failed:", err?.message || err);
     return new Response(`Webhook Error: ${err?.message || "Invalid signature"}`, {
       status: 400,
     });
@@ -154,22 +173,77 @@ export async function POST(req: Request) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
         console.log("✅ checkout.session.completed", session.id);
-        // TODO: Handle checkout session completion if we use Checkout Sessions
-        // For now, we use Payment Intents, so this is a no-op
+        
+        // Extract listingId from metadata or client_reference_id
+        const listingId = session.metadata?.listingId || session.client_reference_id;
+        
+        if (!listingId) {
+          console.warn("⚠️ Checkout session missing listingId in metadata or client_reference_id:", session.id);
+          break;
+        }
+
+        // Update listing status to sold and set sold_at timestamp
+        const { error: updateError } = await supabaseAdmin
+          .from("listings")
+          .update({ 
+            status: "sold",
+            sold_at: new Date().toISOString()
+          })
+          .eq("id", listingId);
+
+        if (updateError) {
+          console.error("❌ Error updating listing status from checkout session:", updateError);
+        } else {
+          console.log("✅ Listing marked as sold from checkout session:", listingId);
+        }
         break;
       }
 
       case "payment_intent.succeeded": {
         const paymentIntent = event.data.object as Stripe.PaymentIntent;
-        console.log("✅ payment_intent.succeeded", paymentIntent.id);
+        const listingId = paymentIntent.metadata?.listing_id;
         
-        // Safety net: Create order if it doesn't exist
-        // This handles cases where payment succeeded but order creation failed client-side
+        console.log("📦 [WEBHOOK] payment_intent.succeeded");
+        console.log("   payment_intent.id:", paymentIntent.id);
+        console.log("   listing_id:", listingId);
+        
+        if (!listingId) {
+          console.warn("⚠️ Payment intent missing listing_id in metadata:", paymentIntent.id);
+          console.log("   Available metadata keys:", Object.keys(paymentIntent.metadata || {}));
+          break;
+        }
+
+        // Update listing status to sold and set sold_at timestamp
+        const { error: updateError } = await supabaseAdmin
+          .from("listings")
+          .update({ 
+            status: "sold",
+            sold_at: new Date().toISOString()
+          })
+          .eq("id", listingId);
+
+        if (updateError) {
+          console.error("❌ [WEBHOOK] Failed to update listing:", {
+            listingId,
+            error: updateError.message,
+            code: updateError.code,
+          });
+        } else {
+          console.log("✅ [WEBHOOK] Listing updated successfully:", {
+            listingId,
+            status: "sold",
+            sold_at: new Date().toISOString(),
+          });
+          // Temporary confirmation log
+          console.log("🔍 [TEMPORARY] Listing update confirmed - check Supabase for status='sold' and sold_at IS NOT NULL");
+        }
+        
+        // Safety net: Create order if it doesn't exist (separate concern)
         try {
           await createOrderFromPaymentIntent(paymentIntent);
         } catch (err: any) {
           console.error("❌ Error creating order from webhook:", err);
-          // Don't fail the webhook - log and continue
+          // Don't fail the webhook - order creation is separate
         }
         break;
       }

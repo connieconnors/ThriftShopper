@@ -11,6 +11,7 @@ import { useAuth } from '@/app/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import Link from 'next/link';
+import AIAnalysisIndicator from './AIAnalysisIndicator';
 
 interface UploadResult {
   processedImageUrl: string;
@@ -124,6 +125,21 @@ function VoiceInputButton({ onTranscript, disabled, className = '', ariaLabel }:
   );
 }
 
+// Map old condition values to new ones for graceful migration
+function mapConditionValue(condition: string): string {
+  if (!condition) return '';
+  const oldToNew: Record<string, string> = {
+    'New': 'Pristine',
+    'Like New': 'Pristine',
+    'Excellent': 'Very Good',
+    'Good': 'Very Good',
+    'Fair': 'A Few Flaws (see notes)',
+  };
+  
+  // If it's an old value, map it; otherwise return as-is
+  return oldToNew[condition] || condition;
+}
+
 export default function SellerUploadForm() {
   // Add this categorization function here
   const categorizeAttributes = (attributes: string[]) => {
@@ -186,7 +202,9 @@ export default function SellerUploadForm() {
   const [isPublished, setIsPublished] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
+  const [draftSaved, setDraftSaved] = useState(false); // Track if draft was just saved
   const [isRemovingBackground, setIsRemovingBackground] = useState(false);
+  const [isAIAnalyzing, setIsAIAnalyzing] = useState(false);
   const [isStripeReady, setIsStripeReady] = useState<boolean | null>(null);
   
   // Editable fields
@@ -196,6 +214,7 @@ export default function SellerUploadForm() {
   const [price, setPrice] = useState('');
   const [category, setCategory] = useState('');
   const [condition, setCondition] = useState('');
+  const [sellerNotes, setSellerNotes] = useState('');
   const [specifications, setSpecifications] = useState('');
   const [keywords, setKeywords] = useState(''); // For moods/styles
   
@@ -338,7 +357,10 @@ export default function SellerUploadForm() {
         setStory(listing.story_text || '');
         setPrice(listing.price ? listing.price.toString() : '');
         setCategory(listing.category || '');
-        setCondition(listing.condition || '');
+        // Map old condition values to new ones when loading for edit
+        const mappedCondition = mapConditionValue(listing.condition || '');
+        setCondition(mappedCondition);
+        setSellerNotes(listing.seller_notes || '');
         setSpecifications(listing.specifications || '');
         
         // Combine moods, styles, and intents into keywords
@@ -388,6 +410,7 @@ export default function SellerUploadForm() {
           price: listing.price ? listing.price.toString() : '',
           category: listing.category || '',
           condition: listing.condition || '',
+          seller_notes: listing.seller_notes || '',
           specifications: listing.specifications || '',
           keywordsDisplay: keywordsToDisplay,
           parsedMoods: moods,
@@ -697,7 +720,10 @@ export default function SellerUploadForm() {
       // User can edit the AI-generated fields after they're populated
 
       // Simulate processing steps for better UX
-      setTimeout(() => setProcessingStep('analyzing'), 500);
+      setTimeout(() => {
+        setProcessingStep('analyzing');
+        setIsAIAnalyzing(true);
+      }, 500);
       setTimeout(() => setProcessingStep('generating'), 2000);
       setTimeout(() => setProcessingStep('pricing'), 4000);
 
@@ -726,14 +752,17 @@ export default function SellerUploadForm() {
       });
 
       if (!response.ok) {
+        setIsAIAnalyzing(false);
         throw new Error(data.error || 'Upload failed');
       }
 
       if (!data.success) {
+        setIsAIAnalyzing(false);
         throw new Error(data.error || 'Upload failed');
       }
 
       setProcessingStep('complete');
+      setIsAIAnalyzing(false);
       
       // Store listing ID and original image for toggle
       if (data.listingId) {
@@ -816,6 +845,7 @@ export default function SellerUploadForm() {
       console.error('❌ Upload error:', err);
       setError(err instanceof Error ? err.message : 'Upload failed');
       setProcessingStep('idle');
+      setIsAIAnalyzing(false);
       // On error, keep the form visible but show the error
       // Don't clear result - user might want to try again or edit manually
     } finally {
@@ -918,6 +948,7 @@ export default function SellerUploadForm() {
         price: price ? parseFloat(price) : null,
         category,
         condition: condition || null,
+        seller_notes: sellerNotes || null,
         specifications: specifications || null,
         keywords: userKeywordsArray,
         ai_suggested_keywords: aiSuggestedKeywordsArray,
@@ -1048,6 +1079,7 @@ export default function SellerUploadForm() {
         price: price ? parseFloat(price) : null,
         category,
         condition: condition || null,
+        seller_notes: sellerNotes || null,
         specifications: specifications || null,
         keywords: userKeywordsArray,
         ai_suggested_keywords: aiSuggestedKeywordsArray,
@@ -1098,8 +1130,12 @@ export default function SellerUploadForm() {
 
       console.log('✅ [handleSaveDraft] Successfully saved to database');
       setIsSaved(true);
-      // Reset saved indicator after 2 seconds
-      setTimeout(() => setIsSaved(false), 2000);
+      setDraftSaved(true);
+      
+      // After showing "Saved" for 1.5 seconds, change to "New Listing" state
+      setTimeout(() => {
+        setIsSaved(false);
+      }, 1500);
 
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save draft');
@@ -1135,6 +1171,7 @@ export default function SellerUploadForm() {
     setPrice('');
     setCategory('');
     setCondition('');
+    setSellerNotes('');
     setSpecifications('');
     setKeywords('');
     setListingId(null);
@@ -1142,6 +1179,7 @@ export default function SellerUploadForm() {
     setShowProcessedImage(true);
     setIsPublished(false);
     setIsSaved(false);
+    setDraftSaved(false);
     setAdditionalPhoto1('');
     setAdditionalPhoto2('');
     setIsEditMode(false);
@@ -1152,6 +1190,7 @@ export default function SellerUploadForm() {
     setUserHasEditedPrice(false);
     setRemovedAITags(new Set()); // Reset removed AI tags
   };
+
 
   return (
     <div className="max-w-4xl mx-auto p-6">
@@ -1319,6 +1358,8 @@ export default function SellerUploadForm() {
           >
             {isEditMode ? 'Edit Your Listing' : 'Review Your Listing'}
           </h2>
+
+          <AIAnalysisIndicator isAnalyzing={isAIAnalyzing} />
 
           <div className="grid md:grid-cols-2 gap-8 mb-8">
             {/* Photo Section */}
@@ -1764,12 +1805,25 @@ export default function SellerUploadForm() {
                   className="w-full border border-gray-300 rounded-lg px-4 h-11 bg-white"
                 >
                   <option value="">Select condition...</option>
-                  <option value="New">New</option>
-                  <option value="Like New">Like New</option>
-                  <option value="Excellent">Excellent</option>
-                  <option value="Good">Good</option>
-                  <option value="Fair">Fair</option>
+                  <option value="Pristine">Pristine</option>
+                  <option value="Very Good">Very Good</option>
+                  <option value="Storied">Storied</option>
+                  <option value="A Few Flaws (see notes)">A Few Flaws (see notes)</option>
                 </select>
+              </div>
+
+              {/* 7a. Seller Notes */}
+              <div>
+                <label className="block font-semibold mb-2" style={{ fontFamily: 'Merriweather, serif' }}>
+                  Seller notes <span className="text-gray-400 font-normal">(optional)</span>
+                </label>
+                <textarea
+                  value={sellerNotes}
+                  onChange={(e) => setSellerNotes(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2 text-[#333333]"
+                  rows={3}
+                  placeholder="Patina, small marks, repairs, missing pieces — anything you'd want to know as a buyer."
+                />
               </div>
 
               {/* 8. Specifications */}
@@ -1864,18 +1918,18 @@ export default function SellerUploadForm() {
                   )}
                 </button>
 
-                {/* Save Draft Button */}
+                {/* Save Draft / Saved - Upload Another Button */}
                 <button
-                  onClick={handleSaveDraft}
-                  disabled={isPublishing || isSaving || !listingId}
+                  onClick={draftSaved ? resetForm : handleSaveDraft}
+                  disabled={isPublishing || isSaving || (!listingId && !draftSaved)}
                   className="px-4 py-3 rounded-lg font-semibold transition flex items-center justify-center gap-2"
                   style={{
                     fontFamily: 'Merriweather, serif', 
-                    backgroundColor: isSaved ? '#dcfce7' : '#f3f4f6',
-                    color: isSaved ? '#166534' : '#374151',
+                    backgroundColor: (isSaved || draftSaved) ? '#dcfce7' : '#f3f4f6',
+                    color: (isSaved || draftSaved) ? '#166534' : '#374151',
                     border: '1px solid',
-                    borderColor: isSaved ? '#86efac' : '#d1d5db',
-                    cursor: isSaving ? 'wait' : 'pointer',
+                    borderColor: (isSaved || draftSaved) ? '#86efac' : '#d1d5db',
+                    cursor: (isSaving || (!listingId && !draftSaved)) ? 'not-allowed' : 'pointer',
                   }}
                 >
                   {isSaving ? (
@@ -1883,12 +1937,12 @@ export default function SellerUploadForm() {
                       <Loader2 size={16} className="animate-spin" />
                       Saving...
                     </>
-                  ) : isSaved ? (
+                  ) : (isSaved || draftSaved) ? (
                     <>
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                       </svg>
-                      Saved
+                      Saved - Upload Another
                     </>
                   ) : (
                     'Save Draft'

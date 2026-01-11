@@ -4,6 +4,8 @@ import { cookies } from "next/headers";
 import { sendOrderConfirmationEmail } from "../../../lib/emails/sendEmail";
 import { sendItemSoldEmail } from "../../../lib/emails/sendEmail";
 
+export const dynamic = "force-dynamic"; // Ensure route is not statically optimized
+
 export async function POST(request: NextRequest) {
   try {
     // Create Supabase SERVER client using cookies/headers
@@ -287,11 +289,21 @@ export async function POST(request: NextRequest) {
 
     console.log("✅ Order created successfully:", order.id);
 
-    // Update listing status to sold
-    await supabase
+    // Update listing status to sold and set sold_at timestamp
+    const { error: updateError } = await supabase
       .from("listings")
-      .update({ status: "sold" })
+      .update({ 
+        status: "sold",
+        sold_at: new Date().toISOString()
+      })
       .eq("id", listingId);
+    
+    if (updateError) {
+      console.error("❌ Error updating listing status to sold:", updateError);
+      // Don't fail the order creation if status update fails, but log it
+    } else {
+      console.log("✅ Listing marked as sold:", listingId);
+    }
 
     // Fetch buyer and seller profiles for emails
     const { data: buyerProfile } = await supabase

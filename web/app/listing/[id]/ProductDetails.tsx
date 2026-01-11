@@ -29,6 +29,20 @@ interface ProductDetailsProps {
   listing: Listing;
 }
 
+// Map old condition values to new ones for graceful migration
+function mapConditionValue(condition: string): string {
+  const oldToNew: Record<string, string> = {
+    'New': 'Pristine',
+    'Like New': 'Pristine',
+    'Excellent': 'Very Good',
+    'Good': 'Very Good',
+    'Fair': 'A Few Flaws (see notes)',
+  };
+  
+  // If it's an old value, map it; otherwise return as-is
+  return oldToNew[condition] || condition;
+}
+
 export default function ProductDetails({ listing }: ProductDetailsProps) {
   const router = useRouter();
   const { user } = useAuth();
@@ -313,7 +327,20 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
             <h2 className="text-sm font-semibold text-gray-600 uppercase tracking-wider mb-2">
               Condition
             </h2>
-            <p className="text-gray-700">{listing.condition}</p>
+            <div className="flex items-start gap-2">
+              <p className="text-gray-700">{mapConditionValue(listing.condition)}</p>
+              {listing.seller_notes && (
+                <span className="text-xs text-gray-500 italic">(see seller notes)</span>
+              )}
+            </div>
+            {listing.seller_notes && (
+              <div className="mt-2">
+                <h3 className="text-gray-700 italic mb-1" style={{ fontSize: '0.9em' }}>
+                  Seller notes:
+                </h3>
+                <p className="text-gray-700 italic" style={{ fontSize: '0.9em' }}>{listing.seller_notes}</p>
+              </div>
+            )}
           </div>
         )}
 

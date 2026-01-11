@@ -12,6 +12,8 @@ import {
   getPrimaryImage,
   TS_BADGE_URL
 } from "../../lib/types";
+import { isJustSold } from "../../lib/listingStatus";
+import { CheckCircle2 } from "lucide-react";
 import { supabase } from "../../lib/supabaseClient";
 import { StandaloneMoodWheel } from "../../components/StandaloneMoodWheel";
 import { TSLogo } from "../../components/TSLogo";
@@ -824,15 +826,23 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
                 }}
               />
 
-              {/* Image Counter - Top Right (only show for current card) */}
+              {/* Image Counter and Just Sold Badge - Top Right (only show for current card) */}
               {offset === 0 && (
                 <div 
-                  className="absolute pointer-events-none z-10"
+                  className="absolute pointer-events-none z-10 flex flex-col items-end gap-2"
                   style={{ 
                     top: '16px',
                     right: '16px',
                   }}
                 >
+                  {/* Just Sold Badge */}
+                  {isJustSold(listing) && (
+                    <div className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium uppercase tracking-wide bg-neutral-900/80 text-white border border-white/10 backdrop-blur">
+                      <CheckCircle2 className="w-3 h-3" />
+                      Just Sold
+                    </div>
+                  )}
+                  {/* Image Counter */}
                   <div 
                     className="px-3 py-1.5 rounded-full"
                     style={{ 

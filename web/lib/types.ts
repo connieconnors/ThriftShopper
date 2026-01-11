@@ -15,6 +15,7 @@ export type Listing = {
   photo_url: string | null;
   photo_url_2: string | null;
   condition: string | null;
+  seller_notes: string | null;
   specifications: string | null;
   created_at: string;
   status: ListingStatus;
