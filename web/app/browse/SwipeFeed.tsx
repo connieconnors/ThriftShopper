@@ -503,21 +503,32 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [listings]);
 
+  // Ensure currentIndex is within bounds - reset if out of bounds (e.g., after deletions)
+  useEffect(() => {
+    if (displayListings.length > 0 && currentIndex >= displayListings.length) {
+      setCurrentIndex(0);
+    }
+  }, [displayListings.length, currentIndex]);
+
   // currentListing computed after all hooks
-  const currentListing = displayListings[currentIndex];
+  // Clamp index to valid range to prevent undefined access
+  const safeIndex = displayListings.length > 0 ? Math.min(currentIndex, displayListings.length - 1) : 0;
+  const currentListing = displayListings[safeIndex];
 
   // Track if mood filtering resulted in no results
   const hasMoodFilter = selectedMoods.length > 0;
   const hasNoResults = displayListings.length === 0;
   const isMoodFilterResult = hasMoodFilter && hasNoResults && searchResults === null && noMoodResults;
 
-  if (displayListings.length === 0 && !noMoodResults) {
-    return (
-      <div 
-        className="fixed inset-0 flex flex-col items-center justify-center px-6"
-        style={{ backgroundColor: COLORS.midnightBlue, fontFamily: 'Merriweather, serif' }}
-      >
-        <p className="text-white text-xl mb-2">No items found</p>
+  // Safety check: ensure currentListing exists before rendering
+  if (!currentListing || displayListings.length === 0) {
+    if (!noMoodResults) {
+      return (
+        <div 
+          className="fixed inset-0 flex flex-col items-center justify-center px-6"
+          style={{ backgroundColor: COLORS.midnightBlue, fontFamily: 'Merriweather, serif' }}
+        >
+          <p className="text-white text-xl mb-2">No items found</p>
         {isMoodFilterResult && (
           <>
             <p className="text-white/60 text-sm mb-4">
@@ -546,8 +557,11 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
             Clear search
           </button>
         )}
-      </div>
-    );
+        </div>
+      );
+    }
+    // If noMoodResults is true, return null to prevent error
+    return null;
   }
 
   const imageSrc = getPrimaryImage(currentListing);
