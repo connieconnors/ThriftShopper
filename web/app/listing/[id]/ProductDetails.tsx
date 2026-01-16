@@ -139,6 +139,7 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
     ...(listing.styles || []),
     ...(listing.intents || []),
   ].filter(Boolean);
+  const isSold = listing.status === "sold";
 
   return (
     <StreamChatProvider>
@@ -438,12 +439,25 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
           <FavoriteButton listingId={listing.id} variant="detail" />
 
           {/* Center: Buy Now Button */}
-          <button 
-            onClick={() => router.push(`/checkout/${listing.id}`)}
-            className="flex-1 h-14 bg-[#191970] text-white font-bold text-lg rounded-full hover:bg-[#00006a] transition-colors shadow-md"
-          >
-            Buy Now
-          </button>
+          {isSold ? (
+            <button
+              disabled
+              className="flex-1 h-14 rounded-full bg-[#222222] text-white text-xs uppercase tracking-[0.2em] flex items-center justify-center text-center px-4 cursor-not-allowed"
+              style={{
+                fontFamily: "'Playfair Display', 'Times New Roman', serif",
+                fontWeight: 500,
+              }}
+            >
+              SOLD
+            </button>
+          ) : (
+            <button 
+              onClick={() => router.push(`/checkout/${listing.id}`)}
+              className="flex-1 h-14 bg-[#191970] text-white font-bold text-lg rounded-full hover:bg-[#00006a] transition-colors shadow-md"
+            >
+              Buy Now
+            </button>
+          )}
 
           {/* Right: Message Seller Button (if logged in and not seller) */}
           {user && user.id !== listing.seller_id && listing.seller_id ? (

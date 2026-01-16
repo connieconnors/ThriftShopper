@@ -6,16 +6,15 @@ import SwipeFeed from "./SwipeFeed";
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-export default async function Browse() {
-  // Calculate the date 7 days ago for "Just Sold" filter
-  const sevenDaysAgo = new Date();
-  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-  const sevenDaysAgoISO = sevenDaysAgo.toISOString();
+type ListingWithSoldAt = Listing & {
+  sold_at?: string | null;
+};
 
+export default async function Browse() {
   // Fetch ALL listings (both active and sold) in a single query
   // This ensures we don't miss items due to timing issues
   const { data: allListings, error } = await supabase
-    .from("listings")
+    .from("discoverable_listings")
     .select(`
       *,
       profiles:seller_id (
@@ -27,73 +26,10 @@ export default async function Browse() {
         review_count
       )
     `)
-    .in("status", ["active", "sold"])
-    .limit(200); // Increased limit to ensure we get both active and sold items
+    ;
   
-  // Filter listings client-side
-  const activeListings: any[] = [];
-  const justSoldListings: any[] = [];
-  
-  // Debug: Log all unique statuses we're seeing
-  const statusCounts: Record<string, number> = {};
-  (allListings || []).forEach((listing: any) => {
-    statusCounts[listing.status] = (statusCounts[listing.status] || 0) + 1;
-  });
-  console.log(`[Browse] Status breakdown:`, statusCounts);
-  
-  (allListings || []).forEach((listing: any) => {
-    if (listing.status === "active") {
-      activeListings.push(listing);
-    } else if (listing.status === "sold") {
-      // Include sold items if:
-      // 1. They have no sold_at (might be newly sold, webhook hasn't set it yet)
-      // 2. They were sold within the last 7 days
-      if (!listing.sold_at) {
-        // Include items without sold_at - they might be newly sold
-        console.log(`[Browse] Including sold item without sold_at: ${listing.id} (${listing.title})`);
-        justSoldListings.push(listing);
-      } else {
-        try {
-          const soldDate = new Date(listing.sold_at);
-          if (isNaN(soldDate.getTime())) {
-            // Invalid date - include it anyway
-            console.log(`[Browse] Including sold item with invalid sold_at: ${listing.id} (${listing.title})`);
-            justSoldListings.push(listing);
-          } else {
-            const now = new Date();
-            const daysSinceSold = (now.getTime() - soldDate.getTime()) / (1000 * 60 * 60 * 24);
-            if (daysSinceSold >= 0 && daysSinceSold < 7) {
-              justSoldListings.push(listing);
-            } else {
-              console.log(`[Browse] Excluding sold item (too old): ${listing.id}, sold ${daysSinceSold.toFixed(1)} days ago`);
-            }
-          }
-        } catch (error) {
-          // Error parsing date - include it anyway
-          console.log(`[Browse] Including sold item despite parse error: ${listing.id}`, error);
-          justSoldListings.push(listing);
-        }
-      }
-    }
-  });
-
-  // Combine both results
-  const data = [...activeListings, ...justSoldListings];
-  
-  // Log for debugging
-  console.log(`[Browse] Query results: ${allListings?.length || 0} total, ${activeListings.length} active, ${justSoldListings.length} just sold`);
-  console.log(`[Browse] Final combined: ${data.length} listings`);
-  
-  // Debug: Log a few sample listing statuses to verify
-  if (allListings && allListings.length > 0) {
-    const sampleStatuses = allListings.slice(0, 5).map((l: any) => ({
-      id: l.id,
-      title: l.title?.substring(0, 30),
-      status: l.status,
-      sold_at: l.sold_at || 'null'
-    }));
-    console.log(`[Browse] Sample listing statuses:`, sampleStatuses);
-  }
+  const data = (allListings ?? []) as ListingWithSoldAt[];
+  console.log(`[Browse] Query results: ${data.length} listings`);
   
   if (error) {
     console.error("[Browse] Error loading listings:", error);
@@ -118,17 +54,7 @@ export default async function Browse() {
     // If we have some data despite error, continue (partial success)
   }
 
-  // Shuffle listings randomly for variety on each page load
-  const shuffleArray = <T,>(array: T[]): T[] => {
-    const shuffled = [...array];
-    for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-    }
-    return shuffled;
-  };
-
-  const listings = shuffleArray((data ?? []) as Listing[]);
+  const listings = (data ?? []) as ListingWithSoldAt[];
 
   if (listings.length === 0) {
     return (
@@ -141,5 +67,6 @@ export default async function Browse() {
     );
   }
 
-  return <SwipeFeed initialListings={listings} />;
+  const shuffleKey = Date.now();
+  return <SwipeFeed key={listings.length} initialListings={listings} shuffleKey={shuffleKey} />;
 }

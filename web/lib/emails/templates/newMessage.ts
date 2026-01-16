@@ -75,12 +75,12 @@ export function getNewMessageEmailHtml(data: NewMessageData): string {
           
           <!-- Footer -->
           <tr>
-            <td style="padding: 30px 40px; background-color: #f8f9fa; border-top: 1px solid #e5e7eb; text-align: center;">
-              <p style="margin: 0 0 10px; font-size: 14px; color: #666666;">
-                —
-              </p>
-              <p style="margin: 0 0 5px; font-size: 16px; color: #191970; font-weight: 600; font-family: 'Playfair Display', serif;">
+            <td style="padding: 30px 40px; background-color: #f8f9fa; text-align: center;">
+              <p style="margin: 0; font-size: 16px; font-family: 'Playfair Display', serif; color: #000080; font-weight: 500;">
                 ThriftShopper
+              </p>
+              <p style="margin: -2px 0 0; font-size: 12px; color: #efbf04; font-style: italic; font-weight: 400; font-family: 'Playfair Display', serif; line-height: 1.2;">
+                the magic of discovery<sup style="font-size: 0.7em; color: #efbf04;">TM</sup>
               </p>
             </td>
           </tr>
@@ -107,7 +107,7 @@ ${itemContext}
 
 Reply in ThriftShopper: ${data.messagesUrl}
 
-—
 ThriftShopper
+the magic of discovery™
   `.trim();
 }

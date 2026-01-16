@@ -12,19 +12,8 @@ export default async function ListingPage({ params }: ListingPageProps) {
   const { id } = await params;
 
   const { data, error } = await supabase
-    .from("listings")
-    .select(`
-      *,
-      profiles:seller_id (
-        display_name,
-        location_city,
-        avatar_url,
-        ts_badge,
-        rating,
-        review_count,
-        seller_story
-      )
-    `)
+    .from("discoverable_listings")
+    .select("*, profiles:seller_id(*)")
     .eq("id", id)
     .single();
 

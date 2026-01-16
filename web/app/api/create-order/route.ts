@@ -67,6 +67,18 @@ export async function POST(request: NextRequest) {
         },
       }
     );
+    
+    // Admin client (bypasses RLS) for privileged updates only
+    const supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      {
+        auth: {
+          persistSession: false,
+          autoRefreshToken: false,
+        },
+      }
+    );
 
     // Get session first to ensure RLS context is properly set
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
@@ -96,7 +108,9 @@ export async function POST(request: NextRequest) {
     }
 
     // CRITICAL: Use authenticated user's ID as buyer_id (do NOT accept from client)
+    // NOTE: Supabase user.id is a UUID string; required for listings.buyer_id (uuid)
     const buyerId = user.id;
+    // Schema cache refresh marker (no-op)
     
     // Log auth.uid() and buyer_id for debugging
     console.log("🔐 Authentication verified:", {
@@ -290,13 +304,16 @@ export async function POST(request: NextRequest) {
     console.log("✅ Order created successfully:", order.id);
 
     // Update listing status to sold and set sold_at timestamp
-    const { error: updateError } = await supabase
+    console.log("Attempting DB update for:", listingId);
+    const { error: updateError } = await supabaseAdmin
       .from("listings")
       .update({ 
         status: "sold",
-        sold_at: new Date().toISOString()
+        sold_at: new Date().toISOString(),
+        buyer_id: buyerId,
       })
       .eq("id", listingId);
+    console.log("Update result:", updateError);
     
     if (updateError) {
       console.error("❌ Error updating listing status to sold:", updateError);
@@ -317,6 +334,10 @@ export async function POST(request: NextRequest) {
       .select("email, display_name")
       .eq("user_id", listing.seller_id)
       .maybeSingle();
+    
+    const { data: sellerAuth } = await supabase.auth.admin.getUserById(
+      listing.seller_id
+    );
 
     // Send emails (don't block on errors - log and continue)
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL 
@@ -324,9 +345,10 @@ export async function POST(request: NextRequest) {
       : 'http://localhost:3000';
 
     // Send order confirmation to buyer
-    if (buyerProfile?.email) {
-      sendOrderConfirmationEmail(buyerProfile.email, {
-        buyerName: buyerProfile.display_name || 'there',
+    const buyerEmail = buyerProfile?.email || user.email;
+    if (buyerEmail) {
+      sendOrderConfirmationEmail(buyerEmail, {
+        buyerName: buyerProfile?.display_name || user.user_metadata?.full_name || 'there',
         orderId: order.id,
         itemName: listing.title,
         price: amount || listing.price,
@@ -345,9 +367,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Send item sold notification to seller
-    if (sellerProfile?.email) {
-      sendItemSoldEmail(sellerProfile.email, {
-        sellerName: sellerProfile.display_name || 'there',
+    const sellerEmail = sellerProfile?.email || sellerAuth?.user?.email;
+    if (sellerEmail) {
+      sendItemSoldEmail(sellerEmail, {
+        sellerName: sellerProfile?.display_name || sellerAuth?.user?.user_metadata?.full_name || 'there',
         itemName: listing.title,
         price: amount || listing.price,
         buyerName: buyerProfile?.display_name || 'a buyer',

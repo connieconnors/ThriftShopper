@@ -25,6 +25,7 @@ import { normalizeTagColumn } from "../../lib/utils/tagNormalizer";
 
 interface SwipeFeedProps {
   initialListings: Listing[];
+  shuffleKey?: number;
 }
 
 // Brand colors from guide
@@ -35,10 +36,10 @@ const COLORS = {
   oldGold: '#cfb53b',
 };
 
-export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
+export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProps) {
   const router = useRouter();
   const { user } = useAuth();
-  const [listings, setListings] = useState<Listing[]>(initialListings);
+  const [listings, setListings] = useState<Listing[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [isListening, setIsListening] = useState(false);
@@ -47,7 +48,7 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
   const [searchResults, setSearchResults] = useState<Listing[] | null>(null);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [selectedMoods, setSelectedMoods] = useState<string[]>([]);
-  const [filteredListings, setFilteredListings] = useState<Listing[]>(initialListings);
+  const [filteredListings, setFilteredListings] = useState<Listing[]>([]);
   const [noMoodResults, setNoMoodResults] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -59,6 +60,22 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Reset feed state when the incoming dataset changes
+  useEffect(() => {
+    if (!mounted || !initialListings || initialListings.length === 0) return;
+    const shuffled = [...initialListings];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    setListings(shuffled);
+    setFilteredListings(shuffled);
+    setSearchResults(null);
+    setLastSearchQuery('');
+    setNoMoodResults(false);
+    setCurrentIndex(0);
+  }, [mounted, initialListings, shuffleKey]);
 
   // Load favorites from database when user is logged in
   useEffect(() => {
@@ -356,6 +373,22 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
     }
   };
 
+  const parsePriceCap = (query: string): number | null => {
+    const match = query.match(/\b(?:under|less than)\s*\$?\s*(\d+(?:\.\d+)?)/i);
+    if (!match) return null;
+    const value = Number(match[1]);
+    return Number.isFinite(value) ? value : null;
+  };
+
+  const hasLocalIntent = (query: string): boolean =>
+    /\b(?:near|near me|local)\b/i.test(query);
+
+  const zipPrefix = (zip?: string | null): string | null => {
+    if (!zip) return null;
+    const trimmed = zip.trim();
+    return trimmed.length >= 3 ? trimmed.slice(0, 3) : null;
+  };
+
   const handleSearch = async (query: string) => {
     if (!query || query.trim().length === 0) {
       setSearchResults(null);
@@ -365,6 +398,8 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
 
     // Save the search query so we can display it
     setLastSearchQuery(query.trim());
+    const priceCap = parsePriceCap(query);
+    const wantsLocal = hasLocalIntent(query);
 
     try {
       // Use semantic search API route (server-side, has access to OPENAI_API_KEY)
@@ -389,8 +424,46 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
         console.log('🧠 Query interpretation:', interpretation);
       }
 
-      if (listings.length > 0) {
-        setSearchResults(listings);
+      let nextListings = listings as Listing[];
+
+      if (priceCap !== null) {
+        nextListings = nextListings.filter((listing) => {
+          if (typeof listing.price !== 'number') return false;
+          return listing.price <= priceCap;
+        });
+      }
+
+      if (wantsLocal && user?.id) {
+        const { data: buyerProfile } = await supabase
+          .from('profiles')
+          .select('location_zip')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        const buyerZipPrefix = zipPrefix(buyerProfile?.location_zip);
+
+        if (buyerZipPrefix) {
+          const sellerIds = Array.from(
+            new Set(nextListings.map((listing) => listing.seller_id).filter(Boolean))
+          );
+          if (sellerIds.length > 0) {
+            const { data: sellerProfiles } = await supabase
+              .from('profiles')
+              .select('user_id, location_zip')
+              .in('user_id', sellerIds);
+            const localSellerIds = new Set(
+              (sellerProfiles || [])
+                .filter((profile) => zipPrefix(profile.location_zip) === buyerZipPrefix)
+                .map((profile) => profile.user_id)
+            );
+            nextListings = nextListings.filter((listing) =>
+              localSellerIds.has(listing.seller_id)
+            );
+          }
+        }
+      }
+
+      if (nextListings.length > 0) {
+        setSearchResults(nextListings);
         setCurrentIndex(0);
       } else {
         setSearchResults([]);
@@ -850,10 +923,17 @@ export default function SwipeFeed({ initialListings }: SwipeFeedProps) {
                   }}
                 >
                   {/* Just Sold Badge */}
-                  {isJustSold(listing) && (
-                    <div className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium uppercase tracking-wide bg-neutral-900/80 text-white border border-white/10 backdrop-blur">
-                      <CheckCircle2 className="w-3 h-3" />
-                      Just Sold
+                  {listing.status === "sold" && (
+                    <div
+                      className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm uppercase tracking-[0.15em] text-white backdrop-blur-sm"
+                      style={{
+                        fontFamily: "'Playfair Display', 'Times New Roman', serif",
+                        fontWeight: 500,
+                        backgroundColor: "rgba(34, 34, 34, 0.7)",
+                      }}
+                    >
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      JUST SOLD
                     </div>
                   )}
                   {/* Image Counter */}
