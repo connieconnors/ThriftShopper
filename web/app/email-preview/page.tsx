@@ -59,6 +59,7 @@ const templates: Record<TemplateKey, () => string> = {
   itemShipped: () =>
     getItemShippedEmailHtml({
       buyerName: "Avery",
+      orderId: "TS-48291",
       itemName: "Vintage Stoneware Plate",
       sellerName: "Thrifter Connie",
       trackingNumber: "1Z999AA10123456784",
