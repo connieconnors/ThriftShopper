@@ -55,6 +55,15 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
   const [showProductInfo, setShowProductInfo] = useState(false);
   
   const containerRef = useRef<HTMLDivElement>(null);
+
+  const shuffleArray = <T,>(array: T[]): T[] => {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  };
   
   // Prevent hydration errors by only rendering after mount
   useEffect(() => {
@@ -64,11 +73,7 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
   // Reset feed state when the incoming dataset changes
   useEffect(() => {
     if (!mounted || !initialListings || initialListings.length === 0) return;
-    const shuffled = [...initialListings];
-    for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-    }
+    const shuffled = shuffleArray(initialListings);
     setListings(shuffled);
     setFilteredListings(shuffled);
     setSearchResults(null);
@@ -278,13 +283,39 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
   }, [currentIndex, displayListings.length, isTransitioning]);
 
   const goToNext = useCallback(() => {
-    if (currentIndex < displayListings.length - 1 && !isTransitioning) {
+    if (isTransitioning) return;
+    const lastIndex = displayListings.length - 1;
+    if (lastIndex < 0) return;
+
+    if (currentIndex < lastIndex) {
       setIsTransitioning(true);
       setShowProductInfo(false); // Hide immediately on swipe
       setCurrentIndex(prev => prev + 1);
       setTimeout(() => setIsTransitioning(false), 400);
+      return;
     }
-  }, [currentIndex, displayListings.length, isTransitioning]);
+
+    if (displayListings.length === 1) {
+      setCurrentIndex(0);
+      return;
+    }
+
+    const lastSeenId = displayListings[lastIndex]?.id;
+    const reshuffled = shuffleArray(displayListings);
+    if (reshuffled[0]?.id === lastSeenId) {
+      const swapIndex = Math.floor(Math.random() * (reshuffled.length - 1)) + 1;
+      [reshuffled[0], reshuffled[swapIndex]] = [reshuffled[swapIndex], reshuffled[0]];
+    }
+
+    if (searchResults !== null) {
+      setSearchResults(reshuffled);
+    } else {
+      setListings(reshuffled);
+      setFilteredListings(reshuffled);
+    }
+    setShowProductInfo(false);
+    setCurrentIndex(0);
+  }, [currentIndex, displayListings, isTransitioning, searchResults]);
 
   const goToPrevious = useCallback(() => {
     if (currentIndex > 0 && !isTransitioning) {
@@ -485,6 +516,7 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
     setSearchResults(null);
     setLastSearchQuery('');
     setVoiceTranscript('');
+    setCurrentIndex(0);
     
     // If we have a current listing, try to find it in filteredListings and maintain position
     if (currentListingId && filteredListings.length > 0) {
@@ -660,7 +692,7 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
         ref={containerRef}
         className="fixed inset-0 overflow-hidden select-none"
         style={{ 
-          backgroundColor: '#000', 
+          backgroundColor: '#191970',
           fontFamily: 'Merriweather, serif',
           margin: 0,
           padding: 0,
