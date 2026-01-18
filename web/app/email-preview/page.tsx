@@ -51,8 +51,9 @@ const templates: Record<TemplateKey, () => string> = {
     getPaymentReceivedEmailHtml({
       sellerName: "Thrifter Connie",
       itemName: "Vintage Stoneware Plate",
-      price: 48,
+      amount: 48,
       orderId: "TS-48291",
+      paymentDate: "January 18, 2026",
       stripeDashboardUrl: "https://dashboard.stripe.com/test",
     }),
   itemShipped: () =>
