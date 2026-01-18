@@ -4,7 +4,7 @@
   "description": "Discover unique vintage and thrift finds — the magic of discovery™",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#EDE7D9",
+  "background_color": "#001540",
   "theme_color": "#001540",
   "orientation": "portrait-primary",
   "icons": [
