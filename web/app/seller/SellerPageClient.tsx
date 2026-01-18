@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/app/context/AuthContext';
 import { supabase } from '@/lib/supabaseClient';
 import { TSLogo } from '@/components/TSLogo';
-import { Loader2, Plus, ArrowLeft, Settings, MessageSquare, ChevronDown, ChevronUp, MoreVertical, EyeOff, Trash2, CheckCircle, LogOut, Search, Package, HelpCircle, User, Edit, Truck, PackageCheck } from 'lucide-react';
+import { Loader2, Plus, ArrowLeft, Settings, MessageSquare, ChevronDown, ChevronUp, MoreVertical, EyeOff, Trash2, CheckCircle, LogOut, Search, Package, HelpCircle, User, Edit, Truck, PackageCheck, Link as LinkIcon, Instagram } from 'lucide-react';
 import { GlintIcon } from '../../components/GlintIcon';
 import SellerMessages from './components/SellerMessages';
 import Link from 'next/link';
@@ -218,6 +218,7 @@ export default function SellerPageClient() {
   const [profile, setProfile] = useState<any>(null);
   const [messagesOpen, setMessagesOpen] = useState(false);
   const [supportOpen, setSupportOpen] = useState(false);
+  const [copyFeedback, setCopyFeedback] = useState<{ id: string; type: "link" | "caption" } | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -745,6 +746,26 @@ export default function SellerPageClient() {
     }
   };
 
+  const handleCopy = async (
+    text: string,
+    id: string,
+    type: "link" | "caption",
+    relativeUrl?: string
+  ) => {
+    if (typeof navigator === "undefined" || !navigator.clipboard) return;
+    try {
+      const payload =
+        relativeUrl && typeof window !== "undefined"
+          ? text.replaceAll(relativeUrl, `${window.location.origin}${relativeUrl}`)
+          : text;
+      await navigator.clipboard.writeText(payload);
+      setCopyFeedback({ id, type });
+      setTimeout(() => setCopyFeedback(null), 2000);
+    } catch (err) {
+      console.error("Failed to copy text:", err);
+    }
+  };
+
   if (authLoading || loading) {
     return (
       <StreamChatProvider>
@@ -1076,6 +1097,9 @@ export default function SellerPageClient() {
                   const postedDate = new Date(listing.created_at);
                   const daysAgo = Math.floor((Date.now() - postedDate.getTime()) / (1000 * 60 * 60 * 24));
                   const timeAgo = daysAgo === 0 ? 'Today' : daysAgo === 1 ? '1 day ago' : `${daysAgo} days ago`;
+                  const refSlug = profile?.username ? String(profile.username) : "seller";
+                  const sharePath = `/listing/${listing.id}?ref=${encodeURIComponent(refSlug)}`;
+                  const curatedCaption = `Found this beautiful ${listing.title} today. It's now listed on my ThriftShopper for $${listing.price?.toFixed(2) || "0.00"}. A new life for a classic piece.\nDetails at: ${sharePath} ✨`;
                   
                   // Determine status badge color and text
                   const getStatusBadge = () => {
@@ -1291,21 +1315,47 @@ export default function SellerPageClient() {
                           </span>
                         </div>
 
-                        {/* Line 3: Timestamp (or payment status for sold items) */}
-                        <div 
-                          className="text-[11px] text-gray-500"
-                          style={{ 
-                            margin: 0, 
-                            marginTop: '2px',
+                        {/* Line 3: Timestamp + Share Tools */}
+                        <div
+                          className="mt-1 pt-1 border-t border-gray-50 flex items-center justify-between gap-2 text-[9px] text-gray-500"
+                          style={{
+                            margin: 0,
                             padding: 0,
                             lineHeight: '1.2'
                           }}
                         >
-                          {listing.status === 'sold' ? (
-                            <span>Posted {timeAgo} • Awaiting payment</span>
-                          ) : (
-                            <span>Posted {timeAgo}</span>
-                          )}
+                          <span>
+                            {listing.status === 'sold' ? (
+                              <>Posted {timeAgo} • Awaiting payment</>
+                            ) : (
+                              <>Posted {timeAgo}</>
+                            )}
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <span
+                              className="text-gray-500"
+                              style={{ fontFamily: "Merriweather, serif" }}
+                            >
+                              share the find:
+                            </span>
+                            <button
+                              onClick={() => handleCopy(sharePath, listing.id, "link", sharePath)}
+                              className="inline-flex items-center gap-1 text-[#191970] hover:opacity-70 transition-opacity"
+                              aria-label="Copy share link"
+                            >
+                              <LinkIcon className="h-3 w-3" strokeWidth={1.2} />
+                              {copyFeedback?.id === listing.id && copyFeedback.type === "link" ? "copied" : "link"}
+                            </button>
+                            <span className="text-gray-500">•</span>
+                            <button
+                              onClick={() => handleCopy(curatedCaption, listing.id, "caption", sharePath)}
+                              className="inline-flex items-center gap-1 text-[#191970] hover:opacity-70 transition-opacity"
+                              aria-label="Copy share caption"
+                            >
+                              <Instagram className="h-3 w-3" strokeWidth={1.2} />
+                              {copyFeedback?.id === listing.id && copyFeedback.type === "caption" ? "copied" : "caption"}
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>

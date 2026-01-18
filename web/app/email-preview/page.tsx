@@ -36,6 +36,7 @@ const templates: Record<TemplateKey, () => string> = {
       itemName: "Vintage Stoneware Plate",
       price: 48,
       buyerName: "Avery Woods",
+      orderId: "TS-48291",
       shippingAddress: {
         name: "Avery Woods",
         address: "123 Maple Ave",
