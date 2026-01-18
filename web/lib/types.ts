@@ -19,6 +19,7 @@ export type Listing = {
   specifications: string | null;
   created_at: string;
   status: ListingStatus;
+  sold_at?: string | null;
   intents: string[];  // e.g. ["gifting", "selfish"]
   styles: string[];   // e.g. ["mid-century", "whimsical"]
   moods: string[];    // e.g. ["cozy", "surprise"]
@@ -36,6 +37,8 @@ export type Listing = {
     rating: number | null;
     review_count: number | null;
     seller_story: string | null;
+    is_founding_seller?: boolean | null;
+    gives_back?: boolean | null;
   } | null;
 };
 

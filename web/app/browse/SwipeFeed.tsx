@@ -13,10 +13,10 @@ import {
   TS_BADGE_URL
 } from "../../lib/types";
 import { isJustSold } from "../../lib/listingStatus";
-import { CheckCircle2 } from "lucide-react";
 import { supabase } from "../../lib/supabaseClient";
 import { StandaloneMoodWheel } from "../../components/StandaloneMoodWheel";
 import { TSLogo } from "../../components/TSLogo";
+import { SoldRibbon } from "../../components/SoldRibbon";
 import AccountSheet from "../../components/AccountSheet";
 import { useWhisperTranscription } from "../../hooks/useWhisperTranscription";
 import { useAuth } from "../context/AuthContext";
@@ -913,7 +913,7 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
                 }}
               />
 
-              {/* Image Counter and Just Sold Badge - Top Right (only show for current card) */}
+              {/* Image Counter - Top Right (only show for current card) */}
               {offset === 0 && (
                 <div 
                   className="absolute pointer-events-none z-10 flex flex-col items-end gap-2"
@@ -922,20 +922,6 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
                     right: '16px',
                   }}
                 >
-                  {/* Just Sold Badge */}
-                  {listing.status === "sold" && (
-                    <div
-                      className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm uppercase tracking-[0.15em] text-white backdrop-blur-sm"
-                      style={{
-                        fontFamily: "'Playfair Display', 'Times New Roman', serif",
-                        fontWeight: 500,
-                        backgroundColor: "rgba(34, 34, 34, 0.7)",
-                      }}
-                    >
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                      JUST SOLD
-                    </div>
-                  )}
                   {/* Image Counter */}
                   <div 
                     className="px-3 py-1.5 rounded-full"
@@ -949,6 +935,9 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
                   >
                     {currentIndex + 1} / {displayListings.length}
                   </div>
+                  {listing.status === "sold" && (
+                    <SoldRibbon variant="discovery" className="mt-[6px]" />
+                  )}
                 </div>
               )}
 

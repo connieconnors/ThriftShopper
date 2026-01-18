@@ -24,6 +24,10 @@ import { addRecentlyViewed } from "../../../lib/userPreferences";
 import MessagesModal from "../../../components/MessagesModal";
 import { StreamChatProvider } from "../../seller/StreamChatProvider";
 import { MessageSquare, Bookmark } from "lucide-react";
+import { FounderBadge } from "../../../components/FounderBadge";
+import { GivesBackBadge } from "../../../components/GivesBackBadge";
+import { SoldRibbon } from "../../../components/SoldRibbon";
+import { JustSoldBanner } from "../../../components/JustSoldBanner";
 
 interface ProductDetailsProps {
   listing: Listing;
@@ -126,6 +130,8 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
   const sellerRating = getSellerRating(listing);
   const reviewCount = getSellerReviewCount(listing);
   const sellerStory = getSellerStory(listing);
+  const isFoundingSeller = listing.profiles?.is_founding_seller === true;
+  const givesBack = listing.profiles?.gives_back === true;
   
   // Check TS badge
   const hasTSBadge = hasSellerTSBadge(listing);
@@ -184,7 +190,7 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
             }}
           >
             {images.map((src, index) => (
-              <div key={index} className="w-full h-full flex-shrink-0" style={{ backgroundColor: '#EDE7D9' }}>
+              <div key={index} className="relative w-full h-full flex-shrink-0" style={{ backgroundColor: '#EDE7D9' }}>
                 <img
                   src={src}
                   alt={`${listing.title} - Image ${index + 1}`}
@@ -192,11 +198,12 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
                   draggable={false}
                   onClick={() => setIsZoomed(true)}
                 />
+                
               </div>
             ))}
           </div>
         ) : (
-          <div className="w-full h-full flex items-center justify-center" style={{ backgroundColor: '#EDE7D9' }}>
+          <div className="relative w-full h-full flex items-center justify-center" style={{ backgroundColor: '#EDE7D9' }}>
             <span className="text-gray-400 text-6xl">📦</span>
           </div>
         )}
@@ -432,6 +439,13 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
         {/* Seller Ratings (temporarily hidden for MVP - no reviews yet) */}
       </section>
 
+      {(isFoundingSeller || givesBack) && (
+        <div className="flex items-center justify-center gap-2 py-4 px-6">
+          {isFoundingSeller && <FounderBadge />}
+          {givesBack && <GivesBackBadge />}
+        </div>
+      )}
+
       {/* Fixed Bottom Action Bar */}
       <div className="fixed bottom-0 left-0 right-0 p-4 backdrop-blur-lg border-t border-gray-200" style={{ backgroundColor: 'rgba(237, 231, 217, 0.95)' }}>
         <div className="flex items-center gap-3 max-w-lg mx-auto">
@@ -440,16 +454,9 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
 
           {/* Center: Buy Now Button */}
           {isSold ? (
-            <button
-              disabled
-              className="flex-1 h-14 rounded-full bg-[#222222] text-white text-xs uppercase tracking-[0.2em] flex items-center justify-center text-center px-4 cursor-not-allowed"
-              style={{
-                fontFamily: "'Playfair Display', 'Times New Roman', serif",
-                fontWeight: 500,
-              }}
-            >
-              SOLD
-            </button>
+            <div className="flex-1">
+              <JustSoldBanner />
+            </div>
           ) : (
             <button 
               onClick={() => router.push(`/checkout/${listing.id}`)}
