@@ -694,7 +694,7 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
         ref={containerRef}
         className="fixed inset-0 overflow-hidden select-none"
         style={{ 
-          backgroundColor: '#02040B',
+          backgroundColor: '#001540',
           fontFamily: 'Merriweather, serif',
           margin: 0,
           padding: 0,
