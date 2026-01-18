@@ -1,4 +1,3 @@
-import type { Viewport } from "next";
 import { supabase } from "../../lib/supabaseClient";
 import type { Listing } from "../../lib/types";
 import SwipeFeed from "./SwipeFeed";
@@ -6,9 +5,6 @@ import SwipeFeed from "./SwipeFeed";
 // Force dynamic rendering to avoid caching issues
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
-export const viewport: Viewport = {
-  themeColor: "#080D16",
-};
 
 type ListingWithSoldAt = Listing & {
   sold_at?: string | null;
