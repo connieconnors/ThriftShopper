@@ -131,7 +131,9 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
   const reviewCount = getSellerReviewCount(listing);
   const sellerStory = getSellerStory(listing);
   const isFoundingSeller = listing.profiles?.is_founding_seller === true;
-  const givesBack = listing.profiles?.gives_back === true;
+  const givesBack =
+    listing.profiles?.gives_back === true ||
+    (listing as { givesBack?: boolean | null }).givesBack === true;
   
   // Check TS badge
   const hasTSBadge = hasSellerTSBadge(listing);
