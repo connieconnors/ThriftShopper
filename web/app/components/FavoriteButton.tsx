@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Sparkles, Bookmark } from "lucide-react";
+import React from "react";
 import { supabase } from "../../lib/supabaseClient";
 import { useAuth } from "../context/AuthContext";
 
@@ -21,7 +21,6 @@ export default function FavoriteButton({
   const router = useRouter();
   const [isFavorited, setIsFavorited] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [isAnimating, setIsAnimating] = useState(false);
   
   const userId = user?.id;
 
@@ -98,10 +97,6 @@ export default function FavoriteButton({
       return;
     }
     
-    // Trigger animation
-    setIsAnimating(true);
-    setTimeout(() => setIsAnimating(false), 300);
-    
     // Optimistic update - change UI immediately
     const newFavoritedState = !isFavorited;
     setIsFavorited(newFavoritedState);
@@ -158,15 +153,21 @@ export default function FavoriteButton({
   };
 
   // Sparkle icon with animation
-  const SparkleIcon = ({ size = 24 }: { size?: number }) => (
-    <Sparkles
-      size={size}
-      className={`transition-transform duration-200 ${
-        isAnimating ? "scale-125" : "scale-100"
-      }`}
-      fill={isFavorited ? "currentColor" : "none"}
-      strokeWidth={isFavorited ? 0 : 2}
-    />
+  const GlintIcon = ({ size = 24 }: { size?: number }) => (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      className="transition-colors duration-200"
+      fill={isFavorited ? "#D4AF37" : "none"}
+      stroke={isFavorited ? "#D4AF37" : "currentColor"}
+      strokeWidth={1}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M12 1 L12.6 12 L12 23 L11.4 12 Z" />
+      <path d="M4 12 L12 11.6 L20 12 L12 12.4 Z" />
+    </svg>
   );
 
   // Small variant for favorites grid
@@ -178,11 +179,11 @@ export default function FavoriteButton({
         aria-label={isFavorited ? "Remove from saved" : "Save this find"}
         className={`w-8 h-8 flex items-center justify-center rounded-full transition-all duration-200 ${
           isFavorited 
-            ? "bg-[#cfb53b] text-[#191970]" 
+            ? "bg-[#D4AF37] text-[#191970]" 
             : "bg-black/60 text-white hover:bg-black/80"
         } ${isLoading ? "opacity-50" : ""} ${className}`}
       >
-        <SparkleIcon size={16} />
+        <GlintIcon size={16} />
       </button>
     );
   }
@@ -196,18 +197,11 @@ export default function FavoriteButton({
         aria-label={isFavorited ? "Remove from saved" : "Save this find"}
         className={`w-14 h-14 flex items-center justify-center rounded-full border-2 transition-all duration-200 ${
           isFavorited
-            ? "bg-[#cfb53b] border-[#cfb53b] text-[#191970]"
-            : "border-white/30 text-white hover:border-[#cfb53b]/50 hover:bg-white/10"
+            ? "bg-[#D4AF37] border-[#D4AF37] text-[#191970]"
+            : "border-white/30 text-white hover:border-[#D4AF37]/50 hover:bg-white/10"
         } ${isLoading ? "opacity-50" : ""} ${className}`}
       >
-        <Bookmark
-          size={24}
-          className={`transition-transform duration-200 ${
-            isAnimating ? "scale-125" : "scale-100"
-          }`}
-          fill={isFavorited ? "currentColor" : "none"}
-          strokeWidth={isFavorited ? 0 : 2}
-        />
+        <GlintIcon size={24} />
       </button>
     );
   }
@@ -220,11 +214,11 @@ export default function FavoriteButton({
       aria-label={isFavorited ? "Remove from saved" : "Save this find"}
       className={`w-14 h-14 flex items-center justify-center backdrop-blur-sm rounded-full transition-all duration-200 ${
         isFavorited 
-          ? "bg-[#cfb53b] text-[#191970]" 
+          ? "bg-[#D4AF37] text-[#191970]" 
           : "bg-white/15 text-white hover:bg-white/25"
       } ${isLoading ? "opacity-50" : ""} ${className}`}
     >
-      <SparkleIcon size={24} />
+      <GlintIcon size={24} />
     </button>
   );
 }

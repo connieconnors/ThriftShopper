@@ -1,8 +1,7 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { TSLogo } from './TSLogo';
 
 export interface Product {
@@ -33,7 +32,6 @@ interface ProductCardProps {
 
 export function ProductCard({ product, onFavorite, onSwipeUp, onTap, isFavorited }: ProductCardProps) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [showSparkle, setShowSparkle] = useState(false);
   const touchStartX = useRef(0);
   const touchStartY = useRef(0);
 
@@ -84,10 +82,6 @@ export function ProductCard({ product, onFavorite, onSwipeUp, onTap, isFavorited
   const handleFavorite = (e: React.MouseEvent) => {
     e.stopPropagation();
     onFavorite(product.id);
-    
-    // Show sparkle animation
-    setShowSparkle(true);
-    setTimeout(() => setShowSparkle(false), 800);
   };
 
   // Truncate description to ~60 chars
@@ -96,6 +90,22 @@ export function ProductCard({ product, onFavorite, onSwipeUp, onTap, isFavorited
     : product.description;
 
   const currentImage = product.images?.[currentImageIndex] || product.imageUrl || 'https://placehold.co/800x1200/191970/cfb53b?text=No+Image';
+  const GlintIcon = ({ size = 24 }: { size?: number }) => (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      className="transition-colors duration-200"
+      fill={isFavorited ? "#D4AF37" : "none"}
+      stroke={isFavorited ? "#D4AF37" : "white"}
+      strokeWidth={1}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M12 1 L12.6 12 L12 23 L11.4 12 Z" />
+      <path d="M4 12 L12 11.6 L20 12 L12 12.4 Z" />
+    </svg>
+  );
   
   // Debug
   console.log('ProductCard rendering:', { 
@@ -137,39 +147,13 @@ export function ProductCard({ product, onFavorite, onSwipeUp, onTap, isFavorited
       </div>
 
       {/* Sparkle Button - Top Right */}
-      <motion.button
+      <button
         onClick={handleFavorite}
-        className="absolute top-20 right-4 z-10 w-12 h-12 rounded-full flex items-center justify-center"
+        className="absolute top-20 right-4 z-10 w-12 h-12 rounded-full flex items-center justify-center transition-colors duration-200"
         style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)', backdropFilter: 'blur(10px)' }}
-        whileTap={{ scale: 0.85 }}
       >
-        <motion.div
-          animate={isFavorited ? { scale: [1, 1.3, 1] } : {}}
-          transition={{ duration: 0.3 }}
-        >
-          <Sparkles 
-            className="w-6 h-6" 
-            style={{ 
-              color: isFavorited ? '#efbf04' : 'white',
-              fill: isFavorited ? '#efbf04' : 'transparent',
-            }} 
-          />
-        </motion.div>
-      </motion.button>
-
-      {/* Sparkle Animation on Favorite */}
-      <AnimatePresence>
-        {showSparkle && (
-          <motion.div
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1.5, opacity: 1 }}
-            exit={{ scale: 2, opacity: 0 }}
-            className="absolute inset-0 flex items-center justify-center pointer-events-none z-20"
-          >
-            <Sparkles className="w-24 h-24" style={{ color: '#efbf04', fill: '#efbf04' }} />
-          </motion.div>
-        )}
-      </AnimatePresence>
+        <GlintIcon size={24} />
+      </button>
 
       {/* Image Navigation Arrows */}
       {product.images?.length > 1 && (

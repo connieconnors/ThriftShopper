@@ -20,7 +20,7 @@ import { SoldRibbon } from "../../components/SoldRibbon";
 import AccountSheet from "../../components/AccountSheet";
 import { useWhisperTranscription } from "../../hooks/useWhisperTranscription";
 import { useAuth } from "../context/AuthContext";
-import { Mic, Loader2, Bookmark } from "lucide-react";
+import { Mic, Loader2, Sparkles } from "lucide-react";
 import { normalizeTagColumn } from "../../lib/utils/tagNormalizer";
 
 interface SwipeFeedProps {
@@ -552,6 +552,7 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
     }
     setFavorites(newFavorites);
 
+
     // Update database
     try {
       if (isCurrentlyFavorited) {
@@ -1066,14 +1067,14 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
           }}
           aria-label={currentListing && favorites.has(currentListing.id) ? "Remove from saved" : "Save this find"}
         >
-          <Bookmark 
-            className="w-6 h-6 transition-all"
+          <Sparkles
+            className="w-6 h-6 transition-colors duration-200"
             style={{
               width: '24px',
               height: '24px',
-              color: currentListing && favorites.has(currentListing.id) ? COLORS.gold : 'white',
-              fill: currentListing && favorites.has(currentListing.id) ? COLORS.gold : 'none',
-              strokeWidth: currentListing && favorites.has(currentListing.id) ? 0 : 2,
+              color: currentListing && favorites.has(currentListing.id) ? '#D4AF37' : 'white',
+              fill: currentListing && favorites.has(currentListing.id) ? '#D4AF37' : 'transparent',
+              strokeWidth: 1.5,
             }}
           />
           
@@ -1081,7 +1082,7 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
           {user && favorites.size > 0 && (
             <span 
               className="absolute -top-1 -right-1 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center"
-              style={{ backgroundColor: '#ef4444' }}
+              style={{ backgroundColor: '#333333' }}
             >
               {favorites.size}
             </span>
