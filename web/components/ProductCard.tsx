@@ -3,6 +3,7 @@
 import React, { useState, useRef } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { TSLogo } from './TSLogo';
+import { GlintIcon } from './GlintIcon';
 
 export interface Product {
   id: string;
@@ -90,22 +91,7 @@ export function ProductCard({ product, onFavorite, onSwipeUp, onTap, isFavorited
     : product.description;
 
   const currentImage = product.images?.[currentImageIndex] || product.imageUrl || 'https://placehold.co/800x1200/191970/cfb53b?text=No+Image';
-  const GlintIcon = ({ size = 24 }: { size?: number }) => (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      className="transition-colors duration-200"
-      fill={isFavorited ? "#D4AF37" : "none"}
-      stroke={isFavorited ? "#D4AF37" : "white"}
-      strokeWidth={1}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M12 1 L12.6 12 L12 23 L11.4 12 Z" />
-      <path d="M4 12 L12 11.6 L20 12 L12 12.4 Z" />
-    </svg>
-  );
+  const glintColor = isFavorited ? "#D4AF37" : "white";
   
   // Debug
   console.log('ProductCard rendering:', { 
@@ -152,7 +138,12 @@ export function ProductCard({ product, onFavorite, onSwipeUp, onTap, isFavorited
         className="absolute top-20 right-4 z-10 w-12 h-12 rounded-full flex items-center justify-center transition-colors duration-200"
         style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)', backdropFilter: 'blur(10px)' }}
       >
-        <GlintIcon size={24} />
+        <GlintIcon
+          size={24}
+          color={glintColor}
+          filled={isFavorited}
+          className="transition-colors duration-200"
+        />
       </button>
 
       {/* Image Navigation Arrows */}

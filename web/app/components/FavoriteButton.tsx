@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import React from "react";
+import { GlintIcon } from "../../components/GlintIcon";
 import { supabase } from "../../lib/supabaseClient";
 import { useAuth } from "../context/AuthContext";
 
@@ -152,24 +153,6 @@ export default function FavoriteButton({
     }
   };
 
-  // Sparkle icon with animation
-  const GlintIcon = ({ size = 24 }: { size?: number }) => (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      className="transition-colors duration-200"
-      fill={isFavorited ? "#D4AF37" : "none"}
-      stroke={isFavorited ? "#D4AF37" : "currentColor"}
-      strokeWidth={1}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M12 1 L12.6 12 L12 23 L11.4 12 Z" />
-      <path d="M4 12 L12 11.6 L20 12 L12 12.4 Z" />
-    </svg>
-  );
-
   // Small variant for favorites grid
   if (variant === "small") {
     return (
@@ -183,7 +166,12 @@ export default function FavoriteButton({
             : "bg-black/60 text-white hover:bg-black/80"
         } ${isLoading ? "opacity-50" : ""} ${className}`}
       >
-        <GlintIcon size={16} />
+        <GlintIcon
+          size={16}
+          color={isFavorited ? "#D4AF37" : "currentColor"}
+          filled={isFavorited}
+          className="transition-colors duration-200"
+        />
       </button>
     );
   }
@@ -195,13 +183,19 @@ export default function FavoriteButton({
         onClick={toggleFavorite}
         disabled={isLoading}
         aria-label={isFavorited ? "Remove from saved" : "Save this find"}
-        className={`w-14 h-14 flex items-center justify-center rounded-full border-2 transition-all duration-200 ${
-          isFavorited
-            ? "bg-[#D4AF37] border-[#D4AF37] text-[#191970]"
-            : "border-white/30 text-white hover:border-[#D4AF37]/50 hover:bg-white/10"
-        } ${isLoading ? "opacity-50" : ""} ${className}`}
+        className={`w-12 h-12 flex items-center justify-center rounded-full transition-all duration-200 ${
+          isLoading ? "opacity-50" : "hover:opacity-80"
+        } ${className}`}
       >
-        <GlintIcon size={24} />
+        <GlintIcon
+          size={26}
+          color={isFavorited ? "#D4AF37" : "#FFFFFF"}
+          filled
+          className="transition-colors duration-200"
+          style={{
+            filter: "drop-shadow(0 0 1px rgba(0, 21, 64, 0.7))",
+          }}
+        />
       </button>
     );
   }
@@ -218,7 +212,12 @@ export default function FavoriteButton({
           : "bg-white/15 text-white hover:bg-white/25"
       } ${isLoading ? "opacity-50" : ""} ${className}`}
     >
-      <GlintIcon size={24} />
+      <GlintIcon
+        size={24}
+        color={isFavorited ? "#D4AF37" : "currentColor"}
+        filled={isFavorited}
+        className="transition-colors duration-200"
+      />
     </button>
   );
 }

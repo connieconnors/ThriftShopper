@@ -20,7 +20,8 @@ import { SoldRibbon } from "../../components/SoldRibbon";
 import AccountSheet from "../../components/AccountSheet";
 import { useWhisperTranscription } from "../../hooks/useWhisperTranscription";
 import { useAuth } from "../context/AuthContext";
-import { Mic, Loader2, Sparkles } from "lucide-react";
+import { Mic, Loader2 } from "lucide-react";
+import { GlintIcon } from "../../components/GlintIcon";
 import { normalizeTagColumn } from "../../lib/utils/tagNormalizer";
 
 interface SwipeFeedProps {
@@ -693,7 +694,7 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
         ref={containerRef}
         className="fixed inset-0 overflow-hidden select-none"
         style={{ 
-          backgroundColor: '#191970',
+          backgroundColor: '#001540',
           fontFamily: 'Merriweather, serif',
           margin: 0,
           padding: 0,
@@ -1067,15 +1068,12 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
           }}
           aria-label={currentListing && favorites.has(currentListing.id) ? "Remove from saved" : "Save this find"}
         >
-          <Sparkles
-            className="w-6 h-6 transition-colors duration-200"
-            style={{
-              width: '24px',
-              height: '24px',
-              color: currentListing && favorites.has(currentListing.id) ? '#D4AF37' : 'white',
-              fill: currentListing && favorites.has(currentListing.id) ? '#D4AF37' : 'transparent',
-              strokeWidth: 1.5,
-            }}
+          <GlintIcon
+            size={24}
+            color={currentListing && favorites.has(currentListing.id) ? "#D4AF37" : "white"}
+            filled={!!(currentListing && favorites.has(currentListing.id))}
+            className="transition-colors duration-200"
+            style={{ width: "24px", height: "24px" }}
           />
           
           {/* Favorites count badge - only show when logged in */}

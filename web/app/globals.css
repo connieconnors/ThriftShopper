@@ -24,3 +24,11 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Hide Stripe DevTools overlay if injected in dev */
+stripe-devtools,
+#stripe-devtools,
+.__stripe-devtools,
+#__stripe-devtools {
+  display: none !important;
+}

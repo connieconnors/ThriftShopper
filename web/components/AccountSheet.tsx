@@ -179,7 +179,7 @@ const AccountSheet: React.FC<AccountSheetProps> = ({ isOpen, onClose }) => {
                     await signOut();
                     router.push("/browse");
                   }}
-                  className="w-full text-left px-4 py-3 text-[15px] font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                  className="w-full text-left px-4 py-3 text-[15px] font-medium text-[#D4AF37] hover:bg-[#D4AF37]/10 rounded-lg transition-colors"
                 >
                   Sign Out
                 </button>
@@ -230,7 +230,7 @@ const AccountSheet: React.FC<AccountSheetProps> = ({ isOpen, onClose }) => {
                     await signOut();
                     router.push("/browse");
                   }}
-                  className="w-full text-left px-4 py-3 text-[15px] font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                  className="w-full text-left px-4 py-3 text-[15px] font-medium text-[#D4AF37] hover:bg-[#D4AF37]/10 rounded-lg transition-colors"
                 >
                   Sign Out
                 </button>

@@ -2,7 +2,8 @@
 
 import React from 'react';
 import { motion } from 'motion/react';
-import { X, Sparkles, MapPin, Star } from 'lucide-react';
+import { X, MapPin, Star } from 'lucide-react';
+import { GlintIcon } from './GlintIcon';
 import { Product } from './ProductCard';
 import { TSLogo } from './TSLogo';
 
@@ -41,7 +42,7 @@ export function Favorites({
       >
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-3">
-            <Sparkles className="w-8 h-8" style={{ color: '#efbf04', fill: '#efbf04' }} />
+            <GlintIcon size={32} color="#efbf04" className="w-8 h-8" />
             <h1 className="text-2xl text-white">My Saved Finds</h1>
           </div>
           <button
@@ -64,7 +65,7 @@ export function Favorites({
             animate={{ opacity: 1, y: 0 }}
             className="flex flex-col items-center justify-center py-20 text-center"
           >
-            <Sparkles className="w-20 h-20 mb-6" style={{ color: '#cfb53b', strokeWidth: 1 }} />
+            <GlintIcon size={80} color="#cfb53b" className="w-20 h-20 mb-6" />
             <h2 className="text-xl text-white mb-2">No saved finds yet</h2>
             <p className="text-sm" style={{ color: '#cfb53b' }}>
               Tap the sparkle as you discover treasures to save them here
@@ -104,10 +105,7 @@ export function Favorites({
                       backdropFilter: 'blur(10px)',
                     }}
                   >
-                    <Sparkles
-                      className="w-5 h-5"
-                      style={{ color: '#efbf04', fill: '#efbf04' }}
-                    />
+                    <GlintIcon size={20} color="#efbf04" className="w-5 h-5" />
                   </button>
 
                   {/* TS Badge */}

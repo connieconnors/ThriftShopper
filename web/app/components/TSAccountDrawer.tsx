@@ -215,7 +215,7 @@ export default function TSAccountDrawer({ isOpen, onClose }: TSAccountDrawerProp
               </Link>
               <button
                 onClick={handleSignOut}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-red-50 transition-colors text-red-600 mt-4"
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-[#D4AF37]/10 transition-colors text-[#D4AF37] mt-4"
               >
                 <LogOut className="w-5 h-5" />
                 <span>Sign Out</span>
@@ -258,7 +258,7 @@ export default function TSAccountDrawer({ isOpen, onClose }: TSAccountDrawerProp
               </Link>
               <button
                 onClick={handleSignOut}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-red-50 transition-colors text-red-600 mt-4"
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-[#D4AF37]/10 transition-colors text-[#D4AF37] mt-4"
               >
                 <LogOut className="w-5 h-5" />
                 <span>Sign Out</span>

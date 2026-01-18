@@ -2,7 +2,8 @@
 
 import React from 'react';
 import { motion } from 'motion/react';
-import { X, MapPin, Package, Star, User, Sparkles } from 'lucide-react';
+import { X, MapPin, Package, Star, User } from 'lucide-react';
+import { GlintIcon } from './GlintIcon';
 import { Product } from './ProductCard';
 
 interface ProductDetailProps {
@@ -212,12 +213,11 @@ export function ProductDetail({
               color: isFavorited ? '#191970' : '#191970',
             }}
           >
-            <Sparkles
+            <GlintIcon
+              size={20}
+              color={isFavorited ? "#191970" : "#cfb53b"}
+              filled={isFavorited}
               className="w-5 h-5"
-              style={{
-                color: isFavorited ? '#191970' : '#cfb53b',
-                fill: isFavorited ? '#191970' : 'transparent',
-              }}
             />
             <span>{isFavorited ? 'Saved' : 'Save This Find'}</span>
           </button>

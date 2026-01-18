@@ -96,11 +96,11 @@ export function getOrderConfirmationEmailHtml(data: OrderConfirmationData): stri
           <!-- Footer -->
           <tr>
             <td style="padding: 30px 40px; background-color: #f8f9fa; text-align: center;">
-              <p style="margin: 0; font-size: 16px; font-family: 'Playfair Display', serif; color: #000080; font-weight: 500;">
+              <p style="margin: 0; font-size: 16px; font-family: 'Playfair Display', serif; color: #000080; font-weight: 500; line-height: 1.1;">
                 ThriftShopper
               </p>
-              <p style="margin: -2px 0 0; font-size: 12px; color: #efbf04; font-style: italic; font-weight: 400; font-family: 'Playfair Display', serif; line-height: 1.2;">
-                the magic of discovery<sup style="font-size: 0.7em; color: #efbf04;">TM</sup>
+              <p style="margin: 2px 0 0; font-size: 12px; color: #efbf04; font-style: italic; font-weight: 400; font-family: 'Playfair Display', serif; line-height: 1.1;">
+                the magic of discovery<sup style="font-size: 0.6em; color: #efbf04;">TM</sup>
               </p>
             </td>
           </tr>

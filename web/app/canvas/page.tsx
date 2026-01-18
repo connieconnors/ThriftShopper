@@ -625,7 +625,7 @@ export default function BuyerCanvasPage() {
                       <button
                         onClick={(e) => removeBookmark(item.id, e)}
                         disabled={removingBookmarkId === item.id}
-                        className="absolute top-0 right-0 -mt-1 -mr-1 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 transition-colors disabled:opacity-50 z-10"
+                        className="absolute top-0 right-0 -mt-1 -mr-1 w-5 h-5 rounded-full bg-[#D4AF37] text-white flex items-center justify-center hover:bg-[#C99C2E] transition-colors disabled:opacity-50 z-10"
                         aria-label="Remove favorite"
                       >
                         {removingBookmarkId === item.id ? (

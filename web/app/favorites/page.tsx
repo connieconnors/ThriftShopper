@@ -7,7 +7,8 @@ import { supabase } from "../../lib/supabaseClient";
 import { Listing, getSellerDisplayName, getPrimaryImage, TS_BADGE_URL, hasSellerTSBadge } from "../../lib/types";
 import { useAuth } from "../context/AuthContext";
 import FavoriteButton from "../components/FavoriteButton";
-import { Sparkles, Package, Settings, ChevronRight } from "lucide-react";
+import { Package, Settings, ChevronRight } from "lucide-react";
+import { GlintIcon } from "../../components/GlintIcon";
 import { TSLogo } from "@/components/TSLogo";
 
 interface Order {
@@ -235,7 +236,7 @@ export default function BuyerHomePage() {
                 : "text-white/50 hover:text-white/70"
             }`}
           >
-            <Sparkles size={16} />
+            <GlintIcon size={16} color="currentColor" filled={false} />
             Saved {listings.length > 0 && `(${listings.length})`}
           </button>
           <button
@@ -262,7 +263,7 @@ export default function BuyerHomePage() {
           ) : listings.length === 0 ? (
             <div className="flex flex-col items-center justify-center px-6 py-20">
               <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center mb-6">
-                <Sparkles className="w-10 h-10 text-white/30" />
+                <GlintIcon size={40} color="rgba(255, 255, 255, 0.3)" className="w-10 h-10" />
               </div>
               <h2 className="text-xl font-semibold mb-2">No saved items yet</h2>
               <p className="text-white/50 text-center mb-8 max-w-xs">

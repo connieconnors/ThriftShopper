@@ -82,7 +82,7 @@ export default function Navigation() {
                             </Link>
                             <button
                               onClick={handleSignOut}
-                              className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-white/5 transition-colors"
+                              className="w-full text-left px-4 py-2 text-sm text-[#D4AF37] hover:bg-[#D4AF37]/10 transition-colors"
                             >
                               Sign Out
                             </button>
