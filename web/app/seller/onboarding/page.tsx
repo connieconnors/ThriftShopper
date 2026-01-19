@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "motion/react";
@@ -37,12 +37,19 @@ const US_STATES = [
 
 // Shipping is now a free-text field, so we don't need predefined options
 
-export default function SellerOnboardingPage() {
+function SellerOnboardingContent() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { user, isLoading: authLoading } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isPreviewMode, setIsPreviewMode] = useState(false);
+
+  // Determine preview mode from query string (client-side)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const preview = new URLSearchParams(window.location.search).get("preview") === "1";
+    setIsPreviewMode(preview);
+  }, []);
 
   const [formData, setFormData] = useState<SellerProfile>({
     storeName: "",
@@ -321,7 +328,7 @@ export default function SellerOnboardingPage() {
           >
             Set Up Your Shop
           </h1>
-          {searchParams?.get("preview") === "1" && (
+          {isPreviewMode && (
             <div className="inline-flex items-center gap-2 rounded-full border border-[#191970]/20 bg-white px-3 py-1 text-[11px] text-[#191970]">
               Preview Mode
             </div>
@@ -679,4 +686,10 @@ export default function SellerOnboardingPage() {
   );
 }
 
-
+export default function SellerOnboardingPage() {
+  return (
+    <Suspense fallback={<div />}>
+      <SellerOnboardingContent />
+    </Suspense>
+  );
+}
