@@ -799,15 +799,7 @@ export default function SellerPageClient() {
 
   return (
     <StreamChatProvider>
-    <div className="min-h-screen pb-16 bg-gray-50" style={{ fontFamily: "Merriweather, serif" }}>
-      {/* iOS status bar strip override */}
-      <div
-        className="fixed top-0 left-0 right-0 z-50 pointer-events-none"
-        style={{
-          height: "env(safe-area-inset-top, 44px)",
-          backgroundColor: "#191970",
-        }}
-      />
+    <div className="min-h-screen pb-16 bg-[#191970]" style={{ fontFamily: "Merriweather, serif" }}>
       {/* Header */}
       <header 
         className="sticky top-0 z-40 px-4 py-2 flex items-center justify-between shadow-sm"
@@ -825,6 +817,7 @@ export default function SellerPageClient() {
         </Link>
       </header>
 
+      <div className="bg-gray-50">
       <main className="max-w-4xl mx-auto px-4 py-4">
         {/* Profile Section */}
         {profile && (
@@ -1376,6 +1369,7 @@ export default function SellerPageClient() {
         </div>
 
       </main>
+      </div>
 
       {/* Footer Navigation - Simplified like v0 */}
       <nav 

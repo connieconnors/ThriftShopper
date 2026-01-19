@@ -327,15 +327,7 @@ export default function BuyerCanvasPage() {
 
   return (
     <StreamChatProvider>
-    <div className="min-h-screen pb-16 bg-gray-50" style={{ fontFamily: "Merriweather, serif" }}>
-      {/* iOS status bar strip override */}
-      <div
-        className="fixed top-0 left-0 right-0 z-50 pointer-events-none"
-        style={{
-          height: "env(safe-area-inset-top, 44px)",
-          backgroundColor: "#191970",
-        }}
-      />
+    <div className="min-h-screen pb-16 bg-[#191970]" style={{ fontFamily: "Merriweather, serif" }}>
       {/* Header */}
       <header
         className="sticky top-0 z-40 px-4 py-2 flex items-center justify-between shadow-sm"
@@ -353,6 +345,8 @@ export default function BuyerCanvasPage() {
         </Link>
       </header>
 
+      {/* Content Wrapper */}
+      <div className="bg-gray-50">
       {/* Profile Section */}
       <div className="bg-white px-4 py-4 mb-3">
         <div className="flex items-center gap-3 mb-4">
@@ -765,6 +759,7 @@ export default function BuyerCanvasPage() {
       {/* Modals */}
       <MessagesModal isOpen={messagesOpen} onClose={() => setMessagesOpen(false)} />
       <SupportModal isOpen={supportOpen} onClose={() => setSupportOpen(false)} />
+      </div>
     </div>
     </StreamChatProvider>
   );
