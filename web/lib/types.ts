@@ -39,6 +39,9 @@ export type Listing = {
     seller_story: string | null;
     is_founding_seller?: boolean | null;
     gives_back?: boolean | null;
+    gives_back_name?: string | null;
+    gives_back_pct?: number | null;
+    is_non_profit?: boolean | null;
   } | null;
 };
 
