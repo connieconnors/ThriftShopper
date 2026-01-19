@@ -811,7 +811,7 @@ export default function SellerPageClient() {
       {/* Header */}
       <header 
         className="sticky top-0 z-40 px-4 py-2 flex items-center justify-between shadow-sm"
-        style={{ backgroundColor: "#191970" }}
+        style={{ backgroundColor: "#001540" }}
       >
         <Link href="/browse" className="flex items-center gap-2">
           <TSLogo size={24} primaryColor="#ffffff" accentColor="#EFBF05" />
