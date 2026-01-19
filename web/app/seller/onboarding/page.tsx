@@ -1,10 +1,10 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion } from "motion/react";
-import { Store, MapPin, Mail, Phone, Package, Loader2, Upload, Image as ImageIcon } from "lucide-react";
+import { Store, MapPin, Mail, Phone, Package, Loader2, Upload, Image as ImageIcon, Check } from "lucide-react";
 import { useAuth } from "@/app/context/AuthContext";
 import { supabase } from "@/lib/supabaseClient";
 import { TSLogo } from "@/components/TSLogo";
@@ -21,6 +21,10 @@ interface SellerProfile {
   shippingSpeed: string;
   avatarFile: File | null;
   avatarPreview: string | null;
+  givesBack: boolean;
+  givesBackName: string;
+  givesBackPct: string;
+  isNonProfit: boolean;
 }
 
 const US_STATES = [
@@ -35,6 +39,7 @@ const US_STATES = [
 
 export default function SellerOnboardingPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user, isLoading: authLoading } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -51,6 +56,10 @@ export default function SellerOnboardingPage() {
     shippingSpeed: "",
     avatarFile: null,
     avatarPreview: null,
+    givesBack: false,
+    givesBackName: "",
+    givesBackPct: "",
+    isNonProfit: false,
   });
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
 
@@ -65,6 +74,9 @@ export default function SellerOnboardingPage() {
     if (user && !authLoading) {
       const checkSellerStatus = async () => {
         try {
+          if (searchParams?.get("preview") === "1") {
+            return;
+          }
           // Try user_id first (actual column name), fallback to id
           let { data: profile, error } = await supabase
             .from("profiles")
@@ -98,7 +110,7 @@ export default function SellerOnboardingPage() {
       
       checkSellerStatus();
     }
-  }, [user, authLoading, router]);
+  }, [user, authLoading, router, searchParams]);
 
   // Pre-fill email from auth
   useEffect(() => {
@@ -202,6 +214,10 @@ export default function SellerOnboardingPage() {
         email: formData.email,
         phone_main: formData.phone || null, // Use phone_main (stores can have store phone and mobile)
         shipping_info: formData.shippingSpeed, // Changed from shipping_speed to shipping_info
+        gives_back: formData.givesBack,
+        gives_back_name: formData.givesBack ? formData.givesBackName || null : null,
+        gives_back_pct: formData.givesBack ? formData.givesBackPct || null : null,
+        is_non_profit: formData.isNonProfit,
         is_seller: true,
       };
 
@@ -232,6 +248,10 @@ export default function SellerOnboardingPage() {
           email: formData.email,
           phone_main: formData.phone || null, // Use phone_main (stores can have store phone and mobile)
           shipping_info: formData.shippingSpeed, // Changed from shipping_speed to shipping_info
+          gives_back: formData.givesBack,
+          gives_back_name: formData.givesBack ? formData.givesBackName || null : null,
+          gives_back_pct: formData.givesBack ? formData.givesBackPct || null : null,
+          is_non_profit: formData.isNonProfit,
           is_seller: true,
         };
 
@@ -269,6 +289,10 @@ export default function SellerOnboardingPage() {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
+  const updateToggle = (field: "givesBack" | "isNonProfit", value: boolean) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#f5f5f5" }}>
@@ -285,11 +309,11 @@ export default function SellerOnboardingPage() {
         className="max-w-2xl mx-auto"
       >
         <div className="text-center mb-8">
-          <div
+            <div
             className="inline-flex w-20 h-20 rounded-full items-center justify-center mb-4"
             style={{ backgroundColor: "#191970" }}
           >
-            <Store size={40} color="#cfb53b" />
+            <TSLogo size={44} primaryColor="#ffffff" accentColor="#D4AF37" showStar />
           </div>
           <h1
             className="text-3xl font-bold mb-2"
@@ -508,6 +532,118 @@ export default function SellerOnboardingPage() {
             <p className="mt-2 text-sm text-gray-500">
               Indicate your preferred and secondary shipping methods (e.g., "Ships within 3-5 days, Local pickup available")
             </p>
+          </div>
+
+          {/* Gives Back */}
+          <div>
+            <label className="block mb-2 font-medium" style={{ color: "#191970" }}>
+              Gives Back
+            </label>
+            <div className="flex items-center gap-3 mb-3">
+              <input
+                id="gives-back"
+                type="checkbox"
+                checked={formData.givesBack}
+                onChange={(e) => updateToggle("givesBack", e.target.checked)}
+                className="h-4 w-4 accent-[#191970]"
+              />
+              <label htmlFor="gives-back" className="text-sm text-gray-700">
+                We donate a portion of proceeds to a cause or nonprofit.
+              </label>
+            </div>
+            <p className="text-xs text-gray-500">
+              We’ll review this information before adding a badge to your shop.
+            </p>
+            {formData.givesBack && (
+              <div className="mt-4 space-y-3">
+                <div>
+                  <label className="block mb-2 font-medium" style={{ color: "#191970" }}>
+                    Who do you give back to?
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.givesBackName}
+                    onChange={(e) => updateField("givesBackName", e.target.value)}
+                    className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#191970] outline-none transition-colors"
+                    placeholder="Organization or cause name"
+                  />
+                </div>
+                <div>
+                  <label className="block mb-2 font-medium" style={{ color: "#191970" }}>
+                    Approximate percentage given back
+                  </label>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={formData.givesBackPct}
+                    onChange={(e) => updateField("givesBackPct", e.target.value)}
+                    className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#191970] outline-none transition-colors"
+                    placeholder="e.g., 5%"
+                  />
+                </div>
+                <div className="flex items-center gap-3">
+                  <input
+                    id="is-non-profit"
+                    type="checkbox"
+                    checked={formData.isNonProfit}
+                    onChange={(e) => updateToggle("isNonProfit", e.target.checked)}
+                    className="h-4 w-4 accent-[#191970]"
+                  />
+                  <label htmlFor="is-non-profit" className="text-sm text-gray-700">
+                    We are a registered nonprofit.
+                  </label>
+                </div>
+                <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+                  <p className="text-xs text-gray-500 mb-2">
+                    Badge preview (applied after review)
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    <div className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 border border-[#191970]/20">
+                      <div className="relative h-6 w-6 flex items-center justify-center rounded-full" style={{ backgroundColor: "#191970" }}>
+                        <span
+                          style={{
+                            fontFamily: "Playfair Display, serif",
+                            fontSize: "10px",
+                            lineHeight: 1,
+                            color: "#D4AF37",
+                            letterSpacing: "-0.02em",
+                          }}
+                        >
+                          FS
+                        </span>
+                        <span
+                          className="absolute -bottom-1 -right-1 h-3 w-3 rounded-full flex items-center justify-center"
+                          style={{ backgroundColor: "#D4AF37" }}
+                        >
+                          <span
+                            style={{
+                              fontSize: "8px",
+                              lineHeight: 1,
+                              color: "#191970",
+                            }}
+                          >
+                            ✦
+                          </span>
+                        </span>
+                      </div>
+                      <span className="text-xs text-[#191970] font-medium">Founding Seller</span>
+                    </div>
+                    <div className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 border border-[#191970]/20">
+                      <div className="relative h-6 w-6 flex items-center justify-center rounded-full" style={{ backgroundColor: "#191970" }}>
+                        <TSLogo size={14} primaryColor="#ffffff" accentColor="#D4AF37" />
+                        <span
+                          className="absolute -bottom-1 -right-1 h-3 w-3 rounded-full flex items-center justify-center"
+                          style={{ backgroundColor: "#D4AF37" }}
+                        >
+                          <Check className="h-2 w-2 text-[#191970]" strokeWidth={2} />
+                        </span>
+                      </div>
+                      <span className="text-xs text-[#191970] font-medium">Gives Back</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           <motion.button
