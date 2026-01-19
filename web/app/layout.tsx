@@ -47,7 +47,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#001540",
+  themeColor: "#ff0000",
 };
 
 export default function RootLayout({
@@ -58,7 +58,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <meta name="theme-color" content="#001540" />
+        <meta name="theme-color" content="#ff0000" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black" />
         <meta name="apple-mobile-web-app-title" content="ThriftShopper" />
