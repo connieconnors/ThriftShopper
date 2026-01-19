@@ -333,13 +333,13 @@ export default function BuyerCanvasPage() {
         className="fixed top-0 left-0 right-0 z-50 pointer-events-none"
         style={{
           height: "env(safe-area-inset-top, 44px)",
-          backgroundColor: "#001540",
+          backgroundColor: "#191970",
         }}
       />
       {/* Header */}
       <header
         className="sticky top-0 z-40 px-4 py-2 flex items-center justify-between shadow-sm"
-        style={{ backgroundColor: "#001540" }}
+        style={{ backgroundColor: "#191970" }}
       >
         <Link href="/browse" className="flex items-center gap-2">
           <TSLogo size={24} primaryColor="#ffffff" accentColor="#EFBF05" />
