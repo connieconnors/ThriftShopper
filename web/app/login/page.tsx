@@ -268,8 +268,7 @@ function LoginForm() {
           <h1 
             className="text-2xl font-bold text-center mb-2"
             style={{ 
-              color: "#000080", 
-              fontFamily: "var(--font-playfair), Playfair Display, serif" 
+              color: "#000080"
             }}
           >
             Welcome Back

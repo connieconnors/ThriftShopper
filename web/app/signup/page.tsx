@@ -341,25 +341,21 @@ function SignUpForm() {
           <div className="text-center text-xs text-gray-500 mt-6 space-y-1">
             <p>
               Also review our{" "}
-              <a 
-                href="https://thriftshopper.com/marketplace-guidelines" 
-                target="_blank" 
-                rel="noopener noreferrer"
+              <Link
+                href="/marketplace-guidelines"
                 className="font-semibold hover:underline"
                 style={{ color: '#191970' }}
               >
                 Marketplace Guidelines
-              </a>
+              </Link>
               {" "}and{" "}
-              <a 
-                href="https://thriftshopper.com/what-we-accept" 
-                target="_blank" 
-                rel="noopener noreferrer"
+              <Link
+                href="/what-we-accept"
                 className="font-semibold hover:underline"
                 style={{ color: '#191970' }}
               >
                 What We Accept
-              </a>
+              </Link>
             </p>
           </div>
         </div>

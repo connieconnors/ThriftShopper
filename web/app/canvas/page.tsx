@@ -320,7 +320,7 @@ export default function BuyerCanvasPage() {
   // Show loading state until mounted to prevent hydration mismatch
   if (!mounted || authLoading || isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50" style={{ fontFamily: "Merriweather, serif" }}>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="animate-spin h-8 w-8 border-2 border-[#EFBF05] border-t-transparent rounded-full" />
       </div>
     );
@@ -337,7 +337,7 @@ export default function BuyerCanvasPage() {
     <StreamChatProvider>
     <div
       className="min-h-screen pb-16 bg-[#191970]"
-      style={{ fontFamily: "Merriweather, serif", overscrollBehaviorY: "contain" }}
+      style={{ overscrollBehaviorY: "contain" }}
     >
       {/* Header */}
       <header
@@ -374,7 +374,7 @@ export default function BuyerCanvasPage() {
             )}
           </div>
           <div className="flex-1">
-            <h1 className="text-lg font-semibold mb-0.5" style={{ color: "#191970" }}>
+            <h1 className="text-lg font-semibold mb-0.5 font-editorial" style={{ color: "#191970" }}>
               My Canvas
             </h1>
             <p className="text-xs text-gray-600">Treasure hunter since {getJoinYear()}</p>

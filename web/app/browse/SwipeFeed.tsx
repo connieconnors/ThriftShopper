@@ -633,7 +633,7 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
       return (
         <div 
           className="fixed inset-0 flex flex-col items-center justify-center px-6"
-          style={{ backgroundColor: COLORS.midnightBlue, fontFamily: 'Merriweather, serif' }}
+          style={{ backgroundColor: COLORS.midnightBlue }}
         >
           <p className="text-white text-xl mb-2">No items found</p>
         {isMoodFilterResult && (
@@ -695,7 +695,6 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
         className="fixed inset-0 overflow-hidden select-none"
         style={{ 
           backgroundColor: '#001540',
-          fontFamily: 'Merriweather, serif',
           margin: 0,
           padding: 0,
         }}
@@ -982,7 +981,7 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
                 >
                 {/* Title (whisper/caption - subtle overlay) */}
                 <h1 
-                  className="mb-1"
+                  className="mb-1 font-editorial"
                   style={{ 
                     color: 'rgba(255, 255, 255, 0.70)',
                     fontSize: '15px',

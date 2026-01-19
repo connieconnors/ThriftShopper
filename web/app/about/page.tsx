@@ -6,7 +6,7 @@ import { ArrowLeft, Mail, Phone } from "lucide-react";
 
 export default function AboutPage() {
   return (
-    <main className="min-h-screen flex flex-col" style={{ backgroundColor: '#f8f9fa', fontFamily: 'Merriweather, serif' }}>
+    <main className="min-h-screen flex flex-col" style={{ backgroundColor: '#f8f9fa' }}>
       {/* Header */}
       <header className="p-4 flex items-center justify-between" style={{ backgroundColor: '#191970' }}>
         <Link href="/browse" className="flex items-center gap-2">
@@ -25,11 +25,11 @@ export default function AboutPage() {
       {/* Content */}
       <div className="flex-1 max-w-4xl mx-auto w-full px-4 py-8">
         <div className="bg-white rounded-lg shadow-sm p-8">
-          <h1 className="text-3xl font-bold mb-6" style={{ color: '#191970' }}>
+          <h1 className="text-3xl font-bold mb-6 font-editorial" style={{ color: '#191970' }}>
             About ThriftShopper
           </h1>
           
-          <div className="prose prose-lg max-w-none" style={{ fontFamily: 'Merriweather, serif' }}>
+          <div className="prose prose-lg max-w-none">
             <p className="text-gray-700 leading-relaxed mb-6">
               ThriftShopper is the first buyer discovery marketplace for secondhand treasures, allowing sellers to easily list treasures for buyers to discover, not search and scroll for.
             </p>
@@ -54,7 +54,7 @@ export default function AboutPage() {
 
             {/* Contact Information */}
             <section className="mt-8 pt-6 border-t border-gray-200">
-              <h2 className="text-xl font-semibold mb-4" style={{ color: '#191970' }}>
+              <h2 className="text-xl font-semibold mb-4 font-editorial" style={{ color: '#191970' }}>
                 Get in Touch
               </h2>
               <div className="space-y-3">

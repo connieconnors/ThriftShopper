@@ -165,7 +165,7 @@ export default function OrderDetailsPage() {
   const isSeller = user?.id === order.seller_id;
 
   return (
-    <div className="min-h-screen bg-gray-50" style={{ fontFamily: "Merriweather, serif" }}>
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header
         className="sticky top-0 z-40 px-4 py-2 flex items-center justify-between shadow-sm"

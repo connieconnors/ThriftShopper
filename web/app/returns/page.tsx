@@ -6,7 +6,7 @@ import { ArrowLeft } from "lucide-react";
 
 export default function ReturnsPage() {
   return (
-    <main className="min-h-screen flex flex-col" style={{ backgroundColor: '#f8f9fa', fontFamily: 'Merriweather, serif' }}>
+    <main className="min-h-screen flex flex-col" style={{ backgroundColor: '#f8f9fa' }}>
       {/* Header */}
       <header className="p-4 flex items-center justify-between" style={{ backgroundColor: '#191970' }}>
         <Link href="/browse" className="flex items-center gap-2">
@@ -29,7 +29,7 @@ export default function ReturnsPage() {
             Returns and Exchanges
           </h1>
           
-          <div className="prose prose-lg max-w-none" style={{ fontFamily: 'Merriweather, serif' }}>
+          <div className="prose prose-lg max-w-none">
             <p className="text-sm text-gray-500 mb-6">
               Last Updated: December 15, 2024
             </p>

@@ -392,7 +392,7 @@ export default function BuyerHomePage() {
                         {order.listing?.title || "Item"}
                       </h3>
                       <p className="text-sm text-white/50 mb-2">
-                        From {order.seller?.display_name || "Seller"}
+                        From <span className="font-editorial">{order.seller?.display_name || "Seller"}</span>
                       </p>
                       <div className="flex items-center justify-between">
                         <span className="font-bold">${order.amount.toFixed(2)}</span>

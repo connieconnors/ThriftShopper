@@ -1194,7 +1194,14 @@ export default function SellerUploadForm() {
 
   return (
     <div className="max-w-4xl mx-auto p-6">
-      <div className="flex items-center mb-6">
+      <div className="flex items-center justify-between mb-6">
+        <Link
+          href="/seller"
+          className="inline-flex items-center gap-2 text-sm text-[#191970] hover:opacity-70 transition-opacity"
+        >
+          <ArrowLeft size={16} />
+          Back to Dashboard
+        </Link>
         <TSLogo size={36} primaryColor="#191970" accentColor="#cfb53b" />
       </div>
 
@@ -1252,7 +1259,6 @@ export default function SellerUploadForm() {
                 <p 
                   className="text-sm mt-3"
                   style={{ 
-                    fontFamily: "'Source Sans 3', 'Source Sans Pro', sans-serif",
                     color: 'rgba(0, 0, 0, 0.85)',
                     lineHeight: '1.5'
                   }}
@@ -1353,8 +1359,8 @@ export default function SellerUploadForm() {
           
           {/* Header */}
           <h2 
-            className="text-2xl font-bold mb-6"
-            style={{ fontFamily: 'Merriweather, serif', color: '#191970' }}
+            className="text-2xl font-bold mb-6 font-editorial"
+            style={{ color: '#191970' }}
           >
             {isEditMode ? 'Edit Your Listing' : 'Review Your Listing'}
           </h2>
@@ -1504,7 +1510,6 @@ export default function SellerUploadForm() {
               <p 
                 className="text-xs mt-2"
                 style={{ 
-                  fontFamily: "'Source Sans 3', 'Source Sans Pro', sans-serif",
                   color: 'rgba(0, 0, 0, 0.85)',
                   lineHeight: '1.5'
                 }}
@@ -1517,7 +1522,7 @@ export default function SellerUploadForm() {
             <div className="space-y-4">
               {/* 1. Title */}
               <div>
-                <label className="block font-semibold mb-2" style={{ fontFamily: 'Merriweather, serif' }}>Title</label>
+                <label className="block font-semibold mb-2">Title</label>
                 <div className="flex gap-2">
                   <input
                     type="text"
@@ -1551,8 +1556,8 @@ export default function SellerUploadForm() {
 
               {/* 2. Description */}
               <div>
-                <label className="block font-semibold mb-2" style={{ fontFamily: 'Merriweather, serif' }}>Description</label>
-                <p className="text-xs text-gray-500 mb-1.5" style={{ fontFamily: "'Source Sans 3', 'Source Sans Pro', sans-serif" }}>
+                <label className="block font-semibold mb-2">Description</label>
+                <p className="text-xs text-gray-500 mb-1.5">
                   Start typing anytime — we'll never overwrite your words.
                 </p>
                 <div className="flex gap-2 items-start">
@@ -1609,10 +1614,10 @@ export default function SellerUploadForm() {
 
               {/* 2.5. Story */}
               <div>
-                <label className="block font-semibold mb-2" style={{ fontFamily: 'Merriweather, serif' }}>
+                <label className="block font-semibold mb-2">
                   Story <span className="text-gray-400 font-normal">(optional)</span>
                 </label>
-                <p className="text-xs text-gray-500 mb-1.5 leading-relaxed" style={{ fontFamily: "'Source Sans 3', 'Source Sans Pro', sans-serif" }}>
+                <p className="text-xs text-gray-500 mb-1.5 leading-relaxed">
                   A quick note in your own words — where it came from, why you loved it, or anything worth knowing.
                 </p>
                 <div className="flex gap-2 items-start">
@@ -1638,7 +1643,7 @@ export default function SellerUploadForm() {
 
               {/* 3. Price */}
               <div>
-                <label className="block font-semibold mb-2" style={{ fontFamily: 'Merriweather, serif' }}>Price</label>
+                <label className="block font-semibold mb-2">Price</label>
                 <div className="relative">
                   <span className="absolute left-4 top-2 text-gray-500">$</span>
                   <input
@@ -1692,7 +1697,7 @@ export default function SellerUploadForm() {
               {/* 4. AI Detected Tags */}
               {result.detectedAttributes?.filter(attr => !removedAITags.has(attr)).length > 0 && (
                 <div>
-                  <label className="block font-semibold mb-2" style={{ fontFamily: 'Merriweather, serif' }}>AI Detected Tags</label>
+                  <label className="block font-semibold mb-2">AI Detected Tags</label>
                   <div className="flex flex-wrap gap-1.5">
                     {result.detectedAttributes?.filter(attr => !removedAITags.has(attr)).map((attr, i) => (
                       <span
@@ -1719,10 +1724,10 @@ export default function SellerUploadForm() {
 
               {/* 5. Keywords & Moods */}
               <div>
-                <label className="block font-semibold mb-2" style={{ fontFamily: 'Merriweather, serif' }}>
+                <label className="block font-semibold mb-2">
                   Add Keywords <span className="text-gray-400 font-normal">(optional)</span>
                 </label>
-                <p className="text-xs text-gray-500 mb-1.5 leading-relaxed" style={{ fontFamily: "'Source Sans 3', 'Source Sans Pro', sans-serif" }}>
+                <p className="text-xs text-gray-500 mb-1.5 leading-relaxed">
                   AI suggests most keywords for you. Add 1–2 if there&apos;s something only you know — where it belongs, how it&apos;s used, or why someone would love it.
                 </p>
                 <div className="flex gap-2 mb-1.5">
@@ -1735,7 +1740,7 @@ export default function SellerUploadForm() {
                   />
                   <VoiceInputButton onTranscript={handleKeywordsVoice} />
                 </div>
-                <p className="text-xs text-gray-400 italic mb-1.5 leading-tight" style={{ fontFamily: "'Source Sans 3', 'Source Sans Pro', sans-serif" }}>
+                <p className="text-xs text-gray-400 italic mb-1.5 leading-tight">
                   Think: &quot;entryway statement&quot;, &quot;warm glow&quot;, &quot;giftable&quot;, &quot;small-space friendly&quot;.
                 </p>
                 {/* Clickable keyword suggestions */}
@@ -1766,7 +1771,7 @@ export default function SellerUploadForm() {
 
               {/* 6. Category */}
               <div>
-                <label className="block font-semibold mb-2" style={{ fontFamily: 'Merriweather, serif' }}>Category</label>
+                <label className="block font-semibold mb-2">Category</label>
                 <div className="flex gap-2">
                   <input
                     type="text"
@@ -1796,7 +1801,7 @@ export default function SellerUploadForm() {
 
               {/* 7. Condition */}
               <div>
-                <label className="block font-semibold mb-2" style={{ fontFamily: 'Merriweather, serif' }}>
+                <label className="block font-semibold mb-2">
                   Condition <span className="text-gray-400 font-normal">(optional)</span>
                 </label>
                 <select
@@ -1814,7 +1819,7 @@ export default function SellerUploadForm() {
 
               {/* 7a. Seller Notes */}
               <div>
-                <label className="block font-semibold mb-2" style={{ fontFamily: 'Merriweather, serif' }}>
+                <label className="block font-semibold mb-2">
                   Seller notes <span className="text-gray-400 font-normal">(optional)</span>
                 </label>
                 <textarea
@@ -1828,7 +1833,7 @@ export default function SellerUploadForm() {
 
               {/* 8. Specifications */}
               <div>
-                <label className="block font-semibold mb-2" style={{ fontFamily: 'Merriweather, serif' }}>
+                <label className="block font-semibold mb-2">
                   Specifications <span className="text-gray-400 font-normal">(optional)</span>
                 </label>
                 <div className="flex gap-2 items-start">
@@ -1857,7 +1862,7 @@ export default function SellerUploadForm() {
                   <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
-                  <span style={{ fontFamily: 'Merriweather, serif' }}>Published Successfully!</span>
+                  <span>Published Successfully!</span>
                 </div>
                 
                 {/* Next Action Buttons */}
@@ -1867,7 +1872,6 @@ export default function SellerUploadForm() {
                     className="flex-1 py-3 rounded-lg font-semibold transition text-white"
                     style={{ 
                       backgroundColor: '#191970',
-                      fontFamily: 'Merriweather, serif',
                     }}
                   >
                     List Another?
@@ -1878,7 +1882,6 @@ export default function SellerUploadForm() {
                     style={{ 
                       borderColor: '#191970',
                       color: '#191970',
-                      fontFamily: 'Merriweather, serif',
                     }}
                   >
                     My Listings
@@ -1904,7 +1907,6 @@ export default function SellerUploadForm() {
                   style={{ 
                     backgroundColor: (isPublishing) ? '#9ca3af' : '#191970',
                     cursor: (isPublishing) ? 'not-allowed' : 'pointer',
-                    fontFamily: 'Merriweather, serif',
                   }}
                   title={isStripeReady === false ? 'Note: Connect Stripe to receive payments when buyers purchase.' : ''}
                 >
@@ -1924,7 +1926,6 @@ export default function SellerUploadForm() {
                   disabled={isPublishing || isSaving || (!listingId && !draftSaved)}
                   className="px-4 py-3 rounded-lg font-semibold transition flex items-center justify-center gap-2"
                   style={{
-                    fontFamily: 'Merriweather, serif', 
                     backgroundColor: (isSaved || draftSaved) ? '#dcfce7' : '#f3f4f6',
                     color: (isSaved || draftSaved) ? '#166534' : '#374151',
                     border: '1px solid',
@@ -1956,7 +1957,6 @@ export default function SellerUploadForm() {
               onClick={resetForm}
               disabled={isPublishing || isSaving}
               className="px-4 py-3 border border-gray-300 rounded-lg font-semibold hover:bg-gray-50 transition disabled:opacity-50"
-              style={{ fontFamily: 'Merriweather, serif' }}
             >
               Start Over
             </button>
@@ -1965,7 +1965,6 @@ export default function SellerUploadForm() {
             <Link
               href="/seller"
               className="flex items-center justify-center gap-2 px-4 py-3 text-gray-600 hover:text-[#191970] transition-colors font-medium"
-              style={{ fontFamily: 'Merriweather, serif' }}
             >
               <ArrowLeft size={18} />
               Return to Seller Dashboard

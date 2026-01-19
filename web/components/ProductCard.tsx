@@ -103,10 +103,7 @@ export function ProductCard({ product, onFavorite, onSwipeUp, onTap, isFavorited
   });
 
   return (
-    <div 
-      className="relative w-full h-full"
-      style={{ fontFamily: 'Merriweather, serif' }}
-    >
+    <div className="relative w-full h-full">
       {/* Full-screen image */}
       <div 
         className="absolute inset-0 cursor-pointer"
@@ -195,9 +192,8 @@ export function ProductCard({ product, onFavorite, onSwipeUp, onTap, isFavorited
       <div className="absolute bottom-0 left-0 right-0 p-4 pb-5 z-10">
         {/* Title */}
         <h2 
-          className="text-xl text-white mb-1 leading-tight overflow-hidden"
+          className="text-xl text-white mb-1 leading-tight overflow-hidden font-editorial"
           style={{ 
-            fontFamily: 'Merriweather, serif',
             lineHeight: 1.2,
             maxHeight: '2.4em',
             display: '-webkit-box',
@@ -212,7 +208,7 @@ export function ProductCard({ product, onFavorite, onSwipeUp, onTap, isFavorited
         {/* Price */}
         <p 
           className="text-xl font-bold mb-1.5"
-          style={{ color: '#cfb53b', fontFamily: 'Merriweather, serif' }}
+          style={{ color: '#cfb53b' }}
         >
           ${(product.price ?? 0).toFixed(2)}
         </p>
@@ -221,7 +217,7 @@ export function ProductCard({ product, onFavorite, onSwipeUp, onTap, isFavorited
         {truncatedDescription && (
           <p 
             className="text-xs mb-2 leading-snug"
-            style={{ color: 'rgba(255, 255, 255, 0.6)', fontFamily: 'Merriweather, serif' }}
+            style={{ color: 'rgba(255, 255, 255, 0.6)' }}
           >
             {truncatedDescription}
           </p>
@@ -237,14 +233,13 @@ export function ProductCard({ product, onFavorite, onSwipeUp, onTap, isFavorited
                 style={{
                   backgroundColor: 'rgba(207, 181, 59, 0.2)',
                   color: '#cfb53b',
-                  fontFamily: "'Source Sans 3', sans-serif",
                 }}
               >
                 {tag}
               </span>
             ))}
             {product.tags.length > 3 && (
-              <span className="text-[10px] text-white/50" style={{ fontFamily: "'Source Sans 3', sans-serif" }}>+{product.tags.length - 3}</span>
+              <span className="text-[10px] text-white/50">+{product.tags.length - 3}</span>
             )}
           </div>
         )}
@@ -258,7 +253,7 @@ export function ProductCard({ product, onFavorite, onSwipeUp, onTap, isFavorited
               className="w-4 h-4 rounded-full object-cover"
             />
           )}
-          <span>{product.seller}</span>
+          <span className="font-editorial">{product.seller}</span>
           {product.location && (
             <>
               <span>•</span>

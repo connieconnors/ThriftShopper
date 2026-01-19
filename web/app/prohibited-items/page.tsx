@@ -6,7 +6,7 @@ import { ArrowLeft } from "lucide-react";
 
 export default function ProhibitedItemsPage() {
   return (
-    <main className="min-h-screen flex flex-col" style={{ backgroundColor: '#f8f9fa', fontFamily: 'Merriweather, serif' }}>
+    <main className="min-h-screen flex flex-col" style={{ backgroundColor: '#f8f9fa' }}>
       {/* Header */}
       <header className="p-4 flex items-center justify-between" style={{ backgroundColor: '#191970' }}>
         <Link href="/browse" className="flex items-center gap-2">
@@ -29,10 +29,10 @@ export default function ProhibitedItemsPage() {
             ThriftShopper Prohibited & Restricted Items
           </h1>
           <p className="text-sm text-gray-500 mb-6">
-            Last Updated: December 25, 2024
+            Last Updated: December 25, 2025
           </p>
           
-          <div className="prose prose-lg max-w-none" style={{ fontFamily: 'Merriweather, serif' }}>
+          <div className="prose prose-lg max-w-none">
             <p className="text-gray-700 leading-relaxed mb-6">
               ThriftShopper is a curated marketplace for secondhand, vintage, and collectible non-apparel goods. To maintain trust, safety, and quality, certain items are not permitted on our platform.
             </p>
@@ -44,7 +44,6 @@ export default function ProhibitedItemsPage() {
               <div className="text-center text-gray-400 text-xs">════════════════════════════════════════════════════════════</div>
             </div>
 
-            {/* PROHIBITED ITEMS */}
             <section className="mb-8">
               <h2 className="text-2xl font-bold mb-4" style={{ color: '#191970' }}>
                 PROHIBITED ITEMS (Never Allowed)
@@ -54,7 +53,6 @@ export default function ProhibitedItemsPage() {
               </p>
 
               <div className="space-y-6">
-                {/* EVERYDAY APPAREL & WEARABLES */}
                 <div>
                   <h3 className="text-xl font-semibold mb-3" style={{ color: '#191970' }}>
                     EVERYDAY APPAREL & WEARABLES
@@ -73,8 +71,8 @@ export default function ProhibitedItemsPage() {
                     <li>Vintage designer belts with unique buckles or craftsmanship</li>
                     <li>Statement hats (vintage, designer, or decorative - not everyday baseball caps)</li>
                     <li>Unique boots or shoes with artistic/collectible value (e.g., vintage cowboy boots, designer boots, architectural shoes)</li>
-                    <li>Exceptional vintage outerwear with significant design merit</li>
-                    <li>Accessories displayed as decorative objects (e.g., vintage purses as wall art)</li>
+                    <li>Exceptional vintage outerwear, handbags, scarves with design merit</li>
+                    <li>Accessories with design merit and/or used as decorative objects (handbags, belts, etc.)</li>
                     <li>Items with clear collectible, artistic, or display value beyond ordinary fashion</li>
                   </ul>
                   <p className="text-gray-700 leading-relaxed italic">
@@ -82,7 +80,6 @@ export default function ProhibitedItemsPage() {
                   </p>
                 </div>
 
-                {/* COUNTERFEIT & REPLICA GOODS */}
                 <div>
                   <h3 className="text-xl font-semibold mb-3" style={{ color: '#191970' }}>
                     COUNTERFEIT & REPLICA GOODS
@@ -95,7 +92,6 @@ export default function ProhibitedItemsPage() {
                   </ul>
                 </div>
 
-                {/* ILLEGAL & DANGEROUS ITEMS */}
                 <div>
                   <h3 className="text-xl font-semibold mb-3" style={{ color: '#191970' }}>
                     ILLEGAL & DANGEROUS ITEMS
@@ -110,7 +106,6 @@ export default function ProhibitedItemsPage() {
                   </ul>
                 </div>
 
-                {/* REGULATED SUBSTANCES */}
                 <div>
                   <h3 className="text-xl font-semibold mb-3" style={{ color: '#191970' }}>
                     REGULATED SUBSTANCES
@@ -123,7 +118,6 @@ export default function ProhibitedItemsPage() {
                   </ul>
                 </div>
 
-                {/* PERSONAL & PRIVATE INFORMATION */}
                 <div>
                   <h3 className="text-xl font-semibold mb-3" style={{ color: '#191970' }}>
                     PERSONAL & PRIVATE INFORMATION
@@ -138,7 +132,6 @@ export default function ProhibitedItemsPage() {
                   </ul>
                 </div>
 
-                {/* HUMAN & ANIMAL MATERIALS */}
                 <div>
                   <h3 className="text-xl font-semibold mb-3" style={{ color: '#191970' }}>
                     HUMAN & ANIMAL MATERIALS
@@ -153,7 +146,6 @@ export default function ProhibitedItemsPage() {
                   </ul>
                 </div>
 
-                {/* OFFENSIVE & HARMFUL CONTENT */}
                 <div>
                   <h3 className="text-xl font-semibold mb-3" style={{ color: '#191970' }}>
                     OFFENSIVE & HARMFUL CONTENT
@@ -168,7 +160,6 @@ export default function ProhibitedItemsPage() {
                   </ul>
                 </div>
 
-                {/* MASS-PRODUCED RETAIL INVENTORY */}
                 <div>
                   <h3 className="text-xl font-semibold mb-3" style={{ color: '#191970' }}>
                     MASS-PRODUCED RETAIL INVENTORY
@@ -182,7 +173,6 @@ export default function ProhibitedItemsPage() {
                   </ul>
                 </div>
 
-                {/* INTANGIBLE & UNVERIFIABLE ITEMS */}
                 <div>
                   <h3 className="text-xl font-semibold mb-3" style={{ color: '#191970' }}>
                     INTANGIBLE & UNVERIFIABLE ITEMS
@@ -197,7 +187,18 @@ export default function ProhibitedItemsPage() {
                   </ul>
                 </div>
 
-                {/* MISCELLANEOUS PROHIBITED */}
+                <div>
+                  <h3 className="text-xl font-semibold mb-3" style={{ color: '#191970' }}>
+                    FOOD & CONSUMABLES
+                  </h3>
+                </div>
+
+                <div>
+                  <h3 className="text-xl font-semibold mb-3" style={{ color: '#191970' }}>
+                    BEAUTY & PERSONAL CARE
+                  </h3>
+                </div>
+
                 <div>
                   <h3 className="text-xl font-semibold mb-3" style={{ color: '#191970' }}>
                     MISCELLANEOUS PROHIBITED
@@ -219,7 +220,6 @@ export default function ProhibitedItemsPage() {
               <div className="text-center text-gray-400 text-xs">════════════════════════════════════════════════════════════</div>
             </div>
 
-            {/* RESTRICTED ITEMS */}
             <section className="mb-8">
               <h2 className="text-2xl font-bold mb-4" style={{ color: '#191970' }}>
                 RESTRICTED ITEMS (Allowed with Conditions)
@@ -229,32 +229,9 @@ export default function ProhibitedItemsPage() {
               </p>
 
               <div className="space-y-6">
-                {/* FOOD & CONSUMABLES */}
                 <div>
                   <h3 className="text-xl font-semibold mb-3" style={{ color: '#191970' }}>
-                    FOOD & CONSUMABLES
-                  </h3>
-                  <p className="text-gray-700 font-semibold mb-2">Allowed only if:</p>
-                  <ul className="list-disc list-inside text-gray-700 leading-relaxed space-y-1 ml-4 mb-4">
-                    <li>Commercially packaged and sealed</li>
-                    <li>Not expired</li>
-                    <li>Not homemade or prepared in home kitchens</li>
-                    <li>Comply with FDA and food safety regulations</li>
-                    <li>Properly labeled with ingredients and allergen information</li>
-                  </ul>
-                  <p className="text-gray-700 font-semibold mb-2">Prohibited:</p>
-                  <ul className="list-disc list-inside text-gray-700 leading-relaxed space-y-1 ml-4">
-                    <li>Opened food items</li>
-                    <li>Homemade baked goods or preserves</li>
-                    <li>Items requiring refrigeration</li>
-                    <li>Expired products</li>
-                  </ul>
-                </div>
-
-                {/* VINTAGE COLLECTIBLES */}
-                <div>
-                  <h3 className="text-xl font-semibold mb-3" style={{ color: '#191970' }}>
-                    VINTAGE COLLECTIBLES
+                    VINTAGE "COLLECTIBLES"
                   </h3>
                   <p className="text-gray-700 font-semibold mb-2">Allowed only if:</p>
                   <ul className="list-disc list-inside text-gray-700 leading-relaxed space-y-1 ml-4 mb-4">
@@ -272,29 +249,6 @@ export default function ProhibitedItemsPage() {
                   </ul>
                 </div>
 
-                {/* BEAUTY & PERSONAL CARE */}
-                <div>
-                  <h3 className="text-xl font-semibold mb-3" style={{ color: '#191970' }}>
-                    BEAUTY & PERSONAL CARE
-                  </h3>
-                  <p className="text-gray-700 font-semibold mb-2">Allowed only if:</p>
-                  <ul className="list-disc list-inside text-gray-700 leading-relaxed space-y-1 ml-4 mb-4">
-                    <li>New and sealed in original packaging</li>
-                    <li>Not expired</li>
-                    <li>Not altered or tampered with</li>
-                    <li>Meet safety and labeling requirements</li>
-                  </ul>
-                  <p className="text-gray-700 font-semibold mb-2">Prohibited:</p>
-                  <ul className="list-disc list-inside text-gray-700 leading-relaxed space-y-1 ml-4">
-                    <li>Used cosmetics, makeup, or skincare products</li>
-                    <li>Opened bottles or containers</li>
-                    <li>Used makeup brushes or applicators (unless thoroughly sanitized)</li>
-                    <li>Expired products</li>
-                    <li>Products without proper labeling</li>
-                  </ul>
-                </div>
-
-                {/* ART & REPRODUCTIONS */}
                 <div>
                   <h3 className="text-xl font-semibold mb-3" style={{ color: '#191970' }}>
                     ART & REPRODUCTIONS
@@ -315,7 +269,6 @@ export default function ProhibitedItemsPage() {
                   </ul>
                 </div>
 
-                {/* BOOKS & MEDIA */}
                 <div>
                   <h3 className="text-xl font-semibold mb-3" style={{ color: '#191970' }}>
                     BOOKS & MEDIA
@@ -334,7 +287,6 @@ export default function ProhibitedItemsPage() {
                   </ul>
                 </div>
 
-                {/* COLLECTIBLE CURRENCY & STAMPS */}
                 <div>
                   <h3 className="text-xl font-semibold mb-3" style={{ color: '#191970' }}>
                     COLLECTIBLE CURRENCY & STAMPS
@@ -353,7 +305,6 @@ export default function ProhibitedItemsPage() {
                   </ul>
                 </div>
 
-                {/* ELECTRONICS & TECHNOLOGY */}
                 <div>
                   <h3 className="text-xl font-semibold mb-3" style={{ color: '#191970' }}>
                     ELECTRONICS & TECHNOLOGY
@@ -374,14 +325,13 @@ export default function ProhibitedItemsPage() {
                   </ul>
                 </div>
 
-                {/* FURNITURE & HOME GOODS */}
                 <div>
                   <h3 className="text-xl font-semibold mb-3" style={{ color: '#191970' }}>
                     FURNITURE & HOME GOODS
                   </h3>
                   <p className="text-gray-700 font-semibold mb-2">Allowed:</p>
                   <ul className="list-disc list-inside text-gray-700 leading-relaxed space-y-1 ml-4 mb-4">
-                    <li>Used furniture, home décor, vintage housewares</li>
+                    <li>Used furniture, home decor, vintage housewares</li>
                   </ul>
                   <p className="text-gray-700 font-semibold mb-2">Restricted:</p>
                   <ul className="list-disc list-inside text-gray-700 leading-relaxed space-y-1 ml-4">
@@ -398,7 +348,6 @@ export default function ProhibitedItemsPage() {
               <div className="text-center text-gray-400 text-xs">════════════════════════════════════════════════════════════</div>
             </div>
 
-            {/* SELLER RESPONSIBILITIES */}
             <section className="mb-8">
               <h2 className="text-2xl font-bold mb-4" style={{ color: '#191970' }}>
                 SELLER RESPONSIBILITIES
@@ -420,7 +369,6 @@ export default function ProhibitedItemsPage() {
               <div className="text-center text-gray-400 text-xs">════════════════════════════════════════════════════════════</div>
             </div>
 
-            {/* ENFORCEMENT */}
             <section className="mb-8">
               <h2 className="text-2xl font-bold mb-4" style={{ color: '#191970' }}>
                 ENFORCEMENT
@@ -450,7 +398,6 @@ export default function ProhibitedItemsPage() {
               <div className="text-center text-gray-400 text-xs">════════════════════════════════════════════════════════════</div>
             </div>
 
-            {/* REPORTING VIOLATIONS */}
             <section className="mb-8">
               <h2 className="text-2xl font-bold mb-4" style={{ color: '#191970' }}>
                 REPORTING VIOLATIONS
@@ -468,7 +415,6 @@ export default function ProhibitedItemsPage() {
               <div className="text-center text-gray-400 text-xs">════════════════════════════════════════════════════════════</div>
             </div>
 
-            {/* QUESTIONS */}
             <section className="mb-8">
               <h2 className="text-2xl font-bold mb-4" style={{ color: '#191970' }}>
                 QUESTIONS?
@@ -477,7 +423,7 @@ export default function ProhibitedItemsPage() {
                 Not sure if your item is allowed? Contact us before listing:
               </p>
               <p className="text-gray-700 leading-relaxed">
-                📩 Email: <a href="mailto:support@thriftshopper.com" className="text-[#EFBF05] hover:underline font-semibold">support@thriftshopper.com</a>
+                Email <a href="mailto:support@thriftshopper.com" className="text-[#EFBF05] hover:underline font-semibold">support@thriftshopper.com</a>
               </p>
               <p className="text-gray-700 leading-relaxed mt-4">
                 We're happy to help clarify.
@@ -488,7 +434,6 @@ export default function ProhibitedItemsPage() {
               <div className="text-center text-gray-400 text-xs">════════════════════════════════════════════════════════════</div>
             </div>
 
-            {/* Legal Disclaimer */}
             <section className="mb-8">
               <h2 className="text-xl font-semibold mb-3" style={{ color: '#191970' }}>
                 Legal Disclaimer

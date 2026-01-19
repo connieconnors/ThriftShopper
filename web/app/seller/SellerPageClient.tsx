@@ -7,7 +7,7 @@ import { supabase } from '@/lib/supabaseClient';
 import { TSLogo } from '@/components/TSLogo';
 import { FounderBadge } from '@/components/FounderBadge';
 import { GivesBackBadge } from '@/components/GivesBackBadge';
-import { Loader2, Plus, ArrowLeft, Settings, MessageSquare, ChevronDown, ChevronUp, MoreVertical, EyeOff, Trash2, CheckCircle, LogOut, Search, Package, HelpCircle, User, Edit, Truck, PackageCheck, Link as LinkIcon, Instagram } from 'lucide-react';
+import { Loader2, Plus, ArrowLeft, Settings, MessageSquare, ChevronDown, ChevronUp, MoreVertical, EyeOff, Trash2, CheckCircle, LogOut, Search, Package, HelpCircle, User, Edit, Truck, PackageCheck, Link as LinkIcon, Instagram, X } from 'lucide-react';
 import { GlintIcon } from '../../components/GlintIcon';
 import SellerMessages from './components/SellerMessages';
 import Link from 'next/link';
@@ -221,6 +221,7 @@ export default function SellerPageClient() {
   const [messagesOpen, setMessagesOpen] = useState(false);
   const [supportOpen, setSupportOpen] = useState(false);
   const [copyFeedback, setCopyFeedback] = useState<{ id: string; type: "link" | "caption" } | null>(null);
+  const [badgeInfoOpen, setBadgeInfoOpen] = useState<"founding" | "givesBack" | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -767,7 +768,7 @@ export default function SellerPageClient() {
   if (authLoading || loading) {
     return (
       <StreamChatProvider>
-        <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#FFF8E6", fontFamily: "Merriweather, serif" }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#FFF8E6" }}>
           <div className="animate-spin h-8 w-8 border-2 border-[#EFBF05] border-t-transparent rounded-full" />
         </div>
       </StreamChatProvider>
@@ -799,7 +800,7 @@ export default function SellerPageClient() {
     <StreamChatProvider>
     <div
       className="min-h-screen pb-16 bg-[#191970]"
-      style={{ fontFamily: "Merriweather, serif", overscrollBehaviorY: "contain" }}
+      style={{ overscrollBehaviorY: "contain" }}
     >
       {/* Header */}
       <header 
@@ -837,14 +838,64 @@ export default function SellerPageClient() {
                 )}
               </div>
               <div className="flex-1">
-                <h1 className="text-lg font-semibold" style={{ color: "#191970" }}>
+                <h1 className="text-lg font-semibold font-editorial" style={{ color: "#191970" }}>
                   {profile.display_name || "Seller Dashboard"}
                 </h1>
                 <p className="text-xs text-gray-600">Storytelling seller since {getJoinYear()}</p>
               {(profile.is_founding_seller || profile.gives_back) && (
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {profile.is_founding_seller && <FounderBadge />}
-                  {profile.gives_back && <GivesBackBadge />}
+                <div className="mt-2 relative">
+                  <div className="flex flex-wrap gap-2">
+                    {profile.is_founding_seller && (
+                      <button
+                        type="button"
+                        onClick={() => setBadgeInfoOpen((prev) => (prev === "founding" ? null : "founding"))}
+                        className="inline-flex"
+                        aria-label="Founding Seller badge details"
+                      >
+                        <FounderBadge />
+                      </button>
+                    )}
+                    {profile.gives_back && (
+                      <button
+                        type="button"
+                        onClick={() => setBadgeInfoOpen((prev) => (prev === "givesBack" ? null : "givesBack"))}
+                        className="inline-flex"
+                        aria-label="Gives Back badge details"
+                      >
+                        <GivesBackBadge />
+                      </button>
+                    )}
+                  </div>
+                  {badgeInfoOpen && (
+                    <>
+                      <div
+                        className="fixed inset-0 z-10"
+                        onClick={() => setBadgeInfoOpen(null)}
+                        aria-hidden="true"
+                      />
+                      <div className="relative z-20 mt-3 inline-block w-fit max-w-[260px] rounded-lg border border-gray-200 bg-white px-3 py-2 shadow-md text-[11px] text-gray-600 animate-fade-in">
+                        <div className="flex items-start justify-between gap-3">
+                        <p className="leading-relaxed">
+                          {badgeInfoOpen === "founding"
+                            ? `${profile.display_name || "This seller"} is a founding member of ThriftShopper, helping build the future of secondhand discovery.`
+                            : profile.is_non_profit
+                            ? `${profile.display_name || "This seller"} is a registered non-profit. 100% of proceeds support their mission.`
+                            : profile.gives_back_name
+                            ? `${profile.display_name || "This seller"} gives back${profile.gives_back_pct ? ` ${profile.gives_back_pct}% of sales` : ""} to ${profile.gives_back_name}.`
+                            : `${profile.display_name || "This seller"} gives back to charity.`}
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => setBadgeInfoOpen(null)}
+                          className="text-gray-400 hover:text-gray-600 transition-colors"
+                          aria-label="Close badge details"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
               </div>
@@ -943,7 +994,7 @@ export default function SellerPageClient() {
 
         {/* Sold Items - Match "Your Listings" wrapper structure exactly */}
         <div className="mb-4">
-          <h2 className="text-base font-semibold mb-3" style={{ color: "#191970" }}>
+          <h2 className="text-base font-semibold mb-3 font-editorial" style={{ color: "#191970" }}>
             Sold Items{allOrders.length > 0 ? ` (${allOrders.length})` : ''}
           </h2>
           
@@ -1084,7 +1135,7 @@ export default function SellerPageClient() {
 
         {/* Your Listings */}
         <div className="mb-4">
-          <h2 className="text-base font-semibold mb-3" style={{ color: "#191970" }}>
+          <h2 className="text-base font-semibold mb-3 font-editorial" style={{ color: "#191970" }}>
             Your Listings
           </h2>
           
@@ -1340,10 +1391,7 @@ export default function SellerPageClient() {
                             )}
                           </span>
                           <div className="flex items-center gap-2">
-                            <span
-                              className="text-gray-500"
-                              style={{ fontFamily: "Merriweather, serif" }}
-                            >
+                            <span className="text-gray-500">
                               share the find:
                             </span>
                             <button

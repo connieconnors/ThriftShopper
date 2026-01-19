@@ -316,8 +316,8 @@ export default function SellerOnboardingPage() {
             <TSLogo size={44} primaryColor="#ffffff" accentColor="#D4AF37" showStar />
           </div>
           <h1
-            className="text-3xl font-bold mb-2"
-            style={{ color: "#000080", fontFamily: "var(--font-merriweather), Merriweather, serif" }}
+            className="text-3xl font-bold mb-2 font-editorial"
+            style={{ color: "#000080" }}
           >
             Set Up Your Shop
           </h1>

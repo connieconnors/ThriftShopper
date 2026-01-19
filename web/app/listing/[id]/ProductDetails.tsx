@@ -23,7 +23,7 @@ import { useAuth } from "../../context/AuthContext";
 import { addRecentlyViewed } from "../../../lib/userPreferences";
 import MessagesModal from "../../../components/MessagesModal";
 import { StreamChatProvider } from "../../seller/StreamChatProvider";
-import { MessageSquare, Bookmark } from "lucide-react";
+import { MessageSquare, Bookmark, X } from "lucide-react";
 import { FounderBadge } from "../../../components/FounderBadge";
 import { GivesBackBadge } from "../../../components/GivesBackBadge";
 import { SoldRibbon } from "../../../components/SoldRibbon";
@@ -134,12 +134,16 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
   const givesBack =
     listing.profiles?.gives_back === true ||
     (listing as { givesBack?: boolean | null }).givesBack === true;
+  const givesBackName = listing.profiles?.gives_back_name ?? null;
+  const givesBackPct = listing.profiles?.gives_back_pct ?? null;
+  const isNonProfit = listing.profiles?.is_non_profit === true;
   
   // Check TS badge
   const hasTSBadge = hasSellerTSBadge(listing);
   
   // State for expanding seller story
   const [isSellerStoryExpanded, setIsSellerStoryExpanded] = useState(false);
+  const [badgeInfoOpen, setBadgeInfoOpen] = useState<"founding" | "givesBack" | null>(null);
 
   // Collect all tags
   const tags = [
@@ -151,7 +155,7 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
 
   return (
     <StreamChatProvider>
-    <main className="min-h-screen text-gray-900" style={{ backgroundColor: '#EDE7D9', fontFamily: 'Merriweather, serif' }}>
+    <main className="min-h-screen text-gray-900" style={{ backgroundColor: '#EDE7D9' }}>
       {/* Fixed Header - Back to Browse */}
       <header className="fixed top-0 left-0 right-0 z-50 p-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -271,10 +275,10 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
       </section>
 
       {/* Product Info */}
-      <section className="px-6 py-6 space-y-6">
+      <section className="px-6 pt-4 pb-6">
         {/* Title & Price */}
         <div>
-          <h1 className="text-base sm:text-lg font-bold text-gray-900 leading-tight mb-1">
+          <h1 className="text-base sm:text-lg font-bold text-gray-900 leading-tight mb-1 font-editorial">
             {listing.title}
           </h1>
           <p className="text-lg font-bold text-gray-900">
@@ -283,7 +287,7 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
         </div>
 
         {/* Shipping Info */}
-        <div className="flex items-center gap-3 py-3 px-4 rounded-xl" style={{ backgroundColor: '#191970' }}>
+        <div className="mt-4 flex items-center gap-3 py-2.5 px-4 rounded-xl" style={{ backgroundColor: '#191970' }}>
           <svg className="w-5 h-5 text-white flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
           </svg>
@@ -293,24 +297,10 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
           </div>
         </div>
 
-        {/* Tags */}
-        {tags.length > 0 && (
-          <div className="flex flex-wrap gap-2">
-            {tags.map((tag, index) => (
-              <span
-                key={index}
-                className="px-3 py-1.5 text-xs font-medium bg-gray-200 rounded-full text-gray-700"
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-        )}
-
         {/* Description */}
         {listing.description && (
-          <div>
-            <h2 className="text-sm font-semibold text-gray-600 uppercase tracking-wider mb-2">
+          <div className="mt-6 mb-5">
+            <h2 className="text-sm font-semibold text-gray-600 uppercase tracking-wider mb-4">
               Description
             </h2>
             <p className="text-gray-700 leading-relaxed">
@@ -319,13 +309,13 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
           </div>
         )}
 
-        {/* Story (Seller's personal note about the item) */}
+        {/* Story */}
         {listing.story_text && (
-          <div className="pt-2">
+          <div className="mb-6">
             <h2 className="text-sm font-semibold text-gray-600 uppercase tracking-wider mb-2">
               Story
             </h2>
-            <p className="text-gray-700 leading-relaxed italic">
+            <p className="text-gray-700 leading-relaxed italic border-l-2 border-gray-200 pl-4">
               {listing.story_text}
             </p>
           </div>
@@ -333,22 +323,19 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
 
         {/* Condition */}
         {listing.condition && (
-          <div>
+          <div className="mb-8">
             <h2 className="text-sm font-semibold text-gray-600 uppercase tracking-wider mb-2">
               Condition
             </h2>
-            <div className="flex items-start gap-2">
-              <p className="text-gray-700">{mapConditionValue(listing.condition)}</p>
-              {listing.seller_notes && (
-                <span className="text-xs text-gray-500 italic">(see seller notes)</span>
-              )}
-            </div>
+            <p className="text-gray-700">{mapConditionValue(listing.condition)}</p>
             {listing.seller_notes && (
               <div className="mt-2">
-                <h3 className="text-gray-700 italic mb-1" style={{ fontSize: '0.9em' }}>
-                  Seller notes:
+                <h3 className="text-xs font-semibold text-gray-600 uppercase tracking-wider mb-2">
+                  Seller's Notes
                 </h3>
-                <p className="text-gray-700 italic" style={{ fontSize: '0.9em' }}>{listing.seller_notes}</p>
+                <p className="text-gray-700 leading-relaxed italic border-l-2 border-gray-200 pl-4">
+                  {listing.seller_notes}
+                </p>
               </div>
             )}
           </div>
@@ -365,88 +352,85 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
         )}
 
         {/* Seller Section */}
-        <div className="pt-4 border-t border-gray-200">
-          <button
-            onClick={() => setShowSellerDrawer(true)}
-            className="w-full flex items-center gap-3 group text-left"
-          >
-            {/* Seller Avatar */}
-            <div className="relative flex-shrink-0">
-              {sellerAvatar ? (
-                <img
-                  src={sellerAvatar}
-                  alt={sellerName}
-                  className="w-12 h-12 rounded-full object-cover"
-                />
-              ) : (
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center">
-                  <span className="text-white font-bold text-sm">
-                    {sellerName.charAt(0).toUpperCase()}
-                  </span>
-                </div>
-              )}
-            </div>
-            
-            {/* Seller Name with TS Badge */}
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-1.5">
-                <span className="font-semibold text-gray-900 group-hover:text-violet-600 transition-colors">
-                  {sellerName}
-                </span>
-                {/* TS Verified Badge Image */}
-                {hasTSBadge && (
-                  <img 
-                    src={TS_BADGE_URL}
-                    alt="ThriftShopper Verified"
-                    className="w-5 h-5 flex-shrink-0"
-                  />
-                )}
-              </div>
-              {sellerLocation && (
-                <p className="text-sm text-gray-500">{sellerLocation}</p>
-              )}
-            </div>
-
-            {/* Arrow */}
-            <svg className="w-5 h-5 text-gray-400 group-hover:text-gray-600 transition-colors flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </button>
-
-          {/* Seller Story (if exists) */}
+        <div className="mt-8">
+          <div className="flex items-center gap-2">
+            <span className="text-base font-semibold text-gray-900 font-editorial">
+              {sellerName}
+            </span>
+            {hasTSBadge && (
+              <img 
+                src={TS_BADGE_URL}
+                alt="ThriftShopper Verified"
+                className="w-4 h-4 flex-shrink-0"
+              />
+            )}
+          </div>
+          {sellerLocation && (
+            <p className="text-sm text-gray-500">{sellerLocation}</p>
+          )}
           {sellerStory && (
-            <div className="mt-3 pt-3 border-t border-gray-100">
-              <p 
-                className={`text-sm text-gray-700 leading-relaxed ${
-                  !isSellerStoryExpanded ? 'line-clamp-2' : ''
-                }`}
-              >
-                {sellerStory}
-              </p>
-              {sellerStory.length > 150 && (
+            <p className="mt-1 text-xs text-gray-500 leading-relaxed">
+              {sellerStory}
+            </p>
+          )}
+          {(isFoundingSeller || givesBack) && (
+            <div className="mt-2 flex flex-wrap gap-2">
+              {isFoundingSeller && (
                 <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setIsSellerStoryExpanded(!isSellerStoryExpanded);
-                  }}
-                  className="mt-2 text-sm font-medium text-[#191970] hover:text-[#000080] transition-colors"
+                  type="button"
+                  onClick={() => setBadgeInfoOpen((prev) => (prev === "founding" ? null : "founding"))}
+                  className="inline-flex"
+                  aria-label="Founding Seller badge details"
                 >
-                  {isSellerStoryExpanded ? 'Read less' : 'Read more'}
+                  <FounderBadge />
+                </button>
+              )}
+              {givesBack && (
+                <button
+                  type="button"
+                  onClick={() => setBadgeInfoOpen((prev) => (prev === "givesBack" ? null : "givesBack"))}
+                  className="inline-flex"
+                  aria-label="Gives Back badge details"
+                >
+                  <GivesBackBadge />
                 </button>
               )}
             </div>
+          )}
+          {badgeInfoOpen && (
+            <>
+              <div
+                className="fixed inset-0 z-10"
+                onClick={() => setBadgeInfoOpen(null)}
+                aria-hidden="true"
+              />
+              <div className="relative z-20 mt-3 inline-block w-fit max-w-[260px] rounded-lg border border-gray-200 bg-white px-3 py-2 shadow-md text-[11px] text-gray-600 animate-fade-in">
+                <div className="flex items-start justify-between gap-3">
+                  <p className="leading-relaxed">
+                    {badgeInfoOpen === "founding"
+                      ? `${sellerName || "This seller"} is a founding member of ThriftShopper, helping build the future of secondhand discovery.`
+                      : isNonProfit
+                      ? `${sellerName || "This seller"} is a registered non-profit. 100% of proceeds support their mission.`
+                      : givesBackName
+                      ? `${sellerName || "This seller"} gives back${givesBackPct ? ` ${givesBackPct}% of sales` : ""} to ${givesBackName}.`
+                      : `${sellerName || "This seller"} gives back to charity.`}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setBadgeInfoOpen(null)}
+                    className="text-gray-400 hover:text-gray-600 transition-colors"
+                    aria-label="Close badge details"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              </div>
+            </>
           )}
         </div>
 
         {/* Seller Ratings (temporarily hidden for MVP - no reviews yet) */}
       </section>
-
-      {(isFoundingSeller || givesBack) && (
-        <div className="flex items-center justify-center gap-2 py-4 px-6">
-          {isFoundingSeller && <FounderBadge />}
-          {givesBack && <GivesBackBadge />}
-        </div>
-      )}
 
       {/* Fixed Bottom Action Bar */}
       <div className="fixed bottom-0 left-0 right-0 p-4 backdrop-blur-lg border-t border-gray-200" style={{ backgroundColor: 'rgba(237, 231, 217, 0.95)' }}>

@@ -50,7 +50,7 @@ export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
           </button>
           {expandedTopic === "quick-tips" && (
             <div className="px-3 pb-3 pt-0 border-t border-white/10">
-              <div className="pt-3 space-y-3 text-xs" style={{ fontFamily: "'Source Sans 3', 'Source Sans Pro', sans-serif" }}>
+              <div className="pt-3 space-y-3 text-xs">
                 <div>
                   <p className="font-semibold mb-1" style={{ color: '#EFBF05' }}>BUYERS</p>
                   <p className="text-white/90 leading-relaxed">
@@ -102,7 +102,14 @@ export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
                     <a href="mailto:support@thriftshopper.com" className="underline hover:text-[#EFBF05]">support@thriftshopper.com</a>
                   </p>
                   <p className="text-white/90 leading-relaxed">
-                    <a href="/support" className="underline hover:text-[#EFBF05]">thriftshopper.com/support</a>
+                    <a
+                      href="https://thriftshopper.com/support"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline hover:text-[#EFBF05]"
+                    >
+                      thriftshopper.com/support
+                    </a>
                   </p>
                 </div>
                 <div>
@@ -140,7 +147,7 @@ export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
           </button>
           {expandedTopic === "selling" && (
             <div className="px-3 pb-3 pt-0 border-t border-white/10">
-              <div className="pt-3 space-y-4 text-xs" style={{ fontFamily: "'Source Sans 3', 'Source Sans Pro', sans-serif" }}>
+              <div className="pt-3 space-y-4 text-xs">
                 <div>
                   <p className="font-semibold mb-1" style={{ color: '#EFBF05' }}>START WITH ONE GREAT ITEM</p>
                   <p className="text-white/90 leading-relaxed">
@@ -304,9 +311,9 @@ export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
               </button>
               {expandedTopic === "shipping-returns" && (
                 <div className="px-3 pb-3 pt-0 border-t border-white/10">
-                  <div className="pt-3 space-y-4 text-xs" style={{ fontFamily: "'Source Sans 3', 'Source Sans Pro', sans-serif" }}>
+                  <div className="pt-3 space-y-4 text-xs">
                     <div>
-                      <h4 className="text-sm font-semibold mb-2" style={{ fontFamily: 'var(--font-playfair), serif', color: '#191970' }}>
+                      <h4 className="text-sm font-semibold mb-2" style={{ color: '#EFBF05' }}>
                         How Shipping Works
                       </h4>
                       <ul className="list-disc list-inside text-white/90 leading-relaxed space-y-1 ml-2">
@@ -317,7 +324,7 @@ export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
                       </ul>
                     </div>
                     <div>
-                      <h4 className="text-sm font-semibold mb-2" style={{ fontFamily: 'var(--font-playfair), serif', color: '#191970' }}>
+                      <h4 className="text-sm font-semibold mb-2" style={{ color: '#EFBF05' }}>
                         Return Policy
                       </h4>
                       <p className="text-white/90 leading-relaxed mb-2">
@@ -331,7 +338,7 @@ export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
                       </ul>
                     </div>
                     <div>
-                      <h4 className="text-sm font-semibold mb-2" style={{ fontFamily: 'var(--font-playfair), serif', color: '#191970' }}>
+                      <h4 className="text-sm font-semibold mb-2" style={{ color: '#EFBF05' }}>
                         When Returns May Apply
                       </h4>
                       <p className="text-white/90 leading-relaxed mb-2">
@@ -342,7 +349,7 @@ export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
                       </p>
                     </div>
                     <div>
-                      <h4 className="text-sm font-semibold mb-2" style={{ fontFamily: 'var(--font-playfair), serif', color: '#191970' }}>
+                      <h4 className="text-sm font-semibold mb-2" style={{ color: '#EFBF05' }}>
                         Full Policy Details
                       </h4>
                       <p className="text-white/90 leading-relaxed">
@@ -350,7 +357,7 @@ export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
                       </p>
                     </div>
                     <div>
-                      <h4 className="text-sm font-semibold mb-2" style={{ fontFamily: 'var(--font-playfair), serif', color: '#191970' }}>
+                      <h4 className="text-sm font-semibold mb-2" style={{ color: '#EFBF05' }}>
                         Questions?
                       </h4>
                       <p className="text-white/90 leading-relaxed">
@@ -383,9 +390,9 @@ export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
               </button>
               {expandedTopic === "account-settings" && (
                 <div className="px-3 pb-3 pt-0 border-t border-white/10">
-                  <div className="pt-3 space-y-4 text-xs" style={{ fontFamily: "'Source Sans 3', 'Source Sans Pro', sans-serif" }}>
+                  <div className="pt-3 space-y-4 text-xs">
                     <div>
-                      <h4 className="text-sm font-semibold mb-2" style={{ fontFamily: 'var(--font-playfair), serif', color: '#191970' }}>
+                      <h4 className="text-sm font-semibold mb-2" style={{ color: '#191970' }}>
                         Your Canvas
                       </h4>
                       <p className="text-white/90 leading-relaxed mb-2">
@@ -400,7 +407,7 @@ export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
                       </ul>
                     </div>
                     <div>
-                      <h4 className="text-sm font-semibold mb-2" style={{ fontFamily: 'var(--font-playfair), serif', color: '#191970' }}>
+                      <h4 className="text-sm font-semibold mb-2" style={{ color: '#191970' }}>
                         Account Settings
                       </h4>
                       <ul className="list-disc list-inside text-white/90 leading-relaxed space-y-1 ml-2">
@@ -411,7 +418,7 @@ export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
                       </ul>
                     </div>
                     <div>
-                      <h4 className="text-sm font-semibold mb-2" style={{ fontFamily: 'var(--font-playfair), serif', color: '#191970' }}>
+                      <h4 className="text-sm font-semibold mb-2" style={{ color: '#191970' }}>
                         Beta Access
                       </h4>
                       <p className="text-white/90 leading-relaxed">
@@ -419,15 +426,33 @@ export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
                       </p>
                     </div>
                     <div>
-                      <h4 className="text-sm font-semibold mb-2" style={{ fontFamily: 'var(--font-playfair), serif', color: '#191970' }}>
+                      <h4 className="text-sm font-semibold mb-2" style={{ color: '#191970' }}>
                         Privacy & Security
                       </h4>
                       <p className="text-white/90 leading-relaxed">
-                        Your data is protected. Review our <a href="/privacy" className="underline hover:text-[#EFBF05]">Privacy Policy</a> and <a href="/terms" className="underline hover:text-[#EFBF05]">Terms of Service</a>.
+                        Your data is protected. Review our{" "}
+                        <a
+                          href="https://thriftshopper.com/privacy"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="underline hover:text-[#EFBF05]"
+                        >
+                          Privacy Policy
+                        </a>{" "}
+                        and{" "}
+                        <a
+                          href="https://thriftshopper.com/terms"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="underline hover:text-[#EFBF05]"
+                        >
+                          Terms of Service
+                        </a>
+                        .
                       </p>
                     </div>
                     <div>
-                      <h4 className="text-sm font-semibold mb-2" style={{ fontFamily: 'var(--font-playfair), serif', color: '#191970' }}>
+                      <h4 className="text-sm font-semibold mb-2" style={{ color: '#191970' }}>
                         Need Help?
                       </h4>
                       <p className="text-white/90 leading-relaxed">

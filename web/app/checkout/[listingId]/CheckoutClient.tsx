@@ -455,7 +455,7 @@ export default function CheckoutClient({ listing }: CheckoutClientProps) {
                     colorBackground: "#ffffff",
                     colorText: "#111827",
                     colorDanger: "#dc2626",
-                    fontFamily: "system-ui, sans-serif",
+                    fontFamily: "var(--font-system)",
                     borderRadius: "12px",
                   },
                 },

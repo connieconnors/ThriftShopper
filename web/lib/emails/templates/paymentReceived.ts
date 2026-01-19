@@ -20,7 +20,7 @@ export function getPaymentReceivedEmailHtml(data: PaymentReceivedData): string {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Payment received for ${data.itemName}</title>
 </head>
-<body style="margin: 0; padding: 0; font-family: 'Source Sans Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f8f9fa;">
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif; background-color: #f8f9fa;">
   <table role="presentation" style="width: 100%; border-collapse: collapse; background-color: #f8f9fa; padding: 20px;">
     <tr>
       <td align="center" style="padding: 20px 0;">
@@ -28,7 +28,7 @@ export function getPaymentReceivedEmailHtml(data: PaymentReceivedData): string {
           <!-- Header -->
           <tr>
             <td style="padding: 40px 40px 30px; text-align: center; border-bottom: 2px solid #EFBF05;">
-              <h1 style="margin: 0; font-family: 'Playfair Display', serif; font-size: 28px; color: #191970; font-weight: 700;">
+              <h1 style="margin: 0; font-family: 'Merriweather', serif; font-size: 28px; color: #191970; font-weight: 700;">
                 Payment received for ${data.itemName}
               </h1>
             </td>
@@ -83,10 +83,10 @@ export function getPaymentReceivedEmailHtml(data: PaymentReceivedData): string {
           <!-- Footer -->
           <tr>
             <td style="padding: 30px 40px; background-color: #f8f9fa; text-align: center;">
-              <p style="margin: 0; font-size: 16px; font-family: 'Playfair Display', serif; color: #000080; font-weight: 500; line-height: 1.1;">
+              <p style="margin: 0; font-size: 16px; font-family: 'Merriweather', serif; color: #000080; font-weight: 500; line-height: 1.1;">
                 ThriftShopper
               </p>
-              <p style="margin: 2px 0 0; font-size: 12px; color: #efbf04; font-style: italic; font-weight: 400; font-family: 'Playfair Display', serif; line-height: 1.1;">
+              <p style="margin: 2px 0 0; font-size: 12px; color: #efbf04; font-style: italic; font-weight: 400; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif; line-height: 1.1;">
                 the magic of discovery<sup style="font-size: 0.6em; color: #efbf04;">TM</sup>
               </p>
             </td>

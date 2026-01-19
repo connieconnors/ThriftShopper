@@ -118,7 +118,7 @@ export default function SettingsPage() {
 
   if (authLoading || isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50" style={{ fontFamily: "Merriweather, serif" }}>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="animate-spin h-8 w-8 border-2 border-[#EFBF05] border-t-transparent rounded-full" />
       </div>
     )
@@ -127,7 +127,7 @@ export default function SettingsPage() {
   const backUrl = userType === "seller" ? "/seller" : "/canvas"
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-16" style={{ fontFamily: "Merriweather, serif" }}>
+    <div className="min-h-screen bg-gray-50 pb-16">
       {/* Header */}
       <header className="bg-[#191970] px-4 py-2 flex items-center justify-between sticky top-0 z-10">
         <Link href={backUrl} className="flex items-center gap-3">

@@ -27,7 +27,6 @@ export function SellerView({ products, onBack, onAddListing }: SellerViewProps) 
       className="absolute inset-0 z-30 overflow-y-auto"
       style={{
         backgroundColor: '#f8f9fa',
-        fontFamily: 'Merriweather, serif',
       }}
     >
       {/* Header */}

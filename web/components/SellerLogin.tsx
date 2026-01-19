@@ -33,7 +33,7 @@ export function SellerLogin({ onLogin }: SellerLoginProps) {
           </div>
         </div>
 
-        <h1 className="text-center mb-2" style={{ color: '#000080', fontFamily: 'Merriweather, serif' }}>
+        <h1 className="text-center mb-2" style={{ color: '#000080' }}>
           Seller Portal
         </h1>
         <p className="text-center mb-8 text-gray-600">

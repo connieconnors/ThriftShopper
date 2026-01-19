@@ -68,7 +68,7 @@ export function SellerOnboarding({ onComplete }: SellerOnboardingProps) {
           <div className="inline-flex w-20 h-20 rounded-full items-center justify-center mb-4" style={{ backgroundColor: '#191970' }}>
             <TSLogo size={48} primaryColor="#ffffff" accentColor="#efbf04" />
           </div>
-          <h1 className="mb-2" style={{ color: '#000080', fontFamily: 'Merriweather, serif' }}>
+          <h1 className="mb-2 font-editorial" style={{ color: '#000080' }}>
             Set Up Your Shop
           </h1>
           <p className="text-gray-600">

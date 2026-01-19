@@ -29,7 +29,6 @@ export function Favorites({
       className="fixed inset-0 z-50 overflow-y-auto"
       style={{
         backgroundColor: '#191970',
-        fontFamily: 'Merriweather, serif',
       }}
     >
       {/* Header */}
@@ -118,7 +117,7 @@ export function Favorites({
 
                 {/* Product Info */}
                 <div className="p-3">
-                  <h3 className="text-sm mb-1 line-clamp-2" style={{ color: '#ffffff' }}>
+                  <h3 className="text-sm mb-1 line-clamp-2 font-editorial" style={{ color: '#ffffff' }}>
                     {product.title}
                   </h3>
                   <p className="mb-2" style={{ color: '#efbf04' }}>

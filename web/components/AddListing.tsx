@@ -68,7 +68,7 @@ export function AddListing({ onSubmit, onCancel }: AddListingProps) {
         className="max-w-3xl mx-auto"
       >
         <div className="flex items-center justify-between mb-6">
-          <h1 style={{ color: '#000080', fontFamily: 'Merriweather, serif' }}>
+          <h1 style={{ color: '#000080' }}>
             New Listing
           </h1>
           <button
@@ -114,7 +114,6 @@ export function AddListing({ onSubmit, onCancel }: AddListingProps) {
             <p 
               className="text-sm mt-2"
               style={{ 
-                fontFamily: "'Source Sans 3', 'Source Sans Pro', sans-serif",
                 color: 'rgba(0, 0, 0, 0.85)',
                 lineHeight: '1.5'
               }}
