@@ -328,6 +328,14 @@ export default function BuyerCanvasPage() {
   return (
     <StreamChatProvider>
     <div className="min-h-screen pb-16 bg-gray-50" style={{ fontFamily: "Merriweather, serif" }}>
+      {/* iOS status bar strip override */}
+      <div
+        className="fixed top-0 left-0 right-0 z-50 pointer-events-none"
+        style={{
+          height: "env(safe-area-inset-top, 44px)",
+          backgroundColor: "#001540",
+        }}
+      />
       {/* Header */}
       <header
         className="sticky top-0 z-40 px-4 py-2 flex items-center justify-between shadow-sm"
