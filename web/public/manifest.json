@@ -1,8 +1,9 @@
 {
-  "name": "ThriftShopper",
-  "short_name": "ThriftShopper",
+  "name": "ThriftShopper Beta",
+  "short_name": "TS Beta",
   "description": "Discover unique vintage and thrift finds — the magic of discovery™",
-  "start_url": "/",
+  "id": "/?pwa=20260118",
+  "start_url": "/?pwa=20260118",
   "display": "standalone",
   "background_color": "#000000",
   "theme_color": "#000000",

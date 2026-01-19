@@ -31,7 +31,7 @@ const merriweather = Merriweather({
 export const metadata: Metadata = {
   title: "ThriftShopper — the magic of discovery™",
   description: "Discover unique vintage and thrift finds",
-  manifest: "/manifest.json?v=3",
+  manifest: "/manifest.json?v=4",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black",
@@ -65,7 +65,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black" />
         <meta name="apple-mobile-web-app-title" content="ThriftShopper" />
-        <link rel="manifest" href="/manifest.json?v=3" />
+        <link rel="manifest" href="/manifest.json?v=4" />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${playfair.variable} ${merriweather.variable} antialiased`}
