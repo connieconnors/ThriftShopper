@@ -387,7 +387,7 @@ export default function SellerPageClient() {
         .from('profiles')
         .select('*')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
       
       // If that fails, try id
       if (profileError && profileError.code === 'PGRST116') {
@@ -395,14 +395,14 @@ export default function SellerPageClient() {
           .from('profiles')
           .select('*')
           .eq('id', user.id)
-          .single();
+          .maybeSingle();
         profile = retry.data;
         profileError = retry.error;
       }
 
       console.log('📊 Profile query result:', { profile, error: profileError });
 
-      if (profileError) {
+      if (profileError && profileError.code !== 'PGRST116') {
         console.error('❌ Error fetching profile:', profileError);
         console.error('Error details:', {
           message: profileError.message,
@@ -410,8 +410,8 @@ export default function SellerPageClient() {
           details: profileError.details,
           hint: profileError.hint
         });
-        // If profile doesn't exist, redirect to onboarding
-        router.push('/seller/onboarding');
+        setProfile(profile ?? null);
+        fetchSellerData();
         return;
       }
 
