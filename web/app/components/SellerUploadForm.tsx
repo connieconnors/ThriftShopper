@@ -649,8 +649,19 @@ export default function SellerUploadForm() {
       // Don't set processingStep here - let it stay 'idle' until upload actually starts
       // This way the manual button will show if auto-upload fails
     } else {
-      // In edit mode, don't show result immediately
-      setResult(null);
+      // In edit mode, keep the current form visible and swap the preview image in place
+      setShowProcessedImage(true);
+      setIsAIAnalyzing(false);
+      setProcessingStep('idle');
+      setResult((prev) =>
+        prev
+          ? {
+              ...prev,
+              processedImageUrl: preview,
+              backgroundRemoved: false,
+            }
+          : prev
+      );
     }
 
     // OPTIMIZATION: Start upload and AI analysis immediately when file is selected
@@ -1145,18 +1156,8 @@ export default function SellerUploadForm() {
   };
 
   const handleReplacePhoto = () => {
-    // Reset only photo-related state, keep form data
-    setSelectedFile(null);
-    setPreviewUrl('');
-    setProcessingStep('idle');
-    setResult(null);
-    setOriginalImageUrl('');
-    setShowProcessedImage(true);
     setError('');
-    setRemovedAITags(new Set()); // Reset removed AI tags when replacing photo
-    // Keep all form fields (title, description, price, etc.)
-    // Keep listingId if in edit mode
-    // Keep additional photos
+    fileInputRef.current?.click();
   };
 
   const resetForm = () => {
@@ -1295,24 +1296,6 @@ export default function SellerUploadForm() {
               </div>
             )}
             
-            {/* Hidden file input for gallery */}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleFileSelect}
-              className="hidden"
-            />
-            
-            {/* Hidden file input for camera (with capture attribute) */}
-            <input
-              ref={cameraInputRef}
-              type="file"
-              accept="image/*"
-              capture="environment"
-              onChange={handleFileSelect}
-              className="hidden"
-            />
           </div>
 
           {error && (
@@ -1373,8 +1356,14 @@ export default function SellerUploadForm() {
               {/* Main Photo - Toggleable */}
               <div 
                 className="relative cursor-pointer group mb-3"
-                onClick={() => setShowProcessedImage(!showProcessedImage)}
-                title="Click to toggle background"
+                onClick={() => {
+                  if (isEditMode) {
+                    fileInputRef.current?.click();
+                    return;
+                  }
+                  setShowProcessedImage(!showProcessedImage);
+                }}
+                title={isEditMode ? "Replace photo" : "Click to toggle background"}
               >
                 <img
                   src={showProcessedImage ? result.processedImageUrl : originalImageUrl}
@@ -1384,7 +1373,7 @@ export default function SellerUploadForm() {
                 {/* Hover overlay hint */}
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all rounded-lg flex items-center justify-center">
                   <span className="opacity-0 group-hover:opacity-100 text-white bg-black/50 px-3 py-1 rounded-full text-sm transition-opacity">
-                    Click to toggle view
+                    {isEditMode ? "Replace photo" : "Click to toggle view"}
                   </span>
                 </div>
               </div>
@@ -1401,6 +1390,15 @@ export default function SellerUploadForm() {
                     : '○ Original image'
                   }
                 </p>
+                {result.backgroundRemoved && (
+                  <button
+                    type="button"
+                    onClick={() => setShowProcessedImage(!showProcessedImage)}
+                    className="mt-2 w-full px-4 py-2 bg-white text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition flex items-center justify-center gap-2 border border-gray-200"
+                  >
+                    {showProcessedImage ? "View Original" : "View Removed Background"}
+                  </button>
+                )}
                 {/* Replace Photo Button */}
                 <button
                   type="button"
@@ -1972,6 +1970,22 @@ export default function SellerUploadForm() {
           </div>
         </div>
       )}
+      {/* Hidden file inputs (shared for upload + edit) */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleFileSelect}
+        className="hidden"
+      />
+      <input
+        ref={cameraInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        onChange={handleFileSelect}
+        className="hidden"
+      />
     </div>
   );
 }
