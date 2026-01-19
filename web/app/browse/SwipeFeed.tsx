@@ -694,7 +694,7 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
         ref={containerRef}
         className="fixed inset-0 overflow-hidden select-none"
         style={{ 
-          backgroundColor: '#080D16',
+          backgroundColor: '#001540',
           fontFamily: 'Merriweather, serif',
           margin: 0,
           padding: 0,
@@ -707,8 +707,8 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
       <div
         className="fixed top-0 left-0 right-0 z-40 pointer-events-none"
         style={{
-          height: 'env(safe-area-inset-top)',
-          backgroundColor: '#080D16',
+          height: 'env(safe-area-inset-top, 44px)',
+          backgroundColor: '#001540',
         }}
       />
       {/* ===== TOP GRADIENT OVERLAY (for status bar readability) ===== */}
