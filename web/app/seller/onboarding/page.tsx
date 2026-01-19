@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "motion/react";
 import { Store, MapPin, Mail, Phone, Package, Loader2, Upload, Image as ImageIcon, Check } from "lucide-react";
@@ -74,7 +74,7 @@ export default function SellerOnboardingPage() {
     if (user && !authLoading) {
       const checkSellerStatus = async () => {
         try {
-          if (searchParams?.get("preview") === "1") {
+          if (isPreviewMode) {
             return;
           }
           // Try user_id first (actual column name), fallback to id
@@ -110,7 +110,7 @@ export default function SellerOnboardingPage() {
       
       checkSellerStatus();
     }
-  }, [user, authLoading, router, searchParams]);
+  }, [user, authLoading, router, isPreviewMode]);
 
   // Pre-fill email from auth
   useEffect(() => {
@@ -678,4 +678,5 @@ export default function SellerOnboardingPage() {
     </div>
   );
 }
+
 
