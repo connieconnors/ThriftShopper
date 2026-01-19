@@ -384,7 +384,7 @@ export default function SellerPageClient() {
       // Note: Stripe status columns may not exist yet if SQL migration hasn't been run
       let { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('is_seller, display_name, location_city, avatar_url, created_at, stripe_account_id, stripe_onboarding_status, is_founding_seller, badge_type, gives_back, gives_back_name, gives_back_pct, is_non_profit')
+        .select('*')
         .eq('user_id', user.id)
         .single();
       
@@ -392,20 +392,8 @@ export default function SellerPageClient() {
       if (profileError && profileError.code === 'PGRST116') {
         const retry = await supabase
           .from('profiles')
-          .select('is_seller, display_name, location_city, avatar_url, created_at, stripe_account_id, stripe_onboarding_status, is_founding_seller, badge_type, gives_back, gives_back_name, gives_back_pct, is_non_profit')
+          .select('*')
           .eq('id', user.id)
-          .single();
-        profile = retry.data;
-        profileError = retry.error;
-      }
-
-      // If query failed due to missing columns, try again without Stripe status columns
-      if (profileError && (profileError.message?.includes('column') || profileError.code === '42703')) {
-        console.log('⚠️ Stripe status columns may not exist, retrying without them...');
-        const retry = await supabase
-          .from('profiles')
-          .select('is_seller, display_name, location_city, avatar_url, created_at, stripe_account_id, stripe_onboarding_status, is_founding_seller, badge_type, gives_back, gives_back_name, gives_back_pct, is_non_profit')
-          .eq('user_id', user.id)
           .single();
         profile = retry.data;
         profileError = retry.error;
@@ -483,7 +471,7 @@ export default function SellerPageClient() {
         // Re-fetch profile after status check to get updated values
         const { data: refreshedProfile } = await supabase
           .from('profiles')
-          .select('stripe_account_id, stripe_charges_enabled, stripe_payouts_enabled, stripe_details_submitted, display_name, location_city, avatar_url, is_seller, created_at')
+          .select('*')
           .eq('user_id', user.id)
           .maybeSingle();
         if (refreshedProfile) {

@@ -321,6 +321,11 @@ export default function SellerOnboardingPage() {
           >
             Set Up Your Shop
           </h1>
+          {searchParams?.get("preview") === "1" && (
+            <div className="inline-flex items-center gap-2 rounded-full border border-[#191970]/20 bg-white px-3 py-1 text-[11px] text-[#191970]">
+              Preview Mode
+            </div>
+          )}
           <p className="text-gray-600">
             Let&apos;s get you started selling on ThriftShopper
           </p>
@@ -329,6 +334,12 @@ export default function SellerOnboardingPage() {
             className="mt-4 inline-block text-sm text-[#191970] hover:underline"
           >
             Want to shop instead? Go to My Canvas →
+          </Link>
+          <Link
+            href="/seller/onboarding?preview=1"
+            className="mt-2 block text-xs text-gray-500 hover:underline"
+          >
+            Preview mode (bypass seller redirect)
           </Link>
         </div>
 
