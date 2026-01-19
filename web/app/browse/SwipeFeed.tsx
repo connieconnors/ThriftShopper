@@ -703,23 +703,6 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
-      {/* iOS status bar/safe-area strip color */}
-      <div
-        className="fixed top-0 left-0 right-0 z-40 pointer-events-none"
-        style={{
-          height: 'env(safe-area-inset-top, 44px)',
-          backgroundColor: '#001540',
-        }}
-      />
-      {/* ===== TOP GRADIENT OVERLAY (for status bar readability) ===== */}
-      <div
-        className="absolute top-0 left-0 right-0 z-30 pointer-events-none"
-        style={{ 
-          height: '120px',
-          background: 'linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, transparent 100%)' 
-        }}
-      />
-
       {/* ===== HEADER (TikTok-style, top-left, smaller) ===== */}
       <div
         className="absolute top-0 left-0 z-30 p-4"
