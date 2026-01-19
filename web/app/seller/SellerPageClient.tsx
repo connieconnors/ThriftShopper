@@ -231,6 +231,14 @@ export default function SellerPageClient() {
     }
   }, [user, authLoading]);
 
+  useEffect(() => {
+    const previous = document.body.style.backgroundColor;
+    document.body.style.backgroundColor = "#191970";
+    return () => {
+      document.body.style.backgroundColor = previous;
+    };
+  }, []);
+
   // Debug: Log when orders state changes
   useEffect(() => {
     console.log("allOrders state updated:", allOrders.length, "orders");
@@ -799,7 +807,10 @@ export default function SellerPageClient() {
 
   return (
     <StreamChatProvider>
-    <div className="min-h-screen pb-16 bg-[#191970]" style={{ fontFamily: "Merriweather, serif" }}>
+    <div
+      className="min-h-screen pb-16 bg-[#191970]"
+      style={{ fontFamily: "Merriweather, serif", overscrollBehaviorY: "contain" }}
+    >
       {/* Header */}
       <header 
         className="sticky top-0 z-40 px-4 py-2 flex items-center justify-between shadow-sm"

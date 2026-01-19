@@ -120,6 +120,14 @@ export default function BuyerCanvasPage() {
   }, [user, authLoading, router]);
 
   useEffect(() => {
+    const previous = document.body.style.backgroundColor;
+    document.body.style.backgroundColor = "#191970";
+    return () => {
+      document.body.style.backgroundColor = previous;
+    };
+  }, []);
+
+  useEffect(() => {
     const fetchData = async () => {
       if (!user) return;
 
@@ -327,7 +335,10 @@ export default function BuyerCanvasPage() {
 
   return (
     <StreamChatProvider>
-    <div className="min-h-screen pb-16 bg-[#191970]" style={{ fontFamily: "Merriweather, serif" }}>
+    <div
+      className="min-h-screen pb-16 bg-[#191970]"
+      style={{ fontFamily: "Merriweather, serif", overscrollBehaviorY: "contain" }}
+    >
       {/* Header */}
       <header
         className="sticky top-0 z-40 px-4 py-2 flex items-center justify-between shadow-sm"
