@@ -5,6 +5,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/app/context/AuthContext';
 import { supabase } from '@/lib/supabaseClient';
 import { TSLogo } from '@/components/TSLogo';
+import { FounderBadge } from '@/components/FounderBadge';
+import { GivesBackBadge } from '@/components/GivesBackBadge';
 import { Loader2, Plus, ArrowLeft, Settings, MessageSquare, ChevronDown, ChevronUp, MoreVertical, EyeOff, Trash2, CheckCircle, LogOut, Search, Package, HelpCircle, User, Edit, Truck, PackageCheck, Link as LinkIcon, Instagram } from 'lucide-react';
 import { GlintIcon } from '../../components/GlintIcon';
 import SellerMessages from './components/SellerMessages';
@@ -382,7 +384,7 @@ export default function SellerPageClient() {
       // Note: Stripe status columns may not exist yet if SQL migration hasn't been run
       let { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('is_seller, display_name, location_city, avatar_url, created_at, stripe_account_id, stripe_onboarding_status')
+        .select('is_seller, display_name, location_city, avatar_url, created_at, stripe_account_id, stripe_onboarding_status, is_founding_seller, badge_type, gives_back, gives_back_name, gives_back_pct, is_non_profit')
         .eq('user_id', user.id)
         .single();
       
@@ -390,7 +392,7 @@ export default function SellerPageClient() {
       if (profileError && profileError.code === 'PGRST116') {
         const retry = await supabase
           .from('profiles')
-          .select('is_seller, display_name, location_city, avatar_url, created_at, stripe_account_id, stripe_onboarding_status')
+          .select('is_seller, display_name, location_city, avatar_url, created_at, stripe_account_id, stripe_onboarding_status, is_founding_seller, badge_type, gives_back, gives_back_name, gives_back_pct, is_non_profit')
           .eq('id', user.id)
           .single();
         profile = retry.data;
@@ -402,7 +404,7 @@ export default function SellerPageClient() {
         console.log('⚠️ Stripe status columns may not exist, retrying without them...');
         const retry = await supabase
           .from('profiles')
-          .select('is_seller, display_name, location_city, avatar_url, created_at, stripe_account_id, stripe_onboarding_status')
+          .select('is_seller, display_name, location_city, avatar_url, created_at, stripe_account_id, stripe_onboarding_status, is_founding_seller, badge_type, gives_back, gives_back_name, gives_back_pct, is_non_profit')
           .eq('user_id', user.id)
           .single();
         profile = retry.data;
@@ -851,6 +853,12 @@ export default function SellerPageClient() {
                   {profile.display_name || "Seller Dashboard"}
                 </h1>
                 <p className="text-xs text-gray-600">Storytelling seller since {getJoinYear()}</p>
+              {(profile.is_founding_seller || profile.gives_back) && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {profile.is_founding_seller && <FounderBadge />}
+                  {profile.gives_back && <GivesBackBadge />}
+                </div>
+              )}
               </div>
             </div>
 
