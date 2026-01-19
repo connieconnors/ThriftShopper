@@ -31,10 +31,10 @@ const merriweather = Merriweather({
 export const metadata: Metadata = {
   title: "ThriftShopper — the magic of discovery™",
   description: "Discover unique vintage and thrift finds",
-  manifest: "/manifest.json",
+  manifest: "/manifest.json?v=3",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "black-translucent",
+    statusBarStyle: "black",
     title: "ThriftShopper",
   },
   formatDetection: {
