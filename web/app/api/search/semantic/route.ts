@@ -61,8 +61,8 @@ async function semanticEmbeddingSearch(query: string, limit: number): Promise<Li
     }
 
     const ids: string[] = matches
-      .map((match: { id: string }) => match.id)
-      .filter((id): id is string => Boolean(id));
+      .map((match: { id: string | null }) => match.id)
+      .filter((id: string | null): id is string => Boolean(id));
     if (ids.length === 0) {
       return [];
     }
