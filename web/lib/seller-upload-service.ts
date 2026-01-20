@@ -1549,7 +1549,7 @@ Return ONLY valid JSON:
 
 // Claude Vision with hypotheses-based approach for buyer-first marketplace
 // Uses same structure as OpenAI for consistency - may provide better keywords/tags
-async function analyzeWithClaude(imageUrl: string): Promise<{
+export async function analyzeWithClaude(imageUrl: string): Promise<{
   title: string;
   description: string;
   category: string;
@@ -2020,7 +2020,7 @@ Return the following JSON structure:
 
 // OpenAI Vision with hypotheses-based approach for buyer-first marketplace
 // Returns multiple hypotheses with evidence, confidence levels, and observational language
-async function analyzeWithOpenAI(imageUrl: string): Promise<{
+export async function analyzeWithOpenAI(imageUrl: string): Promise<{
   title: string; // Extracted from listing_copy.title
   description: string; // Extracted from listing_copy.description
   category: string; // Extracted from recommended hypothesis category_id
@@ -2538,7 +2538,7 @@ export async function removeBackground(imageFile: File | Buffer): Promise<string
 // REVERT: Google Vision is SECONDARY/SUPPLEMENTARY - only provides additional tags/attributes
 // Renamed from analyzeImage() to analyzeWithGoogleVision() for clarity
 // Runs in parallel with OpenAI but only supplements OpenAI's results with extra labels/tags
-async function analyzeWithGoogleVision(imageUrl: string): Promise<{
+export async function analyzeWithGoogleVision(imageUrl: string): Promise<{
   title: string; // Included for fallback scenarios, but OpenAI is primary
   category: string; // Included for fallback scenarios, but OpenAI is primary
   attributes: string[]; // SUPPLEMENTARY: Additional tags/labels to merge with OpenAI attributes
@@ -2852,7 +2852,7 @@ async function getApifyPricing(searchQuery: string): Promise<{
   return null;
 }
 
-async function getEbayPricing(searchQuery: string): Promise<{
+export async function getEbayPricing(searchQuery: string): Promise<{
   minPrice: number;
   maxPrice: number;
   avgPrice: number;
