@@ -27,14 +27,11 @@ async function testSemanticSearch() {
 
       if (result.interpretation) {
         console.log('\n🧠 Interpretation:');
-        console.log(`   Keywords: ${result.interpretation.keywords.join(', ') || 'none'}`);
-        console.log(`   Intents: ${result.interpretation.intents.join(', ') || 'none'}`);
-        console.log(`   Styles: ${result.interpretation.styles.join(', ') || 'none'}`);
-        console.log(`   Moods: ${result.interpretation.moods.join(', ') || 'none'}`);
-        console.log(`   Categories: ${result.interpretation.categories.join(', ') || 'none'}`);
-        if (result.interpretation.priceRange) {
-          console.log(`   Price Range: ${JSON.stringify(result.interpretation.priceRange)}`);
-        }
+        console.log(`   Query: ${result.interpretation.originalQuery}`);
+        console.log(
+          `   Terms: ${result.interpretation.termGroups.map((group) => group.term).join(', ') || 'none'}`
+        );
+        console.log(`   Source: ${result.interpretation.source}`);
       }
 
       console.log(`\n📊 Results: ${result.listings.length} listings found`);
