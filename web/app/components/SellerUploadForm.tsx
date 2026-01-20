@@ -217,6 +217,7 @@ export default function SellerUploadForm() {
   const [sellerNotes, setSellerNotes] = useState('');
   const [specifications, setSpecifications] = useState('');
   const [keywords, setKeywords] = useState(''); // For moods/styles
+  const [isDirty, setIsDirty] = useState(false);
   
   // Track if user has manually edited fields (to avoid overwriting their input)
   const [userHasEditedTitle, setUserHasEditedTitle] = useState(false);
@@ -431,6 +432,7 @@ export default function SellerUploadForm() {
         
         setAdditionalPhoto1(listing.additional_image_url || '');
         setAdditionalPhoto2(listing.additional_image_two_url || '');
+        setIsDirty(false);
         
         // Use AI suggested keywords for detectedAttributes, or fallback to categorized keywords
         const detectedAttributes = dbAiSuggested.length > 0 ? dbAiSuggested : keywordsArrayForDisplay;
@@ -506,6 +508,7 @@ export default function SellerUploadForm() {
     // Create preview URL
     const previewUrl = URL.createObjectURL(file);
     setPhoto(previewUrl);
+    setIsDirty(true);
 
     // Upload to Supabase Storage
     try {
@@ -525,6 +528,54 @@ export default function SellerUploadForm() {
       }
     } catch (err) {
       console.error('Additional photo upload error:', err);
+    }
+  };
+
+  const handleMainPhotoReplace = async (file: File) => {
+    if (!listingId || !user) return;
+    try {
+      const filename = `original-${listingId}-${Date.now()}.jpg`;
+      const { error: uploadError } = await supabase.storage
+        .from('listings')
+        .upload(filename, file, { contentType: file.type });
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('listings')
+        .getPublicUrl(filename);
+
+      const { error: updateError } = await supabase
+        .from('listings')
+        .update({
+          original_image_url: publicUrl,
+          clean_image_url: null,
+          staged_image_url: null,
+        })
+        .eq('id', listingId)
+        .eq('seller_id', user.id);
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      setPreviewUrl(publicUrl);
+      setOriginalImageUrl(publicUrl);
+      setShowProcessedImage(true);
+      setResult((prev) =>
+        prev
+          ? {
+              ...prev,
+              processedImageUrl: publicUrl,
+              backgroundRemoved: false,
+            }
+          : prev
+      );
+    } catch (err) {
+      console.error('Main photo replace error:', err);
+      setError('Failed to replace main photo. Please try again.');
     }
   };
 
@@ -594,7 +645,14 @@ export default function SellerUploadForm() {
       listingId, 
       uploadInProgress: uploadInProgressRef.current 
     });
-    
+
+    if (listingId) {
+      setSelectedFile(file);
+      setError('');
+      await handleMainPhotoReplace(file);
+      return;
+    }
+
     setSelectedFile(file);
     const preview = URL.createObjectURL(file);
     setPreviewUrl(preview);
@@ -634,6 +692,7 @@ export default function SellerUploadForm() {
       setOriginalUserPrice(null);
       // Reset removed AI tags when selecting a new file
       setRemovedAITags(new Set());
+      setIsDirty(true);
       
       // OPTION 2: Show form immediately with placeholder result
       // This allows user to start editing while AI processes in background
@@ -662,6 +721,7 @@ export default function SellerUploadForm() {
             }
           : prev
       );
+      setIsDirty(true);
     }
 
     // OPTIMIZATION: Start upload and AI analysis immediately when file is selected
@@ -899,11 +959,12 @@ export default function SellerUploadForm() {
 
       // Update the result with the new processed image
       if (result) {
-        setResult({
+      setResult({
           ...result,
           processedImageUrl: data.processedImageUrl,
           backgroundRemoved: true,
         });
+      setIsDirty(true);
       }
 
       // Switch to showing the processed image
@@ -1033,6 +1094,7 @@ export default function SellerUploadForm() {
       }
 
       setIsPublished(true);
+      setIsDirty(false);
       // Don't auto-redirect - let user choose next action
       // In edit mode, refresh the page to show updated status
       if (isEditMode) {
@@ -1141,6 +1203,7 @@ export default function SellerUploadForm() {
 
       console.log('✅ [handleSaveDraft] Successfully saved to database');
       setIsSaved(true);
+      setIsDirty(false);
       setDraftSaved(true);
       
       // After showing "Saved" for 1.5 seconds, change to "New Listing" state
@@ -1190,19 +1253,32 @@ export default function SellerUploadForm() {
     setUserHasEditedCategory(false);
     setUserHasEditedPrice(false);
     setRemovedAITags(new Set()); // Reset removed AI tags
+    setIsDirty(false);
   };
 
 
   return (
     <div className="max-w-4xl mx-auto p-6">
       <div className="flex items-center justify-between mb-6">
-        <Link
-          href="/seller"
-          className="inline-flex items-center gap-2 text-sm text-[#191970] hover:opacity-70 transition-opacity"
-        >
-          <ArrowLeft size={16} />
-          Back to Dashboard
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/seller"
+            className="inline-flex items-center gap-2 text-sm text-[#191970] hover:opacity-70 transition-opacity"
+          >
+            <ArrowLeft size={16} />
+            Back to Dashboard
+          </Link>
+          {isEditMode && isDirty && (
+            <button
+              type="button"
+              onClick={handleSaveDraft}
+              disabled={isSaving || !listingId}
+              className="text-xs text-[#191970]/80 hover:text-[#191970] border border-[#191970]/20 rounded-full px-3 py-1 transition disabled:opacity-60"
+            >
+              Save changes
+            </button>
+          )}
+        </div>
         <TSLogo size={36} primaryColor="#191970" accentColor="#cfb53b" />
       </div>
 
@@ -1378,25 +1454,24 @@ export default function SellerUploadForm() {
                 </div>
               </div>
               <div className="mb-3">
-                <p className={`text-sm ${
-                  showProcessedImage && result.backgroundRemoved 
-                    ? 'text-green-600' 
-                    : showProcessedImage && !result.backgroundRemoved
-                    ? 'text-orange-600'
-                    : 'text-gray-500'
-                }`}>
-                  {showProcessedImage 
-                    ? (result.backgroundRemoved ? '✓ Background removed' : '○ Original image')
-                    : '○ Original image'
-                  }
-                </p>
-                {result.backgroundRemoved && (
+                {result.backgroundRemoved ? (
                   <button
                     type="button"
                     onClick={() => setShowProcessedImage(!showProcessedImage)}
-                    className="mt-2 w-full px-4 py-2 bg-white text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition flex items-center justify-center gap-2 border border-gray-200"
+                    className={`text-sm font-semibold ${
+                      showProcessedImage ? "text-green-600" : "text-gray-500"
+                    }`}
                   >
-                    {showProcessedImage ? "View Original" : "View Removed Background"}
+                    ✓ Remove Background&nbsp;&nbsp;&nbsp;&nbsp;○━━━
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleRemoveBackground}
+                    disabled={isRemovingBackground}
+                    className="text-sm font-semibold text-orange-600 disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    Remove Background
                   </button>
                 )}
                 {/* Replace Photo Button */}
@@ -1410,25 +1485,11 @@ export default function SellerUploadForm() {
                   </svg>
                   Replace Photo
                 </button>
-                {/* Remove Background Button - only show if not already removed */}
-                {!result.backgroundRemoved && (
-                  <button
-                    type="button"
-                    onClick={handleRemoveBackground}
-                    disabled={isRemovingBackground}
-                    className="mt-2 w-full px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                  >
-                    {isRemovingBackground ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Removing background...
-                      </>
-                    ) : (
-                      <>
-                        ✨ Remove Background
-                      </>
-                    )}
-                  </button>
+                {isRemovingBackground && (
+                  <div className="mt-2 flex items-center gap-2 text-xs text-gray-500">
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    Removing background...
+                  </div>
                 )}
               </div>
 
@@ -1528,6 +1589,7 @@ export default function SellerUploadForm() {
                     onChange={(e) => {
                       setTitle(e.target.value);
                       setUserHasEditedTitle(true);
+                      setIsDirty(true);
                     }}
                     className="flex-1 border border-gray-300 rounded-lg px-4 h-11 text-[#333333]"
                     maxLength={80}
@@ -1566,6 +1628,7 @@ export default function SellerUploadForm() {
                       setDescription(newValue);
                       descriptionValueRef.current = newValue; // Update ref immediately (synchronous)
                       setUserHasEditedDescription(true);
+                      setIsDirty(true);
                     }}
                     className="flex-1 border border-gray-300 rounded-lg px-4 py-2 text-[#333333]"
                     rows={4}
@@ -1619,10 +1682,13 @@ export default function SellerUploadForm() {
                   A quick note in your own words — where it came from, why you loved it, or anything worth knowing.
                 </p>
                 <div className="flex gap-2 items-start">
-                  <textarea
-                    ref={storyTextareaRef}
-                    value={story}
-                    onChange={(e) => setStory(e.target.value)}
+                <textarea
+                  ref={storyTextareaRef}
+                  value={story}
+                  onChange={(e) => {
+                    setStory(e.target.value);
+                    setIsDirty(true);
+                  }}
                     className="flex-1 border border-gray-300 rounded-lg px-4 py-2 text-[#333333] resize-none overflow-hidden"
                     rows={3}
                     placeholder="Example: &quot;We found this during a kitchen reno and loved the warm glow. It&apos;s been wrapped and stored since—ready for its next home.&quot;"
@@ -1650,6 +1716,7 @@ export default function SellerUploadForm() {
                     onChange={(e) => {
                       setPrice(e.target.value);
                       setUserHasEditedPrice(true);
+                      setIsDirty(true);
                     }}
                     className="w-full border border-gray-300 rounded-lg pl-8 pr-4 h-11"
                     min="0"
@@ -1732,7 +1799,10 @@ export default function SellerUploadForm() {
                   <input
                     type="text"
                     value={keywords}
-                    onChange={(e) => setKeywords(e.target.value)}
+                    onChange={(e) => {
+                      setKeywords(e.target.value);
+                      setIsDirty(true);
+                    }}
                     className="flex-1 border border-gray-300 rounded-lg px-4 h-11 text-[#333333]"
                     placeholder="Add a keyword..."
                   />
@@ -1777,6 +1847,7 @@ export default function SellerUploadForm() {
                     onChange={(e) => {
                       setCategory(e.target.value);
                       setUserHasEditedCategory(true);
+                      setIsDirty(true);
                     }}
                     className="flex-1 border border-gray-300 rounded-lg px-4 h-11 text-[#333333]"
                     placeholder={processingStep === 'analyzing' || processingStep === 'generating' ? "AI analyzing... category coming soon" : "e.g., Home Decor, Vintage..."}
@@ -1804,7 +1875,10 @@ export default function SellerUploadForm() {
                 </label>
                 <select
                   value={condition}
-                  onChange={(e) => setCondition(e.target.value)}
+                  onChange={(e) => {
+                    setCondition(e.target.value);
+                    setIsDirty(true);
+                  }}
                   className="w-full border border-gray-300 rounded-lg px-4 h-11 bg-white"
                 >
                   <option value="">Select condition...</option>
@@ -1822,7 +1896,10 @@ export default function SellerUploadForm() {
                 </label>
                 <textarea
                   value={sellerNotes}
-                  onChange={(e) => setSellerNotes(e.target.value)}
+                  onChange={(e) => {
+                    setSellerNotes(e.target.value);
+                    setIsDirty(true);
+                  }}
                   className="w-full border border-gray-300 rounded-lg px-4 py-2 text-[#333333]"
                   rows={3}
                   placeholder="Patina, small marks, repairs, missing pieces — anything you'd want to know as a buyer."
@@ -1835,9 +1912,12 @@ export default function SellerUploadForm() {
                   Specifications <span className="text-gray-400 font-normal">(optional)</span>
                 </label>
                 <div className="flex gap-2 items-start">
-                  <textarea
-                    value={specifications}
-                    onChange={(e) => setSpecifications(e.target.value)}
+                <textarea
+                  value={specifications}
+                  onChange={(e) => {
+                    setSpecifications(e.target.value);
+                    setIsDirty(true);
+                  }}
                     className="flex-1 border border-gray-300 rounded-lg px-4 py-2 text-[#333333]"
                     rows={2}
                     placeholder="Dimensions, materials, brand, era..."
