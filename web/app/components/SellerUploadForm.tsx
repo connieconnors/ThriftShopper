@@ -1258,7 +1258,7 @@ export default function SellerUploadForm() {
 
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
+    <div className="max-w-4xl mx-auto p-6" style={{ colorScheme: 'light' }}>
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <Link
@@ -1581,7 +1581,7 @@ export default function SellerUploadForm() {
             <div className="space-y-4">
               {/* 1. Title */}
               <div>
-                <label className="block font-semibold mb-2">Title</label>
+                <label className="block font-semibold mb-2 text-gray-900">Title</label>
                 <div className="flex gap-2">
                   <input
                     type="text"
@@ -1616,7 +1616,7 @@ export default function SellerUploadForm() {
 
               {/* 2. Description */}
               <div>
-                <label className="block font-semibold mb-2">Description</label>
+                <label className="block font-semibold mb-2 text-gray-900">Description</label>
                 <p className="text-xs text-gray-500 mb-1.5">
                   Start typing anytime — we'll never overwrite your words.
                 </p>
@@ -1675,7 +1675,7 @@ export default function SellerUploadForm() {
 
               {/* 2.5. Story */}
               <div>
-                <label className="block font-semibold mb-2">
+                <label className="block font-semibold mb-2 text-gray-900">
                   Story <span className="text-gray-400 font-normal">(optional)</span>
                 </label>
                 <p className="text-xs text-gray-500 mb-1.5 leading-relaxed">
@@ -1707,7 +1707,7 @@ export default function SellerUploadForm() {
 
               {/* 3. Price */}
               <div>
-                <label className="block font-semibold mb-2">Price</label>
+                <label className="block font-semibold mb-2 text-gray-900">Price</label>
                 <div className="relative">
                   <span className="absolute left-4 top-2 text-gray-500">$</span>
                   <input
