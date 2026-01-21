@@ -1096,10 +1096,12 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
             height: '48px',
             minWidth: '44px', // Accessibility: ensure 44px touch target
             minHeight: '44px',
-            backgroundColor: 'rgba(255, 255, 255, 0.2)',
+            backgroundColor: isListening ? 'rgba(217, 169, 3, 0.6)' : 'rgba(255, 255, 255, 0.2)',
             backdropFilter: 'blur(8px)',
-            border: '1px solid rgba(255, 255, 255, 0.3)',
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+            border: isListening ? '1px solid rgba(255, 255, 255, 0.7)' : '1px solid rgba(255, 255, 255, 0.3)',
+            boxShadow: isListening
+              ? '0 0 12px rgba(217, 169, 3, 0.6), 0 2px 8px rgba(0, 0, 0, 0.2)'
+              : '0 2px 8px rgba(0, 0, 0, 0.15)',
             touchAction: 'manipulation', // Improve touch responsiveness
           }}
           aria-label="Voice search"
