@@ -771,9 +771,9 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
           <div 
             className="mt-4 h-10 px-4 flex items-center justify-between rounded-full max-w-md"
             style={{ 
-              backgroundColor: 'rgba(255,255,255,0.15)', 
+              backgroundColor: '#D9A903', 
               backdropFilter: 'blur(10px)',
-              border: `1px solid ${voiceError ? '#ef4444' : COLORS.oldGold}50`,
+              border: voiceError ? '1px solid #ef4444' : 'none',
             }}
           >
             <p 
@@ -786,14 +786,14 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
                   ⚠️ {voiceError}
                 </span>
               ) : isProcessing ? (
-                <span className="flex items-center gap-2" style={{ color: COLORS.oldGold }}>
+                <span className="flex items-center gap-2" style={{ color: 'rgba(255,255,255,0.9)' }}>
                   <Loader2 className="w-4 h-4 animate-spin" />
                   Transcribing...
                 </span>
               ) : voiceTranscript ? (
                 `"${voiceTranscript}"`
               ) : (
-                <span className="italic" style={{ color: COLORS.oldGold }}>
+                <span className="italic" style={{ color: 'rgba(255,255,255,0.8)' }}>
                   Listening...
                 </span>
               )}
@@ -802,7 +802,7 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
             {isRecording && countdown > 0 && !voiceError && (
               <span 
                 className="text-xs ml-2 opacity-70"
-                style={{ color: COLORS.oldGold }}
+                style={{ color: 'rgba(255,255,255,0.75)' }}
               >
                 {countdown}s
               </span>
