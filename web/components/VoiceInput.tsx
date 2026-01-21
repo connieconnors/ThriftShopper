@@ -176,9 +176,9 @@ export function VoiceSearchBar({ isVisible, transcript, isProcessing, countdown 
           <div 
             className="h-10 px-4 rounded-full flex items-center justify-between"
             style={{ 
-              backgroundColor: 'rgba(25, 25, 112, 0.15)', 
-              backdropFilter: 'blur(10px)',
-              border: '1px solid rgba(207, 181, 59, 0.3)',
+              backgroundColor: 'rgba(25, 25, 112, 0.28)', 
+              backdropFilter: 'blur(12px)',
+              border: '1px solid rgba(239, 191, 4, 0.35)',
             }}
           >
             {isProcessing ? (
@@ -186,7 +186,8 @@ export function VoiceSearchBar({ isVisible, transcript, isProcessing, countdown 
                 className="text-sm flex items-center gap-2"
                 style={{ 
                   color: '#efbf04',
-                  textShadow: '0 2px 4px rgba(0,0,0,0.9), 0 0 12px rgba(0,0,0,0.7)'
+                  fontWeight: 600,
+                  textShadow: '0 2px 6px rgba(0,0,0,0.95), 0 0 14px rgba(0,0,0,0.8)'
                 }}
               >
                 <Loader2 size={14} className="animate-spin" />
@@ -203,7 +204,8 @@ export function VoiceSearchBar({ isVisible, transcript, isProcessing, countdown 
                 className="text-sm italic"
                 style={{ 
                   color: '#efbf04',
-                  textShadow: '0 2px 4px rgba(0,0,0,0.9), 0 0 12px rgba(0,0,0,0.7)'
+                  fontWeight: 600,
+                  textShadow: '0 2px 6px rgba(0,0,0,0.95), 0 0 14px rgba(0,0,0,0.8)'
                 }}
               >
                 Listening...
@@ -213,7 +215,7 @@ export function VoiceSearchBar({ isVisible, transcript, isProcessing, countdown 
             {!isProcessing && countdown !== undefined && countdown > 0 && (
               <span 
                 className="text-xs ml-2 opacity-70"
-                style={{ color: '#cfb53b' }}
+                style={{ color: '#efbf04' }}
               >
                 {countdown}s
               </span>
