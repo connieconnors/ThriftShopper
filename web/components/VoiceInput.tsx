@@ -176,7 +176,7 @@ export function VoiceSearchBar({ isVisible, transcript, isProcessing, countdown 
           <div 
             className="h-10 px-4 rounded-full flex items-center justify-between"
             style={{ 
-              backgroundColor: 'rgba(255,255,255,0.15)', 
+              backgroundColor: 'rgba(25, 25, 112, 0.15)', 
               backdropFilter: 'blur(10px)',
               border: '1px solid rgba(207, 181, 59, 0.3)',
             }}
@@ -184,7 +184,10 @@ export function VoiceSearchBar({ isVisible, transcript, isProcessing, countdown 
             {isProcessing ? (
               <p 
                 className="text-sm flex items-center gap-2"
-                style={{ color: '#cfb53b' }}
+                style={{ 
+                  color: '#efbf04',
+                  textShadow: '0 2px 4px rgba(0,0,0,0.9), 0 0 12px rgba(0,0,0,0.7)'
+                }}
               >
                 <Loader2 size={14} className="animate-spin" />
                 Transcribing...
@@ -198,7 +201,10 @@ export function VoiceSearchBar({ isVisible, transcript, isProcessing, countdown 
             ) : (
               <p 
                 className="text-sm italic"
-                style={{ color: '#cfb53b' }}
+                style={{ 
+                  color: '#efbf04',
+                  textShadow: '0 2px 4px rgba(0,0,0,0.9), 0 0 12px rgba(0,0,0,0.7)'
+                }}
               >
                 Listening...
               </p>
