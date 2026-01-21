@@ -771,7 +771,7 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
           <div 
             className="mt-4 h-10 px-4 flex items-center justify-between rounded-full max-w-md"
             style={{ 
-              backgroundColor: 'rgba(217, 169, 3, 0.5)', 
+              backgroundColor: '#D9A903', 
               backdropFilter: 'blur(10px)',
               border: voiceError ? '1px solid #ef4444' : 'none',
             }}
