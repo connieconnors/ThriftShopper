@@ -780,6 +780,7 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
               backgroundColor: '#D9A903', 
               backdropFilter: 'blur(10px)',
               border: voiceError ? '1px solid #ef4444' : 'none',
+              pointerEvents: 'auto',
             }}
             onClick={(event) => {
               event.preventDefault();
