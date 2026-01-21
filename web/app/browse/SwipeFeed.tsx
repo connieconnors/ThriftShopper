@@ -740,8 +740,10 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
                   const newMoods = selectedMoods.filter(m => m !== mood);
                   applyMoodFilter(newMoods);
                 }}
+                onTouchStart={(event) => {
+                  event.stopPropagation();
+                }}
                 onTouchEnd={(event) => {
-                  event.preventDefault();
                   event.stopPropagation();
                 }}
                 className="flex items-center gap-1.5 font-medium transition-all hover:opacity-80"
@@ -783,11 +785,12 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
               pointerEvents: 'auto',
             }}
             onClick={(event) => {
-              event.preventDefault();
               event.stopPropagation();
             }}
             onTouchEnd={(event) => {
-              event.preventDefault();
+              event.stopPropagation();
+            }}
+            onTouchStart={(event) => {
               event.stopPropagation();
             }}
           >
@@ -801,8 +804,10 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
                   clearSearch();
                 }
               }}
+              onTouchStart={(event) => {
+                event.stopPropagation();
+              }}
               onTouchEnd={(event) => {
-                event.preventDefault();
                 event.stopPropagation();
               }}
             >
