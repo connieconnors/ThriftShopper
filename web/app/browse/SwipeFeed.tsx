@@ -802,6 +802,7 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
                 event.stopPropagation();
                 if (voiceTranscript && !isProcessing) {
                   clearSearch();
+                  setIsListening(false);
                 }
               }}
               onTouchStart={(event) => {
