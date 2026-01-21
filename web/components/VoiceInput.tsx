@@ -176,7 +176,7 @@ export function VoiceSearchBar({ isVisible, transcript, isProcessing, countdown 
           <div 
             className="h-10 px-4 rounded-full flex items-center justify-between"
             style={{ 
-              backgroundColor: '#D9A903', 
+              backgroundColor: 'rgba(217, 169, 3, 0.5)', 
               backdropFilter: 'blur(12px)',
               border: 'none',
             }}
