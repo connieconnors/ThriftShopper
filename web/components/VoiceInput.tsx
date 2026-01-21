@@ -194,8 +194,6 @@ export function VoiceSearchBar({ isVisible, transcript, isProcessing, countdown 
                 className="text-sm truncate flex-1"
                 style={{ 
                   color: '#efbf04',
-                  WebkitTextFillColor: '#efbf04',
-                  fontWeight: 600,
                   textShadow: '0 2px 4px rgba(0,0,0,0.9), 0 0 12px rgba(0,0,0,0.7)'
                 }}
               >
@@ -206,8 +204,6 @@ export function VoiceSearchBar({ isVisible, transcript, isProcessing, countdown 
                 className="text-sm italic"
                 style={{ 
                   color: '#efbf04',
-                  WebkitTextFillColor: '#efbf04',
-                  fontWeight: 500,
                   textShadow: '0 2px 4px rgba(0,0,0,0.9), 0 0 12px rgba(0,0,0,0.7)'
                 }}
               >
