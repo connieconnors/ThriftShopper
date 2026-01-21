@@ -740,6 +740,10 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
                   const newMoods = selectedMoods.filter(m => m !== mood);
                   applyMoodFilter(newMoods);
                 }}
+                onTouchEnd={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                }}
                 className="flex items-center gap-1.5 font-medium transition-all hover:opacity-80"
                 style={{
                   height: '28px',
@@ -781,6 +785,10 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
               event.preventDefault();
               event.stopPropagation();
             }}
+            onTouchEnd={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+            }}
           >
             <p 
               className="text-sm truncate flex-1" 
@@ -791,6 +799,10 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
                 if (voiceTranscript && !isProcessing) {
                   clearSearch();
                 }
+              }}
+              onTouchEnd={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
               }}
             >
               {voiceError ? (
@@ -896,7 +908,8 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
                   minHeight: '44px', // Accessibility: ensure tappable area
                   minWidth: '44px',
                 }}
-                onClick={() => {
+                onClick={(event) => {
+                  if (event.defaultPrevented) return;
                   if (offset === 0) {
                     triggerHaptic();
                     handleCardClick(listing.id);
@@ -904,6 +917,7 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
                 }}
                 onTouchEnd={(e) => {
                   // Ensure tap works on touch devices
+                  if (e.defaultPrevented) return;
                   if (offset === 0 && Math.abs(touchDeltaY.current) < 10) {
                     triggerHaptic();
                     handleCardClick(listing.id);
