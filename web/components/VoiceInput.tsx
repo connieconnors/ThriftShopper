@@ -191,8 +191,7 @@ export function VoiceSearchBar({ isVisible, transcript, isProcessing, countdown 
               </p>
             ) : transcript ? (
               <p 
-                className="text-sm truncate flex-1"
-                style={{ color: '#FFFFFF', WebkitTextFillColor: '#FFFFFF' }}
+                className="text-sm text-white truncate flex-1"
               >
                 "{displayText}"
               </p>
