@@ -192,14 +192,20 @@ export function VoiceSearchBar({ isVisible, transcript, isProcessing, countdown 
             ) : transcript ? (
               <p 
                 className="text-sm truncate flex-1"
-                style={{ color: '#FFFFFF', WebkitTextFillColor: '#FFFFFF' }}
+                style={{ 
+                  color: '#cfb53b',
+                  textShadow: '0 1px 3px rgba(0,0,0,0.8), 0 0 8px rgba(0,0,0,0.6)'
+                }}
               >
                 "{displayText}"
               </p>
             ) : (
               <p 
                 className="text-sm italic"
-                style={{ color: '#cfb53b' }}
+                style={{ 
+                  color: '#cfb53b',
+                  textShadow: '0 1px 3px rgba(0,0,0,0.8), 0 0 8px rgba(0,0,0,0.6)'
+                }}
               >
                 Listening...
               </p>
