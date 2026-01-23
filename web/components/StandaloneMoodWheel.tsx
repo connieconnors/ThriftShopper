@@ -262,12 +262,16 @@ export function StandaloneMoodWheel({ selectedMoods, onMoodsChange, noResults = 
                 bg-white/6 
                 px-1 py-1
               ">
-                {['Moods','Intents','Styles'].map((tab) => {
-                  const tabKey = tab as 'Moods' | 'Intents' | 'Styles';
+                {[
+                  { key: 'Moods', label: 'Vibes' },
+                  { key: 'Intents', label: 'Purpose' },
+                  { key: 'Styles', label: 'Styles' },
+                ].map((tab) => {
+                  const tabKey = tab.key as 'Moods' | 'Intents' | 'Styles';
                   const isActive = activeTab === tabKey;
                   return (
                     <button
-                      key={tab}
+                      key={tabKey}
                       onClick={(e) => {
                         e.stopPropagation();
                         setActiveTab(tabKey);
@@ -279,7 +283,7 @@ export function StandaloneMoodWheel({ selectedMoods, onMoodsChange, noResults = 
                           : 'text-white/55 hover:bg-white/10 hover:text-white'}
                       `}
                     >
-                      {tab}
+                      {tab.label}
                     </button>
                   );
                 })}
