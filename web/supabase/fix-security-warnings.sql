@@ -89,7 +89,7 @@ BEGIN
     l.styles,
     l.intents,
     l.category,
-    l.primary_image_url,
+    COALESCE(l.original_image_url, l.clean_image_url, l.staged_image_url, l.photo_url) as primary_image_url,
     l.seller_id,
     l.created_at,
     1 - (l.embedding <=> query_embedding) as similarity

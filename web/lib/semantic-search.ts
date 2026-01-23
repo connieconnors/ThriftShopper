@@ -42,7 +42,61 @@ const STOP_WORDS = new Set([
   'those', 'please', 'just', 'really', 'very', 'maybe', 'something', 'anything'
 ]);
 
+const OPTIONAL_STYLE_TERMS = new Set([
+  'ceramic',
+  'glass',
+  'brass',
+  'wood',
+  'metal',
+  'steel',
+  'iron',
+  'porcelain',
+  'crystal',
+  // Colors
+  'red',
+  'blue',
+  'green',
+  'yellow',
+  'pink',
+  'black',
+  'white',
+  'gold',
+  'silver',
+  'copper',
+  'bronze',
+  'purple',
+  'orange',
+  'teal',
+  'burgundy',
+  'navy',
+  'cream',
+  'beige',
+  'brown',
+  'gray',
+  'grey',
+  // Patterns
+  'floral',
+  'geometric',
+  'striped',
+  'polka-dot',
+  'paisley',
+  'plaid',
+  'checkered',
+  'abstract',
+  // Conditions/eras
+  'vintage',
+  'antique',
+  'retro',
+  'modern',
+  'contemporary',
+  'new',
+  'pristine',
+  'excellent',
+  'good',
+]);
+
 const SYNONYM_MAP: Record<string, string> = {
+  // Existing whimsical/vintage synonyms
   funky: 'whimsical',
   playful: 'whimsical',
   quirky: 'whimsical',
@@ -56,6 +110,56 @@ const SYNONYM_MAP: Record<string, string> = {
   midcenturymodern: 'mid-century',
   mid: 'mid',
   deco: 'art-deco',
+  // JEWELRY & ACCESSORIES
+  necklace: 'jewelry',
+  bracelet: 'jewelry',
+  earrings: 'jewelry',
+  ring: 'jewelry',
+  brooch: 'jewelry',
+  pendant: 'jewelry',
+  pearls: 'jewelry',
+  gemstone: 'jewelry',
+  handbag: 'accessory',
+  purse: 'accessory',
+  bag: 'accessory',
+  accessory: 'accessory',
+  accessories: 'accessory',
+  // FAUX/COSTUME -> JEWELRY
+  faux: 'jewelry',
+  costume: 'jewelry',
+  pearl: 'jewelry',
+  // KITCHEN & DINING
+  glassware: 'kitchen',
+  drinkware: 'kitchen',
+  serveware: 'kitchen',
+  dinnerware: 'kitchen',
+  cookware: 'kitchen',
+  tableware: 'kitchen',
+  utensils: 'kitchen',
+  dishes: 'kitchen',
+  plates: 'kitchen',
+  bowls: 'kitchen',
+  cups: 'kitchen',
+  mugs: 'kitchen',
+  // BEVERAGE -> KITCHEN
+  coffee: 'kitchen',
+  tea: 'kitchen',
+  teapot: 'kitchen',
+  coffeepot: 'kitchen',
+  mug: 'kitchen',
+  cup: 'kitchen',
+  // HOME DECOR
+  vase: 'decor',
+  figurine: 'decor',
+  sculpture: 'decor',
+  ornament: 'decor',
+  planter: 'decor',
+  candle: 'decor',
+  frame: 'decor',
+  // COLLECTIBLES
+  porcelain: 'collectible',
+  ceramic: 'collectible',
+  crystal: 'collectible',
 };
 
 /**
@@ -158,22 +262,27 @@ async function extractSearchTerms(query: string): Promise<{ termGroups: TermGrou
   }
 
   const prompt = `You are extracting buyer search terms for a secondhand marketplace.
-Return a clean list of search term groups with synonyms.
+Return a clean list of search term groups containing ONLY the words the user actually said.
 
 Rules:
 - Remove filler words, hedges, and conversational phrases.
-- Extract only meaningful search terms.
-- Normalize synonyms to a primary term (e.g., "funky" -> "whimsical").
-- Return each term with variants (synonyms, close variations, or related terms).
+- Extract only meaningful terms the user explicitly said.
+- Do NOT infer additional terms or related concepts.
+- Do NOT expand into categories or adjacent items.
+- Do NOT add synonyms or variants beyond the literal words spoken/typed.
 - Do NOT categorize by mood/style/intent or choose columns.
+
+Examples:
+- "kitchen" -> ["kitchen"]
+- "whimsical vintage lamp" -> ["whimsical", "vintage", "lamp"]
 
 Query: "${query}"
 
 Return ONLY valid JSON:
 {
   "terms": [
-    { "term": "whimsical", "variants": ["funky", "playful"] },
-    { "term": "vintage", "variants": ["antique", "retro"] }
+    { "term": "whimsical", "variants": [] },
+    { "term": "vintage", "variants": [] }
   ]
 }`;
 
@@ -218,6 +327,19 @@ Return ONLY valid JSON:
       }))
     : [];
 
+  if (process.env.NODE_ENV !== 'production') {
+    termGroups.forEach((group) => {
+      console.log('[termExtraction:openai]', {
+        originalTerm: group.term,
+        variants: group.variants,
+      });
+    });
+  }
+
+  if (termGroups.length === 0) {
+    return { termGroups: localExtractTerms(query), source: 'local' };
+  }
+
   return { termGroups, source: 'openai' };
 }
 
@@ -243,6 +365,14 @@ function normalizeTermGroups(termGroups: TermGroup[]): TermGroup[] {
       if (seen.has(finalBase)) return;
     }
 
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('[termNormalization]', {
+        originalTerm: group.term,
+        mappedTerm: normalizedBase,
+        finalTerm: finalBase,
+      });
+    }
+
     normalized.push({
       term: finalBase,
       variants: Array.from(new Set([finalBase, ...variants])),
@@ -263,11 +393,30 @@ function localExtractTerms(query: string): TermGroup[] {
     const canonical = SYNONYM_MAP[word] || word;
     if (!canonical) return;
 
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('[termExtraction:local]', {
+        originalTerm: word,
+        mappedTerm: canonical,
+        finalTerm: canonical,
+      });
+    }
+
     const existing = termGroups.get(canonical) || new Set<string>();
     existing.add(word);
     existing.add(canonical);
     termGroups.set(canonical, existing);
   });
+
+  if (normalized.includes('party') && !termGroups.has('gift')) {
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('[termExtraction:local]', {
+        originalTerm: 'party',
+        mappedTerm: 'gift',
+        finalTerm: 'gift',
+      });
+    }
+    termGroups.set('gift', new Set(['gift']));
+  }
 
   return Array.from(termGroups.entries()).map(([term, variants]) => ({
     term,
@@ -363,8 +512,16 @@ async function searchWithTerms(
     termMatchCounts[group.term] = 0;
   });
 
-  const minMatchesRequired =
-    termGroups.length >= 3 ? Math.ceil(termGroups.length * 0.7) : termGroups.length;
+  const requiredTerms = termGroups.filter((group) => !OPTIONAL_STYLE_TERMS.has(group.term));
+  const optionalOnly = requiredTerms.length === 0;
+  const effectiveRequiredTerms = optionalOnly ? termGroups : requiredTerms;
+  const requiredTermSet = new Set(effectiveRequiredTerms.map((group) => group.term));
+
+  const minMatchesRequired = optionalOnly
+    ? 1
+    : effectiveRequiredTerms.length >= 3
+      ? Math.ceil(effectiveRequiredTerms.length * 0.7)
+      : effectiveRequiredTerms.length;
 
   const scored = listings
     .map((listing) => {
@@ -372,8 +529,12 @@ async function searchWithTerms(
         matchTermGroup(listing, group)
       );
 
-      const matchedCount = matchResults.filter((result) => result.matched).length;
-      if (matchedCount < minMatchesRequired) {
+      const matchedRequiredCount = matchResults.filter((result, index) => {
+        const term = termGroups[index]?.term;
+        return result.matched && term ? requiredTermSet.has(term) : false;
+      }).length;
+
+      if (matchedRequiredCount < minMatchesRequired) {
         return null;
       }
 
@@ -389,7 +550,7 @@ async function searchWithTerms(
       const score = matchResults.reduce((sum, result) => sum + result.weight, 0);
       return {
         listing,
-        score: score + matchedCount * 2,
+        score: score + matchedRequiredCount * 2,
       };
     })
     .filter(Boolean)
@@ -415,51 +576,83 @@ function matchTermGroup(listing: Listing, termGroup: TermGroup): MatchResult {
     return { matched: false, weight: 0 };
   }
 
+  // HIGH PRIORITY: Tags (moods, styles, intents)
   const listingMoods = normalizeTagColumn(listing.moods).map((tag) => normalizeTerm(tag));
   const listingStyles = normalizeTagColumn(listing.styles).map((tag) => normalizeTerm(tag));
   const listingIntents = normalizeTagColumn(listing.intents).map((tag) => normalizeTerm(tag));
   const tagPool = [...listingMoods, ...listingStyles, ...listingIntents].filter(Boolean);
 
-  const keywordPool = [
-    ...(listing.ai_suggested_keywords || []),
-    ...(listing.keywords || []),
-  ].map((keyword) => normalizeTerm(keyword)).filter(Boolean);
-
-  const textPool = normalizeText([
-    listing.title,
-    listing.description,
-    listing.story_text,
-    listing.category,
-  ]
-    .filter(Boolean)
-    .join(' '));
-
-  const aiTextPool = normalizeText([
-    (listing as { ai_generated_title?: string | null }).ai_generated_title,
-    (listing as { ai_generated_description?: string | null }).ai_generated_description,
-  ]
-    .filter(Boolean)
-    .join(' '));
+  if (process.env.NODE_ENV !== 'production') {
+    variants.forEach((term) => {
+      const wordRegex = new RegExp(`\\b${escapeRegex(term)}\\b`, 'i');
+      const categoryValue = listing.category ?? null;
+      const categoryNormalized = categoryValue ? normalizeText(categoryValue) : null;
+      const categoryMatch = categoryNormalized ? wordRegex.test(categoryNormalized) : false;
+      const styleMatch = listingStyles.includes(term);
+      console.log('[matchTermGroup]', {
+        term,
+        category: categoryValue,
+        categoryNormalized,
+        categoryMatch,
+        styles: listingStyles,
+        styleMatch,
+      });
+    });
+  }
 
   const matchesTag = variants.some((term) => tagPool.includes(term));
   if (matchesTag) {
     return { matched: true, weight: 3 };
   }
 
+  // HIGH PRIORITY: Keywords
+  const keywordPool = [
+    ...(listing.ai_suggested_keywords || []),
+    ...(listing.keywords || []),
+  ].map((keyword) => normalizeTerm(keyword)).filter(Boolean);
+
   const matchesKeyword = variants.some((term) => keywordPool.includes(term));
   if (matchesKeyword) {
     return { matched: true, weight: 2 };
   }
 
-  const matchesText = variants.some((term) => textPool.includes(term));
+  // HIGH PRIORITY: Title, Description, Story, Category - WORD BOUNDARY MATCHING
+  const textFields = [
+    listing.title,
+    listing.description,
+    listing.story_text,
+    listing.category,
+  ].filter((field): field is string => Boolean(field));
+  const normalizedTextFields = textFields.map((field) => normalizeText(field));
+
+  const matchesText = variants.some((term) => {
+    const wordRegex = new RegExp(`\\b${escapeRegex(term)}\\b`, 'i');
+    return normalizedTextFields.some((field) => wordRegex.test(field));
+  });
+
   if (matchesText) {
     return { matched: true, weight: 1 };
   }
 
-  const matchesAiText = variants.some((term) => aiTextPool.includes(term));
+  // LOW PRIORITY: AI-generated text
+  const aiTextFields = [
+    (listing as { ai_generated_title?: string | null }).ai_generated_title,
+    (listing as { ai_generated_description?: string | null }).ai_generated_description,
+  ].filter((field): field is string => Boolean(field));
+  const normalizedAiTextFields = aiTextFields.map((field) => normalizeText(field));
+
+  const matchesAiText = variants.some((term) => {
+    const wordRegex = new RegExp(`\\b${escapeRegex(term)}\\b`, 'i');
+    return normalizedAiTextFields.some((field) => wordRegex.test(field));
+  });
+
   if (matchesAiText) {
     return { matched: true, weight: 0.5 };
   }
 
   return { matched: false, weight: 0 };
+}
+
+function escapeRegex(str: string): string {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
