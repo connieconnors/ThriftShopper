@@ -1,7 +1,6 @@
 // web/app/api/embeddings/regenerate/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import type { Listing } from '@/lib/types';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE;
@@ -80,7 +79,7 @@ export async function POST(request: NextRequest) {
 
     if (dryRun) {
       // Show sample of what would be regenerated
-      const sample = listings.slice(0, 3).map((listing: Listing) => {
+      const sample = listings.slice(0, 3).map((listing) => {
         const styles = (listing.styles || []).join(' ');
         const embeddingText = `${listing.title || ''} ${listing.description || ''} ${styles} ${listing.category || ''} ${listing.story_text || ''}`.trim();
         return {
