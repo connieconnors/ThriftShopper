@@ -7,6 +7,7 @@
 import { supabase } from './supabase';
 import type { Listing } from './types';
 import { normalizeTagColumn } from './utils/tagNormalizer';
+import { getMoodVariations } from './moodMappings';
 
 export type TermGroup = {
   term: string;
@@ -448,15 +449,15 @@ async function searchWithTerms(
   limit: number
 ): Promise<{ listings: Listing[]; debug: SemanticSearchDebug }> {
   const columnsSearched = [
+    'styles', // Highest priority - keyword data stored here
     'moods',
-    'styles',
     'intents',
     'title',
     'description',
     'story_text',
     'category',
-    'ai_suggested_keywords',
     'keywords',
+    'ai_suggested_keywords',
     'ai_generated_title',
     'ai_generated_description',
   ];
@@ -576,78 +577,99 @@ function matchTermGroup(listing: Listing, termGroup: TermGroup): MatchResult {
     return { matched: false, weight: 0 };
   }
 
-  // HIGH PRIORITY: Tags (moods, styles, intents)
-  const listingMoods = normalizeTagColumn(listing.moods).map((tag) => normalizeTerm(tag));
+  // HIGH PRIORITY (weight 4): Vibe wheel data (styles, moods, intents)
+  // Use fuzzy matching with mood mappings for plural/singular/semantic variations
   const listingStyles = normalizeTagColumn(listing.styles).map((tag) => normalizeTerm(tag));
+  const listingMoods = normalizeTagColumn(listing.moods).map((tag) => normalizeTerm(tag));
   const listingIntents = normalizeTagColumn(listing.intents).map((tag) => normalizeTerm(tag));
-  const tagPool = [...listingMoods, ...listingStyles, ...listingIntents].filter(Boolean);
+  const vibeWheelPool = [...listingStyles, ...listingMoods, ...listingIntents].filter(Boolean);
+
+  // Check if any variant matches any vibe wheel field using fuzzy matching
+  const matchesVibeWheel = variants.some((term) => {
+    const variations = getMoodVariations(term);
+    return vibeWheelPool.some(field => {
+      return variations.some(variation => {
+        // Exact match
+        if (field === variation) return true;
+        // Word boundary match
+        const escaped = variation.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const regex = new RegExp(`\\b${escaped}\\b`, 'i');
+        return regex.test(field);
+      });
+    });
+  });
+  
+  if (matchesVibeWheel) {
+    return { matched: true, weight: 4 };
+  }
+
+  // HIGH PRIORITY (weight 4): Seller text (title, description)
+  const sellerTextFields = [
+    listing.title,
+    listing.description,
+  ].filter((field): field is string => Boolean(field));
+  const normalizedSellerText = sellerTextFields.map((field) => normalizeText(field));
+
+  const matchesSellerText = variants.some((term) => {
+    const wordRegex = new RegExp(`\\b${escapeRegex(term)}\\b`, 'i');
+    return normalizedSellerText.some((field) => wordRegex.test(field));
+  });
+
+  if (matchesSellerText) {
+    return { matched: true, weight: 4 };
+  }
+
+  // HIGH PRIORITY (weight 4): Category
+  const categoryValue = listing.category ?? null;
+  if (categoryValue) {
+    const categoryNormalized = normalizeText(categoryValue);
+    const matchesCategory = variants.some((term) => {
+      const wordRegex = new RegExp(`\\b${escapeRegex(term)}\\b`, 'i');
+      return wordRegex.test(categoryNormalized);
+    });
+    if (matchesCategory) {
+      return { matched: true, weight: 4 };
+    }
+  }
+
+  // HIGH PRIORITY (weight 4): AI-generated text (story_text, ai_suggested_keywords)
+  const aiTextFields = [
+    listing.story_text,
+    ...(listing.ai_suggested_keywords || []),
+    (listing as { ai_generated_title?: string | null }).ai_generated_title,
+    (listing as { ai_generated_description?: string | null }).ai_generated_description,
+  ].filter((field): field is string => Boolean(field));
+  const normalizedAiText = aiTextFields.map((field) => normalizeText(field));
+
+  const matchesAiText = variants.some((term) => {
+    const wordRegex = new RegExp(`\\b${escapeRegex(term)}\\b`, 'i');
+    return normalizedAiText.some((field) => wordRegex.test(field));
+  });
+
+  if (matchesAiText) {
+    return { matched: true, weight: 4 };
+  }
 
   if (process.env.NODE_ENV !== 'production') {
     variants.forEach((term) => {
-      const wordRegex = new RegExp(`\\b${escapeRegex(term)}\\b`, 'i');
-      const categoryValue = listing.category ?? null;
-      const categoryNormalized = categoryValue ? normalizeText(categoryValue) : null;
-      const categoryMatch = categoryNormalized ? wordRegex.test(categoryNormalized) : false;
-      const styleMatch = listingStyles.includes(term);
       console.log('[matchTermGroup]', {
         term,
-        category: categoryValue,
-        categoryNormalized,
-        categoryMatch,
         styles: listingStyles,
-        styleMatch,
+        moods: listingMoods,
+        intents: listingIntents,
+        category: categoryValue,
       });
     });
   }
 
-  const matchesTag = variants.some((term) => tagPool.includes(term));
-  if (matchesTag) {
-    return { matched: true, weight: 3 };
-  }
-
-  // HIGH PRIORITY: Keywords
+  // MEDIUM PRIORITY (weight 2): Keywords column (backup field)
   const keywordPool = [
-    ...(listing.ai_suggested_keywords || []),
     ...(listing.keywords || []),
   ].map((keyword) => normalizeTerm(keyword)).filter(Boolean);
 
   const matchesKeyword = variants.some((term) => keywordPool.includes(term));
   if (matchesKeyword) {
     return { matched: true, weight: 2 };
-  }
-
-  // HIGH PRIORITY: Title, Description, Story, Category - WORD BOUNDARY MATCHING
-  const textFields = [
-    listing.title,
-    listing.description,
-    listing.story_text,
-    listing.category,
-  ].filter((field): field is string => Boolean(field));
-  const normalizedTextFields = textFields.map((field) => normalizeText(field));
-
-  const matchesText = variants.some((term) => {
-    const wordRegex = new RegExp(`\\b${escapeRegex(term)}\\b`, 'i');
-    return normalizedTextFields.some((field) => wordRegex.test(field));
-  });
-
-  if (matchesText) {
-    return { matched: true, weight: 1 };
-  }
-
-  // LOW PRIORITY: AI-generated text
-  const aiTextFields = [
-    (listing as { ai_generated_title?: string | null }).ai_generated_title,
-    (listing as { ai_generated_description?: string | null }).ai_generated_description,
-  ].filter((field): field is string => Boolean(field));
-  const normalizedAiTextFields = aiTextFields.map((field) => normalizeText(field));
-
-  const matchesAiText = variants.some((term) => {
-    const wordRegex = new RegExp(`\\b${escapeRegex(term)}\\b`, 'i');
-    return normalizedAiTextFields.some((field) => wordRegex.test(field));
-  });
-
-  if (matchesAiText) {
-    return { matched: true, weight: 0.5 };
   }
 
   return { matched: false, weight: 0 };

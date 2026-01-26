@@ -23,6 +23,7 @@ import { useAuth } from "../context/AuthContext";
 import { Mic, Loader2 } from "lucide-react";
 import { GlintIcon } from "../../components/GlintIcon";
 import { normalizeTagColumn } from "../../lib/utils/tagNormalizer";
+import { matchesMood, getMoodVariations } from "../../lib/moodMappings";
 
 interface SwipeFeedProps {
   initialListings: Listing[];
@@ -152,26 +153,118 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
       return;
     }
 
+    console.log('🎯 [MOOD FILTER] Starting filter with selections:', moods);
+    console.log('🎯 [MOOD FILTER] Total listings to filter:', listings.length);
+
+    // Debug: Show sample of what's in the database
+    if (listings.length > 0) {
+      const sample = listings.slice(0, 3);
+      console.log('🎯 [MOOD FILTER] Sample listing data:', sample.map(l => ({
+        id: l.id?.substring(0, 8),
+        title: l.title?.substring(0, 30),
+        styles: l.styles,
+        moods: l.moods,
+        intents: l.intents,
+        stylesNormalized: normalizeTagColumn(l.styles),
+        moodsNormalized: normalizeTagColumn(l.moods),
+        intentsNormalized: normalizeTagColumn(l.intents),
+      })));
+    }
+
     const next = listings.filter((listing) => {
-      // Normalize the listing's mood/style/intent columns
-      const listingMoods = normalizeTagColumn(listing.moods);
-      const listingStyles = normalizeTagColumn(listing.styles);
-      const listingIntents = normalizeTagColumn(listing.intents);
+      // HIGHEST PRIORITY: Check styles field first (keyword data is stored here)
+      // Normalize and lowercase ALL database values for case-insensitive matching
+      const listingStyles = normalizeTagColumn(listing.styles).map(tag => tag.toLowerCase().trim());
+      const listingMoods = normalizeTagColumn(listing.moods).map(tag => tag.toLowerCase().trim());
+      const listingIntents = normalizeTagColumn(listing.intents).map(tag => tag.toLowerCase().trim());
       
-      // Combine all tags from the listing
-      const allTags = [...listingMoods, ...listingStyles, ...listingIntents]
-        .map(tag => tag.toLowerCase());
+      // Also get text fields (description, title, category, AI-generated text)
+      const textFields = [
+        listing.title || '',
+        listing.description || '',
+        listing.category || '',
+        listing.story_text || '',
+        ...(listing.ai_suggested_keywords || []),
+        (listing as { ai_generated_title?: string | null }).ai_generated_title || '',
+        (listing as { ai_generated_description?: string | null }).ai_generated_description || '',
+      ]
+        .filter(Boolean)
+        .map(field => field.toLowerCase().trim());
       
-      // Check if ALL selected moods match tags from the listing (AND logic)
+      // Combine all searchable fields (arrays + text fields)
+      const allSearchableFields = [
+        ...listingStyles,
+        ...listingMoods,
+        ...listingIntents,
+      ].filter(Boolean); // Remove any empty strings
+      
+      // Check if ALL selected moods match any field from the listing (AND logic)
+      // Uses fuzzy matching with mood mappings for plural/singular/semantic variations
       const matches = moods.every(selectedMood => {
         if (typeof selectedMood !== 'string') {
           console.warn('Invalid selectedMood type:', selectedMood);
           return false;
         }
-        return allTags.includes(selectedMood.toLowerCase());
+        
+        // Get all variations for this mood (handles plural/singular/semantic equivalents)
+        const variations = getMoodVariations(selectedMood);
+        
+        // Check array fields (exact and word boundary match)
+        const arrayMatch = allSearchableFields.some(field => {
+          return variations.some(variation => {
+            // Exact match
+            if (field === variation) return true;
+            
+            // Word boundary match (handles phrases)
+            const escaped = variation.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const regex = new RegExp(`\\b${escaped}\\b`, 'i');
+            return regex.test(field);
+          });
+        });
+        
+        // Check text fields (word boundary match only - handles "practical" in description)
+        const textMatch = textFields.some(textField => {
+          return variations.some(variation => {
+            const escaped = variation.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const regex = new RegExp(`\\b${escaped}\\b`, 'i');
+            return regex.test(textField);
+          });
+        });
+        
+        const matchResult = arrayMatch || textMatch;
+        
+        // Debug logging for first listing and first mood
+        if (listing === listings[0] && selectedMood === moods[0]) {
+          console.log('🎯 [MOOD FILTER] Checking mood with fuzzy matching:', {
+            selectedMood,
+            variations,
+            listingStylesRaw: listing.styles,
+            listingStylesNormalized: listingStyles,
+            listingMoodsRaw: listing.moods,
+            listingMoodsNormalized: listingMoods,
+            listingIntentsRaw: listing.intents,
+            listingIntentsNormalized: listingIntents,
+            title: listing.title?.substring(0, 50),
+            description: listing.description?.substring(0, 50),
+            category: listing.category,
+            allSearchableFields,
+            arrayMatch,
+            textMatch,
+            matchResult,
+          });
+        }
+        
+        return matchResult;
       });
       
       return matches;
+    });
+
+    console.log('🎯 [MOOD FILTER] Filter results:', {
+      selectedMoods: moods,
+      totalListings: listings.length,
+      matchedListings: next.length,
+      matchedIds: next.slice(0, 5).map(l => l.id?.substring(0, 8)),
     });
 
     if (next.length === 0) {
@@ -592,14 +685,61 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
       // Only re-apply if we're not in a "no results" state
       // This prevents clearing the current view when listings update
       const next = listings.filter((listing) => {
-        const listingMoods = normalizeTagColumn(listing.moods);
-        const listingStyles = normalizeTagColumn(listing.styles);
-        const listingIntents = normalizeTagColumn(listing.intents);
-        const allTags = [...listingMoods, ...listingStyles, ...listingIntents]
-          .map(tag => tag.toLowerCase());
+        // HIGHEST PRIORITY: Check styles field first (keyword data is stored here)
+        // Normalize and lowercase ALL database values for case-insensitive matching
+        const listingStyles = normalizeTagColumn(listing.styles).map(tag => tag.toLowerCase().trim());
+        const listingMoods = normalizeTagColumn(listing.moods).map(tag => tag.toLowerCase().trim());
+        const listingIntents = normalizeTagColumn(listing.intents).map(tag => tag.toLowerCase().trim());
+        
+        // Also get text fields (description, title, category, AI-generated text)
+        const textFields = [
+          listing.title || '',
+          listing.description || '',
+          listing.category || '',
+          listing.story_text || '',
+          ...(listing.ai_suggested_keywords || []),
+          (listing as { ai_generated_title?: string | null }).ai_generated_title || '',
+          (listing as { ai_generated_description?: string | null }).ai_generated_description || '',
+        ]
+          .filter(Boolean)
+          .map(field => field.toLowerCase().trim());
+        
+        // Combine all searchable array fields
+        const allSearchableFields = [
+          ...listingStyles,
+          ...listingMoods,
+          ...listingIntents,
+        ].filter(Boolean); // Remove any empty strings
+        
         return selectedMoods.every(selectedMood => {
           if (typeof selectedMood !== 'string') return false;
-          return allTags.includes(selectedMood.toLowerCase());
+          
+          // Get all variations for this mood (handles plural/singular/semantic equivalents)
+          const variations = getMoodVariations(selectedMood);
+          
+          // Check array fields (exact and word boundary match)
+          const arrayMatch = allSearchableFields.some(field => {
+            return variations.some(variation => {
+              // Exact match
+              if (field === variation) return true;
+              
+              // Word boundary match (handles phrases)
+              const escaped = variation.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+              const regex = new RegExp(`\\b${escaped}\\b`, 'i');
+              return regex.test(field);
+            });
+          });
+          
+          // Check text fields (word boundary match only - handles "practical" in description)
+          const textMatch = textFields.some(textField => {
+            return variations.some(variation => {
+              const escaped = variation.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+              const regex = new RegExp(`\\b${escaped}\\b`, 'i');
+              return regex.test(textField);
+            });
+          });
+          
+          return arrayMatch || textMatch;
         });
       });
       if (next.length > 0) {
