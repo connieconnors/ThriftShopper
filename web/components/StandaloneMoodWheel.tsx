@@ -42,7 +42,7 @@ const categories = {
   Moods: [
     { name: 'Whimsical', icon: Zap, color: '#C28A3B', description: 'Unexpected finds' },
     { name: 'Impulsive', icon: Sparkles, color: '#8C7BAF', description: 'Playful & imaginative' },
-    { name: 'Wild', icon: Stars, color: '#B5695C', description: 'Must-have now' },
+    { name: 'Fun', icon: Stars, color: '#B5695C', description: 'Must-have now' },
     { name: 'Nostalgic', icon: Stars, color: '#6E9E8D', description: 'Unique & fun' },
     { name: 'Quirky', icon: PartyPopper, color: '#7B4C7A', description: 'Wild & bold' },
     { name: 'Chill', icon: Heart, color: '#5776A5', description: 'Peaceful vibes' },
@@ -65,7 +65,7 @@ const categories = {
     { name: 'Retro', icon: Mountain, color: '#6E9E8D', description: 'Natural & earthy' },
     { name: 'Vintage', icon: Coffee, color: '#4F8CA8', description: 'Nostalgic vibes' },
     { name: 'Modern', icon: Gem, color: '#5776A5', description: 'Refined & sophisticated' },
-    { name: 'MCM', icon: Brush, color: '#8C7BAF', description: 'Creative expression' },
+    { name: 'Novelty', icon: Brush, color: '#8C7BAF', description: 'Creative expression' },
     { name: 'Kitschy', icon: Palette, color: '#6E9E8D', description: 'Traditional craft' },
     { name: 'Elegant', icon: Star, color: '#B4475B', description: 'Seasonal spirit' },
   ],

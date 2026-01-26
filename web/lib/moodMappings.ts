@@ -8,7 +8,7 @@ export const MOOD_MAPPINGS: Record<string, string[]> = {
   // VIBES (Moods)
   'whimsical': ['whimsical', 'whimsy', 'playful', 'fun', 'quirky'],
   'impulsive': ['impulsive', 'impulse', 'spontaneous'],
-  'wild': ['wild', 'bold', 'daring'],
+  'fun': ['fun', 'funny', 'playful', 'entertaining', 'amusing', 'enjoyable', 'wild', 'bold'],
   'nostalgic': ['nostalgic', 'nostalgia', 'retro', 'vintage'],
   'quirky': ['quirky', 'quirks', 'unique', 'unusual'],
   'chill': ['chill', 'chilled', 'calm', 'calming', 'peaceful', 'serene'],
@@ -31,7 +31,7 @@ export const MOOD_MAPPINGS: Record<string, string[]> = {
   'retro': ['retro', 'vintage', 'nostalgic', 'classic'],
   'vintage': ['vintage', 'antique', 'retro', 'classic', 'old'],
   'modern': ['modern', 'contemporary', 'sleek', 'minimalist'],
-  'mcm': ['mcm', 'mid-century modern', 'midcentury modern', 'mid century modern', 'mid-century', 'midcentury'],
+  'novelty': ['novelty', 'novel', 'unique', 'unusual', 'uncommon', 'distinctive', 'original', 'one-of-a-kind'],
   'kitschy': ['kitschy', 'kitsch', 'tacky', 'campy', 'funky'],
   'elegant': ['elegant', 'elegance', 'sophisticated', 'refined', 'classy'],
 };
