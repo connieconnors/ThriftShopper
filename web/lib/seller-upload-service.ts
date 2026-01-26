@@ -1175,9 +1175,9 @@ Return ONLY valid JSON:
     postProcessingTasks.push(categorizationTask);
     
     // Task 3: Embedding Generation (if we have title/description)
-    // Include styles in embedding text (highest priority field - keyword data is stored here)
-    const stylesForEmbedding = categorized.styles || [];
-    const embeddingText = `${openAITitle || 'New Listing'} ${openAIDescription} ${stylesForEmbedding.join(' ')} ${openAIEnrichment?.category || 'General'}`;
+    // Note: Styles will be added to embedding after categorization completes
+    // For now, generate embedding with available data (styles added to DB separately)
+    const embeddingText = `${openAITitle || 'New Listing'} ${openAIDescription} ${openAIEnrichment?.category || 'General'}`;
     const embeddingTask = (process.env.OPENAI_API_KEY && embeddingText.trim() !== 'New Listing')
       ? generateEmbedding(embeddingText).catch((err) => {
           console.error('⚠️ Embedding generation failed:', err);
