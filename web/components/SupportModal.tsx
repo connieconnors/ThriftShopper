@@ -392,7 +392,7 @@ export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
                 <div className="px-3 pb-3 pt-0 border-t border-white/10">
                   <div className="pt-3 space-y-4 text-xs">
                     <div>
-                      <h4 className="text-sm font-semibold mb-2" style={{ color: '#191970' }}>
+                      <h4 className="text-sm font-semibold mb-2" style={{ color: '#EFBF05' }}>
                         Your Canvas
                       </h4>
                       <p className="text-white/90 leading-relaxed mb-2">
@@ -407,7 +407,7 @@ export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
                       </ul>
                     </div>
                     <div>
-                      <h4 className="text-sm font-semibold mb-2" style={{ color: '#191970' }}>
+                      <h4 className="text-sm font-semibold mb-2" style={{ color: '#EFBF05' }}>
                         Account Settings
                       </h4>
                       <ul className="list-disc list-inside text-white/90 leading-relaxed space-y-1 ml-2">
@@ -418,7 +418,7 @@ export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
                       </ul>
                     </div>
                     <div>
-                      <h4 className="text-sm font-semibold mb-2" style={{ color: '#191970' }}>
+                      <h4 className="text-sm font-semibold mb-2" style={{ color: '#EFBF05' }}>
                         Beta Access
                       </h4>
                       <p className="text-white/90 leading-relaxed">
@@ -426,7 +426,7 @@ export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
                       </p>
                     </div>
                     <div>
-                      <h4 className="text-sm font-semibold mb-2" style={{ color: '#191970' }}>
+                      <h4 className="text-sm font-semibold mb-2" style={{ color: '#EFBF05' }}>
                         Privacy & Security
                       </h4>
                       <p className="text-white/90 leading-relaxed">
@@ -452,7 +452,7 @@ export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
                       </p>
                     </div>
                     <div>
-                      <h4 className="text-sm font-semibold mb-2" style={{ color: '#191970' }}>
+                      <h4 className="text-sm font-semibold mb-2" style={{ color: '#EFBF05' }}>
                         Need Help?
                       </h4>
                       <p className="text-white/90 leading-relaxed">
