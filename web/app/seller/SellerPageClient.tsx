@@ -1,18 +1,15 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/app/context/AuthContext';
 import { supabase } from '@/lib/supabaseClient';
 import { TSLogo } from '@/components/TSLogo';
 import { FounderBadge } from '@/components/FounderBadge';
 import { GivesBackBadge } from '@/components/GivesBackBadge';
-import { Loader2, Plus, ArrowLeft, Settings, MessageSquare, ChevronDown, ChevronUp, MoreVertical, EyeOff, Trash2, CheckCircle, LogOut, Search, Package, HelpCircle, User, Edit, Truck, PackageCheck, Link as LinkIcon, Instagram, X } from 'lucide-react';
+import { Loader2, Plus, ArrowLeft, Settings, MessageSquare, ChevronDown, ChevronUp, MoreVertical, EyeOff, Trash2, CheckCircle, LogOut, Search, Package, HelpCircle, User, Edit, Truck, PackageCheck, Link as LinkIcon, Instagram, X, Mail } from 'lucide-react';
 import { GlintIcon } from '../../components/GlintIcon';
-import SellerMessages from './components/SellerMessages';
 import Link from 'next/link';
-import { StreamChatProvider } from './StreamChatProvider';
-import MessagesModal from '@/components/MessagesModal';
 import SupportModal from '@/components/SupportModal';
 
 interface Listing {
@@ -207,7 +204,6 @@ export default function SellerPageClient() {
   const [paidOrders, setPaidOrders] = useState<any[]>([]);
   const [allOrders, setAllOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [messagesExpanded, setMessagesExpanded] = useState(false);
   const [stats, setStats] = useState({
     totalListings: 0,
     activeListings: 0,
@@ -218,7 +214,22 @@ export default function SellerPageClient() {
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [showMenuId, setShowMenuId] = useState<string | null>(null);
   const [profile, setProfile] = useState<any>(null);
-  const [messagesOpen, setMessagesOpen] = useState(false);
+  const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
+  const [messagesSectionExpanded, setMessagesSectionExpanded] = useState(false);
+  const [messagesList, setMessagesList] = useState<Array<{
+    id: string;
+    listing_id: string;
+    buyer_user_id: string;
+    buyer_email: string;
+    message_body: string;
+    created_at: string;
+    read_at: string | null;
+    listing_title: string;
+    buyer_display_name: string;
+  }>>([]);
+  const [messagesLoading, setMessagesLoading] = useState(false);
+  const [selectedConversationKey, setSelectedConversationKey] = useState<string | null>(null);
+  const messagesSectionRef = useRef<HTMLDivElement>(null);
   const [supportOpen, setSupportOpen] = useState(false);
   const [copyFeedback, setCopyFeedback] = useState<{ id: string; type: "link" | "caption" } | null>(null);
   const [badgeInfoOpen, setBadgeInfoOpen] = useState<"founding" | "givesBack" | null>(null);
@@ -233,6 +244,83 @@ export default function SellerPageClient() {
       checkOnboardingAndFetchData();
     }
   }, [user, authLoading]);
+
+  useEffect(() => {
+    if (!user) return;
+    (async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.access_token) return;
+        const res = await fetch("/api/seller/unread-count", {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setUnreadMessagesCount(data.unreadCount ?? 0);
+        }
+      } catch {
+        setUnreadMessagesCount(0);
+      }
+    })();
+  }, [user]);
+
+  const fetchMessagesForInbox = useCallback(async () => {
+    if (!user) return;
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) return;
+    setMessagesLoading(true);
+    try {
+      const res = await fetch("/api/seller/messages", {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setMessagesList(data.messages ?? []);
+        setUnreadMessagesCount(data.unreadCount ?? 0);
+      }
+    } catch {
+      setMessagesList([]);
+    } finally {
+      setMessagesLoading(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (messagesSectionExpanded && user) {
+      fetchMessagesForInbox();
+    }
+  }, [messagesSectionExpanded, user, fetchMessagesForInbox]);
+
+  const markConversationRead = useCallback(async (messageIds: string[]) => {
+    if (messageIds.length === 0) return;
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) return;
+    try {
+      await fetch("/api/seller/messages/read", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ messageIds }),
+      });
+      await fetchMessagesForInbox();
+      setUnreadMessagesCount((c) => Math.max(0, c - messageIds.length));
+    } catch {
+      // ignore
+    }
+  }, [fetchMessagesForInbox]);
+
+  useEffect(() => {
+    if (!selectedConversationKey || messagesList.length === 0) return;
+    const getKey = (lid: string, bid: string) => `${lid}:${bid}`;
+    const conv = messagesList.reduce((acc, m) => {
+      const key = getKey(m.listing_id, m.buyer_user_id);
+      if (key !== selectedConversationKey) return acc;
+      if (!acc) return [m];
+      acc.push(m);
+      return acc;
+    }, [] as typeof messagesList);
+    const idsToMark = conv.filter((m) => !m.read_at).map((m) => m.id);
+    if (idsToMark.length > 0) markConversationRead(idsToMark);
+  }, [selectedConversationKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const previous = document.body.style.backgroundColor;
@@ -767,11 +855,9 @@ export default function SellerPageClient() {
 
   if (authLoading || loading) {
     return (
-      <StreamChatProvider>
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#FFF8E6" }}>
-          <div className="animate-spin h-8 w-8 border-2 border-[#EFBF05] border-t-transparent rounded-full" />
+          <div className="animate-spin h-8 w-8 border-2 border-[#191970] border-t-transparent rounded-full" />
         </div>
-      </StreamChatProvider>
     );
   }
 
@@ -797,7 +883,6 @@ export default function SellerPageClient() {
   });
 
   return (
-    <StreamChatProvider>
     <div
       className="min-h-screen pb-16 bg-[#191970]"
       style={{ overscrollBehaviorY: "contain" }}
@@ -808,7 +893,7 @@ export default function SellerPageClient() {
         style={{ backgroundColor: "#191970" }}
       >
         <Link href="/browse" className="flex items-center gap-2">
-          <TSLogo size={24} primaryColor="#ffffff" accentColor="#EFBF05" />
+          <TSLogo size={24} primaryColor="#ffffff" accentColor="#DFAF37" />
         </Link>
         <Link
           href="/browse"
@@ -827,7 +912,7 @@ export default function SellerPageClient() {
             <div className="flex items-center gap-3 mb-4">
               <div
                 className="w-12 h-12 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0"
-                style={{ backgroundColor: "#EFBF05" }}
+                style={{ backgroundColor: "#191970" }}
               >
                 {profile.avatar_url ? (
                   <img src={profile.avatar_url} alt="Profile" className="w-full h-full object-cover" />
@@ -985,7 +1070,7 @@ export default function SellerPageClient() {
             <div className="text-[11px] font-medium text-gray-600">Drafts</div>
           </div>
           <div className="bg-white rounded-lg p-4 border border-gray-200">
-            <div className="text-2xl font-bold mb-1" style={{ color: "#EFBF05" }}>
+            <div className="text-2xl font-bold mb-1" style={{ color: "#191970" }}>
               ${stats.totalEarnings.toFixed(2)}
             </div>
             <div className="text-[11px] font-medium text-gray-600">Total Earnings</div>
@@ -1423,6 +1508,188 @@ export default function SellerPageClient() {
           )}
         </div>
 
+        {/* Messages - collapsible section */}
+        <div ref={messagesSectionRef} className="mb-4">
+          <button
+            type="button"
+            onClick={() => setMessagesSectionExpanded((e) => !e)}
+            className="w-full bg-white rounded-lg border border-gray-200 p-4 hover:bg-gray-50 transition-colors text-left flex items-center justify-between"
+          >
+            <div className="flex items-center gap-3">
+              <MessageSquare size={22} style={{ color: "#191970" }} />
+              <div>
+                <h2 className="text-base font-semibold font-editorial" style={{ color: "#191970" }}>
+                  Messages
+                </h2>
+                <p className="text-xs text-gray-500">
+                  {unreadMessagesCount > 0 ? `${unreadMessagesCount} unread` : "Buyer inquiries"}
+                </p>
+              </div>
+              {unreadMessagesCount > 0 && (
+                <span
+                  className="px-2 py-0.5 text-xs font-bold rounded-full text-white"
+                  style={{ backgroundColor: "#191970" }}
+                >
+                  {unreadMessagesCount}
+                </span>
+              )}
+            </div>
+            {messagesSectionExpanded ? (
+              <ChevronUp className="h-5 w-5 text-gray-400" />
+            ) : (
+              <ChevronDown className="h-5 w-5 text-gray-400" />
+            )}
+          </button>
+
+          {messagesSectionExpanded && (
+            <div className="mt-2 bg-white rounded-lg border border-gray-200 overflow-hidden">
+              {messagesLoading ? (
+                <div className="p-8 flex justify-center">
+                  <Loader2 className="h-8 w-8 animate-spin" style={{ color: "#191970" }} />
+                </div>
+              ) : (() => {
+                const getKey = (lid: string, bid: string) => `${lid}:${bid}`;
+                const convMap = new Map<string, {
+                  listing_id: string;
+                  listing_title: string;
+                  buyer_user_id: string;
+                  buyer_display_name: string;
+                  buyer_email: string;
+                  messages: typeof messagesList;
+                  unreadCount: number;
+                }>();
+                for (const m of messagesList) {
+                  const key = getKey(m.listing_id, m.buyer_user_id);
+                  const ex = convMap.get(key);
+                  if (!ex) {
+                    convMap.set(key, {
+                      listing_id: m.listing_id,
+                      listing_title: m.listing_title,
+                      buyer_user_id: m.buyer_user_id,
+                      buyer_display_name: m.buyer_display_name,
+                      buyer_email: m.buyer_email,
+                      messages: [m],
+                      unreadCount: m.read_at ? 0 : 1,
+                    });
+                  } else {
+                    ex.messages.push(m);
+                    if (!m.read_at) ex.unreadCount += 1;
+                  }
+                }
+                for (const c of convMap.values()) {
+                  c.messages.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+                }
+                const conversations = Array.from(convMap.entries()).map(([key, val]) => ({ key, ...val }));
+
+                if (conversations.length === 0) {
+                  return (
+                    <div className="p-8 text-center text-gray-500">
+                      <MessageSquare className="h-10 w-10 mx-auto mb-2 text-gray-300" />
+                      <p className="text-sm font-medium">No messages yet</p>
+                      <p className="text-xs mt-1">Buyer questions about your listings will appear here.</p>
+                    </div>
+                  );
+                }
+
+                const selectedConv = selectedConversationKey
+                  ? conversations.find((c) => c.key === selectedConversationKey)
+                  : null;
+
+                if (selectedConv) {
+                  return (
+                    <div className="divide-y divide-gray-100">
+                      <div className="p-4 bg-gray-50 border-b border-gray-200">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedConversationKey(null)}
+                          className="text-sm font-medium mb-2"
+                          style={{ color: "#191970" }}
+                        >
+                          ← All conversations
+                        </button>
+                        <Link
+                          href={`/listing/${selectedConv.listing_id}`}
+                          className="block text-base font-semibold text-gray-900 hover:underline"
+                        >
+                          {selectedConv.listing_title}
+                        </Link>
+                        <p className="text-sm text-gray-600 mt-0.5">{selectedConv.buyer_display_name}</p>
+                        <a
+                          href={`mailto:${selectedConv.buyer_email}`}
+                          className="mt-3 inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white"
+                          style={{ backgroundColor: "#191970", color: "#ffffff" }}
+                        >
+                          <Mail className="h-4 w-4" />
+                          Reply via Email
+                        </a>
+                      </div>
+                      <div className="p-4 space-y-3 max-h-[320px] overflow-y-auto">
+                        {selectedConv.messages.map((m) => (
+                          <div key={m.id} className="rounded-lg p-3 border border-gray-200 bg-gray-50">
+                            <p className="text-xs text-gray-500 mb-1">
+                              {new Date(m.created_at).toLocaleString()}
+                            </p>
+                            <p className="text-gray-800 whitespace-pre-wrap text-sm">{m.message_body}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                }
+
+                const formatTime = (dateString: string) => {
+                  const d = Date.now() - new Date(dateString).getTime();
+                  const m = Math.floor(d / 60000);
+                  const h = Math.floor(m / 60);
+                  const day = Math.floor(h / 24);
+                  if (m < 1) return "just now";
+                  if (m < 60) return `${m}m ago`;
+                  if (h < 24) return `${h}h ago`;
+                  return `${day}d ago`;
+                };
+
+                return (
+                  <ul className="divide-y divide-gray-100">
+                    {conversations.map((conv) => {
+                      const last = conv.messages[conv.messages.length - 1];
+                      const preview = (last?.message_body ?? "").slice(0, 60) + (last && last.message_body.length > 60 ? "…" : "");
+                      return (
+                        <li key={conv.key}>
+                          <button
+                            type="button"
+                            onClick={() => setSelectedConversationKey(conv.key)}
+                            className={`w-full p-4 text-left hover:bg-gray-50 transition-colors ${conv.unreadCount > 0 ? "bg-[#191970]/5" : ""}`}
+                          >
+                            <div className="flex items-start gap-3">
+                              <div
+                                className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 text-white font-semibold text-sm"
+                                style={{ backgroundColor: "#191970", color: "#ffffff" }}
+                              >
+                                {conv.buyer_display_name.charAt(0).toUpperCase()}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between gap-2 mb-0.5">
+                                  <span className="font-semibold text-gray-900 truncate">{conv.buyer_display_name}</span>
+                                  {conv.unreadCount > 0 && (
+                                    <span className="w-2.5 h-2.5 rounded-full flex-shrink-0 bg-[#191970]" />
+                                  )}
+                                </div>
+                                <p className="text-xs text-gray-500 truncate mb-0.5">Re: {conv.listing_title}</p>
+                                <p className="text-sm text-gray-600 truncate">{preview}</p>
+                                <p className="text-xs text-gray-400 mt-1">{formatTime(last?.created_at ?? "")}</p>
+                              </div>
+                            </div>
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                );
+              })()}
+            </div>
+          )}
+        </div>
+
       </main>
       </div>
 
@@ -1433,10 +1700,24 @@ export default function SellerPageClient() {
       >
         <div className="max-w-2xl mx-auto flex items-center justify-around">
           <button
-            onClick={() => setMessagesOpen(true)}
+            type="button"
+            onClick={() => {
+              setMessagesSectionExpanded(true);
+              setTimeout(() => messagesSectionRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
+            }}
             className="flex flex-col items-center gap-0.5 text-white/70 hover:text-white transition-colors"
           >
-            <MessageSquare className="h-4 w-4" />
+            <span className="relative inline-block">
+              <MessageSquare className="h-4 w-4" />
+              {unreadMessagesCount > 0 && (
+                <span
+                  className="absolute -top-1 -right-1.5 min-w-[16px] h-4 flex items-center justify-center rounded-full px-1 text-[10px] font-bold text-[#191970]"
+                  style={{ backgroundColor: "#ffffff" }}
+                >
+                  {unreadMessagesCount > 99 ? "99+" : unreadMessagesCount}
+                </span>
+              )}
+            </span>
             <span className="text-[10px]">Messages</span>
           </button>
           <button
@@ -1474,10 +1755,10 @@ export default function SellerPageClient() {
       </nav>
 
       {/* Modals */}
-      <MessagesModal isOpen={messagesOpen} onClose={() => setMessagesOpen(false)} />
+      
       <SupportModal isOpen={supportOpen} onClose={() => setSupportOpen(false)} />
     </div>
-    </StreamChatProvider>
+   
   );
 }
 

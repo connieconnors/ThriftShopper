@@ -9,7 +9,6 @@ import { TSLogo } from "@/components/TSLogo";
 import {
   X,
   Heart,
-  MessageSquare,
   Store,
   Settings,
   LogOut,
@@ -190,14 +189,6 @@ export default function TSAccountDrawer({ isOpen, onClose }: TSAccountDrawerProp
                 <span>Add New Listing</span>
               </Link>
               <Link
-                href="/messages"
-                onClick={onClose}
-                className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                <MessageSquare className="w-5 h-5 text-gray-600" />
-                <span>Your Messages</span>
-              </Link>
-              <Link
                 href="/favorites"
                 onClick={onClose}
                 className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-50 transition-colors"
@@ -231,14 +222,6 @@ export default function TSAccountDrawer({ isOpen, onClose }: TSAccountDrawerProp
               >
                 <Heart className="w-5 h-5 text-gray-600" />
                 <span>Your Saved Items</span>
-              </Link>
-              <Link
-                href="/messages"
-                onClick={onClose}
-                className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                <MessageSquare className="w-5 h-5 text-gray-600" />
-                <span>Your Messages</span>
               </Link>
               <Link
                 href="/seller/onboarding"

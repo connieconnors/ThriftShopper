@@ -7,7 +7,6 @@ import { useAuth } from "../context/AuthContext";
 import { supabase } from "../../lib/supabaseClient";
 import { TSLogo } from "@/components/TSLogo";
 import {
-  MessageSquare,
   HeadphonesIcon,
   Mic,
   Heart,
@@ -23,9 +22,7 @@ import {
   X,
   Loader2,
 } from "lucide-react";
-import MessagesModal from "@/components/MessagesModal";
 import SupportModal from "@/components/SupportModal";
-import { StreamChatProvider } from "../seller/StreamChatProvider";
 import { Listing, getPrimaryImage } from "../../lib/types";
 import FavoriteButton from "../components/FavoriteButton";
 import {
@@ -283,7 +280,6 @@ export default function BuyerCanvasPage() {
   const [showFavorites, setShowFavorites] = useState(false);
   const [showPurchases, setShowPurchases] = useState(false);
   const [showBadges, setShowBadges] = useState(false);
-  const [messagesOpen, setMessagesOpen] = useState(false);
   const [supportOpen, setSupportOpen] = useState(false);
   const [removingBookmarkId, setRemovingBookmarkId] = useState<string | null>(null);
 
@@ -321,7 +317,7 @@ export default function BuyerCanvasPage() {
   if (!mounted || authLoading || isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin h-8 w-8 border-2 border-[#EFBF05] border-t-transparent rounded-full" />
+        <div className="animate-spin h-8 w-8 border-2 border-[#191970] border-t-transparent rounded-full" />
       </div>
     );
   }
@@ -334,7 +330,6 @@ export default function BuyerCanvasPage() {
   const vibes = savedMoods.map((m) => m.mood).slice(0, 3);
 
   return (
-    <StreamChatProvider>
     <div
       className="min-h-screen pb-16 bg-[#191970]"
       style={{ overscrollBehaviorY: "contain" }}
@@ -345,13 +340,13 @@ export default function BuyerCanvasPage() {
         style={{ backgroundColor: "#191970" }}
       >
         <Link href="/browse" className="flex items-center gap-2">
-          <TSLogo size={24} primaryColor="#ffffff" accentColor="#EFBF05" />
+          <TSLogo size={24} primaryColor="#ffffff" accentColor="#DFAF37" />
         </Link>
         <Link
           href="/browse"
           className="text-white/80 hover:text-white text-[10px] flex items-center gap-1 transition-colors h-8 px-2.5 rounded hover:bg-white/10"
         >
-          <ArrowLeft size={14} style={{ color: "#EFBF05" }} />
+          <ArrowLeft size={14} style={{ color: "#ffffff" }} />
           Back to Discovery
         </Link>
       </header>
@@ -363,7 +358,7 @@ export default function BuyerCanvasPage() {
         <div className="flex items-center gap-3 mb-4">
           <div
             className="w-12 h-12 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0 shadow-sm"
-            style={{ backgroundColor: "#EFBF05" }}
+            style={{ backgroundColor: "#191970" }}
           >
             {profile?.avatar_url ? (
               <img src={profile.avatar_url} alt="Profile" className="w-full h-full object-cover" />
@@ -438,7 +433,7 @@ export default function BuyerCanvasPage() {
               <span
                 key={vibe}
                 className="px-3 py-1 rounded-full text-xs font-medium shadow-sm"
-                style={{ backgroundColor: "#EFBF05", color: "#191970" }}
+                style={{ backgroundColor: "#191970", color: "#ffffff" }}
               >
                 {vibe}
               </span>
@@ -624,7 +619,7 @@ export default function BuyerCanvasPage() {
                     >
                       <Link
                         href={`/listing/${item.id}`}
-                        className="flex items-center gap-2 px-3 py-2 pr-8 rounded-lg border border-gray-200 bg-gray-50 hover:bg-gray-100 hover:border-[#EFBF05] transition-all shadow-sm min-w-0"
+                        className="flex items-center gap-2 px-3 py-2 pr-8 rounded-lg border border-gray-200 bg-gray-50 hover:bg-gray-100 hover:border-[#191970] transition-all shadow-sm min-w-0"
                       >
                         {imageUrl && (
                           <img
@@ -638,7 +633,7 @@ export default function BuyerCanvasPage() {
                       <button
                         onClick={(e) => removeBookmark(item.id, e)}
                         disabled={removingBookmarkId === item.id}
-                        className="absolute top-0 right-0 -mt-1 -mr-1 w-5 h-5 rounded-full bg-[#D4AF37] text-white flex items-center justify-center hover:bg-[#C99C2E] transition-colors disabled:opacity-50 z-10"
+                        className="absolute top-0 right-0 -mt-1 -mr-1 w-5 h-5 rounded-full bg-[#191970] text-white flex items-center justify-center hover:opacity-90 transition-colors disabled:opacity-50 z-10"
                         aria-label="Remove favorite"
                       >
                         {removingBookmarkId === item.id ? (
@@ -682,7 +677,7 @@ export default function BuyerCanvasPage() {
                   <Link
                     key={order.id}
                     href={`/orders/${order.id}`}
-                    className="px-3 py-1.5 rounded-full border border-gray-200 bg-gray-50 flex items-center gap-1.5 hover:bg-gray-100 hover:border-[#EFBF05] transition-all shadow-sm"
+                    className="px-3 py-1.5 rounded-full border border-gray-200 bg-gray-50 flex items-center gap-1.5 hover:bg-gray-100 hover:border-[#191970] transition-all shadow-sm"
                   >
                     <span className="text-xs text-gray-700">{order.listing?.title || "Item"}</span>
                     {order.status && (
@@ -744,13 +739,6 @@ export default function BuyerCanvasPage() {
       >
         <div className="max-w-2xl mx-auto flex items-center justify-around">
           <button
-            onClick={() => setMessagesOpen(true)}
-            className="flex flex-col items-center gap-0.5 text-white/70 hover:text-white transition-colors"
-          >
-            <MessageSquare className="h-4 w-4" />
-            <span className="text-[10px]">Messages</span>
-          </button>
-          <button
             onClick={() => setSupportOpen(true)}
             className="flex flex-col items-center gap-0.5 text-white/70 hover:text-white transition-colors"
           >
@@ -768,11 +756,9 @@ export default function BuyerCanvasPage() {
       </nav>
 
       {/* Modals */}
-      <MessagesModal isOpen={messagesOpen} onClose={() => setMessagesOpen(false)} />
       <SupportModal isOpen={supportOpen} onClose={() => setSupportOpen(false)} />
       </div>
     </div>
-    </StreamChatProvider>
   );
 }
 

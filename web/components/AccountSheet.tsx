@@ -154,15 +154,6 @@ const AccountSheet: React.FC<AccountSheetProps> = ({ isOpen, onClose }) => {
                 >
                   Your Saved Items
                 </button>
-                <button
-                  onClick={() => {
-                    onClose();
-                    router.push("/canvas");
-                  }}
-                  className="w-full text-left px-4 py-3 text-[15px] font-medium text-[#000080] hover:bg-gray-50 rounded-lg transition-colors"
-                >
-                  Your Messages
-                </button>
                 <div className="border-t border-gray-200 my-2" />
                 <button
                   onClick={() => {
@@ -195,15 +186,6 @@ const AccountSheet: React.FC<AccountSheetProps> = ({ isOpen, onClose }) => {
                   className="w-full text-left px-4 py-3 text-[15px] font-medium text-[#000080] hover:bg-gray-50 rounded-lg transition-colors"
                 >
                   Your Saved Items
-                </button>
-                <button
-                  onClick={() => {
-                    onClose();
-                    router.push("/canvas");
-                  }}
-                  className="w-full text-left px-4 py-3 text-[15px] font-medium text-[#000080] hover:bg-gray-50 rounded-lg transition-colors"
-                >
-                  Your Messages
                 </button>
                 <button
                   onClick={() => {

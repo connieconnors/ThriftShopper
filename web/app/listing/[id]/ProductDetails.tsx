@@ -21,13 +21,12 @@ import SellerDrawer from "../../components/SellerDrawer";
 import { TSLogo } from "../../../components/TSLogo";
 import { useAuth } from "../../context/AuthContext";
 import { addRecentlyViewed } from "../../../lib/userPreferences";
-import MessagesModal from "../../../components/MessagesModal";
-import { StreamChatProvider } from "../../seller/StreamChatProvider";
 import { MessageSquare, Bookmark, X } from "lucide-react";
 import { FounderBadge } from "../../../components/FounderBadge";
 import { GivesBackBadge } from "../../../components/GivesBackBadge";
 import { SoldRibbon } from "../../../components/SoldRibbon";
 import { JustSoldBanner } from "../../../components/JustSoldBanner";
+import TSModal from "../../../components/TSModal";
 
 interface ProductDetailsProps {
   listing: Listing;
@@ -55,7 +54,11 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
   const [showShareSuccess, setShowShareSuccess] = useState(false);
   const [showSellerDrawer, setShowSellerDrawer] = useState(false);
   const [isZoomed, setIsZoomed] = useState(false);
-  const [showMessages, setShowMessages] = useState(false);
+  const [contactSellerOpen, setContactSellerOpen] = useState(false);
+  const [contactMessage, setContactMessage] = useState("");
+  const [contactSending, setContactSending] = useState(false);
+  const [contactSuccess, setContactSuccess] = useState(false);
+  const [contactError, setContactError] = useState<string | null>(null);
 
   // Track recently viewed
   useEffect(() => {
@@ -153,8 +156,36 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
   ].filter(Boolean);
   const isSold = listing.status === "sold";
 
+  const handleSendMessage = async () => {
+    const trimmed = contactMessage.trim();
+    if (!trimmed || !user) return;
+    setContactError(null);
+    setContactSending(true);
+    try {
+      const res = await fetch("/api/send-message", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          listingId: listing.id,
+          buyerUserId: user.id,
+          messageBody: trimmed,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setContactError(data.error || "Failed to send message");
+        return;
+      }
+      setContactSuccess(true);
+      setContactMessage("");
+    } catch {
+      setContactError("Something went wrong. Please try again.");
+    } finally {
+      setContactSending(false);
+    }
+  };
+
   return (
-    <StreamChatProvider>
     <main className="min-h-screen text-gray-900" style={{ backgroundColor: '#EDE7D9' }}>
       {/* Fixed Header - Back to Browse */}
       <header className="fixed top-0 left-0 right-0 z-50 p-4 flex items-center justify-between">
@@ -204,7 +235,6 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
                   draggable={false}
                   onClick={() => setIsZoomed(true)}
                 />
-                
               </div>
             ))}
           </div>
@@ -427,9 +457,23 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
               </div>
             </>
           )}
+          {/* Contact Seller - subtle link-style button */}
+          {!isSold && (
+            <button
+              type="button"
+              onClick={() => {
+                setContactError(null);
+                setContactSuccess(false);
+                setContactMessage("");
+                setContactSellerOpen(true);
+              }}
+              className="mt-3 inline-flex items-center gap-1.5 text-sm text-[#191970] hover:text-[#00006a] font-medium transition-colors"
+            >
+              <MessageSquare className="h-4 w-4" style={{ color: "#cfb53b" }} />
+              Contact seller
+            </button>
+          )}
         </div>
-
-        {/* Seller Ratings (temporarily hidden for MVP - no reviews yet) */}
       </section>
 
       {/* Fixed Bottom Action Bar */}
@@ -452,46 +496,21 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
             </button>
           )}
 
-          {/* Right: Message Seller Button (if logged in and not seller) */}
-          {user && user.id !== listing.seller_id && listing.seller_id ? (
-            <button
-              onClick={() => setShowMessages(true)}
-              className="w-14 h-14 flex items-center justify-center rounded-full border-2 border-white/30 text-white hover:border-white/50 transition-colors bg-white/5"
-              aria-label="Message seller"
-            >
-              <MessageSquare className="w-6 h-6" />
-            </button>
-          ) : user && user.id === listing.seller_id ? (
-            <button
-              onClick={handleShare}
-              className="w-14 h-14 flex items-center justify-center rounded-full border-2 border-white/30 text-white hover:border-white/50 transition-colors"
-              aria-label="Share"
-            >
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
-                />
-              </svg>
-            </button>
-          ) : (
-            <button
-              onClick={handleShare}
-              className="w-14 h-14 flex items-center justify-center rounded-full border-2 border-white/30 text-white hover:border-white/50 transition-colors"
-              aria-label="Share"
-            >
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
-                />
-              </svg>
-            </button>
-          )}
+          {/* Right: Message/Share Button */}
+          <button
+            onClick={handleShare}
+            className="w-14 h-14 flex items-center justify-center rounded-full border-2 border-white/30 text-white hover:border-white/50 transition-colors"
+            aria-label="Share"
+          >
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
+              />
+            </svg>
+          </button>
         </div>
       </div>
 
@@ -509,15 +528,67 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
         hasTSBadge={hasTSBadge}
       />
 
-      {/* Messages Modal - opens conversation with seller */}
-      {user && listing.seller_id && (
-        <MessagesModal 
-          isOpen={showMessages} 
-          onClose={() => setShowMessages(false)}
-          initialSellerId={listing.seller_id}
-          initialListingId={listing.id}
-        />
-      )}
+      {/* Contact Seller Modal */}
+      <TSModal
+        isOpen={contactSellerOpen}
+        onClose={() => {
+          setContactSellerOpen(false);
+          setContactError(null);
+          setContactSuccess(false);
+          setContactMessage("");
+        }}
+        title="Contact seller"
+      >
+        <div className="space-y-4">
+          {!user ? (
+            <p className="text-sm text-white/90">
+              Please sign in to message the seller.
+            </p>
+          ) : contactSuccess ? (
+            <p className="text-sm text-white/90">
+              Your message was sent. The seller will reply to your email.
+            </p>
+          ) : (
+            <>
+              <p className="text-xs text-white/70">
+                Ask a question about this listing. Your message will be emailed to the seller.
+              </p>
+              <textarea
+                value={contactMessage}
+                onChange={(e) => setContactMessage(e.target.value)}
+                placeholder="Your message..."
+                rows={4}
+                className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/50 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#cfb53b]/50"
+                disabled={contactSending}
+              />
+              {contactError && (
+                <p className="text-xs text-red-300">{contactError}</p>
+              )}
+              <div className="flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setContactSellerOpen(false)}
+                  className="px-4 py-2 text-sm font-medium text-white/80 hover:text-white transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSendMessage}
+                  disabled={contactSending || !contactMessage.trim()}
+                  className="px-4 py-2 text-sm font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{
+                    backgroundColor: "#cfb53b",
+                    color: "#191970",
+                  }}
+                >
+                  {contactSending ? "Sending…" : "Send message"}
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      </TSModal>
 
       {/* FULLSCREEN IMAGE ZOOM MODAL */}
       {isZoomed && images.length > 0 && (
@@ -622,7 +693,5 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
         </div>
       )}
     </main>
-    </StreamChatProvider>
   );
 }
-
