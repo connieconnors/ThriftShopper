@@ -3,6 +3,7 @@ import { Geist, Geist_Mono, Playfair_Display, Merriweather } from "next/font/goo
 import "./globals.css";
 import { AuthProvider } from "./context/AuthContext";
 import PWARegister from "./components/PWARegister";
+import { PostHogProvider } from "./providers/PostHogProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -60,10 +61,12 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${playfair.variable} ${merriweather.variable} antialiased`}
       >
-        <PWARegister />
-        <AuthProvider>
-          {children}
-        </AuthProvider>
+        <PostHogProvider>
+          <PWARegister />
+          <AuthProvider>
+            {children}
+          </AuthProvider>
+        </PostHogProvider>
       </body>
     </html>
   );
