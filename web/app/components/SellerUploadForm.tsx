@@ -12,6 +12,13 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import Link from 'next/link';
 import AIAnalysisIndicator from './AIAnalysisIndicator';
+import { ShippingPreferenceForm } from '@/components/ShippingPreferenceForm';
+import {
+  type ShippingPreferences,
+  DEFAULT_SHIPPING_PREFERENCES,
+  serializeShippingPreferences,
+  parseShippingPreferences,
+} from '@/lib/shippingPreferences';
 
 interface UploadResult {
   processedImageUrl: string;
@@ -250,6 +257,11 @@ export default function SellerUploadForm() {
   // Track AI tags that have been removed by the user
   const [removedAITags, setRemovedAITags] = useState<Set<string>>(new Set());
   
+  // Optional per-listing shipping override (same radio+checkboxes as onboarding)
+  const [sellerDefaultShippingPreferences, setSellerDefaultShippingPreferences] = useState<ShippingPreferences>(DEFAULT_SHIPPING_PREFERENCES);
+  const [shippingOverrideEnabled, setShippingOverrideEnabled] = useState(false);
+  const [customShippingPreferences, setCustomShippingPreferences] = useState<ShippingPreferences>(DEFAULT_SHIPPING_PREFERENCES);
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const additionalPhotoRef1 = useRef<HTMLInputElement>(null);
@@ -265,6 +277,20 @@ export default function SellerUploadForm() {
   // Edit mode - check for listing ID in URL
   const [isEditMode, setIsEditMode] = useState(false);
   const [isLoadingListing, setIsLoadingListing] = useState(false);
+
+  // Fetch seller default shipping preferences from profile (for shipping override pre-fill)
+  useEffect(() => {
+    if (!user) return;
+    (async () => {
+      const { data } = await supabase
+        .from('profiles')
+        .select('shipping_info')
+        .eq('user_id', user.id)
+        .single();
+      const prefs = parseShippingPreferences(data?.shipping_info ?? null) ?? DEFAULT_SHIPPING_PREFERENCES;
+      setSellerDefaultShippingPreferences(prefs);
+    })();
+  }, [user]);
 
   // Check Stripe status on mount and when listingId changes
   useEffect(() => {
@@ -433,6 +459,12 @@ export default function SellerUploadForm() {
         setAdditionalPhoto1(listing.additional_image_url || '');
         setAdditionalPhoto2(listing.additional_image_two_url || '');
         setIsDirty(false);
+        
+        // Per-listing shipping override (if any) - parse JSON or use default
+        const customShipping = (listing as { custom_shipping_policy?: string | null }).custom_shipping_policy;
+        const parsed = parseShippingPreferences(customShipping ?? null);
+        setShippingOverrideEnabled(!!customShipping);
+        setCustomShippingPreferences(parsed ?? DEFAULT_SHIPPING_PREFERENCES);
         
         // Use AI suggested keywords for detectedAttributes, or fallback to categorized keywords
         const detectedAttributes = dbAiSuggested.length > 0 ? dbAiSuggested : keywordsArrayForDisplay;
@@ -1027,6 +1059,8 @@ export default function SellerUploadForm() {
         styles,
         moods,
         intents,
+        // Per-listing shipping override (null = use seller default)
+        custom_shipping_policy: shippingOverrideEnabled ? serializeShippingPreferences(customShippingPreferences) : null,
         // Keep status as draft for now - API route will change it
         // Use processed or original image based on toggle
         clean_image_url: showProcessedImage ? result?.processedImageUrl : null,
@@ -1159,6 +1193,7 @@ export default function SellerUploadForm() {
         styles,
         moods,
         intents,
+        custom_shipping_policy: shippingOverrideEnabled ? serializeShippingPreferences(customShippingPreferences) : null,
         // Keep as draft
         status: 'draft',
         clean_image_url: showProcessedImage ? result?.processedImageUrl : null,
@@ -1254,6 +1289,8 @@ export default function SellerUploadForm() {
     setUserHasEditedPrice(false);
     setRemovedAITags(new Set()); // Reset removed AI tags
     setIsDirty(false);
+    setShippingOverrideEnabled(false);
+    setCustomShippingPreferences(DEFAULT_SHIPPING_PREFERENCES);
   };
 
 
@@ -1929,6 +1966,54 @@ export default function SellerUploadForm() {
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* Shipping banner override (before Publish) - same radio+checkboxes as onboarding */}
+          <div className="mb-4 p-4 bg-gray-50 border border-gray-200 rounded-xl">
+            <p className="font-semibold text-gray-900 mb-3">Make changes to your shipping banner for this item?</p>
+            <div className="flex gap-4 mb-3">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="shippingOverride"
+                  checked={!shippingOverrideEnabled}
+                  onChange={() => {
+                    setShippingOverrideEnabled(false);
+                    setIsDirty(true);
+                  }}
+                  className="w-4 h-4 border-gray-300 text-[#191970] focus:ring-[#191970]"
+                />
+                <span className="text-gray-700">No</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="shippingOverride"
+                  checked={shippingOverrideEnabled}
+                  onChange={() => {
+                    setShippingOverrideEnabled(true);
+                    setCustomShippingPreferences(sellerDefaultShippingPreferences);
+                    setIsDirty(true);
+                  }}
+                  className="w-4 h-4 border-gray-300 text-[#191970] focus:ring-[#191970]"
+                />
+                <span className="text-gray-700">Yes</span>
+              </label>
+            </div>
+            {shippingOverrideEnabled && (
+              <div className="mt-3 pl-0">
+                <p className="text-xs text-gray-500 mb-2">This only applies to this listing.</p>
+                <ShippingPreferenceForm
+                  label=""
+                  showLabel={false}
+                  value={customShippingPreferences}
+                  onChange={(prefs) => {
+                    setCustomShippingPreferences(prefs);
+                    setIsDirty(true);
+                  }}
+                />
+              </div>
+            )}
           </div>
 
           {/* Action Buttons */}

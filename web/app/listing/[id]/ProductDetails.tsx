@@ -27,6 +27,11 @@ import { GivesBackBadge } from "../../../components/GivesBackBadge";
 import { SoldRibbon } from "../../../components/SoldRibbon";
 import { JustSoldBanner } from "../../../components/JustSoldBanner";
 import TSModal from "../../../components/TSModal";
+import {
+  parseShippingPreferences,
+  generateShippingBannerText,
+  isShippingJson,
+} from "../../../lib/shippingPreferences";
 
 interface ProductDetailsProps {
   listing: Listing;
@@ -316,16 +321,38 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
           </p>
         </div>
 
-        {/* Shipping Info */}
-        <div className="mt-4 flex items-center gap-3 py-2.5 px-4 rounded-xl" style={{ backgroundColor: '#191970' }}>
-          <svg className="w-5 h-5 text-white flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
-          </svg>
-          <div>
-            <p className="text-sm font-medium text-white">Free shipping</p>
-            <p className="text-xs text-white/70">Local pickup + USPS shipping available</p>
-          </div>
-        </div>
+        {/* Shipping Info: listing override or seller default (JSON → generated text, else plain) */}
+        {(() => {
+          const raw = (listing as { custom_shipping_policy?: string | null }).custom_shipping_policy?.trim()
+            || (listing.profiles as { shipping_info?: string | null } | undefined)?.shipping_info?.trim()
+            || '';
+          let shippingText: string;
+          if (raw && isShippingJson(raw)) {
+            const prefs = parseShippingPreferences(raw);
+            shippingText = prefs ? generateShippingBannerText(prefs) : raw || 'Free shipping';
+          } else {
+            shippingText = raw || 'Free shipping';
+          }
+          const parts = shippingText.split(/\s*\/\s*|\n/).map(s => s.trim()).filter(Boolean);
+          let line1 = parts[0] || 'Free shipping';
+          let line2: string | null = parts[1] || null;
+          // Avoid showing a tiny fragment (e.g. single "U") on its own line: fold into line1
+          if (line2 && line2.length <= 2) {
+            line1 = [line1, line2].filter(Boolean).join(' ');
+            line2 = null;
+          }
+          return (
+            <div className="mt-4 flex items-center gap-3 py-2.5 px-4 rounded-xl" style={{ backgroundColor: '#191970' }}>
+              <svg className="w-5 h-5 text-white flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+              </svg>
+              <div>
+                <p className="text-sm font-medium text-white">{line1}</p>
+                {line2 && <p className="text-sm font-medium text-white">{line2}</p>}
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Description */}
         {listing.description && (

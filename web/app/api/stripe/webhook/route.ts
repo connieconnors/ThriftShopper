@@ -96,6 +96,21 @@ async function createOrderFromPaymentIntent(
     phone: metadata.shipping_phone || null,
   };
 
+  // Fee snapshot: prefer metadata (set at payment intent creation), else fetch profile
+  let effectiveRate = Number(metadata.seller_fee_rate ?? NaN);
+  if (Number.isNaN(effectiveRate)) {
+    const { data: profile } = await supabaseAdmin
+      .from("profiles")
+      .select("seller_fee_rate")
+      .eq("user_id", sellerId)
+      .maybeSingle();
+    effectiveRate = Number(profile?.seller_fee_rate ?? 0);
+  }
+  const orderAmountDollars = amount || Number(listing.price);
+  const platformFeeAmount = Math.round(orderAmountDollars * effectiveRate * 100) / 100;
+  const stripeProcessingFee = orderAmountDollars * 0.029 + 0.3;
+  const sellerPayoutAmount = Math.round((orderAmountDollars - platformFeeAmount - stripeProcessingFee) * 100) / 100;
+
   // Create order (idempotent - will fail if duplicate payment_intent_id)
   const { data: order, error: orderError } = await supabaseAdmin
     .from("orders")
@@ -103,9 +118,12 @@ async function createOrderFromPaymentIntent(
       buyer_id: buyerId,
       seller_id: sellerId,
       listing_id: listingId,
-      amount: amount || listing.price,
+      amount: orderAmountDollars,
       status: "paid",
       payment_intent_id: paymentIntentId,
+      seller_fee_rate: effectiveRate,
+      platform_fee_amount: platformFeeAmount,
+      seller_payout_amount: sellerPayoutAmount,
       shipping_name: shippingInfo.name,
       shipping_address: shippingInfo.address,
       shipping_city: shippingInfo.city,

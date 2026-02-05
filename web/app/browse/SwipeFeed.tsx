@@ -1207,7 +1207,7 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
           />
         </div>
         
-        {/* BOOKMARK/FAVORITES BUTTON */}
+        {/* BOOKMARK/FAVORITES BUTTON - tap only saves; does not navigate to detail (stay in browse) */}
         <button
           onClick={(e) => {
             e.preventDefault();
@@ -1216,6 +1216,8 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
               toggleFavorite(currentListing.id);
             }
           }}
+          onTouchStart={(e) => e.stopPropagation()}
+          onTouchEnd={(e) => e.stopPropagation()}
           className="rounded-full hover:opacity-90 transition-all relative flex items-center justify-center"
           style={{ 
             width: '48px',

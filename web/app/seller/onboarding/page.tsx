@@ -4,10 +4,16 @@ import React, { useState, useEffect, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "motion/react";
-import { Store, MapPin, Mail, Phone, Package, Loader2, Upload, Image as ImageIcon, Check } from "lucide-react";
+import { Store, MapPin, Mail, Phone, Loader2, Upload, Image as ImageIcon, Check } from "lucide-react";
 import { useAuth } from "@/app/context/AuthContext";
 import { supabase } from "@/lib/supabaseClient";
 import { TSLogo } from "@/components/TSLogo";
+import { ShippingPreferenceForm } from "@/components/ShippingPreferenceForm";
+import {
+  type ShippingPreferences,
+  DEFAULT_SHIPPING_PREFERENCES,
+  serializeShippingPreferences,
+  } from "@/lib/shippingPreferences";
 
 interface SellerProfile {
   storeName: string;
@@ -18,7 +24,7 @@ interface SellerProfile {
   zipCode: string;
   email: string;
   phone: string;
-  shippingSpeed: string;
+  shippingPreferences: ShippingPreferences;
   avatarFile: File | null;
   avatarPreview: string | null;
   givesBack: boolean;
@@ -60,7 +66,7 @@ function SellerOnboardingContent() {
     zipCode: "",
     email: "",
     phone: "",
-    shippingSpeed: "",
+    shippingPreferences: DEFAULT_SHIPPING_PREFERENCES,
     avatarFile: null,
     avatarPreview: null,
     givesBack: false,
@@ -220,7 +226,7 @@ function SellerOnboardingContent() {
         location_zip: formData.zipCode,
         email: formData.email,
         phone_main: formData.phone || null, // Use phone_main (stores can have store phone and mobile)
-        shipping_info: formData.shippingSpeed, // Changed from shipping_speed to shipping_info
+        shipping_info: serializeShippingPreferences(formData.shippingPreferences),
         gives_back: formData.givesBack,
         gives_back_name: formData.givesBack ? formData.givesBackName || null : null,
         gives_back_pct: formData.givesBack ? formData.givesBackPct || null : null,
@@ -254,7 +260,7 @@ function SellerOnboardingContent() {
           location_zip: formData.zipCode,
           email: formData.email,
           phone_main: formData.phone || null, // Use phone_main (stores can have store phone and mobile)
-          shipping_info: formData.shippingSpeed, // Changed from shipping_speed to shipping_info
+          shipping_info: serializeShippingPreferences(formData.shippingPreferences),
           gives_back: formData.givesBack,
           gives_back_name: formData.givesBack ? formData.givesBackName || null : null,
           gives_back_pct: formData.givesBack ? formData.givesBackPct || null : null,
@@ -533,23 +539,12 @@ function SellerOnboardingContent() {
 
           {/* Shipping */}
           <div>
-            <label className="block mb-2 font-medium" style={{ color: "#191970" }}>
-              Shipping Details
-            </label>
-            <div className="relative">
-              <Package size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                value={formData.shippingSpeed}
-                onChange={(e) => updateField("shippingSpeed", e.target.value)}
-                className="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#191970] outline-none transition-colors"
-                placeholder="e.g., Ships within 3-5 days, Local pickup available"
-                required
-              />
-            </div>
-            <p className="mt-2 text-sm text-gray-500">
-              Indicate your preferred and secondary shipping methods (e.g., "Ships within 3-5 days, Local pickup available")
-            </p>
+            <ShippingPreferenceForm
+              label="How do you ship?"
+              value={formData.shippingPreferences}
+              onChange={(prefs) => setFormData((prev) => ({ ...prev, shippingPreferences: prefs }))}
+              showLabel={true}
+            />
           </div>
 
           {/* Gives Back */}

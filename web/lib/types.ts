@@ -28,11 +28,14 @@ export type Listing = {
   // Denormalized seller data (set when listing is published)
   seller_stripe_account_id?: string | null;
   seller_name?: string | null;
+  /** Optional per-listing shipping banner. If set, shown instead of seller default. */
+  custom_shipping_policy?: string | null;
   // Joined from profiles table (optional, for backward compatibility)
   profiles?: {
     display_name: string | null;
     location_city: string | null;
     avatar_url: string | null;
+    shipping_info?: string | null; // Seller default shipping (onboarding/settings)
     ts_badge: string | boolean | null; // Can be "true"/"false" string or boolean
     rating: number | null;
     review_count: number | null;

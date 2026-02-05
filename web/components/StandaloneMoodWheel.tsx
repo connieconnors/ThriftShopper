@@ -23,13 +23,19 @@
  * }
  */
 
-import { useState, useEffect, useId } from 'react';
+import { useState, useEffect, useId, useRef, useCallback } from 'react';
 import { 
   Sparkles, Heart, Gem, Palette, Clock, Coffee, Mountain, 
   Flower2, Minus, Stars, Crown, Zap, PartyPopper, Gift, User, 
-  Sofa, Archive, Package, Utensils, Lamp, Calendar, Watch, Brush, Star 
+  Sofa, Archive, Package, Utensils, Lamp, Calendar, Watch, Brush, Star,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import MoodFilterModal from './MoodFilterModal';
+
+const TAB_ORDER: Array<'Moods' | 'Intents' | 'Styles'> = ['Moods', 'Intents', 'Styles'];
+const SWIPE_THRESHOLD = 50;
+const DRAG_RESISTANCE = 0.35;
 
 interface StandaloneMoodWheelProps {
   selectedMoods: string[];
@@ -76,9 +82,24 @@ export function StandaloneMoodWheel({ selectedMoods, onMoodsChange, noResults = 
   const [activeTab, setActiveTab] = useState<'Moods' | 'Intents' | 'Styles'>('Moods');
   const [mounted, setMounted] = useState(false);
   const [noMoodResults, setNoMoodResults] = useState(false);
-  
-  // Unique gradient ID using useId() to avoid hydration mismatches
+  const [dragOffset, setDragOffset] = useState(0);
+
+  const touchStartX = useRef(0);
+  const touchStartY = useRef(0);
+  const mouseDownX = useRef(0);
+  const isDragging = useRef(false);
+
   const gradientId = useId();
+
+  const currentTabIndex = TAB_ORDER.indexOf(activeTab);
+  const goNext = useCallback(() => {
+    setActiveTab(TAB_ORDER[(currentTabIndex + 1) % TAB_ORDER.length]);
+    setDragOffset(0);
+  }, [currentTabIndex]);
+  const goPrev = useCallback(() => {
+    setActiveTab(TAB_ORDER[(currentTabIndex + TAB_ORDER.length - 1) % TAB_ORDER.length]);
+    setDragOffset(0);
+  }, [currentTabIndex]);
 
   useEffect(() => {
     setMounted(true);
@@ -104,6 +125,96 @@ export function StandaloneMoodWheel({ selectedMoods, onMoodsChange, noResults = 
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
+
+  // Arrow key navigation when modal is open
+  useEffect(() => {
+    if (!showModal) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        goNext();
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        goPrev();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [showModal, goNext, goPrev]);
+
+  // Document-level mouse move/up when dragging (so drag works if cursor leaves the area)
+  useEffect(() => {
+    if (!showModal) return;
+    const onMove = (e: MouseEvent) => {
+      if (isDragging.current) {
+        const deltaX = e.clientX - mouseDownX.current;
+        setDragOffset(deltaX * DRAG_RESISTANCE);
+      }
+    };
+    const onUp = (e: MouseEvent) => {
+      if (!isDragging.current) return;
+      const deltaX = e.clientX - mouseDownX.current;
+      if (deltaX > SWIPE_THRESHOLD) goNext();
+      else if (deltaX < -SWIPE_THRESHOLD) goPrev();
+      setDragOffset(0);
+      isDragging.current = false;
+    };
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+    return () => {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    };
+  }, [showModal, goNext, goPrev]);
+
+  const touchDeltaX = useRef(0);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+    touchDeltaX.current = 0;
+  };
+  const handleTouchMove = (e: React.TouchEvent) => {
+    const deltaX = e.touches[0].clientX - touchStartX.current;
+    const deltaY = e.touches[0].clientY - touchStartY.current;
+    if (Math.abs(deltaX) > Math.abs(deltaY)) {
+      touchDeltaX.current = deltaX;
+      setDragOffset(deltaX * DRAG_RESISTANCE);
+    }
+  };
+  const handleTouchEnd = () => {
+    const delta = touchDeltaX.current;
+    if (delta > SWIPE_THRESHOLD) goNext();
+    else if (delta < -SWIPE_THRESHOLD) goPrev();
+    setDragOffset(0);
+    touchDeltaX.current = 0;
+    touchStartX.current = 0;
+    touchStartY.current = 0;
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    mouseDownX.current = e.clientX;
+    isDragging.current = true;
+  };
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging.current) return;
+    const deltaX = e.clientX - mouseDownX.current;
+    setDragOffset(deltaX * DRAG_RESISTANCE);
+  };
+  const handleMouseUp = (e: React.MouseEvent) => {
+    if (!isDragging.current) return;
+    const deltaX = e.clientX - mouseDownX.current;
+    if (deltaX > SWIPE_THRESHOLD) goNext();
+    else if (deltaX < -SWIPE_THRESHOLD) goPrev();
+    setDragOffset(0);
+    isDragging.current = false;
+  };
+  const handleMouseLeave = () => {
+    if (isDragging.current) {
+      setDragOffset(0);
+      isDragging.current = false;
+    }
+  };
 
   return (
     <>
@@ -248,94 +359,129 @@ export function StandaloneMoodWheel({ selectedMoods, onMoodsChange, noResults = 
           onClose={() => setShowModal(false)}
           onClear={() => onMoodsChange([])}
         >
-          {/* Tabs: Moods / Intents / Styles */}
-          <div className="w-full px-3 mt-2 mb-1">
-            <div className="flex w-full justify-center bg-black/10 rounded-full py-1">
-              <div className="
-                flex items-center justify-between 
-                gap-1 rounded-full 
-                bg-white/6 
-                px-1 py-1
-              ">
-                {[
-                  { key: 'Moods', label: 'Vibes' },
-                  { key: 'Intents', label: 'Purpose' },
-                  { key: 'Styles', label: 'Styles' },
-                ].map((tab) => {
-                  const tabKey = tab.key as 'Moods' | 'Intents' | 'Styles';
-                  const isActive = activeTab === tabKey;
-                  return (
-                    <button
-                      key={tabKey}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setActiveTab(tabKey);
-                      }}
-                      className={`
-                        flex-1 text-center text-[11px] py-1.5 rounded-full transition-all
-                        ${isActive 
-                          ? 'bg-white/20 text-white font-semibold shadow-sm' 
-                          : 'text-white/55 hover:bg-white/10 hover:text-white'}
-                      `}
-                    >
-                      {tab.label}
-                    </button>
-                  );
-                })}
+          {/* Swipeable area: tabs + grid (touch + mouse drag, arrow keys) */}
+          <div
+            className="w-full touch-pan-y"
+            style={{ touchAction: 'pan-y' }}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseLeave}
+          >
+            <div
+              className="w-full transition-transform duration-75 ease-out"
+              style={{
+                transform: `translateX(${dragOffset}px)`,
+                transition: dragOffset !== 0 ? 'none' : undefined,
+              }}
+            >
+              {/* Tabs with swipe hints */}
+              <div className="w-full px-3 mt-2 mb-1">
+                <div className="flex w-full items-center justify-center gap-1 bg-black/10 rounded-full py-1">
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); goPrev(); }}
+                    className="p-1 rounded-full text-white/50 hover:text-white/80 hover:bg-white/10 transition-colors touch-manipulation"
+                    aria-label="Previous category"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  <div className="
+                    flex items-center justify-between
+                    gap-1 rounded-full
+                    bg-white/6
+                    px-1 py-1
+                    flex-1 min-w-0
+                  ">
+                    {[
+                      { key: 'Moods', label: 'Vibes' },
+                      { key: 'Intents', label: 'Purpose' },
+                      { key: 'Styles', label: 'Styles' },
+                    ].map((tab) => {
+                      const tabKey = tab.key as 'Moods' | 'Intents' | 'Styles';
+                      const isActive = activeTab === tabKey;
+                      return (
+                        <button
+                          key={tabKey}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveTab(tabKey);
+                          }}
+                          className={`
+                            flex-1 text-center text-[11px] py-1.5 rounded-full transition-all min-w-0
+                            ${isActive
+                              ? 'bg-white/20 text-white font-semibold shadow-sm'
+                              : 'text-white/55 hover:bg-white/10 hover:text-white'}
+                          `}
+                        >
+                          {tab.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); goNext(); }}
+                    className="p-1 rounded-full text-white/50 hover:text-white/80 hover:bg-white/10 transition-colors touch-manipulation"
+                    aria-label="Next category"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Mobile-only helper text */}
+              <p className="mt-1.5 mb-0.5 text-[9px] text-white/50 text-center md:hidden">
+                Pick from categories: moods, intents, or styles • Swipe or use arrows
+              </p>
+
+              {/* Mood Grid */}
+              <div className="overflow-y-auto max-h-[60vh] pt-3 -mt-1">
+                <div className={`grid gap-y-2 gap-x-3 transition-all duration-150
+                  ${activeTab === 'Moods' ? 'grid-cols-2' : 'grid-cols-2'}
+                `}>
+                  {categories[activeTab].map((mood) => {
+                    const isSelected = selectedMoods.includes(mood.name);
+                    return (
+                      <button
+                        key={mood.name}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleMood(mood.name);
+                        }}
+                        className={`
+                          px-3 py-[6px]
+                          rounded-full
+                          text-[11px]
+                          font-medium
+                          text-white
+                          transition-all
+                          min-h-[28px]
+                          flex items-center justify-center
+                        `}
+                        style={{
+                          backgroundColor: mood.color,
+                          border: '1px solid rgba(255,255,255,0.3)',
+                          boxShadow: isSelected
+                            ? '0 0 0 2px #EFBF04, 0 4px 10px rgba(0,0,0,0.4)'
+                            : '0 2px 4px rgba(0,0,0,0.25)',
+                        }}
+                      >
+                        {mood.name}
+                      </button>
+                    );
+                  })}
+                </div>
+                {noResults && (
+                  <p className="mt-1 text-xs text-white/80 text-center">
+                    No items match this combo yet. Try fewer moods or tap Clear.
+                  </p>
+                )}
               </div>
             </div>
-            
-            {/* Mobile-only helper text */}
-            <p className="mt-1.5 mb-0.5 text-[9px] text-white/50 text-center md:hidden">
-              Pick from categories: moods, intents, or styles
-            </p>
-          </div>
-
-          {/* Mood Grid */}
-          <div className="overflow-y-auto max-h-[60vh] pt-3 -mt-1">
-            <div className={`grid gap-y-2 gap-x-3 transition-all duration-150
-              ${activeTab === 'Moods' ? 'grid-cols-2' : 'grid-cols-2'}
-            `}>
-              {categories[activeTab].map((mood) => {
-                const isSelected = selectedMoods.includes(mood.name);
-                
-                return (
-                  <button
-                    key={mood.name}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleMood(mood.name);
-                    }}
-                    className={`
-                      px-3 py-[6px]
-                      rounded-full
-                      text-[11px]
-                      font-medium
-                      text-white
-                      transition-all
-                      min-h-[28px]
-                      flex items-center justify-center
-                    `}
-                    style={{
-                      backgroundColor: mood.color,
-                      border: '1px solid rgba(255,255,255,0.3)',
-                      boxShadow: isSelected
-                        ? '0 0 0 2px #EFBF04, 0 4px 10px rgba(0,0,0,0.4)'
-                        : '0 2px 4px rgba(0,0,0,0.25)',
-                    }}
-                  >
-                    {mood.name}
-                  </button>
-                );
-              })}
-            </div>
-            
-            {/* No Results Message */}
-            {noResults && (
-              <p className="mt-1 text-xs text-white/80 text-center">
-                No items match this combo yet. Try fewer moods or tap Clear.
-              </p>
-            )}
           </div>
         </MoodFilterModal>
       )}

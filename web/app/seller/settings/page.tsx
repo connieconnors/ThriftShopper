@@ -4,9 +4,16 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "motion/react";
-import { Store, MapPin, Mail, Phone, Package, Loader2, ArrowLeft, Check } from "lucide-react";
+import { Store, MapPin, Mail, Phone, Loader2, ArrowLeft, Check } from "lucide-react";
 import { useAuth } from "@/app/context/AuthContext";
 import { supabase } from "@/lib/supabaseClient";
+import { ShippingPreferenceForm } from "@/components/ShippingPreferenceForm";
+import {
+  type ShippingPreferences,
+  DEFAULT_SHIPPING_PREFERENCES,
+  serializeShippingPreferences,
+  parseShippingPreferences,
+} from "@/lib/shippingPreferences";
 
 interface SellerProfile {
   storeName: string;
@@ -17,7 +24,7 @@ interface SellerProfile {
   zipCode: string;
   email: string;
   phone: string;
-  shippingSpeed: string;
+  shippingPreferences: ShippingPreferences;
 }
 
 const US_STATES = [
@@ -26,14 +33,6 @@ const US_STATES = [
   "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ",
   "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC",
   "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY",
-];
-
-const SHIPPING_OPTIONS = [
-  "Ships within 1-2 days",
-  "Ships within 3-5 days",
-  "Ships within 5-7 days",
-  "Local pickup only",
-  "Local pickup + Shipping available",
 ];
 
 export default function SellerSettingsPage() {
@@ -53,7 +52,7 @@ export default function SellerSettingsPage() {
     zipCode: "",
     email: "",
     phone: "",
-    shippingSpeed: SHIPPING_OPTIONS[0],
+    shippingPreferences: DEFAULT_SHIPPING_PREFERENCES,
   });
 
   // Redirect if not logged in
@@ -94,7 +93,7 @@ export default function SellerSettingsPage() {
           zipCode: data.location_zip || "",
           email: data.email || user.email || "",
           phone: data.phone || "",
-          shippingSpeed: data.shipping_info || SHIPPING_OPTIONS[0],
+          shippingPreferences: parseShippingPreferences(data.shipping_info) ?? DEFAULT_SHIPPING_PREFERENCES,
         });
       } else {
         // No profile yet, pre-fill email
@@ -130,7 +129,7 @@ export default function SellerSettingsPage() {
           location_country: "US",
           email: formData.email,
           phone: formData.phone || null,
-          shipping_info: formData.shippingSpeed,
+          shipping_info: serializeShippingPreferences(formData.shippingPreferences),
           is_seller: true,
         }, {
           onConflict: "user_id",
@@ -335,24 +334,12 @@ export default function SellerSettingsPage() {
 
           {/* Shipping */}
           <div>
-            <label className="block mb-2 font-medium" style={{ color: "#191970" }}>
-              Shipping Details
-            </label>
-            <div className="relative">
-              <Package size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <select
-                value={formData.shippingSpeed}
-                onChange={(e) => updateField("shippingSpeed", e.target.value)}
-                className="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#191970] outline-none transition-colors appearance-none"
-                required
-              >
-                {SHIPPING_OPTIONS.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <ShippingPreferenceForm
+              label="How do you ship?"
+              value={formData.shippingPreferences}
+              onChange={(prefs) => setFormData((prev) => ({ ...prev, shippingPreferences: prefs }))}
+              showLabel={true}
+            />
           </div>
 
           <motion.button

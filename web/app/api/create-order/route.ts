@@ -161,6 +161,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Fetch seller's current fee rate from profile (for historical snapshot on order)
+    const { data: sellerProfile } = await supabase
+      .from("profiles")
+      .select("seller_fee_rate")
+      .eq("user_id", listing.seller_id)
+      .maybeSingle();
+
+    const sellerFeeRate = Number(sellerProfile?.seller_fee_rate ?? 0);
+    const orderAmount = Number(amount ?? listing.price);
+    const platformFeeAmount = Math.round(orderAmount * sellerFeeRate * 100) / 100;
+    const stripeProcessingFee = orderAmount * 0.029 + 0.3;
+    const sellerPayoutAmount = Math.round((orderAmount - platformFeeAmount - stripeProcessingFee) * 100) / 100;
+
     // Check if order already exists for this payment intent (prevent duplicates)
     const { data: existingOrder } = await supabase
       .from("orders")
@@ -195,7 +208,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Create order record
+    // Create order record (seller_fee_rate snapshot + computed fees)
     const orderData = {
       buyer_id: buyerId, // Use authenticated user's ID from server
       seller_id: listing.seller_id,
@@ -204,6 +217,9 @@ export async function POST(request: NextRequest) {
       status: "paid",
       payment_intent_id: paymentIntentId,
       stripe_session_id: stripeSessionId || null, // Store if using Checkout Sessions
+      seller_fee_rate: sellerFeeRate,
+      platform_fee_amount: platformFeeAmount,
+      seller_payout_amount: sellerPayoutAmount,
       shipping_name: shippingInfo?.name || null,
       shipping_address: shippingInfo?.address || null,
       shipping_city: shippingInfo?.city || null,
