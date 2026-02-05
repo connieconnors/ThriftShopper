@@ -435,7 +435,7 @@ export function StandaloneMoodWheel({ selectedMoods, onMoodsChange, noResults = 
 
               {/* Mobile-only helper text */}
               <p className="mt-1.5 mb-0.5 text-[9px] text-white/50 text-center md:hidden">
-                Pick from categories: moods, intents, or styles • Swipe or use arrows
+                Choose keywords across three categories. Swipe or use arrows.
               </p>
 
               {/* Mood Grid */}
