@@ -161,10 +161,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Fetch seller's current fee rate from profile (for historical snapshot on order)
+    // Fetch seller profile once: fee rate for order snapshot + email/display_name for notifications
     const { data: sellerProfile } = await supabase
       .from("profiles")
-      .select("seller_fee_rate")
+      .select("seller_fee_rate, email, display_name")
       .eq("user_id", listing.seller_id)
       .maybeSingle();
 
@@ -345,12 +345,8 @@ export async function POST(request: NextRequest) {
       .eq("user_id", buyerId) // Use server-verified buyer ID
       .maybeSingle();
 
-    const { data: sellerProfile } = await supabase
-      .from("profiles")
-      .select("email, display_name")
-      .eq("user_id", listing.seller_id)
-      .maybeSingle();
-    
+    // sellerProfile already fetched above (seller_fee_rate, email, display_name)
+
     const { data: sellerAuth } = await supabase.auth.admin.getUserById(
       listing.seller_id
     );
