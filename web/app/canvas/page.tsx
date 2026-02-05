@@ -340,7 +340,7 @@ export default function BuyerCanvasPage() {
         style={{ backgroundColor: "#191970" }}
       >
         <Link href="/browse" className="flex items-center gap-2">
-          <TSLogo size={24} primaryColor="#ffffff" accentColor="#DFAF37" />
+          <TSLogo size={28} primaryColor="#ffffff" accentColor="#DFAF37" />
         </Link>
         <Link
           href="/browse"
