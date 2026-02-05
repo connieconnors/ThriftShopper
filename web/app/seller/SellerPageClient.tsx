@@ -897,10 +897,11 @@ export default function SellerPageClient() {
         </Link>
         <Link
           href="/browse"
-          className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors"
-          title="Back to Discovery"
+          className="text-white/90 hover:text-white text-xs flex items-center gap-1.5 transition-colors h-9 px-2.5 rounded-full hover:bg-white/10"
+          aria-label="Back to Discovery"
         >
-          <ArrowLeft size={20} className="text-white" />
+          <ArrowLeft size={18} className="text-white flex-shrink-0" />
+          Back to Discovery
         </Link>
       </header>
 

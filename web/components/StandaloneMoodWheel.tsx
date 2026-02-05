@@ -52,7 +52,7 @@ const categories = {
     { name: 'Nostalgic', icon: Stars, color: '#6E9E8D', description: 'Unique & fun' },
     { name: 'Quirky', icon: PartyPopper, color: '#7B4C7A', description: 'Wild & bold' },
     { name: 'Chill', icon: Heart, color: '#5776A5', description: 'Peaceful vibes' },
-    { name: 'Party On', icon: Clock, color: '#B38A63', description: 'Memory lane' },
+    { name: 'Party!', icon: Clock, color: '#B38A63', description: 'Memory lane' },
     { name: 'Warm Heart', icon: PartyPopper, color: '#B4475B', description: 'Celebration ready' },
   ],
   Intents: [
@@ -72,7 +72,7 @@ const categories = {
     { name: 'Vintage', icon: Coffee, color: '#4F8CA8', description: 'Nostalgic vibes' },
     { name: 'Modern', icon: Gem, color: '#5776A5', description: 'Refined & sophisticated' },
     { name: 'Novelty', icon: Brush, color: '#8C7BAF', description: 'Creative expression' },
-    { name: 'Kitschy', icon: Palette, color: '#6E9E8D', description: 'Traditional craft' },
+    { name: 'Mid-Century', icon: Palette, color: '#6E9E8D', description: 'Mid-century modern' },
     { name: 'Elegant', icon: Star, color: '#B4475B', description: 'Seasonal spirit' },
   ],
 };

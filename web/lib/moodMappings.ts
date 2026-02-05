@@ -13,6 +13,7 @@ export const MOOD_MAPPINGS: Record<string, string[]> = {
   'quirky': ['quirky', 'quirks', 'unique', 'unusual'],
   'chill': ['chill', 'chilled', 'calm', 'calming', 'peaceful', 'serene'],
   'party on': ['party on', 'party', 'party-on', 'celebration', 'celebrate', 'festive'],
+  'party!': ['party!', 'party', 'party on', 'party-on', 'celebration', 'celebrate', 'festive'],
   'warm heart': ['warm heart', 'warm-heart', 'warm', 'heart', 'heartfelt', 'cozy'],
 
   // PURPOSE (Intents)
@@ -31,8 +32,8 @@ export const MOOD_MAPPINGS: Record<string, string[]> = {
   'retro': ['retro', 'vintage', 'nostalgic', 'classic'],
   'vintage': ['vintage', 'antique', 'retro', 'classic', 'old'],
   'modern': ['modern', 'contemporary', 'sleek', 'minimalist'],
-  'novelty': ['novelty', 'novel', 'unique', 'unusual', 'uncommon', 'distinctive', 'original', 'one-of-a-kind'],
-  'kitschy': ['kitschy', 'kitsch', 'tacky', 'campy', 'funky'],
+  'novelty': ['novelty', 'novel', 'unique', 'unusual', 'uncommon', 'distinctive', 'original', 'one-of-a-kind', 'kitschy', 'kitsch'],
+  'mid-century': ['mid-century', 'mid century', 'midcentury', 'mcm', 'mid-century modern', 'mid century modern'],
   'elegant': ['elegant', 'elegance', 'sophisticated', 'refined', 'classy'],
 };
 

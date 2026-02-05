@@ -344,9 +344,10 @@ export default function BuyerCanvasPage() {
         </Link>
         <Link
           href="/browse"
-          className="text-white/80 hover:text-white text-[10px] flex items-center gap-1 transition-colors h-8 px-2.5 rounded hover:bg-white/10"
+          className="text-white/90 hover:text-white text-xs flex items-center gap-1.5 transition-colors h-9 px-2.5 rounded-full hover:bg-white/10"
+          aria-label="Back to Discovery"
         >
-          <ArrowLeft size={14} style={{ color: "#ffffff" }} />
+          <ArrowLeft size={18} className="text-white flex-shrink-0" />
           Back to Discovery
         </Link>
       </header>

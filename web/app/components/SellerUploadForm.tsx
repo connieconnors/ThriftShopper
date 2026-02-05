@@ -1442,11 +1442,11 @@ export default function SellerUploadForm() {
         <div className="bg-white rounded-lg shadow-md p-8">
           {/* Show upload button if we have placeholder data but upload hasn't started */}
           {!result.suggestedTitle && processingStep === 'idle' && (
-            <div className="mb-6 p-5 bg-blue-50 border-2 border-blue-300 rounded-lg shadow-sm">
-              <p className="text-blue-900 mb-3 font-medium">Ready to analyze your listing with AI?</p>
+            <div className="mb-6 px-6 py-5 bg-blue-50 border-2 border-blue-300 rounded-lg shadow-sm">
+              <p className="text-blue-900 mb-3 font-medium text-sm">Ready to analyze your listing with AI?</p>
               <button
                 onClick={handleUpload}
-                className="w-full bg-blue-600 text-white py-3.5 rounded-lg font-semibold hover:bg-blue-700 transition text-lg shadow-md"
+                className="w-full bg-blue-600 text-white py-3.5 px-4 rounded-lg font-semibold hover:bg-blue-700 transition text-base shadow-md"
               >
                 ✨ Let AI Create Your Listing
               </button>
