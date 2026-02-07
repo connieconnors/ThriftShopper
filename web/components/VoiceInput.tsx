@@ -16,7 +16,7 @@ const MOOD_KEYWORDS: Record<string, string[]> = {
   vintage: ['vintage', 'antique', 'old', 'retro', 'classic', 'nostalgic', 'old-fashioned'],
   elegant: ['elegant', 'sophisticated', 'fancy', 'luxurious', 'classy', 'refined'],
   quirky: ['quirky', 'unique', 'unusual', 'weird', 'eccentric', 'odd', 'interesting'],
-  rustic: ['rustic', 'farmhouse', 'country', 'natural', 'wooden', 'handmade', 'cottage'],
+  'folk art': ['folk art', 'folk', 'rustic', 'farmhouse', 'country', 'natural', 'wooden', 'handmade', 'cottage'],
   retro: ['retro', '70s', '80s', '60s', 'throwback', 'mid-century', 'groovy'],
 };
 

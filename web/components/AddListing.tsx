@@ -17,7 +17,7 @@ export interface NewListing {
   keywords: string[];
 }
 
-const MOOD_SUGGESTIONS = ['whimsical', 'vintage', 'elegant', 'quirky', 'rustic', 'retro'];
+const MOOD_SUGGESTIONS = ['whimsical', 'vintage', 'elegant', 'quirky', 'Folk Art', 'retro'];
 
 export function AddListing({ onSubmit, onCancel }: AddListingProps) {
   const [images, setImages] = useState<string[]>([]);

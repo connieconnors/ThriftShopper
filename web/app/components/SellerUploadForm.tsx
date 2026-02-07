@@ -155,7 +155,7 @@ export default function SellerUploadForm() {
     const intents: string[] = [];
     
     // Style descriptors (visual/aesthetic)
-    const styleKeywords = ['vintage', 'modern', 'rustic', 'mid-century', 'antique', 'contemporary', 
+    const styleKeywords = ['vintage', 'modern', 'rustic', 'folk art', 'folk', 'mid-century', 'antique', 'contemporary', 
       'traditional', 'industrial', 'bohemian', 'minimalist', 'ornate', 'sleek', 'embroidered',
       'carved', 'painted', 'glazed', 'silver plated', 'brass', 'wood', 'ceramic', 'porcelain',
       'designer', 'loafers', 'shoes', 'jewelry', 'necklace', 'pearl', 'scalloped', 'serving bowl'];
@@ -1851,7 +1851,7 @@ export default function SellerUploadForm() {
                 {/* Clickable keyword suggestions */}
                 <div className="flex flex-wrap gap-1.5">
                   <span className="text-xs text-gray-400 mr-1">Suggestions:</span>
-                  {['whimsical', 'vintage', 'elegant', 'quirky', 'rustic', 'retro', 'cozy', 'mid-century'].map((suggestion) => (
+                  {['whimsical', 'vintage', 'elegant', 'quirky', 'folk art', 'retro', 'cozy', 'mid-century'].map((suggestion) => (
                     <button
                       key={suggestion}
                       type="button"

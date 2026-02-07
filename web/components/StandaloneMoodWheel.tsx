@@ -67,7 +67,7 @@ const categories = {
   ],
   Styles: [
     { name: 'Antique', icon: Clock, color: '#B38A63', description: 'Classic & timeless' },
-    { name: 'Rustic', icon: Crown, color: '#C28A3B', description: 'Historical pieces' },
+    { name: 'Folk Art', icon: Crown, color: '#C28A3B', description: 'Rustic, country & folk' },
     { name: 'Retro', icon: Mountain, color: '#6E9E8D', description: 'Natural & earthy' },
     { name: 'Vintage', icon: Coffee, color: '#4F8CA8', description: 'Nostalgic vibes' },
     { name: 'Modern', icon: Gem, color: '#5776A5', description: 'Refined & sophisticated' },

@@ -28,7 +28,7 @@ export const MOOD_MAPPINGS: Record<string, string[]> = {
 
   // STYLES
   'antique': ['antique', 'antiques', 'vintage', 'classic'],
-  'rustic': ['rustic', 'country', 'farmhouse', 'natural', 'earthy'],
+  'folk art': ['folk art', 'folk', 'rustic', 'country', 'farmhouse', 'natural', 'earthy', 'handcrafted', 'traditional'],
   'retro': ['retro', 'vintage', 'nostalgic', 'classic'],
   'vintage': ['vintage', 'antique', 'retro', 'classic', 'old'],
   'modern': ['modern', 'contemporary', 'sleek', 'minimalist'],

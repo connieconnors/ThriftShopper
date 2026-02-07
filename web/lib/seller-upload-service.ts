@@ -413,7 +413,7 @@ function isValidTagForDisplay(tag: string, listingTitle: string = '', allTags: s
     }
   }
   // Accept known style terms even without "style" suffix
-  const knownStyles = ['mid-century', 'industrial', 'farmhouse', 'rustic', 'minimalist', 'art-deco', 'bauhaus', 'modernist', 'classic', 'vintage', 'retro'];
+  const knownStyles = ['mid-century', 'industrial', 'farmhouse', 'rustic', 'folk art', 'folk', 'minimalist', 'art-deco', 'bauhaus', 'modernist', 'classic', 'vintage', 'retro'];
   if (knownStyles.some(style => lowerTag.includes(style))) {
     return true;
   }
