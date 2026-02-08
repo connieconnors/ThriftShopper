@@ -86,6 +86,9 @@ export default function BetaGate() {
 
       if (betaAccess && betaAccess.status === 'invited') {
         console.log('✅ [BETA GATE] Access granted for:', normalizedEmail);
+
+        // Record activation (they signed in at the gate — not account creation)
+        await supabase.rpc('record_beta_activation', { check_email: normalizedEmail });
         
         // Store email in localStorage (session)
         if (typeof window !== 'undefined') {
