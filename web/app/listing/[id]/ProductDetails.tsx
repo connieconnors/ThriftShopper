@@ -342,7 +342,7 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
             line2 = null;
           }
           return (
-            <div className="mt-4 flex items-center gap-3 py-2.5 px-4 rounded-xl" style={{ backgroundColor: '#191970' }}>
+            <div className="mt-4 flex items-center gap-3 py-2.5 px-4 rounded-xl" style={{ backgroundColor: '#16193a' }}>
               <svg className="w-5 h-5 text-white flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
               </svg>
@@ -494,7 +494,7 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
                 setContactMessage("");
                 setContactSellerOpen(true);
               }}
-              className="mt-3 inline-flex items-center gap-1.5 text-sm text-[#191970] hover:text-[#00006a] font-medium transition-colors"
+              className="mt-3 inline-flex items-center gap-1.5 text-sm text-[#16193a] hover:text-[#0f1230] font-medium transition-colors"
             >
               <MessageSquare className="h-4 w-4" style={{ color: "#cfb53b" }} />
               Contact seller
@@ -517,7 +517,11 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
           ) : (
             <button 
               onClick={() => router.push(`/checkout/${listing.id}`)}
-              className="flex-1 h-14 bg-[#191970] text-white font-bold text-lg rounded-full hover:bg-[#00006a] transition-colors shadow-md"
+              className="flex-1 h-14 font-bold text-lg rounded-full transition-colors shadow-md"
+              style={{
+                backgroundColor: "#16193a",
+                color: "#ffffff",
+              }}
             >
               Buy Now
             </button>
@@ -606,7 +610,7 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
                   className="px-4 py-2 text-sm font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{
                     backgroundColor: "#cfb53b",
-                    color: "#191970",
+                    color: "#16193a",
                   }}
                 >
                   {contactSending ? "Sending…" : "Send message"}

@@ -226,9 +226,10 @@ export function ProductDetail({
           {/* Buy Now Button */}
           <button
             onClick={handleBuyNow}
-            className="w-full py-4 rounded-lg text-white transition-all"
+            className="w-full py-4 rounded-lg transition-all"
             style={{
-              backgroundColor: '#191970',
+              backgroundColor: '#16193a',
+              color: '#ffffff',
               border: '2px solid #cfb53b',
             }}
           >
