@@ -17,6 +17,19 @@ ALTER TABLE public.beta_access
 ALTER TABLE public.beta_access
   ALTER COLUMN activated_at DROP NOT NULL;
 
+-- 1b. Force activated_at to NULL on every new row (even if UI or API sends a value)
+DROP TRIGGER IF EXISTS beta_access_force_activated_at_null_on_insert ON public.beta_access;
+CREATE OR REPLACE FUNCTION public.beta_access_before_insert()
+RETURNS TRIGGER LANGUAGE plpgsql AS $$
+BEGIN
+  NEW.activated_at := NULL;
+  RETURN NEW;
+END;
+$$;
+CREATE TRIGGER beta_access_force_activated_at_null_on_insert
+  BEFORE INSERT ON public.beta_access
+  FOR EACH ROW EXECUTE FUNCTION public.beta_access_before_insert();
+
 -- Remove old trigger if you ran the previous version (activation = at gate, not at signup)
 DROP TRIGGER IF EXISTS on_auth_user_created_mark_beta_activated ON auth.users;
 DROP FUNCTION IF EXISTS public.mark_beta_activated_on_signup();

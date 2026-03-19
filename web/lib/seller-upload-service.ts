@@ -934,6 +934,9 @@ export async function uploadAndCreateListing(
       'title' in claudeResult.value
         ? (claudeResult.value as ClaudeEnrichmentType)
         : null;
+    
+    // Hybrid strategy: Claude-first identification, OpenAI fallback.
+    const primaryEnrichment: OpenAIEnrichmentType | null = claudeEnrichment || openAIEnrichment || null;
         
     type GoogleVisionDataType = {
       title: string;
@@ -977,13 +980,13 @@ export async function uploadAndCreateListing(
     // In practice, if existingListingId is provided and other conditions are met, we stabilize.
     const hasNewImage = !existingImageUrl || originalUrl !== existingImageUrl;
 
-    // Step 2.6: PARALLEL POST-PROCESSING - Run independent operations that depend on OpenAI results
+    // Step 2.6: PARALLEL POST-PROCESSING - Run independent operations based on primary identification
     // OPTIMIZATION: eBay pricing, attribute categorization, and embedding generation can all run in parallel
     // since they all depend on OpenAI results but are independent of each other
     
-    const openAITitle = openAIEnrichment?.title || userInput?.title;
-    const openAIDescription = openAIEnrichment?.description || userInput?.description || '';
-    const openAIAttributes = openAIEnrichment?.attributes || [];
+    const primaryTitle = primaryEnrichment?.title || userInput?.title;
+    const primaryDescription = primaryEnrichment?.description || userInput?.description || '';
+    const primaryAttributes = primaryEnrichment?.attributes || [];
     
     // Prepare data for post-processing tasks
     const postProcessingTasks = [];
@@ -993,9 +996,9 @@ export async function uploadAndCreateListing(
     const pricingTasks = [];
     
     // Priority 1: 1st Dibs (high-end vintage/antiques - best for unique items)
-    if (openAITitle && openAITitle !== 'New Listing') {
+    if (primaryTitle && primaryTitle !== 'New Listing') {
       pricingTasks.push(
-        getFirstDibsPricing(openAITitle).catch((err) => {
+        getFirstDibsPricing(primaryTitle).catch((err) => {
           console.error('⚠️ 1st Dibs pricing lookup failed:', err);
           return null;
         })
@@ -1003,9 +1006,9 @@ export async function uploadAndCreateListing(
     }
     
     // Priority 2: Etsy (vintage/unique items - better than eBay for niche items)
-    if (openAITitle && openAITitle !== 'New Listing') {
+    if (primaryTitle && primaryTitle !== 'New Listing') {
       pricingTasks.push(
-        getEtsyPricing(openAITitle).catch((err) => {
+        getEtsyPricing(primaryTitle).catch((err) => {
           console.error('⚠️ Etsy pricing lookup failed:', err);
           return null;
         })
@@ -1013,8 +1016,8 @@ export async function uploadAndCreateListing(
     }
     
     // Priority 3: eBay (broader market - current fallback)
-    const ebayPricingTask = (process.env.EBAY_APP_ID && openAITitle && openAITitle !== 'New Listing')
-      ? getEbayPricing(openAITitle).catch((err) => {
+    const ebayPricingTask = (process.env.EBAY_APP_ID && primaryTitle && primaryTitle !== 'New Listing')
+      ? getEbayPricing(primaryTitle).catch((err) => {
           console.error('⚠️ eBay pricing lookup failed:', err);
           return null;
         })
@@ -1022,9 +1025,9 @@ export async function uploadAndCreateListing(
     pricingTasks.push(ebayPricingTask);
     
     // Priority 4: Apify (generic scraper platform - optional)
-    if (openAITitle && openAITitle !== 'New Listing') {
+    if (primaryTitle && primaryTitle !== 'New Listing') {
       pricingTasks.push(
-        getApifyPricing(openAITitle).catch((err) => {
+        getApifyPricing(primaryTitle).catch((err) => {
           console.error('⚠️ Apify pricing lookup failed:', err);
           return null;
         })
@@ -1165,9 +1168,9 @@ Return ONLY valid JSON:
     };
     
     const categorizationTask = categorizeAttributes(
-      openAIAttributes,
-      openAITitle || 'New Listing',
-      openAIDescription
+      primaryAttributes,
+      primaryTitle || 'New Listing',
+      primaryDescription
     ).catch((err) => {
       console.error('⚠️ Attribute categorization failed:', err);
       return { styles: [], moods: [], intents: [] };
@@ -1177,7 +1180,7 @@ Return ONLY valid JSON:
     // Task 3: Embedding Generation (if we have title/description)
     // Note: Styles will be added to embedding after categorization completes
     // For now, generate embedding with available data (styles added to DB separately)
-    const embeddingText = `${openAITitle || 'New Listing'} ${openAIDescription} ${openAIEnrichment?.category || 'General'}`;
+    const embeddingText = `${primaryTitle || 'New Listing'} ${primaryDescription} ${primaryEnrichment?.category || 'General'}`;
     const embeddingTask = (process.env.OPENAI_API_KEY && embeddingText.trim() !== 'New Listing')
       ? generateEmbedding(embeddingText).catch((err) => {
           console.error('⚠️ Embedding generation failed:', err);
@@ -1240,9 +1243,9 @@ Return ONLY valid JSON:
       finalPrice = pricingIntelligence.avgPrice;
       priceBasis = 'ebay'; // Price basis tracks external source, but we use 'ebay' for database compatibility
       priceConfidence = pricingIntelligence.recentSales > 0 ? 0.9 : 0.7; // Higher confidence with sales data
-    } else if (openAIEnrichment?.estimatedPrice) {
+    } else if (primaryEnrichment?.estimatedPrice) {
       // AI estimate available - check if stabilization should apply
-      const aiPrice = openAIEnrichment.estimatedPrice;
+      const aiPrice = primaryEnrichment.estimatedPrice;
 
       // Price stabilization conditions:
       // 1. Existing listing exists (existingListingId provided)
@@ -1291,16 +1294,14 @@ Return ONLY valid JSON:
       finalPrice = null;
     }
 
-    // Step 3: COMBINE RESULTS - OpenAI Vision (primary) + Google Vision (supplementary)
-    // REVERT: Strategy - OpenAI Vision provides title/category/description (PRIMARY),
-    // Google Vision provides additional tags/attributes only (SUPPLEMENTARY)
+    // Step 3: COMBINE RESULTS - Claude Vision (primary) + OpenAI/Google supplementary sources
     
     let visionData = {
-      category: userInput?.category || openAIEnrichment?.category || claudeEnrichment?.category || googleVisionData?.category || 'General',
+      category: userInput?.category || primaryEnrichment?.category || googleVisionData?.category || 'General',
       attributes: [] as string[],
       suggestedTitle: '',
       suggestedDescription: '',
-      suggestedPrice: openAIEnrichment?.estimatedPrice || claudeEnrichment?.estimatedPrice || null,
+      suggestedPrice: primaryEnrichment?.estimatedPrice || null,
       styles: [] as string[],
       moods: [] as string[],
     };
@@ -1310,21 +1311,8 @@ Return ONLY valid JSON:
       description: userInput?.description || '',
     };
 
-    // PRIMARY SOURCE: OpenAI or Claude Vision for product identification (title, category, description, attributes)
-    // Prefer OpenAI, but use Claude if OpenAI fails - both run in parallel so we can choose the best
-    if (openAIEnrichment) {
-      // Use OpenAI title as primary (accurate product identification)
-      listing.title = openAIEnrichment.title || listing.title;
-      visionData.category = openAIEnrichment.category || visionData.category;
-      listing.description = openAIEnrichment.description || listing.description;
-      visionData.attributes = openAIEnrichment.attributes || [];
-      visionData.suggestedTitle = openAIEnrichment.title || '';
-      visionData.suggestedDescription = openAIEnrichment.description || '';
-
-      // Note: OpenAI price estimate is handled in price stabilization logic above
-      // We don't create pricingIntelligence here to allow stabilization to work properly
-    } else if (claudeEnrichment) {
-      // FALLBACK: If OpenAI failed, use Claude Vision for product identification
+    // PRIMARY SOURCE: Claude Vision for product identification
+    if (claudeEnrichment) {
       listing.title = claudeEnrichment.title || listing.title;
       visionData.category = claudeEnrichment.category || visionData.category;
       listing.description = claudeEnrichment.description || listing.description;
@@ -1332,8 +1320,16 @@ Return ONLY valid JSON:
       visionData.suggestedTitle = claudeEnrichment.title || '';
       visionData.suggestedDescription = claudeEnrichment.description || '';
       visionData.suggestedPrice = claudeEnrichment.estimatedPrice || visionData.suggestedPrice;
+    } else if (openAIEnrichment) {
+      // FALLBACK: If Claude failed, use OpenAI Vision for product identification
+      listing.title = openAIEnrichment.title || listing.title;
+      visionData.category = openAIEnrichment.category || visionData.category;
+      listing.description = openAIEnrichment.description || listing.description;
+      visionData.attributes = openAIEnrichment.attributes || [];
+      visionData.suggestedTitle = openAIEnrichment.title || '';
+      visionData.suggestedDescription = openAIEnrichment.description || '';
     } else if (googleVisionData) {
-      // FALLBACK: If both OpenAI and Claude failed, use Google Vision for basic identification
+      // FALLBACK: If both Claude and OpenAI failed, use Google Vision for basic identification
       listing.title = googleVisionData.title || listing.title;
       visionData.category = googleVisionData.category || visionData.category;
       visionData.attributes = googleVisionData.attributes || [];
@@ -1575,6 +1571,9 @@ Hard rules:
 - Return EXACTLY 3 hypotheses.
 - Do NOT claim "rare," "authentic," or a specific maker unless
   there is clear visual evidence (mark, stamp, unmistakable pattern or silhouette).
+- Treat the main in-focus object as primary. Do not infer or over-identify items that are partially obscured in stacks.
+- Keep value guidance practical for resale context; when uncertain, stay conservative rather than speculative.
+- Assume fragile/oversized categories (lamps, mirrors, framed art, rugs, furniture, large ceramics/glass) are harder to ship and avoid overconfident portability claims.
 - For style_tags: You MAY include "vintage" or "antique" if the item appears to be from an earlier era or has vintage/antique characteristics (even without definitive proof). Style tags should reflect the aesthetic and era the item evokes, not require authentication.
 - NEVER mention condition, wear, age, patina, or "wear consistent with age" in descriptions unless seller explicitly provides condition notes. Do NOT infer condition from images.
 - If confidence is low or competing hypotheses are close, say so.
