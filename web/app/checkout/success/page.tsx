@@ -20,7 +20,7 @@ function SuccessContent() {
       {/* Header Branding */}
       <div className="absolute top-4 left-4 z-20 flex items-center gap-2">
         <Link href="/browse" className="flex items-center gap-2 opacity-90 hover:opacity-100 transition-opacity">
-          <TSLogo size={28} primaryColor="#191970" accentColor="#cfb53b" />
+          <TSLogo size={28} primaryColor="#16193a" accentColor="#cfb53b" />
         </Link>
       </div>
 
@@ -98,14 +98,14 @@ function SuccessContent() {
           <Link
             href="/browse"
             className="block w-full py-4 text-white font-bold rounded-full hover:opacity-90 transition-colors"
-            style={{ backgroundColor: "#191970" }}
+            style={{ backgroundColor: "#16193a" }}
           >
             Continue Shopping
           </Link>
           <Link
             href="/favorites"
             className="block w-full py-4 border-2 text-gray-900 font-semibold rounded-full hover:bg-gray-50 transition-colors"
-            style={{ borderColor: "#191970" }}
+            style={{ borderColor: "#16193a" }}
           >
             View Favorites
           </Link>

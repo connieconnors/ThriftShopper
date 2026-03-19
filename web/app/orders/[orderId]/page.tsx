@@ -133,7 +133,7 @@ export default function OrderDetailsPage() {
   if (authLoading || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <Loader2 className="h-8 w-8 animate-spin" style={{ color: "#191970" }} />
+        <Loader2 className="h-8 w-8 animate-spin" style={{ color: "#16193a" }} />
       </div>
     );
   }
@@ -142,12 +142,12 @@ export default function OrderDetailsPage() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="text-center">
-          <h1 className="text-xl font-semibold mb-2" style={{ color: "#191970" }}>
+          <h1 className="text-xl font-semibold mb-2" style={{ color: "#16193a" }}>
             {error || "Order not found"}
           </h1>
           <Link
             href="/canvas"
-            className="text-sm text-[#191970] hover:underline"
+            className="text-sm text-[#16193a] hover:underline"
           >
             Back to My Canvas
           </Link>
@@ -169,7 +169,7 @@ export default function OrderDetailsPage() {
       {/* Header */}
       <header
         className="sticky top-0 z-40 px-4 py-2 flex items-center justify-between shadow-sm"
-        style={{ backgroundColor: "#191970" }}
+        style={{ backgroundColor: "#16193a" }}
       >
         <Link href={isSeller ? "/seller" : "/canvas"} className="flex items-center gap-2">
           <ArrowLeft size={20} className="text-white" />
@@ -190,7 +190,7 @@ export default function OrderDetailsPage() {
               <StatusIcon size={24} style={{ color: statusInfo.color }} />
             </div>
             <div>
-              <h2 className="text-lg font-semibold" style={{ color: "#191970" }}>
+              <h2 className="text-lg font-semibold" style={{ color: "#16193a" }}>
                 {statusInfo.label}
               </h2>
               <p className="text-xs text-gray-500">
@@ -203,7 +203,7 @@ export default function OrderDetailsPage() {
         {/* Order Item */}
         {listing && (
           <div className="bg-white rounded-xl p-6 border border-gray-200 mb-4">
-            <h3 className="text-sm font-semibold mb-4" style={{ color: "#191970" }}>
+            <h3 className="text-sm font-semibold mb-4" style={{ color: "#16193a" }}>
               Item
             </h3>
             <div className="flex gap-4">
@@ -216,7 +216,7 @@ export default function OrderDetailsPage() {
               )}
               <div className="flex-1">
                 <h4 className="text-base font-medium mb-1">{listing.title}</h4>
-                <p className="text-lg font-semibold" style={{ color: "#191970" }}>
+                <p className="text-lg font-semibold" style={{ color: "#16193a" }}>
                   ${order.amount.toFixed(2)}
                 </p>
               </div>
@@ -226,7 +226,7 @@ export default function OrderDetailsPage() {
 
         {/* Shipping Information */}
         <div className="bg-white rounded-xl p-6 border border-gray-200 mb-4">
-          <h3 className="text-sm font-semibold mb-4" style={{ color: "#191970" }}>
+          <h3 className="text-sm font-semibold mb-4" style={{ color: "#16193a" }}>
             Shipping Address
           </h3>
           <div className="text-sm text-gray-700 space-y-1">
@@ -246,7 +246,7 @@ export default function OrderDetailsPage() {
         {/* Tracking Information */}
         {order.tracking_number && (
           <div className="bg-white rounded-xl p-6 border border-gray-200 mb-4">
-            <h3 className="text-sm font-semibold mb-2" style={{ color: "#191970" }}>
+            <h3 className="text-sm font-semibold mb-2" style={{ color: "#16193a" }}>
               Tracking Number
             </h3>
             <p className="text-sm font-mono text-gray-700">{order.tracking_number}</p>
@@ -255,7 +255,7 @@ export default function OrderDetailsPage() {
 
         {/* Order Dates */}
         <div className="bg-white rounded-xl p-6 border border-gray-200">
-          <h3 className="text-sm font-semibold mb-4" style={{ color: "#191970" }}>
+          <h3 className="text-sm font-semibold mb-4" style={{ color: "#16193a" }}>
             Order Information
           </h3>
           <div className="space-y-2 text-sm text-gray-700">

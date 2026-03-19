@@ -309,7 +309,7 @@ function SellerOnboardingContent() {
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#f5f5f5" }}>
-        <Loader2 className="w-8 h-8 animate-spin" style={{ color: "#191970" }} />
+        <Loader2 className="w-8 h-8 animate-spin" style={{ color: "#16193a" }} />
       </div>
     );
   }
@@ -324,7 +324,7 @@ function SellerOnboardingContent() {
         <div className="text-center mb-8">
             <div
             className="inline-flex w-20 h-20 rounded-full items-center justify-center mb-4"
-            style={{ backgroundColor: "#191970" }}
+            style={{ backgroundColor: "#16193a" }}
           >
             <TSLogo size={44} primaryColor="#ffffff" accentColor="#D4AF37" showStar />
           </div>
@@ -335,7 +335,7 @@ function SellerOnboardingContent() {
             Set Up Your Shop
           </h1>
           {isPreviewMode && (
-            <div className="inline-flex items-center gap-2 rounded-full border border-[#191970]/20 bg-white px-3 py-1 text-[11px] text-[#191970]">
+            <div className="inline-flex items-center gap-2 rounded-full border border-[#16193a]/20 bg-white px-3 py-1 text-[11px] text-[#16193a]">
               Preview Mode
             </div>
           )}
@@ -344,7 +344,7 @@ function SellerOnboardingContent() {
           </p>
           <Link
             href="/canvas"
-            className="mt-4 inline-block text-sm text-[#191970] hover:underline"
+            className="mt-4 inline-block text-sm text-[#16193a] hover:underline"
           >
             Want to shop instead? Go to My Canvas →
           </Link>
@@ -365,7 +365,7 @@ function SellerOnboardingContent() {
         <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-xl p-8 space-y-6">
           {/* Avatar Upload */}
           <div>
-            <label className="block mb-2 font-medium" style={{ color: "#191970" }}>
+            <label className="block mb-2 font-medium" style={{ color: "#16193a" }}>
               Store Avatar (Optional)
             </label>
             <div className="flex items-center gap-4">
@@ -408,7 +408,7 @@ function SellerOnboardingContent() {
 
           {/* Store Name */}
           <div>
-            <label className="block mb-2 font-medium" style={{ color: "#191970" }}>
+            <label className="block mb-2 font-medium" style={{ color: "#16193a" }}>
               Store Name
             </label>
             <div className="relative">
@@ -417,7 +417,7 @@ function SellerOnboardingContent() {
                 type="text"
                 value={formData.storeName}
                 onChange={(e) => updateField("storeName", e.target.value)}
-                className="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#191970] outline-none transition-colors"
+                className="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#16193a] outline-none transition-colors"
                 placeholder="Your Store or Your Name"
                 required
               />
@@ -427,20 +427,20 @@ function SellerOnboardingContent() {
 
           {/* Description */}
           <div>
-            <label className="block mb-2 font-medium" style={{ color: "#191970" }}>
+            <label className="block mb-2 font-medium" style={{ color: "#16193a" }}>
               Description
             </label>
             <textarea
               value={formData.description}
               onChange={(e) => updateField("description", e.target.value)}
-              className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#191970] outline-none transition-colors min-h-[100px] resize-none"
+              className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#16193a] outline-none transition-colors min-h-[100px] resize-none"
               placeholder="Tell buyers about you and what makes your shop special..."
             />
           </div>
 
           {/* Your Story / About Your Shop */}
           <div>
-            <label className="block mb-2 font-medium" style={{ color: "#191970" }}>
+            <label className="block mb-2 font-medium" style={{ color: "#16193a" }}>
               Your Story <span className="text-gray-400 font-normal">(optional)</span>
             </label>
             <textarea
@@ -452,7 +452,7 @@ function SellerOnboardingContent() {
                 }
               }}
               maxLength={500}
-              className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#191970] outline-none transition-colors min-h-[100px] resize-none"
+              className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#16193a] outline-none transition-colors min-h-[100px] resize-none"
               placeholder="Tell buyers about your shop, what you sell, or what makes your items special..."
             />
             <div className="flex justify-between items-center mt-1">
@@ -467,7 +467,7 @@ function SellerOnboardingContent() {
 
           {/* Location */}
           <div>
-            <label className="block mb-2 font-medium" style={{ color: "#191970" }}>
+            <label className="block mb-2 font-medium" style={{ color: "#16193a" }}>
               Location
             </label>
             <div className="grid grid-cols-2 gap-3 mb-3">
@@ -477,7 +477,7 @@ function SellerOnboardingContent() {
                   type="text"
                   value={formData.city}
                   onChange={(e) => updateField("city", e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#191970] outline-none transition-colors"
+                  className="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#16193a] outline-none transition-colors"
                   placeholder="City"
                   required
                 />
@@ -485,7 +485,7 @@ function SellerOnboardingContent() {
               <select
                 value={formData.state}
                 onChange={(e) => updateField("state", e.target.value)}
-                className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#191970] outline-none transition-colors"
+                className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#16193a] outline-none transition-colors"
                 required
               >
                 <option value="">State</option>
@@ -500,7 +500,7 @@ function SellerOnboardingContent() {
               type="text"
               value={formData.zipCode}
               onChange={(e) => updateField("zipCode", e.target.value)}
-              className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#191970] outline-none transition-colors"
+              className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#16193a] outline-none transition-colors"
               placeholder="ZIP Code"
               pattern="[0-9]{5}"
               required
@@ -509,7 +509,7 @@ function SellerOnboardingContent() {
 
           {/* Contact */}
           <div>
-            <label className="block mb-2 font-medium" style={{ color: "#191970" }}>
+            <label className="block mb-2 font-medium" style={{ color: "#16193a" }}>
               Contact Information
             </label>
             <div className="space-y-3">
@@ -519,7 +519,7 @@ function SellerOnboardingContent() {
                   type="email"
                   value={formData.email}
                   onChange={(e) => updateField("email", e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#191970] outline-none transition-colors"
+                  className="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#16193a] outline-none transition-colors"
                   placeholder="Email"
                   required
                 />
@@ -530,7 +530,7 @@ function SellerOnboardingContent() {
                   type="tel"
                   value={formData.phone}
                   onChange={(e) => updateField("phone", e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#191970] outline-none transition-colors"
+                  className="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#16193a] outline-none transition-colors"
                   placeholder="Phone (optional)"
                 />
               </div>
@@ -549,7 +549,7 @@ function SellerOnboardingContent() {
 
           {/* Gives Back */}
           <div>
-            <label className="block mb-2 font-medium" style={{ color: "#191970" }}>
+            <label className="block mb-2 font-medium" style={{ color: "#16193a" }}>
               Gives Back
             </label>
             <div className="flex items-center gap-3 mb-3">
@@ -558,7 +558,7 @@ function SellerOnboardingContent() {
                 type="checkbox"
                 checked={formData.givesBack}
                 onChange={(e) => updateToggle("givesBack", e.target.checked)}
-                className="h-4 w-4 accent-[#191970]"
+                className="h-4 w-4 accent-[#16193a]"
               />
               <label htmlFor="gives-back" className="text-sm text-gray-700">
                 We donate a portion of proceeds to a cause or nonprofit.
@@ -570,19 +570,19 @@ function SellerOnboardingContent() {
             {formData.givesBack && (
               <div className="mt-4 space-y-3">
                 <div>
-                  <label className="block mb-2 font-medium" style={{ color: "#191970" }}>
+                  <label className="block mb-2 font-medium" style={{ color: "#16193a" }}>
                     Who do you give back to?
                   </label>
                   <input
                     type="text"
                     value={formData.givesBackName}
                     onChange={(e) => updateField("givesBackName", e.target.value)}
-                    className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#191970] outline-none transition-colors"
+                    className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#16193a] outline-none transition-colors"
                     placeholder="Organization or cause name"
                   />
                 </div>
                 <div>
-                  <label className="block mb-2 font-medium" style={{ color: "#191970" }}>
+                  <label className="block mb-2 font-medium" style={{ color: "#16193a" }}>
                     Approximate percentage given back
                   </label>
                   <input
@@ -590,7 +590,7 @@ function SellerOnboardingContent() {
                     inputMode="decimal"
                     value={formData.givesBackPct}
                     onChange={(e) => updateField("givesBackPct", e.target.value)}
-                    className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#191970] outline-none transition-colors"
+                    className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#16193a] outline-none transition-colors"
                     placeholder="e.g., 5%"
                   />
                 </div>
@@ -600,7 +600,7 @@ function SellerOnboardingContent() {
                     type="checkbox"
                     checked={formData.isNonProfit}
                     onChange={(e) => updateToggle("isNonProfit", e.target.checked)}
-                    className="h-4 w-4 accent-[#191970]"
+                    className="h-4 w-4 accent-[#16193a]"
                   />
                   <label htmlFor="is-non-profit" className="text-sm text-gray-700">
                     We are a registered nonprofit.
@@ -611,8 +611,8 @@ function SellerOnboardingContent() {
                     Badge preview (applied after review)
                   </p>
                   <div className="flex flex-wrap gap-2">
-                    <div className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 border border-[#191970]/20">
-                      <div className="relative h-6 w-6 flex items-center justify-center rounded-full" style={{ backgroundColor: "#191970" }}>
+                    <div className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 border border-[#16193a]/20">
+                      <div className="relative h-6 w-6 flex items-center justify-center rounded-full" style={{ backgroundColor: "#16193a" }}>
                         <span
                           style={{
                             fontFamily: "Playfair Display, serif",
@@ -632,26 +632,26 @@ function SellerOnboardingContent() {
                             style={{
                               fontSize: "8px",
                               lineHeight: 1,
-                              color: "#191970",
+                              color: "#16193a",
                             }}
                           >
                             ✦
                           </span>
                         </span>
                       </div>
-                      <span className="text-xs text-[#191970] font-medium">Founding Seller</span>
+                      <span className="text-xs text-[#16193a] font-medium">Founding Seller</span>
                     </div>
-                    <div className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 border border-[#191970]/20">
-                      <div className="relative h-6 w-6 flex items-center justify-center rounded-full" style={{ backgroundColor: "#191970" }}>
+                    <div className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 border border-[#16193a]/20">
+                      <div className="relative h-6 w-6 flex items-center justify-center rounded-full" style={{ backgroundColor: "#16193a" }}>
                         <TSLogo size={14} primaryColor="#ffffff" accentColor="#D4AF37" />
                         <span
                           className="absolute -bottom-1 -right-1 h-3 w-3 rounded-full flex items-center justify-center"
                           style={{ backgroundColor: "#D4AF37" }}
                         >
-                          <Check className="h-2 w-2 text-[#191970]" strokeWidth={2} />
+                          <Check className="h-2 w-2 text-[#16193a]" strokeWidth={2} />
                         </span>
                       </div>
-                      <span className="text-xs text-[#191970] font-medium">Gives Back</span>
+                      <span className="text-xs text-[#16193a] font-medium">Gives Back</span>
                     </div>
                   </div>
                 </div>
@@ -664,7 +664,7 @@ function SellerOnboardingContent() {
             disabled={isSubmitting}
             whileTap={{ scale: 0.98 }}
             className="w-full py-4 rounded-lg text-white font-medium shadow-lg mt-8 disabled:opacity-50 flex items-center justify-center gap-2"
-            style={{ backgroundColor: "#191970" }}
+            style={{ backgroundColor: "#16193a" }}
           >
             {isSubmitting ? (
               <>

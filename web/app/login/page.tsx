@@ -227,7 +227,7 @@ function LoginForm() {
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#f5f5f5" }}>
-        <Loader2 className="w-8 h-8 animate-spin" style={{ color: "#191970" }} />
+        <Loader2 className="w-8 h-8 animate-spin" style={{ color: "#16193a" }} />
       </div>
     );
   }
@@ -236,7 +236,7 @@ function LoginForm() {
   if (user) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#f5f5f5" }}>
-        <Loader2 className="w-8 h-8 animate-spin" style={{ color: "#191970" }} />
+        <Loader2 className="w-8 h-8 animate-spin" style={{ color: "#16193a" }} />
         <p className="ml-3 text-gray-600">Redirecting...</p>
       </div>
     );
@@ -258,7 +258,7 @@ function LoginForm() {
           <div className="flex justify-center mb-6">
             <div 
               className="w-20 h-20 rounded-full flex items-center justify-center"
-              style={{ backgroundColor: "#191970" }}
+              style={{ backgroundColor: "#16193a" }}
             >
               <TSLogo size={48} primaryColor="#ffffff" accentColor="#efbf04" showStar={true} />
             </div>
@@ -289,7 +289,7 @@ function LoginForm() {
             <div>
               <label 
                 className="block mb-2 text-sm font-medium"
-                style={{ color: "#191970" }}
+                style={{ color: "#16193a" }}
               >
                 Email
               </label>
@@ -299,7 +299,7 @@ function LoginForm() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 focus:border-[#191970] outline-none transition-colors"
+                  className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 focus:border-[#16193a] outline-none transition-colors"
                   placeholder="you@example.com"
                   required
                 />
@@ -309,7 +309,7 @@ function LoginForm() {
             <div>
               <label 
                 className="block mb-2 text-sm font-medium"
-                style={{ color: "#191970" }}
+                style={{ color: "#16193a" }}
               >
                 Password
               </label>
@@ -319,7 +319,7 @@ function LoginForm() {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 focus:border-[#191970] outline-none transition-colors"
+                  className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 focus:border-[#16193a] outline-none transition-colors"
                   placeholder="••••••••"
                   required
                 />
@@ -328,7 +328,7 @@ function LoginForm() {
                 <Link
                   href="/forgot-password"
                   className="text-sm hover:underline"
-                  style={{ color: "#191970" }}
+                  style={{ color: "#16193a" }}
                 >
                   Forgot password?
                 </Link>
@@ -340,7 +340,7 @@ function LoginForm() {
               disabled={isLoading}
               whileTap={{ scale: 0.98 }}
               className="w-full py-4 rounded-xl text-white font-semibold shadow-lg mt-6 disabled:opacity-50 flex items-center justify-center gap-2"
-              style={{ backgroundColor: "#191970" }}
+              style={{ backgroundColor: "#16193a" }}
             >
               {isLoading ? (
                 <>
@@ -366,7 +366,7 @@ function LoginForm() {
             <Link
               href="/signup"
               className="font-semibold hover:underline"
-              style={{ color: "#191970" }}
+              style={{ color: "#16193a" }}
             >
               Create an account
             </Link>
@@ -392,7 +392,7 @@ export default function LoginPage() {
   return (
     <Suspense fallback={
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#f5f5f5" }}>
-        <Loader2 className="w-8 h-8 animate-spin" style={{ color: "#191970" }} />
+        <Loader2 className="w-8 h-8 animate-spin" style={{ color: "#16193a" }} />
       </div>
     }>
       <LoginForm />

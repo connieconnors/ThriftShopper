@@ -28,14 +28,14 @@ export function Favorites({
       transition={{ type: 'spring', damping: 30, stiffness: 300 }}
       className="fixed inset-0 z-50 overflow-y-auto"
       style={{
-        backgroundColor: '#191970',
+        backgroundColor: '#16193a',
       }}
     >
       {/* Header */}
       <div
         className="sticky top-0 z-10 p-6"
         style={{
-          background: 'linear-gradient(to bottom, #191970 0%, rgba(25, 25, 112, 0.95) 100%)',
+          background: 'linear-gradient(to bottom, #16193a 0%, rgba(25, 25, 112, 0.95) 100%)',
           backdropFilter: 'blur(10px)',
         }}
       >
@@ -110,7 +110,7 @@ export function Favorites({
                   {/* TS Badge */}
                   {product.isTrustedSeller && (
                     <div className="absolute top-2 left-2">
-                      <TSLogo size={24} primaryColor="#191970" accentColor="#cfb53b" />
+                      <TSLogo size={24} primaryColor="#16193a" accentColor="#cfb53b" />
                     </div>
                   )}
                 </div>

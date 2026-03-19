@@ -28,7 +28,7 @@ export function getPaymentReceivedEmailHtml(data: PaymentReceivedData): string {
           <!-- Header -->
           <tr>
             <td style="padding: 40px 40px 30px; text-align: center; border-bottom: 2px solid #EFBF05;">
-              <h1 style="margin: 0; font-family: 'Merriweather', serif; font-size: 28px; color: #191970; font-weight: 700;">
+              <h1 style="margin: 0; font-family: 'Merriweather', serif; font-size: 28px; color: #16193a; font-weight: 700;">
                 Payment received for ${data.itemName}
               </h1>
             </td>
@@ -46,11 +46,11 @@ export function getPaymentReceivedEmailHtml(data: PaymentReceivedData): string {
               </p>
               
               <div style="background-color: #FFF8E6; padding: 20px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #EFBF05;">
-                <p style="margin: 0 0 10px; font-size: 18px; color: #191970; font-weight: 600;">
+                <p style="margin: 0 0 10px; font-size: 18px; color: #16193a; font-weight: 600;">
                   ${data.itemName}
                 </p>
                 <p style="margin: 0 0 10px; font-size: 15px; color: #666666;">
-                  Amount: <span style="font-weight: 600; color: #191970; font-size: 20px;">$${data.amount.toFixed(2)}</span>
+                  Amount: <span style="font-weight: 600; color: #16193a; font-size: 20px;">$${data.amount.toFixed(2)}</span>
                 </p>
                 <p style="margin: 0; font-size: 15px; color: #666666;">
                   Payment date: ${data.paymentDate}
@@ -66,7 +66,7 @@ export function getPaymentReceivedEmailHtml(data: PaymentReceivedData): string {
               <table role="presentation" style="width: 100%; margin: 30px 0;">
                 <tr>
                   <td align="center" style="padding: 15px 0;">
-                    <a href="${data.stripeDashboardUrl}" style="display: inline-block; padding: 14px 32px; background-color: #191970; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 15px;">
+                    <a href="${data.stripeDashboardUrl}" style="display: inline-block; padding: 14px 32px; background-color: #16193a; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 15px;">
                       View transaction details
                     </a>
                   </td>

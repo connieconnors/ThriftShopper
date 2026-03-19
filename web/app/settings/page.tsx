@@ -129,7 +129,7 @@ export default function SettingsPage() {
   return (
     <div className="min-h-screen bg-gray-50 pb-16">
       {/* Header */}
-      <header className="bg-[#191970] px-4 py-2 flex items-center justify-between sticky top-0 z-10">
+      <header className="bg-[#16193a] px-4 py-2 flex items-center justify-between sticky top-0 z-10">
         <Link href={backUrl} className="flex items-center gap-3">
           <button className="text-white/80 hover:text-white transition-colors">
             <ArrowLeft className="h-5 w-5" style={{ color: "#EFBF05" }} />
@@ -144,8 +144,8 @@ export default function SettingsPage() {
         {/* Profile Section */}
         <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
           <div className="flex items-center gap-2 mb-4">
-            <User className="h-4 w-4" style={{ color: "#191970" }} />
-            <h2 className="text-sm font-semibold" style={{ color: "#191970" }}>
+            <User className="h-4 w-4" style={{ color: "#16193a" }} />
+            <h2 className="text-sm font-semibold" style={{ color: "#16193a" }}>
               Profile Information
             </h2>
           </div>
@@ -178,7 +178,7 @@ export default function SettingsPage() {
                 type="text"
                 value={formData.display_name}
                 onChange={(e) => setFormData({ ...formData, display_name: e.target.value })}
-                className="w-full h-9 px-3 text-sm rounded-lg border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#191970]/20"
+                className="w-full h-9 px-3 text-sm rounded-lg border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#16193a]/20"
                 placeholder="Your name"
               />
             </div>
@@ -191,7 +191,7 @@ export default function SettingsPage() {
                 type="email"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="w-full h-9 px-3 text-sm rounded-lg border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#191970]/20"
+                className="w-full h-9 px-3 text-sm rounded-lg border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#16193a]/20"
                 placeholder="your@email.com"
               />
             </div>
@@ -204,7 +204,7 @@ export default function SettingsPage() {
                 type="tel"
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                className="w-full h-9 px-3 text-sm rounded-lg border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#191970]/20"
+                className="w-full h-9 px-3 text-sm rounded-lg border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#16193a]/20"
                 placeholder="+1 (555) 123-4567"
               />
             </div>
@@ -218,7 +218,7 @@ export default function SettingsPage() {
                     id="description"
                     value={formData.seller_description}
                     onChange={(e) => setFormData({ ...formData, seller_description: e.target.value })}
-                    className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#191970]/20 min-h-[80px] resize-none"
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#16193a]/20 min-h-[80px] resize-none"
                     placeholder="Tell buyers about you and what makes your shop special..."
                   />
                 </div>
@@ -236,7 +236,7 @@ export default function SettingsPage() {
                       }
                     }}
                     maxLength={500}
-                    className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#191970]/20 min-h-[80px] resize-none"
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#16193a]/20 min-h-[80px] resize-none"
                     placeholder="Tell buyers about your shop, what you sell, or what makes your items special..."
                   />
                   <div className="flex justify-between items-center mt-1">
@@ -253,7 +253,7 @@ export default function SettingsPage() {
             <button
               onClick={handleSaveProfile}
               className="w-full mt-2 py-2 text-xs font-medium rounded-lg transition-colors"
-              style={{ backgroundColor: "#191970", color: "white" }}
+              style={{ backgroundColor: "#16193a", color: "white" }}
             >
               Save Changes
             </button>
@@ -264,8 +264,8 @@ export default function SettingsPage() {
         <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <MapPin className="h-4 w-4" style={{ color: "#191970" }} />
-              <h2 className="text-sm font-semibold" style={{ color: "#191970" }}>
+              <MapPin className="h-4 w-4" style={{ color: "#16193a" }} />
+              <h2 className="text-sm font-semibold" style={{ color: "#16193a" }}>
                 Addresses
               </h2>
             </div>
@@ -285,7 +285,7 @@ export default function SettingsPage() {
                   id="addressSelect"
                   value={selectedAddress}
                   onChange={(e) => setSelectedAddress(e.target.value)}
-                  className="w-full h-9 px-3 text-sm rounded-lg border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#191970]/20"
+                  className="w-full h-9 px-3 text-sm rounded-lg border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#16193a]/20"
                 >
                   {addresses.map((addr) => (
                     <option key={addr.id} value={addr.id.toString()}>
@@ -307,7 +307,7 @@ export default function SettingsPage() {
                         id="addressType"
                         type="text"
                         defaultValue={addr.type}
-                        className="w-full h-9 px-3 text-sm rounded-lg border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#191970]/20"
+                        className="w-full h-9 px-3 text-sm rounded-lg border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#16193a]/20"
                       />
                     </div>
                     <div>
@@ -318,7 +318,7 @@ export default function SettingsPage() {
                         id="street"
                         type="text"
                         defaultValue={addr.street}
-                        className="w-full h-9 px-3 text-sm rounded-lg border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#191970]/20"
+                        className="w-full h-9 px-3 text-sm rounded-lg border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#16193a]/20"
                       />
                     </div>
                     <div className="grid grid-cols-2 gap-3">
@@ -330,7 +330,7 @@ export default function SettingsPage() {
                           id="city"
                           type="text"
                           defaultValue={addr.city}
-                          className="w-full h-9 px-3 text-sm rounded-lg border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#191970]/20"
+                          className="w-full h-9 px-3 text-sm rounded-lg border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#16193a]/20"
                         />
                       </div>
                       <div>
@@ -341,7 +341,7 @@ export default function SettingsPage() {
                           id="state"
                           type="text"
                           defaultValue={addr.state}
-                          className="w-full h-9 px-3 text-sm rounded-lg border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#191970]/20"
+                          className="w-full h-9 px-3 text-sm rounded-lg border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#16193a]/20"
                         />
                       </div>
                     </div>
@@ -353,7 +353,7 @@ export default function SettingsPage() {
                         id="zip"
                         type="text"
                         defaultValue={addr.zip}
-                        className="w-full h-9 px-3 text-sm rounded-lg border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#191970]/20"
+                        className="w-full h-9 px-3 text-sm rounded-lg border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#16193a]/20"
                       />
                     </div>
                     <div className="flex items-center gap-2">
@@ -383,8 +383,8 @@ export default function SettingsPage() {
         {/* Payment Methods Section */}
         <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
           <div className="flex items-center gap-2 mb-4">
-            <CreditCard className="h-4 w-4" style={{ color: "#191970" }} />
-            <h2 className="text-sm font-semibold" style={{ color: "#191970" }}>
+            <CreditCard className="h-4 w-4" style={{ color: "#16193a" }} />
+            <h2 className="text-sm font-semibold" style={{ color: "#16193a" }}>
               Payment Methods
             </h2>
           </div>
@@ -409,7 +409,7 @@ export default function SettingsPage() {
                 <Plus className="h-3 w-3" />
                 Add Payment Method
               </button>
-              <button className="w-full py-2 text-xs rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors flex items-center justify-center gap-1 text-[#191970]">
+              <button className="w-full py-2 text-xs rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors flex items-center justify-center gap-1 text-[#16193a]">
                 <ExternalLink className="h-3 w-3" />
                 Manage via Stripe
               </button>
@@ -423,7 +423,7 @@ export default function SettingsPage() {
                 <p className="text-[10px] text-gray-600 mb-3">
                   Your payouts are processed through Stripe. Manage your payout settings and view transaction history.
                 </p>
-                <button className="w-full py-2 text-xs rounded-lg border border-[#EFBF05]/30 hover:bg-[#EFBF05]/20 transition-colors flex items-center justify-center gap-1" style={{ color: "#191970" }}>
+                <button className="w-full py-2 text-xs rounded-lg border border-[#EFBF05]/30 hover:bg-[#EFBF05]/20 transition-colors flex items-center justify-center gap-1" style={{ color: "#16193a" }}>
                   <ExternalLink className="h-3 w-3" />
                   Open Stripe Dashboard
                 </button>
@@ -435,8 +435,8 @@ export default function SettingsPage() {
         {/* Preferences Section */}
         <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
           <div className="flex items-center gap-2 mb-4">
-            <Bell className="h-4 w-4" style={{ color: "#191970" }} />
-            <h2 className="text-sm font-semibold" style={{ color: "#191970" }}>
+            <Bell className="h-4 w-4" style={{ color: "#16193a" }} />
+            <h2 className="text-sm font-semibold" style={{ color: "#16193a" }}>
               Preferences
             </h2>
           </div>
@@ -454,7 +454,7 @@ export default function SettingsPage() {
                   onChange={(e) => setPreferences({ ...preferences, email_notifications: e.target.checked })}
                   className="sr-only peer"
                 />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-[#191970]/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#191970]"></div>
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-[#16193a]/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#16193a]"></div>
               </label>
             </div>
             <div className="flex items-center justify-between">
@@ -469,7 +469,7 @@ export default function SettingsPage() {
                   onChange={(e) => setPreferences({ ...preferences, push_notifications: e.target.checked })}
                   className="sr-only peer"
                 />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-[#191970]/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#191970]"></div>
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-[#16193a]/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#16193a]"></div>
               </label>
             </div>
             <div className="flex items-center justify-between">
@@ -484,7 +484,7 @@ export default function SettingsPage() {
                   onChange={(e) => setPreferences({ ...preferences, marketing_emails: e.target.checked })}
                   className="sr-only peer"
                 />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-[#191970]/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#191970]"></div>
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-[#16193a]/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#16193a]"></div>
               </label>
             </div>
             {userType === "seller" && (
@@ -500,7 +500,7 @@ export default function SettingsPage() {
                     onChange={(e) => setPreferences({ ...preferences, sales_notifications: e.target.checked })}
                     className="sr-only peer"
                   />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-[#191970]/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#191970]"></div>
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-[#16193a]/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#16193a]"></div>
                 </label>
               </div>
             )}
@@ -512,7 +512,7 @@ export default function SettingsPage() {
                 id="language"
                 value={preferences.language}
                 onChange={(e) => setPreferences({ ...preferences, language: e.target.value })}
-                className="w-full h-9 px-3 text-sm rounded-lg border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#191970]/20"
+                className="w-full h-9 px-3 text-sm rounded-lg border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#16193a]/20"
               >
                 <option value="en">English</option>
                 <option value="es">Español</option>
@@ -527,7 +527,7 @@ export default function SettingsPage() {
                 id="currency"
                 value={preferences.currency}
                 onChange={(e) => setPreferences({ ...preferences, currency: e.target.value })}
-                className="w-full h-9 px-3 text-sm rounded-lg border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#191970]/20"
+                className="w-full h-9 px-3 text-sm rounded-lg border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#16193a]/20"
               >
                 <option value="usd">USD ($)</option>
                 <option value="eur">EUR (€)</option>
@@ -540,8 +540,8 @@ export default function SettingsPage() {
         {/* Security & Privacy Section */}
         <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
           <div className="flex items-center gap-2 mb-4">
-            <Shield className="h-4 w-4" style={{ color: "#191970" }} />
-            <h2 className="text-sm font-semibold" style={{ color: "#191970" }}>
+            <Shield className="h-4 w-4" style={{ color: "#16193a" }} />
+            <h2 className="text-sm font-semibold" style={{ color: "#16193a" }}>
               Security & Privacy
             </h2>
           </div>
@@ -565,8 +565,8 @@ export default function SettingsPage() {
         {/* Legal Section */}
         <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
           <div className="flex items-center gap-2 mb-4">
-            <Scale className="h-4 w-4" style={{ color: "#191970" }} />
-            <h2 className="text-sm font-semibold" style={{ color: "#191970" }}>
+            <Scale className="h-4 w-4" style={{ color: "#16193a" }} />
+            <h2 className="text-sm font-semibold" style={{ color: "#16193a" }}>
               Legal
             </h2>
           </div>

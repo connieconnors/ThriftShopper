@@ -80,7 +80,7 @@ function ResetPasswordForm() {
         style={{ backgroundColor: "#f5f5f5" }}
       >
         <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" style={{ color: "#191970" }} />
+          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" style={{ color: "#16193a" }} />
           <p className="text-gray-600">Validating reset link...</p>
         </div>
       </div>
@@ -102,7 +102,7 @@ function ResetPasswordForm() {
             <div className="flex justify-center mb-6">
               <div 
                 className="w-20 h-20 rounded-full flex items-center justify-center"
-                style={{ backgroundColor: "#191970" }}
+                style={{ backgroundColor: "#16193a" }}
               >
                 <TSLogo size={48} primaryColor="#ffffff" accentColor="#efbf04" showStar={true} />
               </div>
@@ -146,7 +146,7 @@ function ResetPasswordForm() {
           <div className="flex justify-center mb-6">
             <div 
               className="w-20 h-20 rounded-full flex items-center justify-center"
-              style={{ backgroundColor: "#191970" }}
+              style={{ backgroundColor: "#16193a" }}
             >
               <TSLogo size={48} primaryColor="#ffffff" accentColor="#efbf04" showStar={true} />
             </div>
@@ -174,7 +174,7 @@ function ResetPasswordForm() {
             <div>
               <label 
                 className="block mb-2 text-sm font-medium"
-                style={{ color: "#191970" }}
+                style={{ color: "#16193a" }}
               >
                 New Password
               </label>
@@ -184,7 +184,7 @@ function ResetPasswordForm() {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 focus:border-[#191970] outline-none transition-colors"
+                  className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 focus:border-[#16193a] outline-none transition-colors"
                   placeholder="••••••••"
                   required
                   minLength={6}
@@ -195,7 +195,7 @@ function ResetPasswordForm() {
             <div>
               <label 
                 className="block mb-2 text-sm font-medium"
-                style={{ color: "#191970" }}
+                style={{ color: "#16193a" }}
               >
                 Confirm Password
               </label>
@@ -205,7 +205,7 @@ function ResetPasswordForm() {
                   type="password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 focus:border-[#191970] outline-none transition-colors"
+                  className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 focus:border-[#16193a] outline-none transition-colors"
                   placeholder="••••••••"
                   required
                   minLength={6}
@@ -218,7 +218,7 @@ function ResetPasswordForm() {
               disabled={isLoading}
               whileTap={{ scale: 0.98 }}
               className="w-full py-4 rounded-xl text-white font-semibold shadow-lg mt-6 disabled:opacity-50 flex items-center justify-center gap-2"
-              style={{ backgroundColor: "#191970" }}
+              style={{ backgroundColor: "#16193a" }}
             >
               {isLoading ? (
                 <>
@@ -235,7 +235,7 @@ function ResetPasswordForm() {
             <Link
               href="/login"
               className="text-sm hover:underline"
-              style={{ color: "#191970" }}
+              style={{ color: "#16193a" }}
             >
               Back to Sign In
             </Link>
@@ -250,7 +250,7 @@ export default function ResetPasswordPage() {
   return (
     <Suspense fallback={
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#f5f5f5" }}>
-        <Loader2 className="w-8 h-8 animate-spin" style={{ color: "#191970" }} />
+        <Loader2 className="w-8 h-8 animate-spin" style={{ color: "#16193a" }} />
       </div>
     }>
       <ResetPasswordForm />

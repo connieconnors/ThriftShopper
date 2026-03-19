@@ -75,13 +75,13 @@ export function AddListing({ onSubmit, onCancel }: AddListingProps) {
             onClick={onCancel}
             className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors"
           >
-            <X size={24} color="#191970" />
+            <X size={24} color="#16193a" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-xl p-8 space-y-6">
           <div>
-            <label className="block mb-3" style={{ color: '#191970' }}>
+            <label className="block mb-3" style={{ color: '#16193a' }}>
               Photos (up to 5)
             </label>
             <div className="grid grid-cols-5 gap-3 mb-3">
@@ -98,7 +98,7 @@ export function AddListing({ onSubmit, onCancel }: AddListingProps) {
                 </div>
               ))}
               {images.length < 5 && (
-                <label className="aspect-square rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center cursor-pointer hover:border-[#191970] transition-colors">
+                <label className="aspect-square rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center cursor-pointer hover:border-[#16193a] transition-colors">
                   <input
                     type="file"
                     accept="image/*"
@@ -123,21 +123,21 @@ export function AddListing({ onSubmit, onCancel }: AddListingProps) {
           </div>
 
           <div>
-            <label className="block mb-2" style={{ color: '#191970' }}>
+            <label className="block mb-2" style={{ color: '#16193a' }}>
               Title
             </label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#191970] outline-none transition-colors"
+              className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#16193a] outline-none transition-colors"
               placeholder="What are you selling?"
               required
             />
           </div>
 
           <div>
-            <label className="block mb-2" style={{ color: '#191970' }}>
+            <label className="block mb-2" style={{ color: '#16193a' }}>
               Price
             </label>
             <div className="relative">
@@ -146,7 +146,7 @@ export function AddListing({ onSubmit, onCancel }: AddListingProps) {
                 type="number"
                 value={price}
                 onChange={(e) => setPrice(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#191970] outline-none transition-colors"
+                className="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#16193a] outline-none transition-colors"
                 placeholder="0.00"
                 step="0.01"
                 min="0"
@@ -156,7 +156,7 @@ export function AddListing({ onSubmit, onCancel }: AddListingProps) {
           </div>
 
           <div>
-            <label className="block mb-2" style={{ color: '#191970' }}>
+            <label className="block mb-2" style={{ color: '#16193a' }}>
               Description
             </label>
             <div className="relative">
@@ -164,14 +164,14 @@ export function AddListing({ onSubmit, onCancel }: AddListingProps) {
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#191970] outline-none transition-colors min-h-[120px] resize-none"
+                className="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#16193a] outline-none transition-colors min-h-[120px] resize-none"
                 placeholder="Tell buyers about your item..."
               />
             </div>
           </div>
 
           <div>
-            <label className="block mb-2" style={{ color: '#191970' }}>
+            <label className="block mb-2" style={{ color: '#16193a' }}>
               Keywords & Moods
             </label>
             <div className="flex flex-wrap gap-2 mb-3">
@@ -179,7 +179,7 @@ export function AddListing({ onSubmit, onCancel }: AddListingProps) {
                 <span
                   key={keyword}
                   className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm text-white"
-                  style={{ backgroundColor: '#191970' }}
+                  style={{ backgroundColor: '#16193a' }}
                 >
                   {keyword}
                   <button
@@ -205,7 +205,7 @@ export function AddListing({ onSubmit, onCancel }: AddListingProps) {
                       addKeyword(keywordInput);
                     }
                   }}
-                  className="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#191970] outline-none transition-colors"
+                  className="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#16193a] outline-none transition-colors"
                   placeholder="Add a keyword..."
                 />
               </div>
@@ -213,7 +213,7 @@ export function AddListing({ onSubmit, onCancel }: AddListingProps) {
                 type="button"
                 onClick={() => addKeyword(keywordInput)}
                 className="px-6 py-3 rounded-lg text-white"
-                style={{ backgroundColor: '#191970' }}
+                style={{ backgroundColor: '#16193a' }}
               >
                 <Plus size={20} />
               </button>
@@ -226,7 +226,7 @@ export function AddListing({ onSubmit, onCancel }: AddListingProps) {
                   type="button"
                   onClick={() => addKeyword(mood)}
                   className="px-3 py-1 rounded-full text-sm border-2 hover:bg-gray-50 transition-colors"
-                  style={{ borderColor: '#cfb53b', color: '#191970' }}
+                  style={{ borderColor: '#cfb53b', color: '#16193a' }}
                 >
                   {mood}
                 </button>
@@ -238,7 +238,7 @@ export function AddListing({ onSubmit, onCancel }: AddListingProps) {
             type="submit"
             whileTap={{ scale: 0.98 }}
             className="w-full py-4 rounded-lg text-white font-medium shadow-lg mt-8"
-            style={{ backgroundColor: '#191970' }}
+            style={{ backgroundColor: '#16193a' }}
             disabled={images.length === 0 || !title || !price || keywords.length === 0}
           >
             List Item

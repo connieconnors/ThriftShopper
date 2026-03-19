@@ -28,7 +28,7 @@ export function SellerLogin({ onLogin }: SellerLoginProps) {
         className="w-full max-w-md p-8 rounded-2xl bg-white shadow-xl"
       >
         <div className="flex justify-center mb-6">
-          <div className="w-20 h-20 rounded-full flex items-center justify-center" style={{ backgroundColor: '#191970' }}>
+          <div className="w-20 h-20 rounded-full flex items-center justify-center" style={{ backgroundColor: '#16193a' }}>
             <TSLogo size={48} primaryColor="#ffffff" accentColor="#efbf04" />
           </div>
         </div>
@@ -42,7 +42,7 @@ export function SellerLogin({ onLogin }: SellerLoginProps) {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block mb-2 text-sm" style={{ color: '#191970' }}>
+            <label className="block mb-2 text-sm" style={{ color: '#16193a' }}>
               Email
             </label>
             <div className="relative">
@@ -51,7 +51,7 @@ export function SellerLogin({ onLogin }: SellerLoginProps) {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#191970] outline-none transition-colors"
+                className="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#16193a] outline-none transition-colors"
                 placeholder="your@email.com"
                 required
               />
@@ -59,7 +59,7 @@ export function SellerLogin({ onLogin }: SellerLoginProps) {
           </div>
 
           <div>
-            <label className="block mb-2 text-sm" style={{ color: '#191970' }}>
+            <label className="block mb-2 text-sm" style={{ color: '#16193a' }}>
               Password
             </label>
             <div className="relative">
@@ -68,7 +68,7 @@ export function SellerLogin({ onLogin }: SellerLoginProps) {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#191970] outline-none transition-colors"
+                className="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#16193a] outline-none transition-colors"
                 placeholder="••••••••"
                 required
               />
@@ -79,7 +79,7 @@ export function SellerLogin({ onLogin }: SellerLoginProps) {
             type="submit"
             whileTap={{ scale: 0.98 }}
             className="w-full py-3 rounded-lg text-white font-medium shadow-lg mt-6"
-            style={{ backgroundColor: '#191970' }}
+            style={{ backgroundColor: '#16193a' }}
           >
             Sign In
           </motion.button>

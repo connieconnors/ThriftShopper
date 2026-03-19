@@ -34,7 +34,7 @@ interface SwipeFeedProps {
 const COLORS = {
   navy: '#000080',
   gold: '#efbf04',
-  midnightBlue: '#191970',
+  midnightBlue: '#16193a',
   oldGold: '#cfb53b',
 };
 

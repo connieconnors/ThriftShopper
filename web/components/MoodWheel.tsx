@@ -48,7 +48,7 @@ export function MoodWheel({ onMoodChange, selectedMoods }: MoodWheelProps) {
   if (!isMounted) {
     // Return a simple placeholder during SSR to prevent hydration mismatch
     return (
-      <div className="w-16 h-16 rounded-full flex items-center justify-center shadow-lg relative overflow-hidden" style={{ backgroundColor: '#191970' }}>
+      <div className="w-16 h-16 rounded-full flex items-center justify-center shadow-lg relative overflow-hidden" style={{ backgroundColor: '#16193a' }}>
         <span className="text-2xl relative z-10">✨</span>
       </div>
     );
@@ -219,7 +219,7 @@ export function MoodWheel({ onMoodChange, selectedMoods }: MoodWheelProps) {
                     className="w-full py-2 rounded-lg text-sm font-medium transition-all"
                     style={{
                       backgroundColor: '#efbf04',
-                      color: '#191970',
+                      color: '#16193a',
                     }}
                   >
                     Apply Filter

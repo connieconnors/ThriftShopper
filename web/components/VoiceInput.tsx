@@ -83,7 +83,7 @@ export function VoiceInput({ onVoiceQuery, onListeningChange }: VoiceInputProps)
     return (
       <button
         className="w-11 h-11 rounded-full flex items-center justify-center opacity-50 cursor-not-allowed"
-        style={{ backgroundColor: '#191970' }}
+        style={{ backgroundColor: '#16193a' }}
         disabled
       >
         <Mic size={22} className="text-white/50" />
@@ -134,7 +134,7 @@ export function VoiceInput({ onVoiceQuery, onListeningChange }: VoiceInputProps)
         disabled={isProcessing}
         className="w-11 h-11 rounded-full flex items-center justify-center relative"
         style={{
-          backgroundColor: isRecording ? '#cfb53b' : isProcessing ? '#6b46c1' : '#191970',
+          backgroundColor: isRecording ? '#cfb53b' : isProcessing ? '#6b46c1' : '#16193a',
         }}
         whileTap={{ scale: 0.9 }}
         animate={isRecording ? { scale: [1, 1.05, 1] } : {}}

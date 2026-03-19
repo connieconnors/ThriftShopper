@@ -100,7 +100,7 @@ export async function POST(request: Request) {
                   <img src="${logoUrl}" alt="ThriftShopper" width="48" height="48" style="display: block; width: 48px; height: 48px; border-radius: 50%;" />
                 </td></tr>
               </table>
-              <h1 style="margin: 0; font-family: 'Playfair Display', Georgia, serif; font-size: 28px; color: #191970; font-weight: 700;" class="message-title">You have a new message</h1>
+              <h1 style="margin: 0; font-family: 'Playfair Display', Georgia, serif; font-size: 28px; color: #16193a; font-weight: 700;" class="message-title">You have a new message</h1>
             </td>
           </tr>
           <!-- Gold accent line -->
@@ -121,7 +121,7 @@ export async function POST(request: Request) {
                   <strong style="color: #333333;">From:</strong> ${escapedBuyerName}
                 </p>
                 <p style="margin: 0 0 14px; font-size: 14px; color: #666666;">
-                  <strong style="color: #333333;">Listing:</strong> <span style="color: #191970; font-weight: 600;">${escapedListingTitle}</span>
+                  <strong style="color: #333333;">Listing:</strong> <span style="color: #16193a; font-weight: 600;">${escapedListingTitle}</span>
                 </p>
                 <p style="margin: 0; font-size: 15px; line-height: 1.6; color: #333333;">${escapedMessageBody}</p>
               </div>

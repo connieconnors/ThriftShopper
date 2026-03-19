@@ -9,7 +9,7 @@ interface TSLogoProps {
 
 export function TSLogo({ 
   size = 24, 
-  primaryColor = '#191970',
+  primaryColor = '#16193a',
   accentColor = '#cfb53b',
   showStar = false
 }: TSLogoProps) {

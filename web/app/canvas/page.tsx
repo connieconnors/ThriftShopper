@@ -118,7 +118,7 @@ export default function BuyerCanvasPage() {
 
   useEffect(() => {
     const previous = document.body.style.backgroundColor;
-    document.body.style.backgroundColor = "#191970";
+    document.body.style.backgroundColor = "#16193a";
     return () => {
       document.body.style.backgroundColor = previous;
     };
@@ -317,7 +317,7 @@ export default function BuyerCanvasPage() {
   if (!mounted || authLoading || isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin h-8 w-8 border-2 border-[#191970] border-t-transparent rounded-full" />
+        <div className="animate-spin h-8 w-8 border-2 border-[#16193a] border-t-transparent rounded-full" />
       </div>
     );
   }
@@ -331,13 +331,13 @@ export default function BuyerCanvasPage() {
 
   return (
     <div
-      className="min-h-screen pb-16 bg-[#191970]"
+      className="min-h-screen pb-16 bg-[#16193a]"
       style={{ overscrollBehaviorY: "contain" }}
     >
       {/* Header */}
       <header
         className="sticky top-0 z-40 px-4 py-2 flex items-center justify-between shadow-sm"
-        style={{ backgroundColor: "#191970" }}
+        style={{ backgroundColor: "#16193a" }}
       >
         <Link href="/browse" className="flex items-center gap-2">
           <TSLogo size={28} primaryColor="#ffffff" accentColor="#DFAF37" />
@@ -359,7 +359,7 @@ export default function BuyerCanvasPage() {
         <div className="flex items-center gap-3 mb-4">
           <div
             className="w-12 h-12 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0 shadow-sm"
-            style={{ backgroundColor: "#191970" }}
+            style={{ backgroundColor: "#16193a" }}
           >
             {profile?.avatar_url ? (
               <img src={profile.avatar_url} alt="Profile" className="w-full h-full object-cover" />
@@ -370,7 +370,7 @@ export default function BuyerCanvasPage() {
             )}
           </div>
           <div className="flex-1">
-            <h1 className="text-lg font-semibold mb-0.5 font-editorial" style={{ color: "#191970" }}>
+            <h1 className="text-lg font-semibold mb-0.5 font-editorial" style={{ color: "#16193a" }}>
               My Canvas
             </h1>
             <p className="text-xs text-gray-600">Treasure hunter since {getJoinYear()}</p>
@@ -385,7 +385,7 @@ export default function BuyerCanvasPage() {
               placeholder="What's your treasure vibe today?"
               value={vibeInput}
               onChange={(e) => setVibeInput(e.target.value)}
-              className="w-full bg-gray-50 rounded-full px-4 py-3 pr-14 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#191970]/20 border border-gray-200"
+              className="w-full bg-gray-50 rounded-full px-4 py-3 pr-14 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#16193a]/20 border border-gray-200"
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   const query = vibeInput.trim();
@@ -411,7 +411,7 @@ export default function BuyerCanvasPage() {
                   ? "bg-violet-500 cursor-wait"
                   : ""
               } ${!isVibeVoiceSupported ? "opacity-50 cursor-not-allowed" : ""}`}
-              style={!isRecordingVibe && !isProcessingVibe ? { backgroundColor: "#191970" } : {}}
+              style={!isRecordingVibe && !isProcessingVibe ? { backgroundColor: "#16193a" } : {}}
             >
               {isProcessingVibe ? (
                 <Loader2 className="h-4 w-4 text-white animate-spin" />
@@ -434,7 +434,7 @@ export default function BuyerCanvasPage() {
               <span
                 key={vibe}
                 className="px-3 py-1 rounded-full text-xs font-medium shadow-sm"
-                style={{ backgroundColor: "#191970", color: "#ffffff" }}
+                style={{ backgroundColor: "#16193a", color: "#ffffff" }}
               >
                 {vibe}
               </span>
@@ -452,7 +452,7 @@ export default function BuyerCanvasPage() {
         <div className="space-y-3 max-w-md mx-auto">
           {/* Discovery */}
           <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm min-h-[180px]">
-            <h3 className="text-sm font-semibold mb-2" style={{ color: "#191970" }}>
+            <h3 className="text-sm font-semibold mb-2" style={{ color: "#16193a" }}>
               Discovery
             </h3>
             <p className="text-xs text-gray-600 leading-relaxed mb-5">
@@ -477,7 +477,7 @@ export default function BuyerCanvasPage() {
               />
               <button
                 onClick={() => discoveryImageInputRef.current?.click()}
-                className="flex-1 h-8 text-xs gap-1.5 rounded-lg border border-gray-200 flex items-center justify-center bg-white text-gray-700 hover:bg-gray-50 hover:border-[#191970] transition-colors cursor-pointer"
+                className="flex-1 h-8 text-xs gap-1.5 rounded-lg border border-gray-200 flex items-center justify-center bg-white text-gray-700 hover:bg-gray-50 hover:border-[#16193a] transition-colors cursor-pointer"
               >
                 <Upload className="h-3.5 w-3.5" />
                 Add Image
@@ -490,7 +490,7 @@ export default function BuyerCanvasPage() {
                     ? "bg-rose-500 text-white border-rose-500 animate-pulse"
                     : isProcessingDiscovery
                     ? "bg-violet-500 text-white border-violet-500 cursor-wait"
-                    : "bg-white text-gray-700 hover:bg-gray-50 hover:border-[#191970]"
+                    : "bg-white text-gray-700 hover:bg-gray-50 hover:border-[#16193a]"
                 } ${!isVoiceSupported ? "opacity-50 cursor-not-allowed" : ""}`}
               >
                 {isProcessingDiscovery ? (
@@ -527,7 +527,7 @@ export default function BuyerCanvasPage() {
               placeholder="I'd really love to find another..."
               value={discoveryText}
               onChange={(e) => setDiscoveryText(e.target.value)}
-              className="w-full min-h-[80px] bg-white rounded-lg px-3 py-2 text-xs placeholder:text-gray-400 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#191970]/20 focus:border-[#191970] resize-none"
+              className="w-full min-h-[80px] bg-white rounded-lg px-3 py-2 text-xs placeholder:text-gray-400 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#16193a]/20 focus:border-[#16193a] resize-none"
               rows={4}
             />
             {discoveryTranscript && isRecordingDiscovery && (
@@ -537,7 +537,7 @@ export default function BuyerCanvasPage() {
 
           {/* Stories */}
           <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm min-h-[180px]">
-            <h3 className="text-sm font-semibold mb-2" style={{ color: "#191970" }}>
+            <h3 className="text-sm font-semibold mb-2" style={{ color: "#16193a" }}>
               Stories
             </h3>
             <p className="text-xs text-gray-600 leading-relaxed mb-3">
@@ -554,7 +554,7 @@ export default function BuyerCanvasPage() {
                     ? "bg-rose-500 text-white border-rose-500 animate-pulse"
                     : isProcessingStories
                     ? "bg-violet-500 text-white border-violet-500 cursor-wait"
-                    : "bg-white text-gray-700 hover:bg-gray-50 hover:border-[#191970]"
+                    : "bg-white text-gray-700 hover:bg-gray-50 hover:border-[#16193a]"
                 } ${!isVoiceSupported ? "opacity-50 cursor-not-allowed" : ""}`}
               >
                 {isProcessingStories ? (
@@ -579,7 +579,7 @@ export default function BuyerCanvasPage() {
               placeholder="This reminded me of that time..."
               value={storiesText}
               onChange={(e) => setStoriesText(e.target.value)}
-              className="w-full min-h-[120px] bg-white rounded-lg px-3 py-2 text-xs placeholder:text-gray-400 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#191970]/20 focus:border-[#191970] resize-none"
+              className="w-full min-h-[120px] bg-white rounded-lg px-3 py-2 text-xs placeholder:text-gray-400 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#16193a]/20 focus:border-[#16193a] resize-none"
               rows={6}
             />
           </div>
@@ -595,7 +595,7 @@ export default function BuyerCanvasPage() {
             className="flex items-center justify-between w-full"
           >
             <div className="flex items-center gap-2">
-              <h2 className="text-sm font-semibold" style={{ color: "#191970" }}>
+              <h2 className="text-sm font-semibold" style={{ color: "#16193a" }}>
                 Favorites
               </h2>
               <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">{favorites.length}</span>
@@ -620,7 +620,7 @@ export default function BuyerCanvasPage() {
                     >
                       <Link
                         href={`/listing/${item.id}`}
-                        className="flex items-center gap-2 px-3 py-2 pr-8 rounded-lg border border-gray-200 bg-gray-50 hover:bg-gray-100 hover:border-[#191970] transition-all shadow-sm min-w-0"
+                        className="flex items-center gap-2 px-3 py-2 pr-8 rounded-lg border border-gray-200 bg-gray-50 hover:bg-gray-100 hover:border-[#16193a] transition-all shadow-sm min-w-0"
                       >
                         {imageUrl && (
                           <img
@@ -634,7 +634,7 @@ export default function BuyerCanvasPage() {
                       <button
                         onClick={(e) => removeBookmark(item.id, e)}
                         disabled={removingBookmarkId === item.id}
-                        className="absolute top-0 right-0 -mt-1 -mr-1 w-5 h-5 rounded-full bg-[#191970] text-white flex items-center justify-center hover:opacity-90 transition-colors disabled:opacity-50 z-10"
+                        className="absolute top-0 right-0 -mt-1 -mr-1 w-5 h-5 rounded-full bg-[#16193a] text-white flex items-center justify-center hover:opacity-90 transition-colors disabled:opacity-50 z-10"
                         aria-label="Remove favorite"
                       >
                         {removingBookmarkId === item.id ? (
@@ -658,7 +658,7 @@ export default function BuyerCanvasPage() {
             className="flex items-center justify-between w-full"
           >
             <div className="flex items-center gap-2">
-              <h2 className="text-sm font-semibold" style={{ color: "#191970" }}>
+              <h2 className="text-sm font-semibold" style={{ color: "#16193a" }}>
                 Purchases
               </h2>
               <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">{purchases.length}</span>
@@ -678,7 +678,7 @@ export default function BuyerCanvasPage() {
                   <Link
                     key={order.id}
                     href={`/orders/${order.id}`}
-                    className="px-3 py-1.5 rounded-full border border-gray-200 bg-gray-50 flex items-center gap-1.5 hover:bg-gray-100 hover:border-[#191970] transition-all shadow-sm"
+                    className="px-3 py-1.5 rounded-full border border-gray-200 bg-gray-50 flex items-center gap-1.5 hover:bg-gray-100 hover:border-[#16193a] transition-all shadow-sm"
                   >
                     <span className="text-xs text-gray-700">{order.listing?.title || "Item"}</span>
                     {order.status && (
@@ -702,7 +702,7 @@ export default function BuyerCanvasPage() {
         <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
           <button onClick={() => setShowBadges(!showBadges)} className="flex items-center justify-between w-full">
             <div className="flex items-center gap-2">
-              <h2 className="text-sm font-semibold" style={{ color: "#191970" }}>
+              <h2 className="text-sm font-semibold" style={{ color: "#16193a" }}>
                 Badges
               </h2>
               <span className="text-xs text-gray-500">Earn as you hunt</span>
@@ -736,7 +736,7 @@ export default function BuyerCanvasPage() {
       {/* Footer Navigation - Simplified like v0 */}
       <nav
         className="fixed bottom-0 left-0 right-0 border-t border-gray-200 px-4 py-2.5 z-30"
-        style={{ backgroundColor: "#191970" }}
+        style={{ backgroundColor: "#16193a" }}
       >
         <div className="max-w-2xl mx-auto flex items-center justify-around">
           <button

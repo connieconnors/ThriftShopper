@@ -8,7 +8,7 @@ export default function ProhibitedItemsPage() {
   return (
     <main className="min-h-screen flex flex-col" style={{ backgroundColor: '#f8f9fa' }}>
       {/* Header */}
-      <header className="p-4 flex items-center justify-between" style={{ backgroundColor: '#191970' }}>
+      <header className="p-4 flex items-center justify-between" style={{ backgroundColor: '#16193a' }}>
         <Link href="/browse" className="flex items-center gap-2">
           <TSLogo size={32} primaryColor="#ffffff" accentColor="#efbf04" />
           <span className="text-white font-semibold">ThriftShopper</span>
@@ -25,7 +25,7 @@ export default function ProhibitedItemsPage() {
       {/* Content */}
       <div className="flex-1 max-w-4xl mx-auto w-full px-4 py-8">
         <div className="bg-white rounded-lg shadow-sm p-8">
-          <h1 className="text-3xl font-bold mb-2" style={{ color: '#191970' }}>
+          <h1 className="text-3xl font-bold mb-2" style={{ color: '#16193a' }}>
             ThriftShopper Prohibited & Restricted Items
           </h1>
           <p className="text-sm text-gray-500 mb-6">
@@ -45,7 +45,7 @@ export default function ProhibitedItemsPage() {
             </div>
 
             <section className="mb-8">
-              <h2 className="text-2xl font-bold mb-4" style={{ color: '#191970' }}>
+              <h2 className="text-2xl font-bold mb-4" style={{ color: '#16193a' }}>
                 PROHIBITED ITEMS (Never Allowed)
               </h2>
               <p className="text-gray-700 leading-relaxed mb-4">
@@ -54,7 +54,7 @@ export default function ProhibitedItemsPage() {
 
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-xl font-semibold mb-3" style={{ color: '#191970' }}>
+                  <h3 className="text-xl font-semibold mb-3" style={{ color: '#16193a' }}>
                     EVERYDAY APPAREL & WEARABLES
                   </h3>
                   <p className="text-gray-700 font-semibold mb-2">Prohibited:</p>
@@ -81,7 +81,7 @@ export default function ProhibitedItemsPage() {
                 </div>
 
                 <div>
-                  <h3 className="text-xl font-semibold mb-3" style={{ color: '#191970' }}>
+                  <h3 className="text-xl font-semibold mb-3" style={{ color: '#16193a' }}>
                     COUNTERFEIT & REPLICA GOODS
                   </h3>
                   <ul className="list-disc list-inside text-gray-700 leading-relaxed space-y-1 ml-4">
@@ -93,7 +93,7 @@ export default function ProhibitedItemsPage() {
                 </div>
 
                 <div>
-                  <h3 className="text-xl font-semibold mb-3" style={{ color: '#191970' }}>
+                  <h3 className="text-xl font-semibold mb-3" style={{ color: '#16193a' }}>
                     ILLEGAL & DANGEROUS ITEMS
                   </h3>
                   <ul className="list-disc list-inside text-gray-700 leading-relaxed space-y-1 ml-4">
@@ -107,7 +107,7 @@ export default function ProhibitedItemsPage() {
                 </div>
 
                 <div>
-                  <h3 className="text-xl font-semibold mb-3" style={{ color: '#191970' }}>
+                  <h3 className="text-xl font-semibold mb-3" style={{ color: '#16193a' }}>
                     REGULATED SUBSTANCES
                   </h3>
                   <ul className="list-disc list-inside text-gray-700 leading-relaxed space-y-1 ml-4">
@@ -119,7 +119,7 @@ export default function ProhibitedItemsPage() {
                 </div>
 
                 <div>
-                  <h3 className="text-xl font-semibold mb-3" style={{ color: '#191970' }}>
+                  <h3 className="text-xl font-semibold mb-3" style={{ color: '#16193a' }}>
                     PERSONAL & PRIVATE INFORMATION
                   </h3>
                   <ul className="list-disc list-inside text-gray-700 leading-relaxed space-y-1 ml-4">
@@ -133,7 +133,7 @@ export default function ProhibitedItemsPage() {
                 </div>
 
                 <div>
-                  <h3 className="text-xl font-semibold mb-3" style={{ color: '#191970' }}>
+                  <h3 className="text-xl font-semibold mb-3" style={{ color: '#16193a' }}>
                     HUMAN & ANIMAL MATERIALS
                   </h3>
                   <ul className="list-disc list-inside text-gray-700 leading-relaxed space-y-1 ml-4">
@@ -147,7 +147,7 @@ export default function ProhibitedItemsPage() {
                 </div>
 
                 <div>
-                  <h3 className="text-xl font-semibold mb-3" style={{ color: '#191970' }}>
+                  <h3 className="text-xl font-semibold mb-3" style={{ color: '#16193a' }}>
                     OFFENSIVE & HARMFUL CONTENT
                   </h3>
                   <ul className="list-disc list-inside text-gray-700 leading-relaxed space-y-1 ml-4">
@@ -161,7 +161,7 @@ export default function ProhibitedItemsPage() {
                 </div>
 
                 <div>
-                  <h3 className="text-xl font-semibold mb-3" style={{ color: '#191970' }}>
+                  <h3 className="text-xl font-semibold mb-3" style={{ color: '#16193a' }}>
                     MASS-PRODUCED RETAIL INVENTORY
                   </h3>
                   <ul className="list-disc list-inside text-gray-700 leading-relaxed space-y-1 ml-4">
@@ -174,7 +174,7 @@ export default function ProhibitedItemsPage() {
                 </div>
 
                 <div>
-                  <h3 className="text-xl font-semibold mb-3" style={{ color: '#191970' }}>
+                  <h3 className="text-xl font-semibold mb-3" style={{ color: '#16193a' }}>
                     INTANGIBLE & UNVERIFIABLE ITEMS
                   </h3>
                   <ul className="list-disc list-inside text-gray-700 leading-relaxed space-y-1 ml-4">
@@ -188,19 +188,19 @@ export default function ProhibitedItemsPage() {
                 </div>
 
                 <div>
-                  <h3 className="text-xl font-semibold mb-3" style={{ color: '#191970' }}>
+                  <h3 className="text-xl font-semibold mb-3" style={{ color: '#16193a' }}>
                     FOOD & CONSUMABLES
                   </h3>
                 </div>
 
                 <div>
-                  <h3 className="text-xl font-semibold mb-3" style={{ color: '#191970' }}>
+                  <h3 className="text-xl font-semibold mb-3" style={{ color: '#16193a' }}>
                     BEAUTY & PERSONAL CARE
                   </h3>
                 </div>
 
                 <div>
-                  <h3 className="text-xl font-semibold mb-3" style={{ color: '#191970' }}>
+                  <h3 className="text-xl font-semibold mb-3" style={{ color: '#16193a' }}>
                     MISCELLANEOUS PROHIBITED
                   </h3>
                   <ul className="list-disc list-inside text-gray-700 leading-relaxed space-y-1 ml-4">
@@ -221,7 +221,7 @@ export default function ProhibitedItemsPage() {
             </div>
 
             <section className="mb-8">
-              <h2 className="text-2xl font-bold mb-4" style={{ color: '#191970' }}>
+              <h2 className="text-2xl font-bold mb-4" style={{ color: '#16193a' }}>
                 RESTRICTED ITEMS (Allowed with Conditions)
               </h2>
               <p className="text-gray-700 leading-relaxed mb-4">
@@ -230,7 +230,7 @@ export default function ProhibitedItemsPage() {
 
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-xl font-semibold mb-3" style={{ color: '#191970' }}>
+                  <h3 className="text-xl font-semibold mb-3" style={{ color: '#16193a' }}>
                     VINTAGE "COLLECTIBLES"
                   </h3>
                   <p className="text-gray-700 font-semibold mb-2">Allowed only if:</p>
@@ -250,7 +250,7 @@ export default function ProhibitedItemsPage() {
                 </div>
 
                 <div>
-                  <h3 className="text-xl font-semibold mb-3" style={{ color: '#191970' }}>
+                  <h3 className="text-xl font-semibold mb-3" style={{ color: '#16193a' }}>
                     ART & REPRODUCTIONS
                   </h3>
                   <p className="text-gray-700 font-semibold mb-2">Allowed only if:</p>
@@ -270,7 +270,7 @@ export default function ProhibitedItemsPage() {
                 </div>
 
                 <div>
-                  <h3 className="text-xl font-semibold mb-3" style={{ color: '#191970' }}>
+                  <h3 className="text-xl font-semibold mb-3" style={{ color: '#16193a' }}>
                     BOOKS & MEDIA
                   </h3>
                   <p className="text-gray-700 font-semibold mb-2">Allowed:</p>
@@ -288,7 +288,7 @@ export default function ProhibitedItemsPage() {
                 </div>
 
                 <div>
-                  <h3 className="text-xl font-semibold mb-3" style={{ color: '#191970' }}>
+                  <h3 className="text-xl font-semibold mb-3" style={{ color: '#16193a' }}>
                     COLLECTIBLE CURRENCY & STAMPS
                   </h3>
                   <p className="text-gray-700 font-semibold mb-2">Allowed only if:</p>
@@ -306,7 +306,7 @@ export default function ProhibitedItemsPage() {
                 </div>
 
                 <div>
-                  <h3 className="text-xl font-semibold mb-3" style={{ color: '#191970' }}>
+                  <h3 className="text-xl font-semibold mb-3" style={{ color: '#16193a' }}>
                     ELECTRONICS & TECHNOLOGY
                   </h3>
                   <p className="text-gray-700 font-semibold mb-2">Allowed only if:</p>
@@ -326,7 +326,7 @@ export default function ProhibitedItemsPage() {
                 </div>
 
                 <div>
-                  <h3 className="text-xl font-semibold mb-3" style={{ color: '#191970' }}>
+                  <h3 className="text-xl font-semibold mb-3" style={{ color: '#16193a' }}>
                     FURNITURE & HOME GOODS
                   </h3>
                   <p className="text-gray-700 font-semibold mb-2">Allowed:</p>
@@ -349,7 +349,7 @@ export default function ProhibitedItemsPage() {
             </div>
 
             <section className="mb-8">
-              <h2 className="text-2xl font-bold mb-4" style={{ color: '#191970' }}>
+              <h2 className="text-2xl font-bold mb-4" style={{ color: '#16193a' }}>
                 SELLER RESPONSIBILITIES
               </h2>
               <p className="text-gray-700 leading-relaxed mb-4">
@@ -370,7 +370,7 @@ export default function ProhibitedItemsPage() {
             </div>
 
             <section className="mb-8">
-              <h2 className="text-2xl font-bold mb-4" style={{ color: '#191970' }}>
+              <h2 className="text-2xl font-bold mb-4" style={{ color: '#16193a' }}>
                 ENFORCEMENT
               </h2>
               <p className="text-gray-700 leading-relaxed mb-4">
@@ -399,7 +399,7 @@ export default function ProhibitedItemsPage() {
             </div>
 
             <section className="mb-8">
-              <h2 className="text-2xl font-bold mb-4" style={{ color: '#191970' }}>
+              <h2 className="text-2xl font-bold mb-4" style={{ color: '#16193a' }}>
                 REPORTING VIOLATIONS
               </h2>
               <p className="text-gray-700 leading-relaxed">
@@ -416,7 +416,7 @@ export default function ProhibitedItemsPage() {
             </div>
 
             <section className="mb-8">
-              <h2 className="text-2xl font-bold mb-4" style={{ color: '#191970' }}>
+              <h2 className="text-2xl font-bold mb-4" style={{ color: '#16193a' }}>
                 QUESTIONS?
               </h2>
               <p className="text-gray-700 leading-relaxed mb-2">
@@ -435,7 +435,7 @@ export default function ProhibitedItemsPage() {
             </div>
 
             <section className="mb-8">
-              <h2 className="text-xl font-semibold mb-3" style={{ color: '#191970' }}>
+              <h2 className="text-xl font-semibold mb-3" style={{ color: '#16193a' }}>
                 Legal Disclaimer
               </h2>
               <p className="text-gray-700 leading-relaxed text-sm italic">

@@ -11,7 +11,7 @@ export default function MarketplaceGuidelinesPage() {
       style={{ backgroundColor: "#f8f9fa" }}
     >
       {/* Header */}
-      <header className="p-4 flex items-center justify-between" style={{ backgroundColor: "#191970" }}>
+      <header className="p-4 flex items-center justify-between" style={{ backgroundColor: "#16193a" }}>
         <Link href="/browse" className="flex items-center gap-2">
           <TSLogo size={32} primaryColor="#ffffff" accentColor="#efbf04" />
           <span className="text-white font-semibold">ThriftShopper</span>
@@ -28,7 +28,7 @@ export default function MarketplaceGuidelinesPage() {
       {/* Content */}
       <div className="flex-1 max-w-4xl mx-auto w-full px-4 py-8">
         <div className="bg-white rounded-lg shadow-sm p-8">
-          <h1 className="text-3xl font-bold mb-2 font-editorial" style={{ color: "#191970" }}>
+          <h1 className="text-3xl font-bold mb-2 font-editorial" style={{ color: "#16193a" }}>
             ThriftShopper Seller Guidelines
           </h1>
           <p className="text-sm text-gray-500 mb-6">Last Updated: December 15, 2025</p>
@@ -49,7 +49,7 @@ export default function MarketplaceGuidelinesPage() {
             </p>
 
             <section className="mb-8">
-              <h2 className="text-2xl font-bold mb-4 font-editorial" style={{ color: "#191970" }}>
+              <h2 className="text-2xl font-bold mb-4 font-editorial" style={{ color: "#16193a" }}>
                 1. Our Marketplace Philosophy
               </h2>
               <p className="text-gray-700 leading-relaxed mb-4">
@@ -66,7 +66,7 @@ export default function MarketplaceGuidelinesPage() {
             </section>
 
             <section className="mb-8">
-              <h2 className="text-2xl font-bold mb-4 font-editorial" style={{ color: "#191970" }}>
+              <h2 className="text-2xl font-bold mb-4 font-editorial" style={{ color: "#16193a" }}>
                 2. What Sells Well on ThriftShopper
               </h2>
               <p className="text-gray-700 leading-relaxed mb-4">We encourage listings that are:</p>
@@ -92,7 +92,7 @@ export default function MarketplaceGuidelinesPage() {
             </section>
 
             <section className="mb-8">
-              <h2 className="text-2xl font-bold mb-4" style={{ color: "#191970" }}>
+              <h2 className="text-2xl font-bold mb-4" style={{ color: "#16193a" }}>
                 3. Items We Do Not Allow
               </h2>
               <p className="text-gray-700 leading-relaxed mb-4">
@@ -113,10 +113,10 @@ export default function MarketplaceGuidelinesPage() {
             </section>
 
             <section className="mb-8">
-              <h2 className="text-2xl font-bold mb-4" style={{ color: "#191970" }}>
+              <h2 className="text-2xl font-bold mb-4" style={{ color: "#16193a" }}>
                 4. Listing Standards
               </h2>
-              <h3 className="text-xl font-semibold mb-3" style={{ color: "#191970" }}>
+              <h3 className="text-xl font-semibold mb-3" style={{ color: "#16193a" }}>
                 4.1 Accuracy and Honesty
               </h3>
               <p className="text-gray-700 leading-relaxed mb-3">Sellers must:</p>
@@ -129,7 +129,7 @@ export default function MarketplaceGuidelinesPage() {
                 Transparency builds trust - and trust builds sales.
               </p>
 
-              <h3 className="text-xl font-semibold mb-3" style={{ color: "#191970" }}>
+              <h3 className="text-xl font-semibold mb-3" style={{ color: "#16193a" }}>
                 4.2 Photos
               </h3>
               <p className="text-gray-700 leading-relaxed mb-3">Listings should include:</p>
@@ -142,7 +142,7 @@ export default function MarketplaceGuidelinesPage() {
                 Great photos do not need to be fancy - just honest.
               </p>
 
-              <h3 className="text-xl font-semibold mb-3" style={{ color: "#191970" }}>
+              <h3 className="text-xl font-semibold mb-3" style={{ color: "#16193a" }}>
                 4.3 Storytelling (Encouraged)
               </h3>
               <p className="text-gray-700 leading-relaxed mb-3">We love listings that include:</p>
@@ -157,7 +157,7 @@ export default function MarketplaceGuidelinesPage() {
             </section>
 
             <section className="mb-8">
-              <h2 className="text-2xl font-bold mb-4" style={{ color: "#191970" }}>
+              <h2 className="text-2xl font-bold mb-4" style={{ color: "#16193a" }}>
                 5. Pricing and Fees
               </h2>
               <ul className="list-disc list-inside text-gray-700 leading-relaxed space-y-1 ml-4">
@@ -169,7 +169,7 @@ export default function MarketplaceGuidelinesPage() {
             </section>
 
             <section className="mb-8">
-              <h2 className="text-2xl font-bold mb-4" style={{ color: "#191970" }}>
+              <h2 className="text-2xl font-bold mb-4" style={{ color: "#16193a" }}>
                 6. Shipping Expectations
               </h2>
               <ul className="list-disc list-inside text-gray-700 leading-relaxed space-y-1 ml-4">
@@ -181,7 +181,7 @@ export default function MarketplaceGuidelinesPage() {
             </section>
 
             <section className="mb-8">
-              <h2 className="text-2xl font-bold mb-4" style={{ color: "#191970" }}>
+              <h2 className="text-2xl font-bold mb-4" style={{ color: "#16193a" }}>
                 7. Returns and Issues
               </h2>
               <p className="text-gray-700 leading-relaxed mb-4">Unless otherwise stated:</p>
@@ -198,7 +198,7 @@ export default function MarketplaceGuidelinesPage() {
             </section>
 
             <section className="mb-8">
-              <h2 className="text-2xl font-bold mb-4" style={{ color: "#191970" }}>
+              <h2 className="text-2xl font-bold mb-4" style={{ color: "#16193a" }}>
                 8. Reviews, Messaging, and Conduct
               </h2>
               <ul className="list-disc list-inside text-gray-700 leading-relaxed space-y-1 ml-4">
@@ -213,7 +213,7 @@ export default function MarketplaceGuidelinesPage() {
             </section>
 
             <section className="mb-8">
-              <h2 className="text-2xl font-bold mb-4" style={{ color: "#191970" }}>
+              <h2 className="text-2xl font-bold mb-4" style={{ color: "#16193a" }}>
                 9. Curation, Removal, and Enforcement
               </h2>
               <ul className="list-disc list-inside text-gray-700 leading-relaxed space-y-1 ml-4">
@@ -227,7 +227,7 @@ export default function MarketplaceGuidelinesPage() {
             </section>
 
             <section className="mb-8">
-              <h2 className="text-2xl font-bold mb-4" style={{ color: "#191970" }}>
+              <h2 className="text-2xl font-bold mb-4" style={{ color: "#16193a" }}>
                 10. Concierge Selling (Optional)
               </h2>
               <ul className="list-disc list-inside text-gray-700 leading-relaxed space-y-1 ml-4">
@@ -239,7 +239,7 @@ export default function MarketplaceGuidelinesPage() {
             </section>
 
             <section className="mb-2">
-              <h2 className="text-2xl font-bold mb-4" style={{ color: "#191970" }}>
+              <h2 className="text-2xl font-bold mb-4" style={{ color: "#16193a" }}>
                 11. Questions or Not Sure?
               </h2>
               <ul className="list-disc list-inside text-gray-700 leading-relaxed space-y-1 ml-4">

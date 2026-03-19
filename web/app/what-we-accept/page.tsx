@@ -11,7 +11,7 @@ export default function WhatWeAcceptPage() {
       style={{ backgroundColor: "#f8f9fa" }}
     >
       {/* Header */}
-      <header className="p-4 flex items-center justify-between" style={{ backgroundColor: "#191970" }}>
+      <header className="p-4 flex items-center justify-between" style={{ backgroundColor: "#16193a" }}>
         <Link href="/browse" className="flex items-center gap-2">
           <TSLogo size={32} primaryColor="#ffffff" accentColor="#efbf04" />
           <span className="text-white font-semibold">ThriftShopper</span>
@@ -28,14 +28,14 @@ export default function WhatWeAcceptPage() {
       {/* Content */}
       <div className="flex-1 max-w-4xl mx-auto w-full px-4 py-8">
         <div className="bg-white rounded-lg shadow-sm p-8">
-          <h1 className="text-3xl font-bold mb-2 font-editorial" style={{ color: "#191970" }}>
+          <h1 className="text-3xl font-bold mb-2 font-editorial" style={{ color: "#16193a" }}>
             What We Accept
           </h1>
           <p className="text-sm text-gray-500 mb-6">Curated categories and examples</p>
 
           <div className="prose prose-lg max-w-none">
             <section className="mb-8">
-              <h2 className="text-2xl font-bold mb-4 font-editorial" style={{ color: "#191970" }}>
+              <h2 className="text-2xl font-bold mb-4 font-editorial" style={{ color: "#16193a" }}>
                 What Tends to Work Well Here
               </h2>
               <p className="text-gray-700 leading-relaxed mb-4">
@@ -85,7 +85,7 @@ export default function WhatWeAcceptPage() {
             </section>
 
             <section className="mb-8">
-              <h2 className="text-2xl font-bold mb-4" style={{ color: "#191970" }}>
+              <h2 className="text-2xl font-bold mb-4" style={{ color: "#16193a" }}>
                 What We Do Not Accept
               </h2>
               <p className="text-gray-700 leading-relaxed mb-4">
@@ -136,7 +136,7 @@ export default function WhatWeAcceptPage() {
             </section>
 
             <section>
-              <h2 className="text-2xl font-bold mb-4" style={{ color: "#191970" }}>
+              <h2 className="text-2xl font-bold mb-4" style={{ color: "#16193a" }}>
                 Unsure If It Fits?
               </h2>
               <p className="text-gray-700 leading-relaxed mb-2">

@@ -30,8 +30,8 @@ export function getNewMessageEmailHtml(data: NewMessageData): string {
         <table role="presentation" style="width: 100%; max-width: 600px; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
           <!-- Header -->
           <tr>
-            <td style="padding: 40px 40px 30px; text-align: center; border-bottom: 2px solid #191970;">
-              <h1 style="margin: 0; font-family: 'Merriweather', serif; font-size: 28px; color: #191970; font-weight: 700;">
+            <td style="padding: 40px 40px 30px; text-align: center; border-bottom: 2px solid #16193a;">
+              <h1 style="margin: 0; font-family: 'Merriweather', serif; font-size: 28px; color: #16193a; font-weight: 700;">
                 New message from ${data.senderName}
               </h1>
             </td>
@@ -54,7 +54,7 @@ export function getNewMessageEmailHtml(data: NewMessageData): string {
               </p>
               `}
               
-              <div style="background-color: #f8f9fa; padding: 20px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #191970;">
+              <div style="background-color: #f8f9fa; padding: 20px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #16193a;">
                 <p style="margin: 0; font-size: 15px; line-height: 1.6; color: #333333; font-style: italic;">
                   "${data.messagePreview}"
                 </p>
@@ -64,7 +64,7 @@ export function getNewMessageEmailHtml(data: NewMessageData): string {
               <table role="presentation" style="width: 100%; margin: 30px 0;">
                 <tr>
                   <td align="center" style="padding: 15px 0;">
-                    <a href="${data.messagesUrl}" style="display: inline-block; padding: 14px 32px; background-color: #191970; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 15px;">
+                    <a href="${data.messagesUrl}" style="display: inline-block; padding: 14px 32px; background-color: #16193a; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 15px;">
                       Reply in ThriftShopper
                     </a>
                   </td>

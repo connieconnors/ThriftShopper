@@ -155,7 +155,7 @@ export default function BetaGate() {
               className="text-xl font-semibold mb-5 text-center"
               style={{
                 fontFamily: "var(--font-playfair), Playfair Display, serif",
-                color: '#191970',
+                color: '#16193a',
               }}
             >
               Welcome to Our Beta!
@@ -174,7 +174,7 @@ export default function BetaGate() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:border-[#191970] transition-colors"
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:border-[#16193a] transition-colors"
                   placeholder="your email"
                   disabled={isLoading}
                 />
@@ -184,7 +184,7 @@ export default function BetaGate() {
                 type="submit"
                 disabled={isLoading}
                 className="w-full h-12 font-semibold text-lg rounded-xl text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                style={{ backgroundColor: '#191970' }}
+                style={{ backgroundColor: '#16193a' }}
               >
                 {isLoading ? (
                   <span className="flex items-center justify-center gap-2">
@@ -211,7 +211,7 @@ export default function BetaGate() {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-full px-4 py-3 font-semibold text-center rounded-xl text-white transition-colors"
-                style={{ backgroundColor: '#191970' }}
+                style={{ backgroundColor: '#16193a' }}
               >
                 Join Waitlist
               </a>

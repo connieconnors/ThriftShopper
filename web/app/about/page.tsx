@@ -8,7 +8,7 @@ export default function AboutPage() {
   return (
     <main className="min-h-screen flex flex-col" style={{ backgroundColor: '#f8f9fa' }}>
       {/* Header */}
-      <header className="p-4 flex items-center justify-between" style={{ backgroundColor: '#191970' }}>
+      <header className="p-4 flex items-center justify-between" style={{ backgroundColor: '#16193a' }}>
         <Link href="/browse" className="flex items-center gap-2">
           <TSLogo size={32} primaryColor="#ffffff" accentColor="#efbf04" />
           <span className="text-white font-semibold">ThriftShopper</span>
@@ -25,7 +25,7 @@ export default function AboutPage() {
       {/* Content */}
       <div className="flex-1 max-w-4xl mx-auto w-full px-4 py-8">
         <div className="bg-white rounded-lg shadow-sm p-8">
-          <h1 className="text-3xl font-bold mb-6 font-editorial" style={{ color: '#191970' }}>
+          <h1 className="text-3xl font-bold mb-6 font-editorial" style={{ color: '#16193a' }}>
             About ThriftShopper
           </h1>
           
@@ -54,7 +54,7 @@ export default function AboutPage() {
 
             {/* Contact Information */}
             <section className="mt-8 pt-6 border-t border-gray-200">
-              <h2 className="text-xl font-semibold mb-4 font-editorial" style={{ color: '#191970' }}>
+              <h2 className="text-xl font-semibold mb-4 font-editorial" style={{ color: '#16193a' }}>
                 Get in Touch
               </h2>
               <div className="space-y-3">

@@ -148,7 +148,7 @@ function OrderCard({ order, onUpdate }: OrderCardProps) {
                     value={trackingNumber}
                     onChange={(e) => setTrackingNumber(e.target.value)}
                     onClick={(e) => e.stopPropagation()}
-                    className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#191970]/20"
+                    className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#16193a]/20"
                   />
                 )}
                 <button
@@ -160,7 +160,7 @@ function OrderCard({ order, onUpdate }: OrderCardProps) {
                   disabled={isUpdating}
                   className="w-full py-1.5 px-3 text-xs font-medium rounded-lg transition-colors flex items-center justify-center gap-1.5"
                   style={{ 
-                    backgroundColor: '#191970', 
+                    backgroundColor: '#16193a', 
                     color: 'white',
                     opacity: isUpdating ? 0.6 : 1
                   }}
@@ -324,7 +324,7 @@ export default function SellerPageClient() {
 
   useEffect(() => {
     const previous = document.body.style.backgroundColor;
-    document.body.style.backgroundColor = "#191970";
+    document.body.style.backgroundColor = "#16193a";
     return () => {
       document.body.style.backgroundColor = previous;
     };
@@ -856,7 +856,7 @@ export default function SellerPageClient() {
   if (authLoading || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#FFF8E6" }}>
-          <div className="animate-spin h-8 w-8 border-2 border-[#191970] border-t-transparent rounded-full" />
+          <div className="animate-spin h-8 w-8 border-2 border-[#16193a] border-t-transparent rounded-full" />
         </div>
     );
   }
@@ -884,13 +884,13 @@ export default function SellerPageClient() {
 
   return (
     <div
-      className="min-h-screen pb-16 bg-[#191970]"
+      className="min-h-screen pb-16 bg-[#16193a]"
       style={{ overscrollBehaviorY: "contain" }}
     >
       {/* Header */}
       <header 
         className="sticky top-0 z-40 px-4 py-2 flex items-center justify-between shadow-sm"
-        style={{ backgroundColor: "#191970" }}
+        style={{ backgroundColor: "#16193a" }}
       >
         <Link href="/browse" className="flex items-center gap-2">
           <TSLogo size={28} primaryColor="#ffffff" accentColor="#DFAF37" />
@@ -913,7 +913,7 @@ export default function SellerPageClient() {
             <div className="flex items-center gap-3 mb-4">
               <div
                 className="w-12 h-12 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0"
-                style={{ backgroundColor: "#191970" }}
+                style={{ backgroundColor: "#16193a" }}
               >
                 {profile.avatar_url ? (
                   <img src={profile.avatar_url} alt="Profile" className="w-full h-full object-cover" />
@@ -924,7 +924,7 @@ export default function SellerPageClient() {
                 )}
               </div>
               <div className="flex-1">
-                <h1 className="text-lg font-semibold font-editorial" style={{ color: "#191970" }}>
+                <h1 className="text-lg font-semibold font-editorial" style={{ color: "#16193a" }}>
                   {profile.display_name || "Seller Dashboard"}
                 </h1>
                 <p className="text-xs text-gray-600">Storytelling seller since {getJoinYear()}</p>
@@ -1022,7 +1022,7 @@ export default function SellerPageClient() {
                         alert('Failed to set up payouts. Please try again.');
                       }
                     }}
-                    style={{ backgroundColor: '#191970', color: 'white' }}
+                    style={{ backgroundColor: '#16193a', color: 'white' }}
                     className="hover:opacity-90 text-xs h-8 px-4 shrink-0 leading-none rounded-lg flex items-center justify-center transition-all font-medium shadow-sm"
                   >
                     Finish payout setup
@@ -1051,7 +1051,7 @@ export default function SellerPageClient() {
             href="/sell"
             className="w-full py-3 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg"
             style={{ 
-              backgroundColor: '#191970', 
+              backgroundColor: '#16193a', 
               color: 'white',
             }}
           >
@@ -1067,11 +1067,11 @@ export default function SellerPageClient() {
             <div className="text-[11px] font-medium text-gray-600">Active Listings</div>
           </div>
           <div className="bg-white rounded-lg p-4 border border-gray-200">
-            <div className="text-2xl font-bold mb-1" style={{ color: "#191970" }}>{stats.totalListings - stats.activeListings}</div>
+            <div className="text-2xl font-bold mb-1" style={{ color: "#16193a" }}>{stats.totalListings - stats.activeListings}</div>
             <div className="text-[11px] font-medium text-gray-600">Drafts</div>
           </div>
           <div className="bg-white rounded-lg p-4 border border-gray-200">
-            <div className="text-2xl font-bold mb-1" style={{ color: "#191970" }}>
+            <div className="text-2xl font-bold mb-1" style={{ color: "#16193a" }}>
               ${stats.totalEarnings.toFixed(2)}
             </div>
             <div className="text-[11px] font-medium text-gray-600">Total Earnings</div>
@@ -1080,7 +1080,7 @@ export default function SellerPageClient() {
 
         {/* Sold Items - Match "Your Listings" wrapper structure exactly */}
         <div className="mb-4">
-          <h2 className="text-base font-semibold mb-3 font-editorial" style={{ color: "#191970" }}>
+          <h2 className="text-base font-semibold mb-3 font-editorial" style={{ color: "#16193a" }}>
             Sold Items{allOrders.length > 0 ? ` (${allOrders.length})` : ''}
           </h2>
           
@@ -1107,7 +1107,7 @@ export default function SellerPageClient() {
                   // Status badge mapping
                   let statusBadge;
                   if (order.shipped_at || orderStatus === 'shipped') {
-                    statusBadge = { bg: 'bg-transparent', text: 'text-[#191970]', label: 'Shipped', border: 'border border-[#191970]' };
+                    statusBadge = { bg: 'bg-transparent', text: 'text-[#16193a]', label: 'Shipped', border: 'border border-[#16193a]' };
                   } else if (orderStatus === 'paid') {
                     statusBadge = { bg: 'bg-green-100', text: 'text-green-700', label: 'Paid' };
                   } else if (orderStatus === 'awaiting_payment') {
@@ -1186,7 +1186,7 @@ export default function SellerPageClient() {
                             <Link
                               href={`/orders/${order.id}`}
                               className="text-base font-medium leading-tight"
-                              style={{ color: "#191970", fontSize: '16px', margin: 0, padding: 0 }}
+                              style={{ color: "#16193a", fontSize: '16px', margin: 0, padding: 0 }}
                             >
                               ${amountInDollars.toFixed(2)}
                             </Link>
@@ -1221,7 +1221,7 @@ export default function SellerPageClient() {
 
         {/* Your Listings */}
         <div className="mb-4">
-          <h2 className="text-base font-semibold mb-3 font-editorial" style={{ color: "#191970" }}>
+          <h2 className="text-base font-semibold mb-3 font-editorial" style={{ color: "#16193a" }}>
             Your Listings
           </h2>
           
@@ -1229,7 +1229,7 @@ export default function SellerPageClient() {
             <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
               <p className="text-sm text-gray-600 mb-2">
                 No listings yet.{" "}
-                <Link href="/sell" className="text-[#191970] hover:underline font-medium">
+                <Link href="/sell" className="text-[#16193a] hover:underline font-medium">
                   Create your first listing
                 </Link>
               </p>
@@ -1451,7 +1451,7 @@ export default function SellerPageClient() {
                           <Link
                             href={listingHref}
                             className="text-base font-medium leading-tight"
-                            style={{ color: "#191970", fontSize: '16px', margin: 0, padding: 0 }}
+                            style={{ color: "#16193a", fontSize: '16px', margin: 0, padding: 0 }}
                           >
                             ${listing.price?.toFixed(2) || '0.00'}
                           </Link>
@@ -1485,7 +1485,7 @@ export default function SellerPageClient() {
                             </span>
                             <button
                               onClick={() => handleCopy(sharePath, listing.id, "link", sharePath)}
-                              className="inline-flex items-center gap-1 text-[#191970] hover:opacity-70 transition-opacity"
+                              className="inline-flex items-center gap-1 text-[#16193a] hover:opacity-70 transition-opacity"
                               aria-label="Copy share link"
                             >
                               <LinkIcon className="h-3 w-3" strokeWidth={1.2} />
@@ -1494,7 +1494,7 @@ export default function SellerPageClient() {
                             <span className="text-gray-500">•</span>
                             <button
                               onClick={() => handleCopy(curatedCaption, listing.id, "caption", sharePath)}
-                              className="inline-flex items-center gap-1 text-[#191970] hover:opacity-70 transition-opacity"
+                              className="inline-flex items-center gap-1 text-[#16193a] hover:opacity-70 transition-opacity"
                               aria-label="Copy share caption"
                             >
                               <Instagram className="h-3 w-3" strokeWidth={1.2} />
@@ -1520,9 +1520,9 @@ export default function SellerPageClient() {
             className="w-full bg-white rounded-lg border border-gray-200 p-4 hover:bg-gray-50 transition-colors text-left flex items-center justify-between"
           >
             <div className="flex items-center gap-3">
-              <MessageSquare size={22} style={{ color: "#191970" }} />
+              <MessageSquare size={22} style={{ color: "#16193a" }} />
               <div>
-                <h2 className="text-base font-semibold font-editorial" style={{ color: "#191970" }}>
+                <h2 className="text-base font-semibold font-editorial" style={{ color: "#16193a" }}>
                   Messages
                 </h2>
                 <p className="text-xs text-gray-500">
@@ -1532,7 +1532,7 @@ export default function SellerPageClient() {
               {unreadMessagesCount > 0 && (
                 <span
                   className="px-2 py-0.5 text-xs font-bold rounded-full text-white"
-                  style={{ backgroundColor: "#191970" }}
+                  style={{ backgroundColor: "#16193a" }}
                 >
                   {unreadMessagesCount}
                 </span>
@@ -1549,7 +1549,7 @@ export default function SellerPageClient() {
             <div className="mt-2 bg-white rounded-lg border border-gray-200 overflow-hidden">
               {messagesLoading ? (
                 <div className="p-8 flex justify-center">
-                  <Loader2 className="h-8 w-8 animate-spin" style={{ color: "#191970" }} />
+                  <Loader2 className="h-8 w-8 animate-spin" style={{ color: "#16193a" }} />
                 </div>
               ) : (() => {
                 const getKey = (lid: string, bid: string) => `${lid}:${bid}`;
@@ -1607,7 +1607,7 @@ export default function SellerPageClient() {
                           type="button"
                           onClick={() => setSelectedConversationKey(null)}
                           className="text-sm font-medium mb-2"
-                          style={{ color: "#191970" }}
+                          style={{ color: "#16193a" }}
                         >
                           ← All conversations
                         </button>
@@ -1621,7 +1621,7 @@ export default function SellerPageClient() {
                         <a
                           href={`mailto:${selectedConv.buyer_email}`}
                           className="mt-3 inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white"
-                          style={{ backgroundColor: "#191970", color: "#ffffff" }}
+                          style={{ backgroundColor: "#16193a", color: "#ffffff" }}
                         >
                           <Mail className="h-4 w-4" />
                           Reply via Email
@@ -1662,12 +1662,12 @@ export default function SellerPageClient() {
                           <button
                             type="button"
                             onClick={() => setSelectedConversationKey(conv.key)}
-                            className={`w-full p-4 text-left hover:bg-gray-50 transition-colors ${conv.unreadCount > 0 ? "bg-[#191970]/5" : ""}`}
+                            className={`w-full p-4 text-left hover:bg-gray-50 transition-colors ${conv.unreadCount > 0 ? "bg-[#16193a]/5" : ""}`}
                           >
                             <div className="flex items-start gap-3">
                               <div
                                 className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 text-white font-semibold text-sm"
-                                style={{ backgroundColor: "#191970", color: "#ffffff" }}
+                                style={{ backgroundColor: "#16193a", color: "#ffffff" }}
                               >
                                 {conv.buyer_display_name.charAt(0).toUpperCase()}
                               </div>
@@ -1675,7 +1675,7 @@ export default function SellerPageClient() {
                                 <div className="flex items-center justify-between gap-2 mb-0.5">
                                   <span className="font-semibold text-gray-900 truncate">{conv.buyer_display_name}</span>
                                   {conv.unreadCount > 0 && (
-                                    <span className="w-2.5 h-2.5 rounded-full flex-shrink-0 bg-[#191970]" />
+                                    <span className="w-2.5 h-2.5 rounded-full flex-shrink-0 bg-[#16193a]" />
                                   )}
                                 </div>
                                 <p className="text-xs text-gray-500 truncate mb-0.5">Re: {conv.listing_title}</p>
@@ -1700,7 +1700,7 @@ export default function SellerPageClient() {
       {/* Footer Navigation - Simplified like v0 */}
       <nav 
         className="fixed bottom-0 left-0 right-0 border-t border-gray-200 px-4 py-2.5 z-30"
-        style={{ backgroundColor: "#191970" }}
+        style={{ backgroundColor: "#16193a" }}
       >
         <div className="max-w-2xl mx-auto flex items-center justify-around">
           <button
@@ -1715,7 +1715,7 @@ export default function SellerPageClient() {
               <MessageSquare className="h-4 w-4" />
               {unreadMessagesCount > 0 && (
                 <span
-                  className="absolute -top-1 -right-1.5 min-w-[16px] h-4 flex items-center justify-center rounded-full px-1 text-[10px] font-bold text-[#191970]"
+                  className="absolute -top-1 -right-1.5 min-w-[16px] h-4 flex items-center justify-center rounded-full px-1 text-[10px] font-bold text-[#16193a]"
                   style={{ backgroundColor: "#ffffff" }}
                 >
                   {unreadMessagesCount > 99 ? "99+" : unreadMessagesCount}

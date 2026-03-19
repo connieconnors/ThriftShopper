@@ -94,10 +94,10 @@ export default function EmailPreviewPage({
   const html = templates[resolvedKey]();
 
   return (
-    <main className="min-h-screen bg-[#f8f9fa] px-6 py-8 text-[#191970]">
+    <main className="min-h-screen bg-[#f8f9fa] px-6 py-8 text-[#16193a]">
       <div className="max-w-5xl mx-auto">
         <h1 className="text-2xl font-semibold mb-2">Email Preview</h1>
-        <p className="text-sm text-[#191970]/70 mb-6">
+        <p className="text-sm text-[#16193a]/70 mb-6">
           Choose a template to preview the HTML rendering.
         </p>
         <div className="flex flex-wrap gap-3 mb-6">
@@ -107,8 +107,8 @@ export default function EmailPreviewPage({
               href={`/email-preview?template=${key}`}
               className={`px-3 py-2 rounded-full text-xs font-medium transition-colors ${
                 key === resolvedKey
-                  ? "bg-[#191970] text-white"
-                  : "bg-white text-[#191970] border border-[#191970]/20 hover:border-[#191970]/40"
+                  ? "bg-[#16193a] text-white"
+                  : "bg-white text-[#16193a] border border-[#16193a]/20 hover:border-[#16193a]/40"
               }`}
             >
               {templateLabels[key]}
@@ -118,7 +118,7 @@ export default function EmailPreviewPage({
         <div className="mb-3 text-sm font-medium">
           Previewing: {templateLabels[resolvedKey]}
         </div>
-        <div className="rounded-2xl border border-[#191970]/10 overflow-hidden bg-white shadow-sm">
+        <div className="rounded-2xl border border-[#16193a]/10 overflow-hidden bg-white shadow-sm">
           <iframe
             title="Email preview"
             srcDoc={html}

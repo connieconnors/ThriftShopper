@@ -8,7 +8,7 @@ export default function ReturnsPage() {
   return (
     <main className="min-h-screen flex flex-col" style={{ backgroundColor: '#f8f9fa' }}>
       {/* Header */}
-      <header className="p-4 flex items-center justify-between" style={{ backgroundColor: '#191970' }}>
+      <header className="p-4 flex items-center justify-between" style={{ backgroundColor: '#16193a' }}>
         <Link href="/browse" className="flex items-center gap-2">
           <TSLogo size={32} primaryColor="#ffffff" accentColor="#efbf04" />
           <span className="text-white font-semibold">ThriftShopper</span>
@@ -25,7 +25,7 @@ export default function ReturnsPage() {
       {/* Content */}
       <div className="flex-1 max-w-4xl mx-auto w-full px-4 py-8">
         <div className="bg-white rounded-lg shadow-sm p-8">
-          <h1 className="text-3xl font-bold mb-6" style={{ color: '#191970' }}>
+          <h1 className="text-3xl font-bold mb-6" style={{ color: '#16193a' }}>
             Returns and Exchanges
           </h1>
           
@@ -43,7 +43,7 @@ export default function ReturnsPage() {
 
             {/* The Short Version */}
             <section className="mb-8 p-4 rounded-lg" style={{ backgroundColor: '#FFF8E6', borderLeft: '4px solid #EFBF05' }}>
-              <h2 className="text-xl font-semibold mb-4" style={{ color: '#191970' }}>
+              <h2 className="text-xl font-semibold mb-4" style={{ color: '#16193a' }}>
                 The Short Version
               </h2>
               <ul className="list-disc list-inside text-gray-700 leading-relaxed space-y-2">
@@ -56,7 +56,7 @@ export default function ReturnsPage() {
 
             {/* 1. Understanding Marketplace Purchases */}
             <section className="mb-8">
-              <h2 className="text-xl font-semibold mb-4" style={{ color: '#191970' }}>
+              <h2 className="text-xl font-semibold mb-4" style={{ color: '#16193a' }}>
                 1. Understanding Marketplace Purchases
               </h2>
               <p className="text-gray-700 leading-relaxed mb-4">
@@ -79,10 +79,10 @@ export default function ReturnsPage() {
 
             {/* 2. Seller Return Policies */}
             <section className="mb-8">
-              <h2 className="text-xl font-semibold mb-4" style={{ color: '#191970' }}>
+              <h2 className="text-xl font-semibold mb-4" style={{ color: '#16193a' }}>
                 2. Seller Return Policies
               </h2>
-              <h3 className="text-lg font-semibold mb-3" style={{ color: '#191970' }}>
+              <h3 className="text-lg font-semibold mb-3" style={{ color: '#16193a' }}>
                 2.1 Final Sale by Default
               </h3>
               <p className="text-gray-700 leading-relaxed mb-4">
@@ -107,7 +107,7 @@ export default function ReturnsPage() {
 
             {/* 3. When a Return or Refund May Be Considered */}
             <section className="mb-8">
-              <h2 className="text-xl font-semibold mb-4" style={{ color: '#191970' }}>
+              <h2 className="text-xl font-semibold mb-4" style={{ color: '#16193a' }}>
                 3. When a Return or Refund May Be Considered
               </h2>
               <p className="text-gray-700 leading-relaxed mb-4">
@@ -125,7 +125,7 @@ export default function ReturnsPage() {
 
             {/* 4. What to Do If There's an Issue */}
             <section className="mb-8">
-              <h2 className="text-xl font-semibold mb-4" style={{ color: '#191970' }}>
+              <h2 className="text-xl font-semibold mb-4" style={{ color: '#16193a' }}>
                 4. What to Do If There's an Issue
               </h2>
               <p className="text-gray-700 leading-relaxed mb-4">
@@ -133,7 +133,7 @@ export default function ReturnsPage() {
               </p>
               
               <div className="mb-4">
-                <h3 className="text-lg font-semibold mb-3" style={{ color: '#191970' }}>
+                <h3 className="text-lg font-semibold mb-3" style={{ color: '#16193a' }}>
                   Step 1: Contact the Seller
                 </h3>
                 <ul className="list-disc list-inside text-gray-700 leading-relaxed space-y-2 ml-4">
@@ -148,7 +148,7 @@ export default function ReturnsPage() {
               </div>
 
               <div>
-                <h3 className="text-lg font-semibold mb-3" style={{ color: '#191970' }}>
+                <h3 className="text-lg font-semibold mb-3" style={{ color: '#16193a' }}>
                   Step 2: Contact ThriftShopper (If Needed)
                 </h3>
                 <p className="text-gray-700 leading-relaxed mb-3">
@@ -172,7 +172,7 @@ export default function ReturnsPage() {
 
             {/* 5. Shipping Damage */}
             <section className="mb-8">
-              <h2 className="text-xl font-semibold mb-4" style={{ color: '#191970' }}>
+              <h2 className="text-xl font-semibold mb-4" style={{ color: '#16193a' }}>
                 5. Shipping Damage
               </h2>
               <p className="text-gray-700 leading-relaxed mb-4">
@@ -195,7 +195,7 @@ export default function ReturnsPage() {
 
             {/* 6. Exchanges */}
             <section className="mb-8">
-              <h2 className="text-xl font-semibold mb-4" style={{ color: '#191970' }}>
+              <h2 className="text-xl font-semibold mb-4" style={{ color: '#16193a' }}>
                 6. Exchanges
               </h2>
               <p className="text-gray-700 leading-relaxed mb-4">
@@ -210,7 +210,7 @@ export default function ReturnsPage() {
 
             {/* 7. Non-Returnable Situations */}
             <section className="mb-8">
-              <h2 className="text-xl font-semibold mb-4" style={{ color: '#191970' }}>
+              <h2 className="text-xl font-semibold mb-4" style={{ color: '#16193a' }}>
                 7. Non-Returnable Situations
               </h2>
               <p className="text-gray-700 leading-relaxed mb-4">
@@ -226,7 +226,7 @@ export default function ReturnsPage() {
 
             {/* 8. ThriftShopper's Role */}
             <section className="mb-8">
-              <h2 className="text-xl font-semibold mb-4" style={{ color: '#191970' }}>
+              <h2 className="text-xl font-semibold mb-4" style={{ color: '#16193a' }}>
                 8. ThriftShopper's Role
               </h2>
               <p className="text-gray-700 leading-relaxed mb-4">
@@ -249,7 +249,7 @@ export default function ReturnsPage() {
 
             {/* 9. Concierge Selling Orders */}
             <section className="mb-8">
-              <h2 className="text-xl font-semibold mb-4" style={{ color: '#191970' }}>
+              <h2 className="text-xl font-semibold mb-4" style={{ color: '#16193a' }}>
                 9. Concierge Selling Orders
               </h2>
               <p className="text-gray-700 leading-relaxed">
@@ -263,7 +263,7 @@ export default function ReturnsPage() {
 
             {/* 10. Questions Before You Buy? */}
             <section className="mb-8">
-              <h2 className="text-xl font-semibold mb-4" style={{ color: '#191970' }}>
+              <h2 className="text-xl font-semibold mb-4" style={{ color: '#16193a' }}>
                 10. Questions Before You Buy?
               </h2>
               <p className="text-gray-700 leading-relaxed mb-3 font-semibold">
@@ -281,7 +281,7 @@ export default function ReturnsPage() {
 
             {/* 11. Contact Us */}
             <section className="mb-8">
-              <h2 className="text-xl font-semibold mb-4" style={{ color: '#191970' }}>
+              <h2 className="text-xl font-semibold mb-4" style={{ color: '#16193a' }}>
                 11. Contact Us
               </h2>
               <p className="text-gray-700 leading-relaxed">

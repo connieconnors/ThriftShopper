@@ -184,7 +184,7 @@ function SignUpForm() {
   return (
     <main className="min-h-screen flex flex-col" style={{ backgroundColor: '#f8f9fa' }}>
       {/* Header */}
-      <header className="p-4 flex items-center justify-between" style={{ backgroundColor: '#191970' }}>
+      <header className="p-4 flex items-center justify-between" style={{ backgroundColor: '#16193a' }}>
         <Link href="/browse" className="flex items-center gap-2">
           <TSLogo size={32} primaryColor="#ffffff" accentColor="#efbf04" showStar={false} />
           <span className="text-white font-semibold">ThriftShopper</span>
@@ -202,13 +202,13 @@ function SignUpForm() {
         <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8">
           {/* Logo */}
           <div className="flex justify-center mb-6">
-            <div className="w-20 h-20 rounded-full flex items-center justify-center" style={{ backgroundColor: '#191970' }}>
+            <div className="w-20 h-20 rounded-full flex items-center justify-center" style={{ backgroundColor: '#16193a' }}>
               <TSLogo size={48} primaryColor="#ffffff" accentColor="#efbf04" showStar={true} />
             </div>
           </div>
 
           <div className="text-center mb-8">
-            <h1 className="text-2xl font-bold mb-2" style={{ color: '#191970', fontFamily: "var(--font-playfair), Playfair Display, serif" }}>
+            <h1 className="text-2xl font-bold mb-2" style={{ color: '#16193a', fontFamily: "var(--font-playfair), Playfair Display, serif" }}>
               {isSellerSignup ? 'Create Your Seller Account' : 'Create your account'}
             </h1>
             <p className="text-gray-600">
@@ -226,37 +226,37 @@ function SignUpForm() {
             )}
 
             <div>
-              <label className="block text-sm mb-1.5" style={{ color: '#191970' }}>Email</label>
+              <label className="block text-sm mb-1.5" style={{ color: '#16193a' }}>Email</label>
               <input
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:border-[#191970] transition-colors"
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:border-[#16193a] transition-colors"
                 placeholder="you@example.com"
               />
             </div>
 
             <div>
-              <label className="block text-sm mb-1.5" style={{ color: '#191970' }}>Password</label>
+              <label className="block text-sm mb-1.5" style={{ color: '#16193a' }}>Password</label>
               <input
                 type="password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:border-[#191970] transition-colors"
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:border-[#16193a] transition-colors"
                 placeholder="At least 6 characters"
               />
             </div>
 
             <div>
-              <label className="block text-sm mb-1.5" style={{ color: '#191970' }}>Confirm Password</label>
+              <label className="block text-sm mb-1.5" style={{ color: '#16193a' }}>Confirm Password</label>
               <input
                 type="password"
                 required
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:border-[#191970] transition-colors"
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:border-[#16193a] transition-colors"
                 placeholder="Confirm your password"
               />
             </div>
@@ -268,7 +268,7 @@ function SignUpForm() {
                 id="accept-terms"
                 required
                 className="mt-1 w-4 h-4 rounded border-gray-300 focus:ring-2 cursor-pointer"
-                style={{ accentColor: '#191970' }}
+                style={{ accentColor: '#16193a' }}
               />
               <label 
                 htmlFor="accept-terms" 
@@ -280,7 +280,7 @@ function SignUpForm() {
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="font-semibold hover:underline"
-                  style={{ color: '#191970' }}
+                  style={{ color: '#16193a' }}
                   onClick={(e) => e.stopPropagation()}
                 >
                   Terms of Service
@@ -291,7 +291,7 @@ function SignUpForm() {
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="font-semibold hover:underline"
-                  style={{ color: '#191970' }}
+                  style={{ color: '#16193a' }}
                   onClick={(e) => e.stopPropagation()}
                 >
                   Privacy Policy
@@ -307,7 +307,7 @@ function SignUpForm() {
                 checked={acceptsMarketing}
                 onChange={(e) => setAcceptsMarketing(e.target.checked)}
                 className="mt-1 w-4 h-4 rounded border-gray-300 focus:ring-2 cursor-pointer"
-                style={{ accentColor: '#191970' }}
+                style={{ accentColor: '#16193a' }}
               />
               <label 
                 htmlFor="accepts-marketing" 
@@ -321,7 +321,7 @@ function SignUpForm() {
               type="submit"
               disabled={isLoading}
               className="w-full h-14 font-bold text-lg rounded-xl text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-6"
-              style={{ backgroundColor: '#191970' }}
+              style={{ backgroundColor: '#16193a' }}
             >
               {isLoading ? (
                 <>
@@ -344,7 +344,7 @@ function SignUpForm() {
               <Link
                 href="/marketplace-guidelines"
                 className="font-semibold hover:underline"
-                style={{ color: '#191970' }}
+                style={{ color: '#16193a' }}
               >
                 Marketplace Guidelines
               </Link>
@@ -352,7 +352,7 @@ function SignUpForm() {
               <Link
                 href="/what-we-accept"
                 className="font-semibold hover:underline"
-                style={{ color: '#191970' }}
+                style={{ color: '#16193a' }}
               >
                 What We Accept
               </Link>
@@ -368,7 +368,7 @@ export default function SignUpPage() {
   return (
     <Suspense fallback={
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#f5f5f5" }}>
-        <Loader2 className="w-8 h-8 animate-spin" style={{ color: "#191970" }} />
+        <Loader2 className="w-8 h-8 animate-spin" style={{ color: "#16193a" }} />
       </div>
     }>
       <SignUpForm />

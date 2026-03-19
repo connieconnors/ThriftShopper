@@ -162,7 +162,7 @@ export default function FavoriteButton({
         aria-label={isFavorited ? "Remove from saved" : "Save this find"}
         className={`w-8 h-8 flex items-center justify-center rounded-full transition-all duration-200 ${
           isFavorited 
-            ? "bg-[#D4AF37] text-[#191970]" 
+            ? "bg-[#D4AF37] text-[#16193a]" 
             : "bg-black/60 text-white hover:bg-black/80"
         } ${isLoading ? "opacity-50" : ""} ${className}`}
       >
@@ -208,7 +208,7 @@ export default function FavoriteButton({
       aria-label={isFavorited ? "Remove from saved" : "Save this find"}
       className={`w-14 h-14 flex items-center justify-center backdrop-blur-sm rounded-full transition-all duration-200 ${
         isFavorited 
-          ? "bg-[#D4AF37] text-[#191970]" 
+          ? "bg-[#D4AF37] text-[#16193a]" 
           : "bg-white/15 text-white hover:bg-white/25"
       } ${isLoading ? "opacity-50" : ""} ${className}`}
     >

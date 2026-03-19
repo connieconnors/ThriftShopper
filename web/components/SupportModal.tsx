@@ -30,9 +30,9 @@ export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
     >
       <div className="space-y-2">
         {/* Quick Tips */}
-        <div className="rounded-lg bg-white/5 border border-transparent hover:border-[#191970]/50 overflow-hidden">
+        <div className="rounded-lg bg-white/5 border border-transparent hover:border-[#16193a]/50 overflow-hidden">
           <button 
-            className="w-full p-3 rounded-lg hover:bg-[#191970]/30 transition-colors text-left flex items-center justify-between"
+            className="w-full p-3 rounded-lg hover:bg-[#16193a]/30 transition-colors text-left flex items-center justify-between"
             onClick={() => toggleTopic("quick-tips")}
           >
             <div className="flex items-center gap-2 flex-1">
@@ -127,9 +127,9 @@ export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
         </div>
 
         {/* Selling on ThriftShopper */}
-        <div className="rounded-lg bg-white/5 border border-transparent hover:border-[#191970]/50 overflow-hidden">
+        <div className="rounded-lg bg-white/5 border border-transparent hover:border-[#16193a]/50 overflow-hidden">
           <button 
-            className="w-full p-3 rounded-lg hover:bg-[#191970]/30 transition-colors text-left flex items-center justify-between"
+            className="w-full p-3 rounded-lg hover:bg-[#16193a]/30 transition-colors text-left flex items-center justify-between"
             onClick={() => toggleTopic("selling")}
           >
             <div className="flex items-center gap-2 flex-1">
@@ -291,9 +291,9 @@ export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
         </div>
 
         {/* Shipping & Returns */}
-        <div className="rounded-lg bg-white/5 border border-transparent hover:border-[#191970]/50 overflow-hidden">
+        <div className="rounded-lg bg-white/5 border border-transparent hover:border-[#16193a]/50 overflow-hidden">
           <button 
-            className="w-full p-3 rounded-lg hover:bg-[#191970]/30 transition-colors text-left flex items-center justify-between"
+            className="w-full p-3 rounded-lg hover:bg-[#16193a]/30 transition-colors text-left flex items-center justify-between"
             onClick={() => toggleTopic("shipping-returns")}
           >
                 <div className="flex items-center gap-2 flex-1">
@@ -370,9 +370,9 @@ export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
         </div>
 
         {/* Account & Settings */}
-        <div className="rounded-lg bg-white/5 border border-transparent hover:border-[#191970]/50 overflow-hidden">
+        <div className="rounded-lg bg-white/5 border border-transparent hover:border-[#16193a]/50 overflow-hidden">
           <button 
-            className="w-full p-3 rounded-lg hover:bg-[#191970]/30 transition-colors text-left flex items-center justify-between"
+            className="w-full p-3 rounded-lg hover:bg-[#16193a]/30 transition-colors text-left flex items-center justify-between"
             onClick={() => toggleTopic("account-settings")}
           >
                 <div className="flex items-center gap-2 flex-1">

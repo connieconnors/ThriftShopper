@@ -49,7 +49,7 @@ export function SellerView({ products, onBack, onAddListing }: SellerViewProps) 
               className="transition-colors hover:opacity-70 flex items-center gap-1"
               style={{ color: '#4b5563' }}
             >
-              <TSLogo size={20} primaryColor="#191970" accentColor="#efbf04" />
+              <TSLogo size={20} primaryColor="#16193a" accentColor="#efbf04" />
               <span>Home</span>
             </button>
             <button 

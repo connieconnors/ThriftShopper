@@ -39,7 +39,7 @@ export function getItemSoldEmailHtml(data: ItemSoldData): string {
           <!-- Header -->
           <tr>
             <td style="padding: 40px 40px 30px; text-align: center; border-bottom: 2px solid #EFBF05;">
-              <h1 style="margin: 0; font-family: 'Merriweather', serif; font-size: 28px; color: #191970; font-weight: 700;">
+              <h1 style="margin: 0; font-family: 'Merriweather', serif; font-size: 28px; color: #16193a; font-weight: 700;">
                 Your item sold! 🎉
               </h1>
             </td>
@@ -57,14 +57,14 @@ export function getItemSoldEmailHtml(data: ItemSoldData): string {
               </p>
               
               <div style="background-color: #FFF8E6; padding: 20px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #EFBF05;">
-                <p style="margin: 0 0 10px; font-size: 18px; color: #191970; font-weight: 600;">
+                <p style="margin: 0 0 10px; font-size: 18px; color: #16193a; font-weight: 600;">
                   ${data.itemName}
                 </p>
                 <p style="margin: 0 0 10px; font-size: 15px; color: #666666;">
-                  Sale price: <span style="font-weight: 600; color: #191970;">$${data.price.toFixed(2)}</span>
+                  Sale price: <span style="font-weight: 600; color: #16193a;">$${data.price.toFixed(2)}</span>
                 </p>
                 <p style="margin: 0; font-size: 15px; color: #666666;">
-                  Buyer: <span style="font-weight: 600; color: #191970;">${data.buyerName}</span>
+                  Buyer: <span style="font-weight: 600; color: #16193a;">${data.buyerName}</span>
                 </p>
               </div>
               
@@ -79,7 +79,7 @@ export function getItemSoldEmailHtml(data: ItemSoldData): string {
               </div>
               
               <div style="margin: 30px 0; padding: 20px; background-color: #f8f9fa; border-radius: 6px;">
-                <p style="margin: 0 0 15px; font-size: 15px; color: #191970; font-weight: 600;">
+                <p style="margin: 0 0 15px; font-size: 15px; color: #16193a; font-weight: 600;">
                   Next steps:
                 </p>
                 <ol style="margin: 0; padding-left: 20px; font-size: 15px; color: #333333; line-height: 1.8;">
@@ -97,7 +97,7 @@ export function getItemSoldEmailHtml(data: ItemSoldData): string {
               <table role="presentation" style="width: 100%; margin: 30px 0;">
                 <tr>
                   <td align="center" style="padding: 15px 0;">
-                    <a href="${data.sellerDashboardUrl}" style="display: inline-block; padding: 14px 32px; background-color: #191970; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 15px;">
+                    <a href="${data.sellerDashboardUrl}" style="display: inline-block; padding: 14px 32px; background-color: #16193a; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 15px;">
                       Manage this order
                     </a>
                   </td>

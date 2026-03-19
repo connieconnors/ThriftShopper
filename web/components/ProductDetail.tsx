@@ -94,7 +94,7 @@ export function ProductDetail({
         <div
           className="sticky top-0 z-10 flex items-center justify-between p-4"
           style={{
-            backgroundColor: '#191970',
+            backgroundColor: '#16193a',
             borderBottom: '2px solid #cfb53b',
           }}
         >
@@ -148,7 +148,7 @@ export function ProductDetail({
                 className="px-3 py-1 rounded-full text-sm"
                 style={{
                   backgroundColor: 'rgba(25, 25, 112, 0.1)',
-                  color: '#191970',
+                  color: '#16193a',
                 }}
               >
                 {tag}
@@ -168,7 +168,7 @@ export function ProductDetail({
               className="w-10 h-10 rounded-full flex items-center justify-center"
               style={{ backgroundColor: 'rgba(25, 25, 112, 0.1)' }}
             >
-              <MapPin className="w-5 h-5" style={{ color: '#191970' }} />
+              <MapPin className="w-5 h-5" style={{ color: '#16193a' }} />
             </div>
             <div>
               <p className="text-sm opacity-75">Location</p>
@@ -189,7 +189,7 @@ export function ProductDetail({
                 className="w-10 h-10 rounded-full flex items-center justify-center"
                 style={{ backgroundColor: 'rgba(207, 181, 59, 0.2)' }}
               >
-                <User className="w-5 h-5" style={{ color: '#191970' }} />
+                <User className="w-5 h-5" style={{ color: '#16193a' }} />
               </div>
             )}
             <div className="flex-1">
@@ -209,7 +209,7 @@ export function ProductDetail({
               className="w-10 h-10 rounded-full flex items-center justify-center"
               style={{ backgroundColor: 'rgba(25, 25, 112, 0.1)' }}
             >
-              <Package className="w-5 h-5" style={{ color: '#191970' }} />
+              <Package className="w-5 h-5" style={{ color: '#16193a' }} />
             </div>
             <div>
               <p className="text-sm opacity-75">Shipping</p>
@@ -242,8 +242,8 @@ export function ProductDetail({
             className="w-full py-4 rounded-lg mt-3 transition-all"
             style={{
               backgroundColor: 'white',
-              border: '2px solid #191970',
-              color: '#191970',
+              border: '2px solid #16193a',
+              color: '#16193a',
             }}
           >
             Contact Seller
@@ -257,12 +257,12 @@ export function ProductDetail({
               style={{
                 backgroundColor: isFavorited ? '#cfb53b' : 'white',
                 border: '2px solid #cfb53b',
-                color: isFavorited ? '#191970' : '#191970',
+                color: isFavorited ? '#16193a' : '#16193a',
               }}
             >
               <GlintIcon
                 size={20}
-                color={isFavorited ? "#191970" : "#cfb53b"}
+                color={isFavorited ? "#16193a" : "#cfb53b"}
                 filled={isFavorited}
                 className="w-5 h-5"
               />
@@ -294,13 +294,13 @@ export function ProductDetail({
             >
               {/* Modal Header */}
               <div className="flex items-center justify-between mb-4">
-                <h3 style={{ color: '#191970' }}>Contact Seller</h3>
+                <h3 style={{ color: '#16193a' }}>Contact Seller</h3>
                 <button
                   onClick={() => setShowMessageModal(false)}
                   className="w-8 h-8 rounded-full flex items-center justify-center"
                   style={{ backgroundColor: 'rgba(25, 25, 112, 0.1)' }}
                 >
-                  <X className="w-4 h-4" style={{ color: '#191970' }} />
+                  <X className="w-4 h-4" style={{ color: '#16193a' }} />
                 </button>
               </div>
 
@@ -329,7 +329,7 @@ export function ProductDetail({
                 disabled={!message.trim() || isSending}
                 className="w-full py-3 rounded-lg text-white transition-all flex items-center justify-center gap-2"
                 style={{
-                  backgroundColor: (!message.trim() || isSending) ? '#ccc' : '#191970',
+                  backgroundColor: (!message.trim() || isSending) ? '#ccc' : '#16193a',
                   border: '2px solid #cfb53b',
                   cursor: (!message.trim() || isSending) ? 'not-allowed' : 'pointer',
                 }}

@@ -65,7 +65,7 @@ export function SellerOnboarding({ onComplete }: SellerOnboardingProps) {
         className="max-w-2xl mx-auto"
       >
         <div className="text-center mb-8">
-          <div className="inline-flex w-20 h-20 rounded-full items-center justify-center mb-4" style={{ backgroundColor: '#191970' }}>
+          <div className="inline-flex w-20 h-20 rounded-full items-center justify-center mb-4" style={{ backgroundColor: '#16193a' }}>
             <TSLogo size={48} primaryColor="#ffffff" accentColor="#efbf04" />
           </div>
           <h1 className="mb-2 font-editorial" style={{ color: '#000080' }}>
@@ -78,7 +78,7 @@ export function SellerOnboarding({ onComplete }: SellerOnboardingProps) {
 
         <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-xl p-8 space-y-6">
           <div>
-            <label className="block mb-2" style={{ color: '#191970' }}>
+            <label className="block mb-2" style={{ color: '#16193a' }}>
               Store Name
             </label>
             <div className="relative">
@@ -87,7 +87,7 @@ export function SellerOnboarding({ onComplete }: SellerOnboardingProps) {
                 type="text"
                 value={formData.storeName}
                 onChange={(e) => updateField('storeName', e.target.value)}
-                className="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#191970] outline-none transition-colors"
+                className="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#16193a] outline-none transition-colors"
                 placeholder="Your Store or Your Name"
                 required
               />
@@ -95,19 +95,19 @@ export function SellerOnboarding({ onComplete }: SellerOnboardingProps) {
           </div>
 
           <div>
-            <label className="block mb-2" style={{ color: '#191970' }}>
+            <label className="block mb-2" style={{ color: '#16193a' }}>
               Seller Description
             </label>
             <textarea
               value={formData.description}
               onChange={(e) => updateField('description', e.target.value)}
-              className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#191970] outline-none transition-colors min-h-[100px] resize-none"
+              className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#16193a] outline-none transition-colors min-h-[100px] resize-none"
               placeholder="Tell buyers about you and what makes your shop special..."
             />
           </div>
 
           <div>
-            <label className="block mb-2" style={{ color: '#191970' }}>
+            <label className="block mb-2" style={{ color: '#16193a' }}>
               Location
             </label>
             <div className="grid grid-cols-2 gap-3 mb-3">
@@ -117,7 +117,7 @@ export function SellerOnboarding({ onComplete }: SellerOnboardingProps) {
                   type="text"
                   value={formData.city}
                   onChange={(e) => updateField('city', e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#191970] outline-none transition-colors"
+                  className="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#16193a] outline-none transition-colors"
                   placeholder="City"
                   required
                 />
@@ -125,7 +125,7 @@ export function SellerOnboarding({ onComplete }: SellerOnboardingProps) {
               <select
                 value={formData.state}
                 onChange={(e) => updateField('state', e.target.value)}
-                className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#191970] outline-none transition-colors"
+                className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#16193a] outline-none transition-colors"
                 required
               >
                 <option value="">State</option>
@@ -138,7 +138,7 @@ export function SellerOnboarding({ onComplete }: SellerOnboardingProps) {
               type="text"
               value={formData.zipCode}
               onChange={(e) => updateField('zipCode', e.target.value)}
-              className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#191970] outline-none transition-colors"
+              className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#16193a] outline-none transition-colors"
               placeholder="ZIP Code"
               pattern="[0-9]{5}"
               required
@@ -146,7 +146,7 @@ export function SellerOnboarding({ onComplete }: SellerOnboardingProps) {
           </div>
 
           <div>
-            <label className="block mb-2" style={{ color: '#191970' }}>
+            <label className="block mb-2" style={{ color: '#16193a' }}>
               Contact Information
             </label>
             <div className="space-y-3">
@@ -156,7 +156,7 @@ export function SellerOnboarding({ onComplete }: SellerOnboardingProps) {
                   type="email"
                   value={formData.email}
                   onChange={(e) => updateField('email', e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#191970] outline-none transition-colors"
+                  className="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#16193a] outline-none transition-colors"
                   placeholder="Email"
                   required
                 />
@@ -167,7 +167,7 @@ export function SellerOnboarding({ onComplete }: SellerOnboardingProps) {
                   type="tel"
                   value={formData.phone}
                   onChange={(e) => updateField('phone', e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#191970] outline-none transition-colors"
+                  className="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#16193a] outline-none transition-colors"
                   placeholder="Phone (optional)"
                 />
               </div>
@@ -175,7 +175,7 @@ export function SellerOnboarding({ onComplete }: SellerOnboardingProps) {
           </div>
 
           <div>
-            <label className="block mb-2" style={{ color: '#191970' }}>
+            <label className="block mb-2" style={{ color: '#16193a' }}>
               Shipping Details
             </label>
             <div className="relative">
@@ -183,7 +183,7 @@ export function SellerOnboarding({ onComplete }: SellerOnboardingProps) {
               <select
                 value={formData.shippingSpeed}
                 onChange={(e) => updateField('shippingSpeed', e.target.value)}
-                className="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#191970] outline-none transition-colors appearance-none"
+                className="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#16193a] outline-none transition-colors appearance-none"
                 required
               >
                 {SHIPPING_OPTIONS.map(option => (
@@ -197,7 +197,7 @@ export function SellerOnboarding({ onComplete }: SellerOnboardingProps) {
             type="submit"
             whileTap={{ scale: 0.98 }}
             className="w-full py-4 rounded-lg text-white font-medium shadow-lg mt-8"
-            style={{ backgroundColor: '#191970' }}
+            style={{ backgroundColor: '#16193a' }}
           >
             Begin Selling
           </motion.button>

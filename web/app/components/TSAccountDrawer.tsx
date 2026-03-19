@@ -101,7 +101,7 @@ export default function TSAccountDrawer({ isOpen, onClose }: TSAccountDrawerProp
         {/* Header */}
         <div
           className="flex items-center justify-between px-6 py-4 border-b border-gray-200"
-          style={{ backgroundColor: "#191970" }}
+          style={{ backgroundColor: "#16193a" }}
         >
           <div className="flex items-center gap-3">
             <TSLogo size={20} primaryColor="#ffffff" accentColor="#EFBF05" />
@@ -119,7 +119,7 @@ export default function TSAccountDrawer({ isOpen, onClose }: TSAccountDrawerProp
         <div className="overflow-y-auto h-[calc(85vh-80px)]">
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
-              <div className="animate-spin h-6 w-6 border-2 border-[#191970] border-t-transparent rounded-full" />
+              <div className="animate-spin h-6 w-6 border-2 border-[#16193a] border-t-transparent rounded-full" />
             </div>
           ) : !user ? (
             // NOT LOGGED IN
@@ -143,8 +143,8 @@ export default function TSAccountDrawer({ isOpen, onClose }: TSAccountDrawerProp
                 </Link>
                 <button
                   onClick={onClose}
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-50 transition-colors border-2 border-[#191970] font-medium"
-                  style={{ color: "#191970" }}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-50 transition-colors border-2 border-[#16193a] font-medium"
+                  style={{ color: "#16193a" }}
                 >
                   Continue as Guest
                 </button>

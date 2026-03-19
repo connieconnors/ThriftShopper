@@ -24,7 +24,7 @@ export default function SellerDashboardClient() {
 
   return (
     <div className="min-h-screen flex items-center justify-center">
-      <div className="animate-spin h-8 w-8 border-2 border-[#191970] border-t-transparent rounded-full" />
+      <div className="animate-spin h-8 w-8 border-2 border-[#16193a] border-t-transparent rounded-full" />
     </div>
   );
 }

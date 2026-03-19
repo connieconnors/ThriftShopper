@@ -156,7 +156,7 @@ export default function SellerSettingsPage() {
   if (authLoading || isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#f5f5f5" }}>
-        <Loader2 className="w-8 h-8 animate-spin" style={{ color: "#191970" }} />
+        <Loader2 className="w-8 h-8 animate-spin" style={{ color: "#16193a" }} />
       </div>
     );
   }
@@ -174,7 +174,7 @@ export default function SellerSettingsPage() {
             href="/seller"
             className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-white/50 transition-colors"
           >
-            <ArrowLeft size={24} style={{ color: "#191970" }} />
+            <ArrowLeft size={24} style={{ color: "#16193a" }} />
           </Link>
           <h1
             className="text-2xl font-bold font-editorial"
@@ -204,7 +204,7 @@ export default function SellerSettingsPage() {
         <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-xl p-8 space-y-6">
           {/* Store Name */}
           <div>
-            <label className="block mb-2 font-medium" style={{ color: "#191970" }}>
+            <label className="block mb-2 font-medium" style={{ color: "#16193a" }}>
               Store Name
             </label>
             <div className="relative">
@@ -213,7 +213,7 @@ export default function SellerSettingsPage() {
                 type="text"
                 value={formData.storeName}
                 onChange={(e) => updateField("storeName", e.target.value)}
-                className="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#191970] outline-none transition-colors"
+                className="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#16193a] outline-none transition-colors"
                 placeholder="Your Store or Your Name"
                 required
               />
@@ -222,7 +222,7 @@ export default function SellerSettingsPage() {
 
           {/* Location */}
           <div>
-            <label className="block mb-2 font-medium" style={{ color: "#191970" }}>
+            <label className="block mb-2 font-medium" style={{ color: "#16193a" }}>
               Location
             </label>
             <div className="grid grid-cols-2 gap-3 mb-3">
@@ -232,7 +232,7 @@ export default function SellerSettingsPage() {
                   type="text"
                   value={formData.city}
                   onChange={(e) => updateField("city", e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#191970] outline-none transition-colors"
+                  className="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#16193a] outline-none transition-colors"
                   placeholder="City"
                   required
                 />
@@ -240,7 +240,7 @@ export default function SellerSettingsPage() {
               <select
                 value={formData.state}
                 onChange={(e) => updateField("state", e.target.value)}
-                className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#191970] outline-none transition-colors"
+                className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#16193a] outline-none transition-colors"
                 required
               >
                 <option value="">State</option>
@@ -255,7 +255,7 @@ export default function SellerSettingsPage() {
               type="text"
               value={formData.zipCode}
               onChange={(e) => updateField("zipCode", e.target.value)}
-              className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#191970] outline-none transition-colors"
+              className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#16193a] outline-none transition-colors"
               placeholder="ZIP Code"
               pattern="[0-9]{5}"
               required
@@ -264,7 +264,7 @@ export default function SellerSettingsPage() {
 
           {/* Contact */}
           <div>
-            <label className="block mb-2 font-medium" style={{ color: "#191970" }}>
+            <label className="block mb-2 font-medium" style={{ color: "#16193a" }}>
               Contact Information
             </label>
             <div className="space-y-3">
@@ -274,7 +274,7 @@ export default function SellerSettingsPage() {
                   type="email"
                   value={formData.email}
                   onChange={(e) => updateField("email", e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#191970] outline-none transition-colors"
+                  className="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#16193a] outline-none transition-colors"
                   placeholder="Email"
                   required
                 />
@@ -285,7 +285,7 @@ export default function SellerSettingsPage() {
                   type="tel"
                   value={formData.phone}
                   onChange={(e) => updateField("phone", e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#191970] outline-none transition-colors"
+                  className="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#16193a] outline-none transition-colors"
                   placeholder="Phone (optional)"
                 />
               </div>
@@ -293,20 +293,20 @@ export default function SellerSettingsPage() {
 
             {/* Description */}
             <div className="mt-3">
-              <label className="block mb-2 font-medium" style={{ color: "#191970" }}>
+              <label className="block mb-2 font-medium" style={{ color: "#16193a" }}>
                 Description
               </label>
               <textarea
                 value={formData.description}
                 onChange={(e) => updateField("description", e.target.value)}
-                className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#191970] outline-none transition-colors min-h-[100px] resize-none"
+                className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#16193a] outline-none transition-colors min-h-[100px] resize-none"
                 placeholder="Tell buyers about you and what makes your shop special..."
               />
             </div>
 
             {/* Your Story */}
             <div className="mt-3">
-              <label className="block mb-2 font-medium" style={{ color: "#191970" }}>
+              <label className="block mb-2 font-medium" style={{ color: "#16193a" }}>
                 Your Story <span className="text-gray-400 font-normal">(optional)</span>
               </label>
               <textarea
@@ -318,7 +318,7 @@ export default function SellerSettingsPage() {
                   }
                 }}
                 maxLength={500}
-                className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#191970] outline-none transition-colors min-h-[100px] resize-none"
+                className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#16193a] outline-none transition-colors min-h-[100px] resize-none"
                 placeholder="Tell buyers about your shop, what you sell, or what makes your items special..."
               />
               <div className="flex justify-between items-center mt-1">
@@ -347,7 +347,7 @@ export default function SellerSettingsPage() {
             disabled={isSubmitting}
             whileTap={{ scale: 0.98 }}
             className="w-full py-4 rounded-lg text-white font-medium shadow-lg mt-8 disabled:opacity-50 flex items-center justify-center gap-2"
-            style={{ backgroundColor: "#191970" }}
+            style={{ backgroundColor: "#16193a" }}
           >
             {isSubmitting ? (
               <>

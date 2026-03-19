@@ -33,8 +33,8 @@ export function getItemShippedEmailHtml(data: ItemShippedData): string {
         <table role="presentation" style="width: 100%; max-width: 600px; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
           <!-- Header -->
           <tr>
-            <td style="padding: 40px 40px 30px; text-align: center; border-bottom: 2px solid #191970;">
-              <h1 style="margin: 0; font-family: 'Merriweather', serif; font-size: 28px; color: #191970; font-weight: 700;">
+            <td style="padding: 40px 40px 30px; text-align: center; border-bottom: 2px solid #16193a;">
+              <h1 style="margin: 0; font-family: 'Merriweather', serif; font-size: 28px; color: #16193a; font-weight: 700;">
                 Your order is on the way
               </h1>
             </td>
@@ -52,11 +52,11 @@ export function getItemShippedEmailHtml(data: ItemShippedData): string {
               </p>
               
               <div style="background-color: #FFF8E6; padding: 20px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #EFBF05;">
-                <p style="margin: 0 0 10px; font-size: 18px; color: #191970; font-weight: 600;">
+                <p style="margin: 0 0 10px; font-size: 18px; color: #16193a; font-weight: 600;">
                   ${data.itemName}
                 </p>
                 <p style="margin: 0 0 10px; font-size: 15px; color: #666666;">
-                  Tracking: <span style="font-weight: 600; color: #191970; font-family: monospace;">${trackingDisplay}</span>
+                  Tracking: <span style="font-weight: 600; color: #16193a; font-family: monospace;">${trackingDisplay}</span>
                 </p>
                 ${data.carrierName ? `<p style="margin: 0; font-size: 15px; color: #666666;">Carrier: ${data.carrierName}</p>` : ''}
               </div>
@@ -66,7 +66,7 @@ export function getItemShippedEmailHtml(data: ItemShippedData): string {
               <table role="presentation" style="width: 100%; margin: 20px 0;">
                 <tr>
                   <td align="center" style="padding: 15px 0;">
-                    <a href="${data.trackingUrl}" style="display: inline-block; padding: 14px 32px; background-color: #191970; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 15px;">
+                    <a href="${data.trackingUrl}" style="display: inline-block; padding: 14px 32px; background-color: #16193a; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 15px;">
                       Track your package
                     </a>
                   </td>
