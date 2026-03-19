@@ -129,7 +129,7 @@ export default function BetaGate() {
         <h1
           className="text-white text-4xl sm:text-5xl md:text-6xl lg:text-7xl tracking-tight font-medium"
           style={{
-            fontFamily: "var(--font-playfair), Playfair Display, serif",
+            fontFamily: "var(--font-editorial)",
             textShadow: "0 2px 8px rgba(0,0,0,0.5), 0 1px 4px rgba(0,0,0,0.3)",
           }}
         >
@@ -139,7 +139,7 @@ export default function BetaGate() {
         <p
           className="italic text-white/90 text-sm sm:text-base md:text-lg tracking-wide font-normal"
           style={{
-            fontFamily: "var(--font-playfair), Playfair Display, serif",
+            fontFamily: "var(--font-editorial)",
             textShadow: "0 2px 12px rgba(0,0,0,0.5)",
           }}
         >
@@ -154,7 +154,7 @@ export default function BetaGate() {
             <h2
               className="text-xl font-semibold mb-5 text-center"
               style={{
-                fontFamily: "var(--font-playfair), Playfair Display, serif",
+                fontFamily: "var(--font-editorial)",
                 color: '#16193a',
               }}
             >

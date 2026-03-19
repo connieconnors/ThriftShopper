@@ -851,7 +851,7 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
         <div 
           className="playfair_display_8964ba03-module_UnR6xq_variable"
           style={{
-            fontFamily: 'var(--font-playfair), serif',
+            fontFamily: 'var(--font-editorial)',
             fontWeight: 500,
             fontSize: '32px',
             color: '#000080',

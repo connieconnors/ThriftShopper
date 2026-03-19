@@ -208,7 +208,7 @@ function SignUpForm() {
           </div>
 
           <div className="text-center mb-8">
-            <h1 className="text-2xl font-bold mb-2" style={{ color: '#16193a', fontFamily: "var(--font-playfair), Playfair Display, serif" }}>
+            <h1 className="text-2xl font-bold mb-2 font-editorial" style={{ color: '#16193a' }}>
               {isSellerSignup ? 'Create Your Seller Account' : 'Create your account'}
             </h1>
             <p className="text-gray-600">

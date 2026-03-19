@@ -49,7 +49,7 @@ export default function Navigation() {
                     <button
                       onClick={() => setIsMenuOpen(!isMenuOpen)}
                       className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center text-white text-[10px] uppercase tracking-[0.2em]"
-                      style={{ fontFamily: "'Playfair Display', 'Times New Roman', serif", fontStyle: "italic", fontWeight: 500 }}
+                      style={{ fontFamily: "var(--font-editorial)", fontStyle: "italic", fontWeight: 500 }}
                     >
                       TS
                     </button>

@@ -615,7 +615,7 @@ function SellerOnboardingContent() {
                       <div className="relative h-6 w-6 flex items-center justify-center rounded-full" style={{ backgroundColor: "#16193a" }}>
                         <span
                           style={{
-                            fontFamily: "Playfair Display, serif",
+                            fontFamily: "var(--font-editorial)",
                             fontSize: "10px",
                             lineHeight: 1,
                             color: "#D4AF37",

@@ -82,7 +82,7 @@ export default function SplashScreen({ autoNavigateDelay = 3000 }: SplashScreenP
           <h1 
             className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-light tracking-wide text-white mb-2"
             style={{ 
-              fontFamily: "var(--font-playfair), Georgia, serif",
+              fontFamily: "var(--font-editorial)",
               textShadow: "0 3px 25px rgba(0,0,0,0.6)",
             }}
           >
@@ -93,7 +93,7 @@ export default function SplashScreen({ autoNavigateDelay = 3000 }: SplashScreenP
           <p 
             className="text-lg sm:text-xl md:text-3xl lg:text-4xl italic"
             style={{ 
-              fontFamily: "var(--font-playfair), Georgia, serif",
+              fontFamily: "var(--font-editorial)",
               color: "#cfb53b",
               textShadow: "0 2px 12px rgba(0,0,0,0.7)",
               paddingLeft: "8px",
@@ -107,7 +107,7 @@ export default function SplashScreen({ autoNavigateDelay = 3000 }: SplashScreenP
           <p 
             className="text-xl sm:text-2xl md:text-4xl lg:text-5xl tracking-widest text-center"
             style={{ 
-              fontFamily: "var(--font-playfair), Georgia, serif",
+              fontFamily: "var(--font-editorial)",
               color: "#ffffff",
               textShadow: "0 2px 10px rgba(0,0,0,0.6)",
               animation: "gentlePulse 2s ease-in-out infinite",

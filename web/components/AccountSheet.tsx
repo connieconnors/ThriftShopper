@@ -108,7 +108,7 @@ const AccountSheet: React.FC<AccountSheetProps> = ({ isOpen, onClose }) => {
             <TSLogo size={36} primaryColor="#ffffff" accentColor="#EFBF04" showStar={true} />
           </div>
 
-          <div className="mt-3 text-[17px] font-semibold text-[#000080]" style={{ fontFamily: 'var(--font-playfair), Playfair Display, serif' }}>
+          <div className="mt-3 text-[17px] font-semibold text-[#000080]" style={{ fontFamily: 'var(--font-editorial)' }}>
             ThriftShopper
           </div>
         </div>

@@ -24,7 +24,7 @@ export function TSLogo({
       <div 
         className="flex items-center justify-center"
         style={{ 
-          fontFamily: 'Playfair Display, serif',
+          fontFamily: 'var(--font-editorial)',
           fontSize: size * 0.58,
           lineHeight: 1,
           fontWeight: 400,

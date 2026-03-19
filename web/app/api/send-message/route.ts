@@ -78,7 +78,7 @@ export async function POST(request: Request) {
   <title>${subject}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&display=swap" rel="stylesheet">
   <style type="text/css">
     @media only screen and (max-width: 620px) {
       .email-padding { padding: 16px 20px !important; }
@@ -92,7 +92,7 @@ export async function POST(request: Request) {
     <tr>
       <td align="center" style="padding: 20px 0;">
         <table role="presentation" style="width: 100%; max-width: 600px; background-color: #ffffff; border-radius: 8px; border-collapse: collapse; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-          <!-- Header: logo + "You have a new message" in Playfair Display navy -->
+          <!-- Header: logo + "You have a new message" in Merriweather -->
           <tr>
             <td class="header-padding" style="padding: 40px 40px 24px; text-align: center;">
               <table role="presentation" align="center" style="border-collapse: collapse; margin: 0 auto 16px;">
@@ -100,7 +100,7 @@ export async function POST(request: Request) {
                   <img src="${logoUrl}" alt="ThriftShopper" width="48" height="48" style="display: block; width: 48px; height: 48px; border-radius: 50%;" />
                 </td></tr>
               </table>
-              <h1 style="margin: 0; font-family: 'Playfair Display', Georgia, serif; font-size: 28px; color: #16193a; font-weight: 700;" class="message-title">You have a new message</h1>
+              <h1 style="margin: 0; font-family: 'Merriweather', Georgia, serif; font-size: 28px; color: #16193a; font-weight: 700;" class="message-title">You have a new message</h1>
             </td>
           </tr>
           <!-- Gold accent line -->
@@ -133,7 +133,7 @@ export async function POST(request: Request) {
           <!-- Footer (match item sold) -->
           <tr>
             <td class="email-padding" style="padding: 30px 40px; background-color: #f8f9fa; text-align: center;">
-              <p style="margin: 0; font-size: 16px; font-family: 'Playfair Display', Georgia, serif; color: #000080; font-weight: 500; line-height: 1.1;">ThriftShopper</p>
+              <p style="margin: 0; font-size: 16px; font-family: 'Merriweather', Georgia, serif; color: #000080; font-weight: 500; line-height: 1.1;">ThriftShopper</p>
               <p style="margin: 2px 0 0; font-size: 12px; color: #efbf04; font-style: italic; font-weight: 400; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.1;">the magic of discovery<sup style="font-size: 0.6em; color: #efbf04;">TM</sup></p>
               <p style="margin: 8px 0 0; font-size: 11px; color: #999999;">Message ID: ${maskedEmailId}</p>
             </td>
