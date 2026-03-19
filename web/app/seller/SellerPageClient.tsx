@@ -1266,6 +1266,9 @@ export default function SellerPageClient() {
                   };
                   
                   const statusBadge = getStatusBadge();
+                  const listingHref = (listing.status || 'draft') === 'draft'
+                    ? `/sell?edit=${listing.id}`
+                    : `/listing/${listing.id}`;
                   
                   return (
                   <div
@@ -1277,7 +1280,7 @@ export default function SellerPageClient() {
                     <div className="flex items-start gap-3">
                       {/* Thumbnail - 60x60px, left side */}
                       <Link
-                        href={`/listing/${listing.id}`}
+                        href={listingHref}
                         className="w-[60px] h-[60px] rounded-lg overflow-hidden bg-gray-100 flex-shrink-0"
                       >
                         {(listing.clean_image_url || listing.original_image_url) ? (
@@ -1309,7 +1312,7 @@ export default function SellerPageClient() {
                           style={{ gap: '0px' }}
                         >
                           <Link
-                            href={`/listing/${listing.id}`}
+                            href={listingHref}
                             className="flex-1 min-w-0"
                             style={{ 
                               paddingRight: '16px', 
@@ -1446,7 +1449,7 @@ export default function SellerPageClient() {
                           }}
                         >
                           <Link
-                            href={`/listing/${listing.id}`}
+                            href={listingHref}
                             className="text-base font-medium leading-tight"
                             style={{ color: "#191970", fontSize: '16px', margin: 0, padding: 0 }}
                           >

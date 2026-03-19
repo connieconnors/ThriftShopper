@@ -1,25 +1,26 @@
+@import url('https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Merriweather:wght@400;700&display=swap');
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-  --font-brand: 'Playfair Display', serif;
+  --background: #ede9e1;
+  --foreground: #16193a;
+  --surface-card: #ffffff;
+  --ink-primary: #16193a;
+  --gold-accent: #c5a028;
+  --card-border: 0.5px solid rgba(197, 160, 40, 0.2);
+  --font-brand: 'Merriweather', serif;
   --font-editorial: 'Merriweather', serif;
-  --font-system: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  --font-system: 'Lato', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-surface-card: var(--surface-card);
+  --color-ink-primary: var(--ink-primary);
+  --color-gold-accent: var(--gold-accent);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 body {
@@ -30,9 +31,9 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Headings default to system font */
+/* Headings use Playfair */
 h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-system);
+  font-family: var(--font-editorial);
   font-weight: 600;
 }
 
@@ -47,6 +48,48 @@ h1, h2, h3, h4, h5, h6 {
 
 .font-system {
   font-family: var(--font-system);
+}
+
+/* Theme-level overrides while keeping existing utility classes */
+.bg-white {
+  background-color: var(--surface-card) !important;
+}
+
+.bg-gray-50 {
+  background-color: var(--background) !important;
+}
+
+/* Opt-in bordered card surface (use on card containers only) */
+.ts-card-surface {
+  background-color: var(--surface-card);
+  border: var(--card-border);
+}
+
+/* Upload/listing photo frame treatment */
+.ts-photo-frame {
+  border: 1.5px solid var(--gold-accent);
+  border-radius: 14px;
+  background-color: rgba(22, 25, 58, 0.04);
+  background-image:
+    linear-gradient(var(--gold-accent), var(--gold-accent)),
+    linear-gradient(var(--gold-accent), var(--gold-accent)),
+    linear-gradient(var(--gold-accent), var(--gold-accent)),
+    linear-gradient(var(--gold-accent), var(--gold-accent)),
+    linear-gradient(var(--gold-accent), var(--gold-accent)),
+    linear-gradient(var(--gold-accent), var(--gold-accent)),
+    linear-gradient(var(--gold-accent), var(--gold-accent)),
+    linear-gradient(var(--gold-accent), var(--gold-accent));
+  background-repeat: no-repeat;
+  background-size:
+    14px 1.5px, 1.5px 14px,
+    14px 1.5px, 1.5px 14px,
+    14px 1.5px, 1.5px 14px,
+    14px 1.5px, 1.5px 14px;
+  background-position:
+    6px 6px, 6px 6px,
+    calc(100% - 20px) 6px, calc(100% - 6px) 6px,
+    6px calc(100% - 6px), 6px calc(100% - 20px),
+    calc(100% - 20px) calc(100% - 6px), calc(100% - 6px) calc(100% - 20px);
 }
 
 @keyframes fadeIn {

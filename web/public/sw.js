@@ -3,8 +3,7 @@ const CACHE_NAME = 'thriftshopper-v1';
 const urlsToCache = [
   '/',
   '/browse',
-  '/sell',
-  '/globals.css'
+  '/sell'
 ];
 
 // Install event - cache resources

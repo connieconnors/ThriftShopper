@@ -1300,7 +1300,8 @@ export default function SellerUploadForm() {
         <div className="flex items-center gap-3">
           <Link
             href="/seller"
-            className="inline-flex items-center gap-2 text-sm text-[#191970] hover:opacity-70 transition-opacity"
+            className="inline-flex items-center gap-2 text-sm hover:opacity-70 transition-opacity"
+            style={{ color: '#16193a' }}
           >
             <ArrowLeft size={16} />
             Back to Dashboard
@@ -1310,13 +1311,14 @@ export default function SellerUploadForm() {
               type="button"
               onClick={handleSaveDraft}
               disabled={isSaving || !listingId}
-              className="text-xs text-[#191970]/80 hover:text-[#191970] border border-[#191970]/20 rounded-full px-3 py-1 transition disabled:opacity-60"
+              className="text-xs border rounded-full px-3 py-1 transition disabled:opacity-60"
+              style={{ color: 'rgba(22, 25, 58, 0.8)', borderColor: 'rgba(22, 25, 58, 0.2)' }}
             >
               Save changes
             </button>
           )}
         </div>
-        <TSLogo size={36} primaryColor="#191970" accentColor="#cfb53b" />
+        <TSLogo size={36} primaryColor="#16193a" accentColor="#c5a028" />
       </div>
 
       {/* Upload Section */}
@@ -1325,14 +1327,14 @@ export default function SellerUploadForm() {
           <div className="mb-6">
             {!previewUrl ? (
               <div
-                className="border-2 border-dashed border-gray-300 rounded-xl text-center cursor-pointer hover:border-blue-500 hover:bg-gray-50/50 transition-all flex flex-col items-center justify-center"
+                className="ts-photo-frame border-2 border-dashed text-center cursor-pointer transition-all flex flex-col items-center justify-center"
                 style={{ minHeight: '60vh' }}
                 onClick={() => fileInputRef.current?.click()}
               >
                 {/* Camera icon - large */}
                 <svg
                   className="h-24 w-24 mb-6"
-                  style={{ color: '#191970' }}
+                  style={{ color: '#16193a' }}
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -1356,7 +1358,7 @@ export default function SellerUploadForm() {
                   <button 
                     onClick={(e) => { e.stopPropagation(); cameraInputRef.current?.click(); }}
                     className="font-semibold underline hover:opacity-70"
-                    style={{ color: '#191970' }}
+                    style={{ color: '#16193a' }}
                   >
                     Take a photo
                   </button>
@@ -1364,7 +1366,7 @@ export default function SellerUploadForm() {
                   <button 
                     onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
                     className="font-semibold underline hover:opacity-70"
-                    style={{ color: '#191970' }}
+                    style={{ color: '#16193a' }}
                   >
                     choose existing
                   </button>
@@ -1381,11 +1383,11 @@ export default function SellerUploadForm() {
                 </p>
               </div>
             ) : (
-              <div className="relative">
+              <div className="relative ts-photo-frame">
                 <img
                   src={previewUrl}
                   alt="Preview"
-                  className="w-full max-h-96 object-contain rounded-lg border border-gray-200"
+                  className="w-full max-h-96 object-contain rounded-[14px]"
                 />
                 <div className="absolute top-2 right-2 flex gap-2">
                   <button
@@ -1420,7 +1422,8 @@ export default function SellerUploadForm() {
           {selectedFile && processingStep === 'idle' && (
             <button
               onClick={handleUpload}
-              className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition"
+              className="w-full text-white py-3 rounded-lg font-semibold transition"
+              style={{ backgroundColor: '#16193a' }}
             >
               ✨ Let AI Create Your Listing
             </button>
@@ -1446,7 +1449,8 @@ export default function SellerUploadForm() {
               <p className="text-blue-900 mb-3 font-medium text-sm">Ready to analyze your listing with AI?</p>
               <button
                 onClick={handleUpload}
-                className="w-full bg-blue-600 text-white py-3.5 px-4 rounded-lg font-semibold hover:bg-blue-700 transition text-base shadow-md"
+                className="w-full text-white py-3.5 px-4 rounded-lg font-semibold transition text-base shadow-md"
+                style={{ backgroundColor: '#16193a' }}
               >
                 ✨ Let AI Create Your Listing
               </button>
@@ -1456,7 +1460,7 @@ export default function SellerUploadForm() {
           {/* Header */}
           <h2 
             className="text-2xl font-bold mb-6 font-editorial"
-            style={{ color: '#191970' }}
+            style={{ color: '#16193a' }}
           >
             {isEditMode ? 'Edit Your Listing' : 'Review Your Listing'}
           </h2>
@@ -1481,7 +1485,7 @@ export default function SellerUploadForm() {
                 <img
                   src={showProcessedImage ? result.processedImageUrl : originalImageUrl}
                   alt="Product"
-                  className="w-full rounded-lg border border-gray-200 transition-all duration-300"
+                  className="w-full ts-photo-frame transition-all duration-300"
                 />
                 {/* Hover overlay hint */}
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all rounded-lg flex items-center justify-center">
@@ -1539,7 +1543,7 @@ export default function SellerUploadForm() {
                       <img
                         src={additionalPhoto1}
                         alt="Additional"
-                        className="w-full h-24 object-cover rounded-lg border border-gray-200"
+                        className="w-full h-24 object-cover ts-photo-frame"
                       />
                       <button
                         type="button"
@@ -1552,7 +1556,7 @@ export default function SellerUploadForm() {
                   ) : (
                     <div
                       onClick={() => additionalPhotoRef1.current?.click()}
-                      className="w-full h-24 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center cursor-pointer hover:border-blue-400 transition"
+                      className="w-full h-24 ts-photo-frame border-2 border-dashed flex items-center justify-center cursor-pointer transition"
                     >
                       <span className="text-gray-400 text-sm">+ Add photo</span>
                     </div>
@@ -1573,7 +1577,7 @@ export default function SellerUploadForm() {
                       <img
                         src={additionalPhoto2}
                         alt="Additional"
-                        className="w-full h-24 object-cover rounded-lg border border-gray-200"
+                        className="w-full h-24 object-cover ts-photo-frame"
                       />
                       <button
                         type="button"
@@ -1586,7 +1590,7 @@ export default function SellerUploadForm() {
                   ) : (
                     <div
                       onClick={() => additionalPhotoRef2.current?.click()}
-                      className="w-full h-24 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center cursor-pointer hover:border-blue-400 transition"
+                      className="w-full h-24 ts-photo-frame border-2 border-dashed flex items-center justify-center cursor-pointer transition"
                     >
                       <span className="text-gray-400 text-sm">+ Add photo</span>
                     </div>
@@ -1614,135 +1618,103 @@ export default function SellerUploadForm() {
               </p>
             </div>
 
-            {/* Listing Details - Reordered for importance */}
+            {/* Listing Details - simplified primary flow */}
             <div className="space-y-4">
-              {/* 1. Title */}
-              <div>
-                <label className="block font-semibold mb-2 text-gray-900">Title</label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={title}
-                    onChange={(e) => {
-                      setTitle(e.target.value);
-                      setUserHasEditedTitle(true);
-                      setIsDirty(true);
-                    }}
-                    className="flex-1 border border-gray-300 rounded-lg px-4 h-11 text-[#333333]"
-                    maxLength={80}
-                    placeholder={processingStep === 'analyzing' || processingStep === 'generating' ? "AI analyzing... title coming soon" : "Enter title or use voice..."}
-                  />
-                  <VoiceInputButton onTranscript={handleTitleVoice} />
-                </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  {(title || '').length}/80 characters
-                </p>
-                <AISuggestionBar
-                  pendingText={pendingAITitle}
-                  isPreviewing={previewingTitle}
-                  onTogglePreview={() => setPreviewingTitle(!previewingTitle)}
-                  onReplace={() => {
-                    if (pendingAITitle) {
-                      setTitle(pendingAITitle);
-                      setPendingAITitle(null);
-                      setPreviewingTitle(false);
-                    }
-                  }}
-                />
-              </div>
-
-              {/* 2. Description */}
-              <div>
-                <label className="block font-semibold mb-2 text-gray-900">Description</label>
-                <p className="text-xs text-gray-500 mb-1.5">
-                  Start typing anytime — we'll never overwrite your words.
-                </p>
-                <div className="flex gap-2 items-start">
-                  <textarea
-                    value={description}
-                    onChange={(e) => {
-                      const newValue = e.target.value;
-                      setDescription(newValue);
-                      descriptionValueRef.current = newValue; // Update ref immediately (synchronous)
-                      setUserHasEditedDescription(true);
-                      setIsDirty(true);
-                    }}
-                    className="flex-1 border border-gray-300 rounded-lg px-4 py-2 text-[#333333]"
-                    rows={4}
-                    placeholder={processingStep === 'analyzing' || processingStep === 'generating' ? "AI analyzing... description coming soon" : "Describe your item or use voice..."}
-                  />
-                  <VoiceInputButton 
-                    onTranscript={handleDescriptionVoice}
-                    className="mt-1"
-                  />
-                </div>
-                <AISuggestionBar
-                  pendingText={pendingAIDescription}
-                  isPreviewing={previewingDescription}
-                  onTogglePreview={() => setPreviewingDescription(!previewingDescription)}
-                  onReplace={() => {
-                    if (pendingAIDescription) {
-                      // Save user's original text before replacing
-                      setOriginalUserDescription(description || null);
-                      setDescription(pendingAIDescription);
-                      descriptionValueRef.current = pendingAIDescription;
-                      setPendingAIDescription(null);
-                      setPreviewingDescription(false);
-                    }
-                  }}
-                />
-                {/* Show revert button if user replaced their text with AI */}
-                {originalUserDescription !== null && (
-                  <div className="mt-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setDescription(originalUserDescription);
-                        descriptionValueRef.current = originalUserDescription;
-                        setOriginalUserDescription(null);
-                        // Don't restore pending - user made their choice
+              {/* AI Result Card */}
+              <div className="rounded-xl border border-gray-200 p-4 bg-white">
+                <h3 className="font-editorial text-lg font-semibold mb-3" style={{ color: '#16193a' }}>
+                  AI Result
+                </h3>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block font-semibold mb-2 text-gray-900">Title</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={title}
+                        onChange={(e) => {
+                          setTitle(e.target.value);
+                          setUserHasEditedTitle(true);
+                          setIsDirty(true);
+                        }}
+                        className="flex-1 border border-gray-300 rounded-lg px-4 h-11 text-[#333333]"
+                        maxLength={80}
+                        placeholder={processingStep === 'analyzing' || processingStep === 'generating' ? "AI analyzing... title coming soon" : "Enter title or use voice..."}
+                      />
+                      <VoiceInputButton onTranscript={handleTitleVoice} />
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {(title || '').length}/80 characters
+                    </p>
+                    <AISuggestionBar
+                      pendingText={pendingAITitle}
+                      isPreviewing={previewingTitle}
+                      onTogglePreview={() => setPreviewingTitle(!previewingTitle)}
+                      onReplace={() => {
+                        if (pendingAITitle) {
+                          setTitle(pendingAITitle);
+                          setPendingAITitle(null);
+                          setPreviewingTitle(false);
+                        }
                       }}
-                      className="text-sm text-blue-600 hover:text-blue-800 underline font-medium"
-                    >
-                      ↶ Revert to my text
-                    </button>
+                    />
                   </div>
-                )}
-              </div>
 
-              {/* 2.5. Story */}
-              <div>
-                <label className="block font-semibold mb-2 text-gray-900">
-                  Story <span className="text-gray-400 font-normal">(optional)</span>
-                </label>
-                <p className="text-xs text-gray-500 mb-1.5 leading-relaxed">
-                  A quick note in your own words — where it came from, why you loved it, or anything worth knowing.
-                </p>
-                <div className="flex gap-2 items-start">
-                <textarea
-                  ref={storyTextareaRef}
-                  value={story}
-                  onChange={(e) => {
-                    setStory(e.target.value);
-                    setIsDirty(true);
-                  }}
-                    className="flex-1 border border-gray-300 rounded-lg px-4 py-2 text-[#333333] resize-none overflow-hidden"
-                    rows={3}
-                    placeholder="Example: &quot;We found this during a kitchen reno and loved the warm glow. It&apos;s been wrapped and stored since—ready for its next home.&quot;"
-                    style={{ minHeight: '72px' }}
-                  />
-                  <VoiceInputButton 
-                    onTranscript={handleStoryVoice}
-                    className="mt-1"
-                    ariaLabel="Speak your story"
-                  />
+                  <div>
+                    <label className="block font-semibold mb-2 text-gray-900">Description</label>
+                    <p className="text-xs text-gray-500 mb-1.5">
+                      Start typing anytime — we'll never overwrite your words.
+                    </p>
+                    <div className="flex gap-2 items-start">
+                      <textarea
+                        value={description}
+                        onChange={(e) => {
+                          const newValue = e.target.value;
+                          setDescription(newValue);
+                          descriptionValueRef.current = newValue;
+                          setUserHasEditedDescription(true);
+                          setIsDirty(true);
+                        }}
+                        className="flex-1 border border-gray-300 rounded-lg px-4 py-2 text-[#333333]"
+                        rows={4}
+                        placeholder={processingStep === 'analyzing' || processingStep === 'generating' ? "AI analyzing... description coming soon" : "Describe your item or use voice..."}
+                      />
+                      <VoiceInputButton onTranscript={handleDescriptionVoice} className="mt-1" />
+                    </div>
+                    <AISuggestionBar
+                      pendingText={pendingAIDescription}
+                      isPreviewing={previewingDescription}
+                      onTogglePreview={() => setPreviewingDescription(!previewingDescription)}
+                      onReplace={() => {
+                        if (pendingAIDescription) {
+                          setOriginalUserDescription(description || null);
+                          setDescription(pendingAIDescription);
+                          descriptionValueRef.current = pendingAIDescription;
+                          setPendingAIDescription(null);
+                          setPreviewingDescription(false);
+                        }
+                      }}
+                    />
+                    {originalUserDescription !== null && (
+                      <div className="mt-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setDescription(originalUserDescription);
+                            descriptionValueRef.current = originalUserDescription;
+                            setOriginalUserDescription(null);
+                          }}
+                          className="text-sm text-blue-600 hover:text-blue-800 underline font-medium"
+                        >
+                          ↶ Revert to my text
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <p className="text-xs text-gray-400 mt-1 leading-tight">
-                  2–4 sentences is plenty.
-                </p>
               </div>
 
-              {/* 3. Price */}
+              {/* Price */}
               <div>
                 <label className="block font-semibold mb-2 text-gray-900">Price</label>
                 <div className="relative">
@@ -1773,21 +1745,26 @@ export default function SellerUploadForm() {
                     }
                   }}
                 />
-                
                 {result.pricingIntelligence && (
-                  <div className="mt-2 p-3 rounded-lg text-sm" style={{ backgroundColor: 'rgba(25, 25, 112, 0.1)' }}>
-                    <p className="font-semibold mb-1" style={{ color: '#191970' }}>
+                  <div
+                    className="mt-2 p-3 rounded-lg text-sm"
+                    style={{
+                      backgroundColor: '#fff9f0',
+                      borderLeft: '3px solid #c5a028',
+                    }}
+                  >
+                    <p className="font-semibold mb-1" style={{ color: '#16193a' }}>
                       💡 {result.pricingIntelligence.source === 'ebay' ? 'eBay Market Data' : 'AI Price Estimate'}:
                     </p>
-                    <p style={{ color: '#191970' }}>
-                      {result.pricingIntelligence.source === 'ebay' 
+                    <p style={{ color: '#16193a' }}>
+                      {result.pricingIntelligence.source === 'ebay'
                         ? `Similar items sold for $${result.pricingIntelligence.minPrice} - $${result.pricingIntelligence.maxPrice}`
                         : `Suggested price range: $${result.pricingIntelligence.minPrice} - $${result.pricingIntelligence.maxPrice}`
                       }
-                      {' '}(recommended: <strong style={{ color: '#cfb53b' }}>${result.pricingIntelligence.avgPrice}</strong>)
+                      {' '}(recommended: <strong style={{ color: '#c5a028' }}>${result.pricingIntelligence.avgPrice}</strong>)
                     </p>
                     <p className="text-xs mt-1" style={{ color: '#4b5563' }}>
-                      {result.pricingIntelligence.source === 'ebay' 
+                      {result.pricingIntelligence.source === 'ebay'
                         ? `Based on ${result.pricingIntelligence.recentSales} recent eBay sales`
                         : 'Estimated based on item type, condition, and market trends'
                       }
@@ -1796,101 +1773,32 @@ export default function SellerUploadForm() {
                 )}
               </div>
 
-              {/* 4. AI Detected Tags */}
-              {result.detectedAttributes?.filter(attr => !removedAITags.has(attr)).length > 0 && (
-                <div>
-                  <label className="block font-semibold mb-2">AI Detected Tags</label>
-                  <div className="flex flex-wrap gap-1.5">
-                    {result.detectedAttributes?.filter(attr => !removedAITags.has(attr)).map((attr, i) => (
-                      <span
-                        key={i}
-                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs"
-                        style={{ backgroundColor: 'rgba(207, 181, 59, 0.1)', color: '#4b5563', border: '1px solid rgba(207, 181, 59, 0.3)' }}
-                      >
-                        {attr}
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setRemovedAITags(prev => new Set(prev).add(attr));
-                          }}
-                          className="ml-0.5 hover:bg-gray-300/50 rounded-full p-0.5 transition-colors"
-                          aria-label={`Remove ${attr}`}
-                        >
-                          <X size={10} className="text-gray-600" />
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* 5. Keywords & Moods */}
-              <div>
-                <label className="block font-semibold mb-2">
-                  Add Keywords <span className="text-gray-400 font-normal">(optional)</span>
-                </label>
-                <p className="text-xs text-gray-500 mb-1.5 leading-relaxed">
-                  AI suggests most keywords for you. Add 1–2 if there&apos;s something only you know — where it belongs, how it&apos;s used, or why someone would love it.
-                </p>
-                <div className="flex gap-2 mb-1.5">
-                  <input
-                    type="text"
-                    value={keywords}
-                    onChange={(e) => {
-                      setKeywords(e.target.value);
-                      setIsDirty(true);
-                    }}
-                    className="flex-1 border border-gray-300 rounded-lg px-4 h-11 text-[#333333]"
-                    placeholder="Add a keyword..."
-                  />
-                  <VoiceInputButton onTranscript={handleKeywordsVoice} />
-                </div>
-                <p className="text-xs text-gray-400 italic mb-1.5 leading-tight">
-                  Think: &quot;entryway statement&quot;, &quot;warm glow&quot;, &quot;giftable&quot;, &quot;small-space friendly&quot;.
-                </p>
-                {/* Clickable keyword suggestions */}
-                <div className="flex flex-wrap gap-1.5">
-                  <span className="text-xs text-gray-400 mr-1">Suggestions:</span>
-                  {['whimsical', 'vintage', 'elegant', 'quirky', 'folk art', 'retro', 'cozy', 'mid-century'].map((suggestion) => (
-                    <button
-                      key={suggestion}
-                      type="button"
-                      onClick={() => {
-                        const currentKeywords = keywords.split(',').map(k => k.trim()).filter(k => k);
-                        if (!currentKeywords.includes(suggestion)) {
-                          setKeywords(currentKeywords.length > 0 ? `${keywords}, ${suggestion}` : suggestion);
-                        }
-                      }}
-                      className={`px-2 py-0.5 rounded-full text-xs border transition-all
-                        ${keywords.toLowerCase().includes(suggestion) 
-                          ? 'text-white' 
-                          : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50 hover:border-gray-300'
-                        }`}
-                      style={keywords.toLowerCase().includes(suggestion) ? { backgroundColor: '#191970', borderColor: '#191970' } : {}}
-                    >
-                      {suggestion}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* 6. Category */}
+              {/* Category dropdown row */}
               <div>
                 <label className="block font-semibold mb-2">Category</label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={category}
-                    onChange={(e) => {
-                      setCategory(e.target.value);
-                      setUserHasEditedCategory(true);
-                      setIsDirty(true);
-                    }}
-                    className="flex-1 border border-gray-300 rounded-lg px-4 h-11 text-[#333333]"
-                    placeholder={processingStep === 'analyzing' || processingStep === 'generating' ? "AI analyzing... category coming soon" : "e.g., Home Decor, Vintage..."}
-                  />
-                  <VoiceInputButton onTranscript={handleCategoryVoice} />
-                </div>
+                <select
+                  value={category}
+                  onChange={(e) => {
+                    setCategory(e.target.value);
+                    setUserHasEditedCategory(true);
+                    setIsDirty(true);
+                  }}
+                  className="w-full border border-gray-300 rounded-lg px-4 h-11 bg-white"
+                >
+                  <option value="">Select category...</option>
+                  <option value="Kitchen & Dining">Kitchen & Dining</option>
+                  <option value="Home Decor">Home Decor</option>
+                  <option value="Collectibles">Collectibles</option>
+                  <option value="Books & Media">Books & Media</option>
+                  <option value="Furniture">Furniture</option>
+                  <option value="Art">Art</option>
+                  <option value="Electronics">Electronics</option>
+                  <option value="Fashion">Fashion</option>
+                  <option value="Jewelry">Jewelry</option>
+                  <option value="Toys & Games">Toys & Games</option>
+                  <option value="Sports & Outdoors">Sports & Outdoors</option>
+                  <option value="General">General</option>
+                </select>
                 <AISuggestionBar
                   pendingText={pendingAICategory}
                   isPreviewing={previewingCategory}
@@ -1905,7 +1813,7 @@ export default function SellerUploadForm() {
                 />
               </div>
 
-              {/* 7. Condition */}
+              {/* Condition dropdown row */}
               <div>
                 <label className="block font-semibold mb-2">
                   Condition <span className="text-gray-400 font-normal">(optional)</span>
@@ -1926,94 +1834,76 @@ export default function SellerUploadForm() {
                 </select>
               </div>
 
-              {/* 7a. Seller Notes */}
+              {/* Shipping dropdown row */}
               <div>
-                <label className="block font-semibold mb-2">
-                  Seller notes <span className="text-gray-400 font-normal">(optional)</span>
-                </label>
-                <textarea
-                  value={sellerNotes}
+                <label className="block font-semibold mb-2">Shipping</label>
+                <select
+                  value={shippingOverrideEnabled ? 'custom' : 'default'}
                   onChange={(e) => {
-                    setSellerNotes(e.target.value);
+                    const custom = e.target.value === 'custom';
+                    setShippingOverrideEnabled(custom);
+                    if (custom) {
+                      setCustomShippingPreferences(sellerDefaultShippingPreferences);
+                    }
                     setIsDirty(true);
                   }}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2 text-[#333333]"
-                  rows={3}
-                  placeholder="Patina, small marks, repairs, missing pieces — anything you'd want to know as a buyer."
-                />
+                  className="w-full border border-gray-300 rounded-lg px-4 h-11 bg-white"
+                >
+                  <option value="default">Use seller default shipping</option>
+                  <option value="custom">Custom shipping for this item</option>
+                </select>
+                {shippingOverrideEnabled && (
+                  <div className="mt-3 p-3 bg-gray-50 border border-gray-200 rounded-xl">
+                    <p className="text-xs text-gray-500 mb-2">This only applies to this listing.</p>
+                    <ShippingPreferenceForm
+                      label=""
+                      showLabel={false}
+                      value={customShippingPreferences}
+                      onChange={(prefs) => {
+                        setCustomShippingPreferences(prefs);
+                        setIsDirty(true);
+                      }}
+                    />
+                  </div>
+                )}
               </div>
 
-              {/* 8. Specifications */}
+              {/* Story (optional) */}
               <div>
-                <label className="block font-semibold mb-2">
-                  Specifications <span className="text-gray-400 font-normal">(optional)</span>
+                <label className="block font-semibold mb-2 text-gray-900">
+                  Story <span className="text-gray-400 font-normal">(optional)</span>
                 </label>
+                <p className="text-xs text-gray-500 mb-1.5 leading-relaxed">
+                  A quick note in your own words — where it came from, why you loved it, or anything worth knowing.
+                </p>
                 <div className="flex gap-2 items-start">
-                <textarea
-                  value={specifications}
-                  onChange={(e) => {
-                    setSpecifications(e.target.value);
-                    setIsDirty(true);
-                  }}
-                    className="flex-1 border border-gray-300 rounded-lg px-4 py-2 text-[#333333]"
-                    rows={2}
-                    placeholder="Dimensions, materials, brand, era..."
+                  <textarea
+                    ref={storyTextareaRef}
+                    value={story}
+                    onChange={(e) => {
+                      setStory(e.target.value);
+                      setIsDirty(true);
+                    }}
+                    className="flex-1 border border-gray-300 rounded-lg px-4 py-2 text-[#333333] resize-none overflow-hidden"
+                    rows={3}
+                    placeholder="Example: &quot;We found this during a kitchen reno and loved the warm glow. It&apos;s been wrapped and stored since—ready for its next home.&quot;"
+                    style={{ minHeight: '72px' }}
                   />
-                  <VoiceInputButton 
-                    onTranscript={handleSpecificationsVoice}
+                  <VoiceInputButton
+                    onTranscript={handleStoryVoice}
                     className="mt-1"
+                    ariaLabel="Speak your story"
                   />
                 </div>
+                <p className="text-xs text-gray-400 mt-1 leading-tight">
+                  2–4 sentences is plenty.
+                </p>
               </div>
-            </div>
-          </div>
 
-          {/* Shipping banner override (before Publish) - same radio+checkboxes as onboarding */}
-          <div className="mb-4 p-4 bg-gray-50 border border-gray-200 rounded-xl">
-            <p className="font-semibold text-gray-900 mb-3">Make changes to your shipping banner for this item?</p>
-            <div className="flex gap-4 mb-3">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="radio"
-                  name="shippingOverride"
-                  checked={!shippingOverrideEnabled}
-                  onChange={() => {
-                    setShippingOverrideEnabled(false);
-                    setIsDirty(true);
-                  }}
-                  className="w-4 h-4 border-gray-300 text-[#191970] focus:ring-[#191970]"
-                />
-                <span className="text-gray-700">No</span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="radio"
-                  name="shippingOverride"
-                  checked={shippingOverrideEnabled}
-                  onChange={() => {
-                    setShippingOverrideEnabled(true);
-                    setCustomShippingPreferences(sellerDefaultShippingPreferences);
-                    setIsDirty(true);
-                  }}
-                  className="w-4 h-4 border-gray-300 text-[#191970] focus:ring-[#191970]"
-                />
-                <span className="text-gray-700">Yes</span>
-              </label>
+              <p className="text-xs text-gray-500 italic">
+                Keywords and specs auto-generated · edit anytime
+              </p>
             </div>
-            {shippingOverrideEnabled && (
-              <div className="mt-3 pl-0">
-                <p className="text-xs text-gray-500 mb-2">This only applies to this listing.</p>
-                <ShippingPreferenceForm
-                  label=""
-                  showLabel={false}
-                  value={customShippingPreferences}
-                  onChange={(prefs) => {
-                    setCustomShippingPreferences(prefs);
-                    setIsDirty(true);
-                  }}
-                />
-              </div>
-            )}
           </div>
 
           {/* Action Buttons */}
@@ -2034,7 +1924,7 @@ export default function SellerUploadForm() {
                     onClick={resetForm}
                     className="flex-1 py-3 rounded-lg font-semibold transition text-white"
                     style={{ 
-                      backgroundColor: '#191970',
+                      backgroundColor: '#16193a',
                     }}
                   >
                     List Another?
@@ -2043,8 +1933,8 @@ export default function SellerUploadForm() {
                     onClick={() => router.push('/seller')}
                     className="flex-1 py-3 rounded-lg font-semibold transition border-2"
                     style={{ 
-                      borderColor: '#191970',
-                      color: '#191970',
+                      borderColor: '#16193a',
+                      color: '#16193a',
                     }}
                   >
                     My Listings
@@ -2055,7 +1945,7 @@ export default function SellerUploadForm() {
                 <button
                   onClick={() => router.push(`/listing/${listingId}`)}
                   className="w-full text-center text-sm underline transition hover:opacity-70"
-                  style={{ color: '#cfb53b' }}
+                  style={{ color: '#c5a028' }}
                 >
                   View your published listing →
                 </button>
@@ -2068,7 +1958,7 @@ export default function SellerUploadForm() {
                   disabled={isPublishing || isSaving || !listingId}
                   className="flex-1 py-3 rounded-lg font-semibold transition flex items-center justify-center gap-2 text-white"
                   style={{ 
-                    backgroundColor: (isPublishing) ? '#9ca3af' : '#191970',
+                    backgroundColor: (isPublishing) ? '#9ca3af' : '#16193a',
                     cursor: (isPublishing) ? 'not-allowed' : 'pointer',
                   }}
                   title={isStripeReady === false ? 'Note: Connect Stripe to receive payments when buyers purchase.' : ''}
@@ -2127,7 +2017,8 @@ export default function SellerUploadForm() {
             {/* Return to Dashboard Link */}
             <Link
               href="/seller"
-              className="flex items-center justify-center gap-2 px-4 py-3 text-gray-600 hover:text-[#191970] transition-colors font-medium"
+              className="flex items-center justify-center gap-2 px-4 py-3 text-gray-600 transition-colors font-medium"
+              style={{ color: '#16193a' }}
             >
               <ArrowLeft size={18} />
               Return to Seller Dashboard
