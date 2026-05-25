@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, FormEvent } from "react";
+import { useState, useEffect, useMemo, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
@@ -8,6 +8,7 @@ import { getStripe } from "../../../lib/stripeClient";
 import { Listing, getPrimaryImage, getSellerDisplayName } from "../../../lib/types";
 import { useAuth } from "../../context/AuthContext";
 import { supabase } from "../../../lib/supabaseClient";
+import { resolveCheckoutShipping } from "../../../lib/shippingPreferences";
 
 interface ShippingInfo {
   name: string;
@@ -25,12 +26,12 @@ interface CheckoutClientProps {
 function CheckoutForm({ 
   listing, 
   shippingInfo,
-  userId,
+  buyerTotal,
   onSuccess 
 }: { 
   listing: Listing; 
   shippingInfo: ShippingInfo;
-  userId: string;
+  buyerTotal: number;
   onSuccess: (orderId: string) => void;
 }) {
   const stripe = useStripe();
@@ -80,9 +81,7 @@ function CheckoutForm({
           body: JSON.stringify({
             listingId: listing.id,
             paymentIntentId: paymentIntent.id,
-            amount: listing.price,
             shippingInfo,
-            // userId removed - server gets it from auth
           }),
         });
 
@@ -141,7 +140,7 @@ function CheckoutForm({
             Processing...
           </>
         ) : (
-          `Pay $${listing.price.toFixed(2)}`
+          `Pay $${buyerTotal.toFixed(2)}`
         )}
       </button>
 
@@ -152,6 +151,16 @@ function CheckoutForm({
 export default function CheckoutClient({ listing }: CheckoutClientProps) {
   const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
+  const checkoutShipping = useMemo(
+    () =>
+      resolveCheckoutShipping(
+        listing.price,
+        listing.custom_shipping_policy,
+        listing.profiles?.shipping_info
+      ),
+    [listing]
+  );
+  const [checkoutTotals, setCheckoutTotals] = useState(checkoutShipping);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -164,6 +173,10 @@ export default function CheckoutClient({ listing }: CheckoutClientProps) {
     zip: "",
     phone: "",
   });
+
+  useEffect(() => {
+    setCheckoutTotals(checkoutShipping);
+  }, [checkoutShipping]);
 
   // Redirect to login if not authenticated (only after auth has finished loading)
   useEffect(() => {
@@ -204,7 +217,7 @@ export default function CheckoutClient({ listing }: CheckoutClientProps) {
   const handleShippingSubmit = async (e: FormEvent) => {
     e.preventDefault();
     
-    if (!isShippingComplete) return;
+    if (!isShippingComplete || checkoutShipping.isCheckoutBlocked) return;
 
     setIsLoading(true);
     setError(null);
@@ -216,7 +229,7 @@ export default function CheckoutClient({ listing }: CheckoutClientProps) {
         body: JSON.stringify({
           listingId: listing.id,
           shippingInfo,
-          userId: user.id, // Include userId for payment intent metadata (webhook fallback)
+          userId: user.id,
         }),
       });
 
@@ -226,6 +239,13 @@ export default function CheckoutClient({ listing }: CheckoutClientProps) {
         setError(data.error);
       } else {
         setClientSecret(data.clientSecret);
+        setCheckoutTotals((prev) => ({
+          ...prev,
+          itemSubtotal: data.itemSubtotal ?? prev.itemSubtotal,
+          shippingAmount: data.shippingAmount ?? prev.shippingAmount,
+          buyerTotal: data.amount ?? prev.buyerTotal,
+          shippingLineLabel: data.shippingLineLabel ?? prev.shippingLineLabel,
+        }));
         setStep("payment");
       }
     } catch (err) {
@@ -305,19 +325,33 @@ export default function CheckoutClient({ listing }: CheckoutClientProps) {
 
           <div className="mt-4 pt-4 border-t border-gray-200 space-y-2">
             <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Subtotal</span>
-              <span className="text-gray-900">${listing.price.toFixed(2)}</span>
+              <span className="text-gray-600">Item price</span>
+              <span className="text-gray-900">${checkoutTotals.itemSubtotal.toFixed(2)}</span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-gray-600">Shipping</span>
-              <span className="text-emerald-600">Free</span>
+              <span
+                className={
+                  checkoutTotals.shippingLineLabel === "Free"
+                    ? "text-emerald-600"
+                    : "text-gray-900"
+                }
+              >
+                {checkoutTotals.shippingLineLabel}
+              </span>
             </div>
             <div className="flex justify-between font-semibold pt-2 border-t border-gray-200 text-gray-900">
               <span>Total</span>
-              <span>${listing.price.toFixed(2)}</span>
+              <span>${checkoutTotals.buyerTotal.toFixed(2)}</span>
             </div>
           </div>
         </div>
+
+        {checkoutShipping.isCheckoutBlocked && (
+          <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl">
+            <p className="text-amber-900 text-sm">{checkoutShipping.checkoutBlockReason}</p>
+          </div>
+        )}
 
         {error && (
           <div className="p-4 bg-red-50 border border-red-200 rounded-xl">
@@ -405,7 +439,7 @@ export default function CheckoutClient({ listing }: CheckoutClientProps) {
 
             <button
               type="submit"
-              disabled={!isShippingComplete || isLoading}
+              disabled={!isShippingComplete || isLoading || checkoutShipping.isCheckoutBlocked}
               className="w-full h-14 bg-gray-900 text-white font-bold text-lg rounded-full hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mt-6 flex items-center justify-center gap-2"
             >
               {isLoading ? (
@@ -464,7 +498,7 @@ export default function CheckoutClient({ listing }: CheckoutClientProps) {
               <CheckoutForm 
                 listing={listing} 
                 shippingInfo={shippingInfo}
-                userId={user!.id}
+                buyerTotal={checkoutTotals.buyerTotal}
                 onSuccess={handlePaymentSuccess}
               />
             </Elements>

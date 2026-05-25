@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useAuth } from "../context/AuthContext";
 import { supabase } from "../../lib/supabaseClient";
 import { TSLogo } from "../../components/TSLogo";
+import { SellerFeeTransparencyLine } from "../../components/SellerFeeTransparency";
 import { Loader2 } from "lucide-react";
 
 function SignUpForm() {
@@ -216,6 +217,9 @@ function SignUpForm() {
                 ? 'Set up your shop and start selling unique finds' 
                 : 'Join ThriftShopper and start discovering unique finds'}
             </p>
+            {isSellerSignup && (
+              <SellerFeeTransparencyLine className="mt-3 max-w-sm mx-auto" />
+            )}
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">

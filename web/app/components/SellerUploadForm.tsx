@@ -3,7 +3,7 @@
 
 'use client';
 
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { Mic, Loader2, X, LogIn, ArrowLeft } from 'lucide-react';
 import { TSLogo } from '@/components/TSLogo';
 import { useWhisperTranscription } from '@/hooks/useWhisperTranscription';
@@ -18,7 +18,16 @@ import {
   DEFAULT_SHIPPING_PREFERENCES,
   serializeShippingPreferences,
   parseShippingPreferences,
+  generateShippingBannerText,
+  validateListingShippingPreferences,
+  isBuyerPaysMissingFlatRate,
+  SELLER_LISTING_NEEDS_SHIPPING_MESSAGE,
 } from '@/lib/shippingPreferences';
+import {
+  calculateSellerEarningsPreview,
+  formatUsd,
+  parseValidListingPrice,
+} from '@/lib/marketplaceFees';
 
 interface UploadResult {
   processedImageUrl: string;
@@ -257,10 +266,11 @@ export default function SellerUploadForm() {
   // Track AI tags that have been removed by the user
   const [removedAITags, setRemovedAITags] = useState<Set<string>>(new Set());
   
-  // Optional per-listing shipping override (same radio+checkboxes as onboarding)
+  // Per-listing shipping (default: free shipping)
   const [sellerDefaultShippingPreferences, setSellerDefaultShippingPreferences] = useState<ShippingPreferences>(DEFAULT_SHIPPING_PREFERENCES);
-  const [shippingOverrideEnabled, setShippingOverrideEnabled] = useState(false);
-  const [customShippingPreferences, setCustomShippingPreferences] = useState<ShippingPreferences>(DEFAULT_SHIPPING_PREFERENCES);
+  const [listingShippingPreferences, setListingShippingPreferences] = useState<ShippingPreferences>(DEFAULT_SHIPPING_PREFERENCES);
+  const [showStripeConnectGate, setShowStripeConnectGate] = useState(false);
+  const [isConnectingStripe, setIsConnectingStripe] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -462,9 +472,18 @@ export default function SellerUploadForm() {
         
         // Per-listing shipping override (if any) - parse JSON or use default
         const customShipping = (listing as { custom_shipping_policy?: string | null }).custom_shipping_policy;
-        const parsed = parseShippingPreferences(customShipping ?? null);
-        setShippingOverrideEnabled(!!customShipping);
-        setCustomShippingPreferences(parsed ?? DEFAULT_SHIPPING_PREFERENCES);
+        let shippingPrefs = parseShippingPreferences(customShipping ?? null);
+        if (!shippingPrefs) {
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('shipping_info')
+            .eq('user_id', listing.seller_id)
+            .maybeSingle();
+          shippingPrefs =
+            parseShippingPreferences(profileData?.shipping_info ?? null) ??
+            DEFAULT_SHIPPING_PREFERENCES;
+        }
+        setListingShippingPreferences(shippingPrefs);
         
         // Use AI suggested keywords for detectedAttributes, or fallback to categorized keywords
         const detectedAttributes = dbAiSuggested.length > 0 ? dbAiSuggested : keywordsArrayForDisplay;
@@ -490,6 +509,12 @@ export default function SellerUploadForm() {
     
     loadListingForEdit();
   }, [user]);
+
+  const earningsPreview = useMemo(() => {
+    const validPrice = parseValidListingPrice(price);
+    if (validPrice === null) return null;
+    return calculateSellerEarningsPreview(validPrice);
+  }, [price]);
 
   // Voice input handlers - MUST be before any returns (React Hooks rules)
   const handleTitleVoice = useCallback((transcript: string) => {
@@ -1008,16 +1033,49 @@ export default function SellerUploadForm() {
     }
   };
 
+  const handleConnectStripe = async () => {
+    setIsConnectingStripe(true);
+    setError('');
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('Not authenticated');
+      }
+      const response = await fetch('/api/stripe/create-account-link', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+      const data = await response.json();
+      if (!response.ok || !data.url) {
+        throw new Error(data.error || 'Failed to connect Stripe');
+      }
+      window.location.href = data.url;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to connect Stripe');
+      setIsConnectingStripe(false);
+    }
+  };
+
   const handlePublish = async () => {
     if (!listingId) {
       setError('No listing to publish');
       return;
     }
 
-    // Stripe is now optional for publishing (beta mode)
-    // Sellers can publish without Stripe, but buyers can't checkout without it
     setIsPublishing(true);
     setError('');
+    setShowStripeConnectGate(false);
+
+    const shippingValidationError = validateListingShippingPreferences(
+      listingShippingPreferences
+    );
+    if (shippingValidationError) {
+      setError(shippingValidationError);
+      setIsPublishing(false);
+      return;
+    }
 
     try {
       // Parse seller-added keywords
@@ -1060,7 +1118,7 @@ export default function SellerUploadForm() {
         moods,
         intents,
         // Per-listing shipping override (null = use seller default)
-        custom_shipping_policy: shippingOverrideEnabled ? serializeShippingPreferences(customShippingPreferences) : null,
+        custom_shipping_policy: serializeShippingPreferences(listingShippingPreferences),
         // Keep status as draft for now - API route will change it
         // Use processed or original image based on toggle
         clean_image_url: showProcessedImage ? result?.processedImageUrl : null,
@@ -1105,7 +1163,13 @@ export default function SellerUploadForm() {
 
       console.log('✅ [handlePublish] Successfully saved to database');
 
-      // Now call the publish API route which enforces Stripe check
+      // Publish requires Stripe — list and save drafts freely; connect when ready to sell
+      if (isStripeReady !== true) {
+        setShowStripeConnectGate(true);
+        return;
+      }
+
+      // Call the publish API route
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         throw new Error('Not authenticated');
@@ -1123,6 +1187,14 @@ export default function SellerUploadForm() {
       const publishData = await publishResponse.json();
 
       if (!publishResponse.ok) {
+        if (publishData.code === 'STRIPE_NOT_COMPLETE') {
+          setShowStripeConnectGate(true);
+          return;
+        }
+        if (publishData.code === 'SHIPPING_NOT_CONFIGURED') {
+          setError(publishData.error || SELLER_LISTING_NEEDS_SHIPPING_MESSAGE);
+          return;
+        }
         setError(publishData.error || 'Failed to publish listing');
         return;
       }
@@ -1193,7 +1265,7 @@ export default function SellerUploadForm() {
         styles,
         moods,
         intents,
-        custom_shipping_policy: shippingOverrideEnabled ? serializeShippingPreferences(customShippingPreferences) : null,
+        custom_shipping_policy: serializeShippingPreferences(listingShippingPreferences),
         // Keep as draft
         status: 'draft',
         clean_image_url: showProcessedImage ? result?.processedImageUrl : null,
@@ -1289,8 +1361,8 @@ export default function SellerUploadForm() {
     setUserHasEditedPrice(false);
     setRemovedAITags(new Set()); // Reset removed AI tags
     setIsDirty(false);
-    setShippingOverrideEnabled(false);
-    setCustomShippingPreferences(DEFAULT_SHIPPING_PREFERENCES);
+    setListingShippingPreferences(sellerDefaultShippingPreferences);
+    setShowStripeConnectGate(false);
   };
 
 
@@ -1771,6 +1843,34 @@ export default function SellerUploadForm() {
                     </p>
                   </div>
                 )}
+                {earningsPreview && (
+                  <div
+                    className="mt-3 p-3 rounded-lg text-sm border"
+                    style={{ backgroundColor: '#f9fafb', borderColor: '#e5e7eb' }}
+                  >
+                    <p className="text-xs font-medium uppercase tracking-wide mb-2" style={{ color: '#6b7280' }}>
+                      Your earnings preview
+                    </p>
+                    <div className="space-y-1" style={{ color: '#16193a' }}>
+                      <div className="flex justify-between gap-4">
+                        <span>Price</span>
+                        <span>{formatUsd(earningsPreview.price)}</span>
+                      </div>
+                      <div className="flex justify-between gap-4">
+                        <span>Marketplace fee</span>
+                        <span>-{formatUsd(earningsPreview.marketplaceFee)}</span>
+                      </div>
+                      <div className="flex justify-between gap-4 font-semibold pt-1 border-t border-gray-200">
+                        <span>You receive</span>
+                        <span>{formatUsd(earningsPreview.sellerReceives)}</span>
+                      </div>
+                    </div>
+                    <p className="text-xs mt-2 leading-relaxed" style={{ color: '#6b7280' }}>
+                      You receive approximately {formatUsd(earningsPreview.sellerReceives)} after
+                      ThriftShopper&apos;s 10% marketplace fee.
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Category dropdown row */}
@@ -1834,38 +1934,29 @@ export default function SellerUploadForm() {
                 </select>
               </div>
 
-              {/* Shipping dropdown row */}
+              {/* Shipping */}
               <div>
-                <label className="block font-semibold mb-2">Shipping</label>
-                <select
-                  value={shippingOverrideEnabled ? 'custom' : 'default'}
-                  onChange={(e) => {
-                    const custom = e.target.value === 'custom';
-                    setShippingOverrideEnabled(custom);
-                    if (custom) {
-                      setCustomShippingPreferences(sellerDefaultShippingPreferences);
-                    }
-                    setIsDirty(true);
-                  }}
-                  className="w-full border border-gray-300 rounded-lg px-4 h-11 bg-white"
-                >
-                  <option value="default">Use seller default shipping</option>
-                  <option value="custom">Custom shipping for this item</option>
-                </select>
-                {shippingOverrideEnabled && (
-                  <div className="mt-3 p-3 bg-gray-50 border border-gray-200 rounded-xl">
-                    <p className="text-xs text-gray-500 mb-2">This only applies to this listing.</p>
-                    <ShippingPreferenceForm
-                      label=""
-                      showLabel={false}
-                      value={customShippingPreferences}
-                      onChange={(prefs) => {
-                        setCustomShippingPreferences(prefs);
-                        setIsDirty(true);
-                      }}
-                    />
-                  </div>
-                )}
+                <label className="block font-semibold mb-1 text-gray-900">Shipping</label>
+                <p className="text-xs text-gray-500 mb-3 leading-relaxed">
+                  You can offer free shipping or set a shipping amount for this item.
+                  Default: {generateShippingBannerText(DEFAULT_SHIPPING_PREFERENCES)}.
+                </p>
+                <div className="p-3 bg-gray-50 border border-gray-200 rounded-xl">
+                  {isBuyerPaysMissingFlatRate(listingShippingPreferences) && (
+                    <p className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-3">
+                      Needs shipping amount — add a flat rate before publishing, or choose free shipping or local pickup.
+                    </p>
+                  )}
+                  <ShippingPreferenceForm
+                    label=""
+                    showLabel={false}
+                    value={listingShippingPreferences}
+                    onChange={(prefs) => {
+                      setListingShippingPreferences(prefs);
+                      setIsDirty(true);
+                    }}
+                  />
+                </div>
               </div>
 
               {/* Story (optional) */}
@@ -1961,7 +2052,6 @@ export default function SellerUploadForm() {
                     backgroundColor: (isPublishing) ? '#9ca3af' : '#16193a',
                     cursor: (isPublishing) ? 'not-allowed' : 'pointer',
                   }}
-                  title={isStripeReady === false ? 'Note: Connect Stripe to receive payments when buyers purchase.' : ''}
                 >
                   {isPublishing ? (
                     <>
@@ -2023,6 +2113,49 @@ export default function SellerUploadForm() {
               <ArrowLeft size={18} />
               Return to Seller Dashboard
             </Link>
+          </div>
+        </div>
+      )}
+      {showStripeConnectGate && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ backgroundColor: 'rgba(22, 25, 58, 0.45)' }}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="stripe-connect-gate-title"
+        >
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
+            <h2
+              id="stripe-connect-gate-title"
+              className="text-xl font-semibold mb-2 font-editorial"
+              style={{ color: '#16193a' }}
+            >
+              Connect payments to start selling
+            </h2>
+            <p className="text-sm text-gray-600 mb-2 leading-relaxed">
+              Your listing is saved. Connect Stripe so buyers can purchase when you&apos;re ready.
+            </p>
+            <p className="text-sm text-gray-600 mb-6 leading-relaxed">
+              Listing is free. ThriftShopper takes a 10% marketplace fee only when your item sells.
+            </p>
+            <div className="flex flex-col gap-3">
+              <button
+                type="button"
+                onClick={handleConnectStripe}
+                disabled={isConnectingStripe}
+                className="w-full py-3 rounded-lg font-semibold text-white transition disabled:opacity-60"
+                style={{ backgroundColor: '#16193a' }}
+              >
+                {isConnectingStripe ? 'Connecting…' : 'Connect Stripe'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowStripeConnectGate(false)}
+                className="w-full py-2 text-sm text-gray-600 hover:text-gray-900"
+              >
+                Keep editing — I&apos;ll connect later
+              </button>
+            </div>
           </div>
         </div>
       )}

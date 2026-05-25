@@ -11,6 +11,10 @@ import { Loader2, Plus, ArrowLeft, Settings, MessageSquare, ChevronDown, Chevron
 import { GlintIcon } from '../../components/GlintIcon';
 import Link from 'next/link';
 import SupportModal from '@/components/SupportModal';
+import {
+  listingNeedsShippingAmountFix,
+  SELLER_LISTING_NEEDS_SHIPPING_MESSAGE,
+} from '@/lib/shippingPreferences';
 
 interface Listing {
   id: string;
@@ -20,6 +24,7 @@ interface Listing {
   original_image_url: string | null;
   clean_image_url: string | null;
   created_at: string;
+  custom_shipping_policy?: string | null;
 }
 
 interface OrderCardProps {
@@ -592,7 +597,7 @@ export default function SellerPageClient() {
     try {
       const { data, error: listingsError } = await supabase
         .from('listings')
-        .select('id, title, price, status, original_image_url, clean_image_url, created_at')
+        .select('id, title, price, status, original_image_url, clean_image_url, created_at, custom_shipping_policy')
         .eq('seller_id', user.id)
         .order('created_at', { ascending: false });
 
@@ -757,6 +762,29 @@ export default function SellerPageClient() {
     try {
       // If publishing, use the API route
       if (newStatus === 'active') {
+        const listingToPublish = listings.find((l) => l.id === listingId);
+        if (
+          listingToPublish &&
+          listingNeedsShippingAmountFix(
+            listingToPublish.custom_shipping_policy,
+            profile?.shipping_info
+          )
+        ) {
+          alert(
+            `${SELLER_LISTING_NEEDS_SHIPPING_MESSAGE}\n\nEdit the listing and add a shipping amount, or switch to free shipping or local pickup.`
+          );
+          setUpdatingId(null);
+          return;
+        }
+
+        if (!isStripeConnectedEnough) {
+          alert(
+            'Connect payments to start selling.\n\nListing is free. ThriftShopper takes a 10% marketplace fee only when your item sells.'
+          );
+          setUpdatingId(null);
+          return;
+        }
+
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) {
           throw new Error('Not authenticated');
@@ -774,7 +802,15 @@ export default function SellerPageClient() {
         const publishData = await publishResponse.json();
 
         if (!publishResponse.ok) {
-          alert(publishData.error || 'Failed to publish listing');
+          if (publishData.code === 'STRIPE_NOT_COMPLETE') {
+            alert(
+              `${publishData.error}\n\n${publishData.message || 'Connect Stripe to receive payments when your item sells.'}`
+            );
+          } else if (publishData.code === 'SHIPPING_NOT_CONFIGURED') {
+            alert(publishData.error || SELLER_LISTING_NEEDS_SHIPPING_MESSAGE);
+          } else {
+            alert(publishData.error || 'Failed to publish listing');
+          }
           return;
         }
       } else {
@@ -1266,6 +1302,10 @@ export default function SellerPageClient() {
                   };
                   
                   const statusBadge = getStatusBadge();
+                  const needsShippingAmount = listingNeedsShippingAmountFix(
+                    listing.custom_shipping_policy,
+                    profile?.shipping_info
+                  );
                   const listingHref = (listing.status || 'draft') === 'draft'
                     ? `/sell?edit=${listing.id}`
                     : `/listing/${listing.id}`;
@@ -1461,6 +1501,14 @@ export default function SellerPageClient() {
                           >
                             {statusBadge.label}
                           </span>
+                          {needsShippingAmount && (
+                            <span
+                              className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-amber-100 text-amber-800"
+                              style={{ margin: 0, padding: '2px 6px' }}
+                            >
+                              Needs shipping amount
+                            </span>
+                          )}
                         </div>
 
                         {/* Line 3: Timestamp + Share Tools */}

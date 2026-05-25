@@ -1,6 +1,5 @@
 "use client";
 
-import { Package } from "lucide-react";
 import type { ShippingPreferences, ShippingPrimary } from "@/lib/shippingPreferences";
 
 interface ShippingPreferenceFormProps {
@@ -22,10 +21,21 @@ export function ShippingPreferenceForm({
   const optsDisabled = disabled;
 
   const setPrimary = (primary: ShippingPrimary) => {
-    onChange({ ...value, primary });
     if (primary === "local_only") {
-      onChange({ ...value, primary, localPickupAvailable: false, shipsIn1To2Days: false });
+      onChange({
+        ...value,
+        primary,
+        localPickupAvailable: false,
+        shipsIn1To2Days: false,
+        flatRate: null,
+      });
+      return;
     }
+    if (primary === "free") {
+      onChange({ ...value, primary, flatRate: null });
+      return;
+    }
+    onChange({ ...value, primary });
   };
 
   return (
@@ -56,7 +66,7 @@ export function ShippingPreferenceForm({
             disabled={optsDisabled}
             className="w-4 h-4 border-gray-300 text-[#16193a] focus:ring-[#16193a]"
           />
-          <span className="text-gray-800">Buyer pays shipping (calculated at checkout)</span>
+          <span className="text-gray-800">Buyer pays shipping (flat amount)</span>
         </label>
         <label className="flex items-center gap-3 cursor-pointer">
           <input
@@ -70,6 +80,35 @@ export function ShippingPreferenceForm({
           <span className="text-gray-800">Local pickup only (no shipping available)</span>
         </label>
       </div>
+      {value.primary === "buyer_pays" && (
+        <div className="pl-1">
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">
+            Shipping amount
+          </label>
+          <div className="relative max-w-xs">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              value={value.flatRate ?? ""}
+              onChange={(e) => {
+                const raw = e.target.value;
+                onChange({
+                  ...value,
+                  flatRate: raw === "" ? null : Number(raw),
+                });
+              }}
+              disabled={optsDisabled}
+              placeholder="0.00"
+              className="w-full border border-gray-300 rounded-lg pl-7 pr-3 py-2 text-gray-900"
+            />
+          </div>
+          <p className="text-xs text-gray-500 mt-1">
+            Buyer pays this amount at checkout in addition to the item price.
+          </p>
+        </div>
+      )}
       <div className="pl-6 space-y-2 border-l-2 border-gray-200">
         <label
           className={`flex items-center gap-3 ${isLocalOnly ? "cursor-not-allowed opacity-60" : "cursor-pointer"}`}

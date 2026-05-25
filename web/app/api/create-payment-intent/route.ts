@@ -1,6 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { supabase } from "../../../lib/supabaseClient";
+import {
+  calculatePlatformFeeCents,
+  getEffectiveSellerFeeRate,
+} from "../../../lib/marketplaceFees";
+import {
+  resolveCheckoutShipping,
+  serializeShippingPreferences,
+  BUYER_SHIPPING_UNAVAILABLE_MESSAGE,
+} from "../../../lib/shippingPreferences";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2025-11-17.clover",
@@ -17,10 +26,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Fetch the listing to get the price and denormalized seller Stripe info
     const { data: listing, error: listingError } = await supabase
       .from("listings")
-      .select("id, title, price, seller_id, status, seller_stripe_account_id")
+      .select(
+        "id, title, price, seller_id, status, seller_stripe_account_id, custom_shipping_policy"
+      )
       .eq("id", listingId)
       .single();
 
@@ -38,68 +48,86 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Beta gating: Check if seller has completed Stripe setup
-    // Use denormalized seller_stripe_account_id from listing (no profile fetch needed)
     if (!listing.seller_stripe_account_id) {
       console.warn("❌ Listing missing seller_stripe_account_id:", listingId);
       return NextResponse.json(
-        { 
+        {
           error: "Seller has not completed payout setup.",
-          code: "STRIPE_NOT_COMPLETE"
+          code: "STRIPE_NOT_COMPLETE",
         },
         { status: 409 }
       );
     }
 
-    // Verify Stripe account status directly from Stripe API
     try {
-      const account = await stripe.accounts.retrieve(listing.seller_stripe_account_id);
-      const isStripeConnectedEnough = account.details_submitted === true || account.charges_enabled === true;
+      const account = await stripe.accounts.retrieve(
+        listing.seller_stripe_account_id
+      );
+      const isStripeConnectedEnough =
+        account.details_submitted === true || account.charges_enabled === true;
 
       if (!isStripeConnectedEnough) {
         return NextResponse.json(
-          { 
+          {
             error: "Seller has not completed payout setup.",
-            code: "STRIPE_NOT_COMPLETE"
+            code: "STRIPE_NOT_COMPLETE",
           },
           { status: 409 }
         );
       }
-    } catch (stripeError: any) {
+    } catch (stripeError: unknown) {
       console.error("❌ Error verifying Stripe account:", stripeError);
-      // If we can't verify, err on the side of caution
       return NextResponse.json(
-        { 
+        {
           error: "Seller has not completed payout setup.",
-          code: "STRIPE_NOT_COMPLETE"
+          code: "STRIPE_NOT_COMPLETE",
         },
         { status: 409 }
       );
     }
 
-    // Fetch seller's fee rate from profile (beta: 0, later e.g. 0.04)
     const { data: sellerProfile } = await supabase
       .from("profiles")
-      .select("seller_fee_rate")
+      .select("seller_fee_rate, shipping_info")
       .eq("user_id", listing.seller_id)
       .maybeSingle();
 
-    const sellerFeeRate = Number(sellerProfile?.seller_fee_rate ?? 0);
+    const resolved = resolveCheckoutShipping(
+      listing.price,
+      listing.custom_shipping_policy,
+      sellerProfile?.shipping_info
+    );
 
-    // Calculate amount in cents (Stripe requires cents)
-    const amountInCents = Math.round(listing.price * 100);
+    if (resolved.isCheckoutBlocked) {
+      return NextResponse.json(
+        {
+          error: BUYER_SHIPPING_UNAVAILABLE_MESSAGE,
+          code: "SHIPPING_NOT_CONFIGURED",
+        },
+        { status: 400 }
+      );
+    }
 
-    // Platform fee = amount × seller_fee_rate (application_fee_amount in Stripe)
-    const platformFeeAmount = Math.round(amountInCents * sellerFeeRate);
-    const sellerAmount = amountInCents - platformFeeAmount;
+    const sellerFeeRate = getEffectiveSellerFeeRate(
+      sellerProfile?.seller_fee_rate
+    );
 
-    // Create payment intent with Stripe Connect
-    // This splits the payment: platform fee stays with you, rest goes to seller
+    const itemSubtotalCents = Math.round(resolved.itemSubtotal * 100);
+    const shippingCents = Math.round(resolved.shippingAmount * 100);
+    const amountInCents = itemSubtotalCents + shippingCents;
+
+    // Marketplace fee on item price only — shipping passes through to seller
+    const platformFeeAmount = calculatePlatformFeeCents(
+      itemSubtotalCents,
+      sellerFeeRate
+    );
+    const sellerTransferCents = amountInCents - platformFeeAmount;
+
     const paymentIntentConfig: Stripe.PaymentIntentCreateParams = {
       amount: amountInCents,
       currency: "usd",
       transfer_data: {
-        destination: listing.seller_stripe_account_id, // Use denormalized Stripe account ID from listing
+        destination: listing.seller_stripe_account_id,
       },
       automatic_payment_methods: {
         enabled: true,
@@ -111,7 +139,11 @@ export async function POST(request: NextRequest) {
         seller_stripe_account: listing.seller_stripe_account_id,
         platform_fee: platformFeeAmount.toString(),
         seller_fee_rate: sellerFeeRate.toString(),
-        seller_amount: sellerAmount.toString(),
+        seller_amount: sellerTransferCents.toString(),
+        item_subtotal: resolved.itemSubtotal.toString(),
+        shipping_amount: resolved.shippingAmount.toString(),
+        buyer_total: resolved.buyerTotal.toString(),
+        shipping_policy: serializeShippingPreferences(resolved.preferences),
         buyer_id: userId || "",
         shipping_name: shippingInfo?.name || "",
         shipping_address: shippingInfo?.address || "",
@@ -122,7 +154,6 @@ export async function POST(request: NextRequest) {
       },
     };
 
-    // Only add application_fee_amount if there's a fee (founding sellers have 0% for 6 months)
     if (platformFeeAmount > 0) {
       paymentIntentConfig.application_fee_amount = platformFeeAmount;
     }
@@ -132,17 +163,17 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       clientSecret: paymentIntent.client_secret,
       paymentIntentId: paymentIntent.id,
-      amount: listing.price,
-      platformFee: platformFeeAmount / 100, // Convert back to dollars for display
-      sellerAmount: sellerAmount / 100, // Convert back to dollars for display
+      amount: resolved.buyerTotal,
+      itemSubtotal: resolved.itemSubtotal,
+      shippingAmount: resolved.shippingAmount,
+      shippingLineLabel: resolved.shippingLineLabel,
+      platformFee: platformFeeAmount / 100,
+      sellerAmount: sellerTransferCents / 100,
     });
   } catch (error: unknown) {
     console.error("Error creating payment intent:", error);
-    const message = error instanceof Error ? error.message : "Failed to create payment";
-    return NextResponse.json(
-      { error: message },
-      { status: 500 }
-    );
+    const message =
+      error instanceof Error ? error.message : "Failed to create payment";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
-

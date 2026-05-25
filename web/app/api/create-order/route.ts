@@ -1,8 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
+import Stripe from "stripe";
 import { sendOrderConfirmationEmail } from "../../../lib/emails/sendEmail";
 import { sendItemSoldEmail } from "../../../lib/emails/sendEmail";
+import {
+  calculatePlatformFeeAmount,
+  getEffectiveSellerFeeRate,
+} from "../../../lib/marketplaceFees";
+import {
+  resolveCheckoutShipping,
+  serializeShippingPreferences,
+  BUYER_SHIPPING_UNAVAILABLE_MESSAGE,
+} from "../../../lib/shippingPreferences";
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: "2025-11-17.clover",
+});
 
 export const dynamic = "force-dynamic"; // Ensure route is not statically optimized
 
@@ -126,10 +140,10 @@ export async function POST(request: NextRequest) {
       listingId, 
       paymentIntentId,
       stripeSessionId, // Optional - for Checkout Sessions
-      amount, 
       shippingInfo,
-      // Explicitly ignore any buyer_id from client (security)
-      buyer_id: _ignoredBuyerId, // If client sends this, we ignore it
+      // Explicitly ignore client amount / buyer_id (security)
+      amount: _ignoredAmount,
+      buyer_id: _ignoredBuyerId,
     } = requestBody;
     
     // Log if client tried to send buyer_id (security check)
@@ -147,10 +161,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Fetch the listing to get seller info
+    // Fetch the listing to get seller info and shipping policy
     const { data: listing, error: listingError } = await supabase
       .from("listings")
-      .select("id, title, seller_id, price, status")
+      .select("id, title, seller_id, price, status, custom_shipping_policy")
       .eq("id", listingId)
       .single();
 
@@ -164,15 +178,61 @@ export async function POST(request: NextRequest) {
     // Fetch seller profile once: fee rate for order snapshot + email/display_name for notifications
     const { data: sellerProfile } = await supabase
       .from("profiles")
-      .select("seller_fee_rate, email, display_name")
+      .select("seller_fee_rate, email, display_name, shipping_info")
       .eq("user_id", listing.seller_id)
       .maybeSingle();
 
-    const sellerFeeRate = Number(sellerProfile?.seller_fee_rate ?? 0);
-    const orderAmount = Number(amount ?? listing.price);
-    const platformFeeAmount = Math.round(orderAmount * sellerFeeRate * 100) / 100;
-    const stripeProcessingFee = orderAmount * 0.029 + 0.3;
-    const sellerPayoutAmount = Math.round((orderAmount - platformFeeAmount - stripeProcessingFee) * 100) / 100;
+    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+    const metadata = paymentIntent.metadata ?? {};
+
+    let itemSubtotal = Number(metadata.item_subtotal);
+    let shippingAmount = Number(metadata.shipping_amount);
+    let buyerTotal = paymentIntent.amount / 100;
+    let shippingPolicySnapshot = metadata.shipping_policy || null;
+
+    if (Number.isNaN(itemSubtotal) || Number.isNaN(shippingAmount)) {
+      const resolved = resolveCheckoutShipping(
+        listing.price,
+        listing.custom_shipping_policy,
+        sellerProfile?.shipping_info
+      );
+      if (resolved.isCheckoutBlocked) {
+        return NextResponse.json(
+          {
+            error: BUYER_SHIPPING_UNAVAILABLE_MESSAGE,
+            code: "SHIPPING_NOT_CONFIGURED",
+          },
+          { status: 400 }
+        );
+      }
+      itemSubtotal = resolved.itemSubtotal;
+      shippingAmount = resolved.shippingAmount;
+      buyerTotal = resolved.buyerTotal;
+      shippingPolicySnapshot =
+        shippingPolicySnapshot ||
+        serializeShippingPreferences(resolved.preferences);
+    }
+
+    if (
+      Math.round(buyerTotal * 100) !==
+      Math.round((itemSubtotal + shippingAmount) * 100)
+    ) {
+      buyerTotal = Math.round((itemSubtotal + shippingAmount) * 100) / 100;
+    }
+
+    const sellerFeeRate = getEffectiveSellerFeeRate(
+      sellerProfile?.seller_fee_rate
+    );
+    const platformFeeAmount = calculatePlatformFeeAmount(
+      itemSubtotal,
+      sellerFeeRate
+    );
+    // Internal estimate only — not shown to sellers in beta UI
+    const stripeProcessingFee = buyerTotal * 0.029 + 0.3;
+    const sellerPayoutAmount =
+      Math.round(
+        (buyerTotal - platformFeeAmount - stripeProcessingFee) * 100
+      ) / 100;
 
     // Check if order already exists for this payment intent (prevent duplicates)
     const { data: existingOrder } = await supabase
@@ -210,13 +270,16 @@ export async function POST(request: NextRequest) {
 
     // Create order record (seller_fee_rate snapshot + computed fees)
     const orderData = {
-      buyer_id: buyerId, // Use authenticated user's ID from server
+      buyer_id: buyerId,
       seller_id: listing.seller_id,
       listing_id: listingId,
-      amount: amount || listing.price,
+      amount: buyerTotal,
+      item_subtotal: itemSubtotal,
+      shipping_amount: shippingAmount,
+      shipping_policy: shippingPolicySnapshot,
       status: "paid",
       payment_intent_id: paymentIntentId,
-      stripe_session_id: stripeSessionId || null, // Store if using Checkout Sessions
+      stripe_session_id: stripeSessionId || null,
       seller_fee_rate: sellerFeeRate,
       platform_fee_amount: platformFeeAmount,
       seller_payout_amount: sellerPayoutAmount,
@@ -363,7 +426,7 @@ export async function POST(request: NextRequest) {
         buyerName: buyerProfile?.display_name || user.user_metadata?.full_name || 'there',
         orderId: order.id,
         itemName: listing.title,
-        price: amount || listing.price,
+        price: buyerTotal,
         shippingAddress: {
           name: shippingInfo?.name || '',
           address: shippingInfo?.address || '',
@@ -384,7 +447,7 @@ export async function POST(request: NextRequest) {
       sendItemSoldEmail(sellerEmail, {
         sellerName: sellerProfile?.display_name || sellerAuth?.user?.user_metadata?.full_name || 'there',
         itemName: listing.title,
-        price: amount || listing.price,
+        price: buyerTotal,
         buyerName: buyerProfile?.display_name || 'a buyer',
         shippingAddress: {
           name: shippingInfo?.name || '',

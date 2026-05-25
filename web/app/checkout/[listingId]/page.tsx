@@ -42,6 +42,20 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
     );
   }
 
-  return <CheckoutClient listing={listing as Listing} />;
+  const { data: sellerProfile } = await supabase
+    .from("profiles")
+    .select("shipping_info")
+    .eq("user_id", listing.seller_id)
+    .maybeSingle();
+
+  const listingForCheckout = {
+    ...(listing as Listing),
+    profiles: {
+      ...((listing as Listing).profiles ?? {}),
+      shipping_info: sellerProfile?.shipping_info ?? null,
+    },
+  } as Listing;
+
+  return <CheckoutClient listing={listingForCheckout} />;
 }
 

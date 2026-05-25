@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import Stripe from "stripe";
+import {
+  listingNeedsShippingAmountFix,
+  SELLER_LISTING_NEEDS_SHIPPING_MESSAGE,
+} from "../../../../lib/shippingPreferences";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2025-11-17.clover",
@@ -8,7 +12,6 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 
 export async function POST(request: NextRequest) {
   try {
-    // Get the session from Authorization header
     const authHeader = request.headers.get("authorization");
     if (!authHeader) {
       return NextResponse.json(
@@ -16,7 +19,7 @@ export async function POST(request: NextRequest) {
         { status: 401 }
       );
     }
-    
+
     const token = authHeader.replace("Bearer ", "");
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -29,8 +32,7 @@ export async function POST(request: NextRequest) {
         },
       }
     );
-    
-    // Verify the user
+
     const { data: { user }, error: tokenError } = await supabase.auth.getUser();
     if (tokenError || !user) {
       return NextResponse.json(
@@ -47,10 +49,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Fetch the listing to verify ownership
     const { data: listing, error: listingError } = await supabase
       .from("listings")
-      .select("id, seller_id, status")
+      .select("id, seller_id, status, custom_shipping_policy")
       .eq("id", listingId)
       .single();
 
@@ -68,10 +69,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get profile for denormalizing seller data (Stripe is optional for publishing in beta)
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
-      .select("stripe_account_id, stripe_details_submitted, stripe_charges_enabled, display_name")
+      .select(
+        "stripe_account_id, stripe_details_submitted, stripe_charges_enabled, display_name, shipping_info"
+      )
       .eq("user_id", user.id)
       .single();
 
@@ -82,14 +84,30 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // OPTIONAL: If seller has Stripe, refresh status from Stripe API (but don't require it)
+    if (
+      listingNeedsShippingAmountFix(
+        listing.custom_shipping_policy,
+        profile.shipping_info
+      )
+    ) {
+      return NextResponse.json(
+        {
+          error: SELLER_LISTING_NEEDS_SHIPPING_MESSAGE,
+          code: "SHIPPING_NOT_CONFIGURED",
+        },
+        { status: 400 }
+      );
+    }
+
     let stripeAccountId = profile.stripe_account_id;
+    let isStripeReady = false;
+
     if (stripeAccountId) {
       try {
         const account = await stripe.accounts.retrieve(stripeAccountId);
-        const isActuallyConnected = account.details_submitted === true || account.charges_enabled === true;
-        
-        // Update profile with fresh status (if we have Stripe account)
+        isStripeReady =
+          account.details_submitted === true || account.charges_enabled === true;
+
         await supabase
           .from("profiles")
           .update({
@@ -99,18 +117,28 @@ export async function POST(request: NextRequest) {
           })
           .eq("user_id", user.id);
       } catch (stripeError) {
-        // If Stripe verification fails, that's ok - seller can still publish without Stripe
-        console.warn('⚠️ Stripe account verification failed (optional):', stripeError);
-        stripeAccountId = null; // Don't use stale/invalid account ID
+        console.warn("⚠️ Stripe account verification failed:", stripeError);
+        stripeAccountId = null;
       }
     }
 
-    // Update listing status to active AND denormalize seller data (Stripe is optional)
-    const updateData: any = {
-      status: 'active',
+    if (!isStripeReady) {
+      return NextResponse.json(
+        {
+          error: "Connect payments to start selling.",
+          code: "STRIPE_NOT_COMPLETE",
+          message:
+            "Listing is free. ThriftShopper takes a 10% marketplace fee only when your item sells.",
+        },
+        { status: 409 }
+      );
+    }
+
+    const updateData: Record<string, unknown> = {
+      status: "active",
       updated_at: new Date().toISOString(),
-      seller_stripe_account_id: stripeAccountId || null, // Denormalize for checkout (null if no Stripe)
-      seller_name: profile.display_name || null, // Denormalize seller name for UI
+      seller_stripe_account_id: stripeAccountId,
+      seller_name: profile.display_name || null,
     };
 
     const { error: updateError } = await supabase
@@ -126,17 +154,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       success: true,
-      message: "Listing published successfully"
+      message: "Listing published successfully",
     });
   } catch (error: unknown) {
     console.error("Error publishing listing:", error);
-    const message = error instanceof Error ? error.message : "Failed to publish listing";
-    return NextResponse.json(
-      { error: message },
-      { status: 500 }
-    );
+    const message =
+      error instanceof Error ? error.message : "Failed to publish listing";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
-

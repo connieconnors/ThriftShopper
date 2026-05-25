@@ -8,12 +8,14 @@ import { Store, MapPin, Mail, Phone, Loader2, Upload, Image as ImageIcon, Check 
 import { useAuth } from "@/app/context/AuthContext";
 import { supabase } from "@/lib/supabaseClient";
 import { TSLogo } from "@/components/TSLogo";
+import { SellerFeeTransparencyLine } from "@/components/SellerFeeTransparency";
 import { ShippingPreferenceForm } from "@/components/ShippingPreferenceForm";
 import {
   type ShippingPreferences,
   DEFAULT_SHIPPING_PREFERENCES,
   serializeShippingPreferences,
-  } from "@/lib/shippingPreferences";
+  validateListingShippingPreferences,
+} from "@/lib/shippingPreferences";
 
 interface SellerProfile {
   storeName: string;
@@ -204,6 +206,15 @@ function SellerOnboardingContent() {
     setIsSubmitting(true);
     setError(null);
 
+    const shippingValidationError = validateListingShippingPreferences(
+      formData.shippingPreferences
+    );
+    if (shippingValidationError) {
+      setError(shippingValidationError);
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
       // Upload avatar first if provided
       let avatarUrl: string | null = null;
@@ -342,6 +353,7 @@ function SellerOnboardingContent() {
           <p className="text-gray-600">
             Let&apos;s get you started selling on ThriftShopper
           </p>
+          <SellerFeeTransparencyLine className="mt-3 max-w-md mx-auto" />
           <Link
             href="/canvas"
             className="mt-4 inline-block text-sm text-[#16193a] hover:underline"

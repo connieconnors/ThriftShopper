@@ -1,6 +1,14 @@
 import Stripe from "stripe";
 import { headers } from "next/headers";
 import { createClient } from "@supabase/supabase-js";
+import {
+  calculatePlatformFeeAmount,
+  getEffectiveSellerFeeRate,
+} from "../../../../lib/marketplaceFees";
+import {
+  resolveCheckoutShipping,
+  serializeShippingPreferences,
+} from "../../../../lib/shippingPreferences";
 
 /**
  * Stripe Webhook Handler
@@ -37,13 +45,11 @@ async function createOrderFromPaymentIntent(
   paymentIntent: Stripe.PaymentIntent
 ): Promise<void> {
   const paymentIntentId = paymentIntent.id;
-  const metadata = paymentIntent.metadata;
+  const metadata: Record<string, string> = { ...(paymentIntent.metadata ?? {}) };
 
   // Extract order data from payment intent metadata
-  // Support both snake_case and camelCase for listing ID
   const listingId = metadata.listing_id || metadata.listingId;
   const sellerId = metadata.seller_id;
-  const amount = paymentIntent.amount / 100; // Convert from cents
 
   if (!listingId || !sellerId) {
     console.warn("⚠️ Payment intent missing required metadata:", {
@@ -77,7 +83,7 @@ async function createOrderFromPaymentIntent(
   // Fetch listing to get full details
   const { data: listing, error: listingError } = await supabaseAdmin
     .from("listings")
-    .select("id, title, price, seller_id")
+    .select("id, title, price, seller_id, custom_shipping_policy")
     .eq("id", listingId)
     .single();
 
@@ -96,20 +102,54 @@ async function createOrderFromPaymentIntent(
     phone: metadata.shipping_phone || null,
   };
 
-  // Fee snapshot: prefer metadata (set at payment intent creation), else fetch profile
+  // Fee snapshot: prefer metadata (set at payment intent creation), else fetch listing/profile
   let effectiveRate = Number(metadata.seller_fee_rate ?? NaN);
+  const { data: profile } = await supabaseAdmin
+    .from("profiles")
+    .select("seller_fee_rate, shipping_info")
+    .eq("user_id", sellerId)
+    .maybeSingle();
+
   if (Number.isNaN(effectiveRate)) {
-    const { data: profile } = await supabaseAdmin
-      .from("profiles")
-      .select("seller_fee_rate")
-      .eq("user_id", sellerId)
-      .maybeSingle();
-    effectiveRate = Number(profile?.seller_fee_rate ?? 0);
+    effectiveRate = getEffectiveSellerFeeRate(profile?.seller_fee_rate);
   }
-  const orderAmountDollars = amount || Number(listing.price);
-  const platformFeeAmount = Math.round(orderAmountDollars * effectiveRate * 100) / 100;
-  const stripeProcessingFee = orderAmountDollars * 0.029 + 0.3;
-  const sellerPayoutAmount = Math.round((orderAmountDollars - platformFeeAmount - stripeProcessingFee) * 100) / 100;
+
+  if (Number.isNaN(Number(metadata.item_subtotal))) {
+    const resolved = resolveCheckoutShipping(
+      listing.price,
+      listing.custom_shipping_policy,
+      profile?.shipping_info
+    );
+    if (!resolved.isCheckoutBlocked) {
+      metadata.item_subtotal = resolved.itemSubtotal.toString();
+      metadata.shipping_amount = resolved.shippingAmount.toString();
+      metadata.shipping_policy =
+        metadata.shipping_policy ||
+        serializeShippingPreferences(resolved.preferences);
+    }
+  }
+
+  const buyerTotalDollars = paymentIntent.amount / 100;
+  let itemSubtotal = Number(metadata.item_subtotal);
+  let shippingAmount = Number(metadata.shipping_amount ?? 0);
+  const shippingPolicySnapshot = metadata.shipping_policy || null;
+  if (Number.isNaN(itemSubtotal)) {
+    itemSubtotal = Number(listing.price);
+  }
+  if (Number.isNaN(shippingAmount)) {
+    shippingAmount = 0;
+  }
+
+  const platformFeeAmount = calculatePlatformFeeAmount(
+    itemSubtotal,
+    effectiveRate
+  );
+  // Internal estimate only — not shown to sellers in beta UI
+  const stripeProcessingFee = buyerTotalDollars * 0.029 + 0.3;
+  const sellerPayoutAmount =
+    Math.round(
+      (buyerTotalDollars - platformFeeAmount - stripeProcessingFee) * 100
+    ) / 100;
 
   // Create order (idempotent - will fail if duplicate payment_intent_id)
   const { data: order, error: orderError } = await supabaseAdmin
@@ -118,7 +158,10 @@ async function createOrderFromPaymentIntent(
       buyer_id: buyerId,
       seller_id: sellerId,
       listing_id: listingId,
-      amount: orderAmountDollars,
+      amount: buyerTotalDollars,
+      item_subtotal: itemSubtotal,
+      shipping_amount: shippingAmount,
+      shipping_policy: shippingPolicySnapshot,
       status: "paid",
       payment_intent_id: paymentIntentId,
       seller_fee_rate: effectiveRate,

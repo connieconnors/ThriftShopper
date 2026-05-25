@@ -13,6 +13,7 @@ import {
   DEFAULT_SHIPPING_PREFERENCES,
   serializeShippingPreferences,
   parseShippingPreferences,
+  validateListingShippingPreferences,
 } from "@/lib/shippingPreferences";
 
 interface SellerProfile {
@@ -114,6 +115,15 @@ export default function SellerSettingsPage() {
     setIsSubmitting(true);
     setError(null);
     setSuccess(false);
+
+    const shippingValidationError = validateListingShippingPreferences(
+      formData.shippingPreferences
+    );
+    if (shippingValidationError) {
+      setError(shippingValidationError);
+      setIsSubmitting(false);
+      return;
+    }
 
     try {
       const { error: updateError } = await supabase
