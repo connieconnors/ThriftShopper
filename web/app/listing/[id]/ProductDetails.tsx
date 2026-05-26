@@ -191,7 +191,7 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
   };
 
   return (
-    <main className="min-h-screen text-gray-900" style={{ backgroundColor: '#EDE7D9' }}>
+    <main className="min-h-screen text-gray-900" style={{ backgroundColor: 'var(--background)' }}>
       {/* Fixed Header - Back to Browse */}
       <header className="fixed top-0 left-0 right-0 z-50 p-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -205,7 +205,7 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
             </svg>
           </Link>
           <Link href="/browse" className="opacity-80 hover:opacity-100 transition-opacity">
-            <TSLogo size={28} primaryColor="#ffffff" accentColor="#efbf04" />
+            <TSLogo size={28} primaryColor="#ffffff" accentColor="var(--gold-accent)" />
           </Link>
         </div>
 
@@ -232,7 +232,7 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
             }}
           >
             {images.map((src, index) => (
-              <div key={index} className="relative w-full h-full flex-shrink-0" style={{ backgroundColor: '#EDE7D9' }}>
+              <div key={index} className="relative w-full h-full flex-shrink-0" style={{ backgroundColor: 'var(--background)' }}>
                 <img
                   src={src}
                   alt={`${listing.title} - Image ${index + 1}`}
@@ -244,7 +244,7 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
             ))}
           </div>
         ) : (
-          <div className="relative w-full h-full flex items-center justify-center" style={{ backgroundColor: '#EDE7D9' }}>
+          <div className="relative w-full h-full flex items-center justify-center" style={{ backgroundColor: 'var(--background)' }}>
             <span className="text-gray-400 text-6xl">📦</span>
           </div>
         )}
@@ -306,7 +306,7 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
         )}
 
         {/* Gradient fade at bottom */}
-        <div className="absolute bottom-0 left-0 right-0 h-32 pointer-events-none" style={{ background: 'linear-gradient(to top, #EDE7D9 0%, rgba(237, 231, 217, 0.5) 50%, transparent 100%)' }} />
+        <div className="absolute bottom-0 left-0 right-0 h-32 pointer-events-none" style={{ background: 'linear-gradient(to top, var(--background) 0%, rgba(237, 233, 225, 0.5) 50%, transparent 100%)' }} />
       </section>
 
       {/* Product Info */}
@@ -496,7 +496,7 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
               }}
               className="mt-3 inline-flex items-center gap-1.5 text-sm text-[#16193a] hover:text-[#0f1230] font-medium transition-colors"
             >
-              <MessageSquare className="h-4 w-4" style={{ color: "#cfb53b" }} />
+              <MessageSquare className="h-4 w-4" style={{ color: "var(--gold-accent)" }} />
               Contact seller
             </button>
           )}
@@ -589,7 +589,7 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
                 onChange={(e) => setContactMessage(e.target.value)}
                 placeholder="Your message..."
                 rows={4}
-                className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/50 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#cfb53b]/50"
+                className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/50 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[rgba(197,160,40,0.5)]"
                 disabled={contactSending}
               />
               {contactError && (
@@ -609,8 +609,8 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
                   disabled={contactSending || !contactMessage.trim()}
                   className="px-4 py-2 text-sm font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{
-                    backgroundColor: "#cfb53b",
-                    color: "#16193a",
+                    backgroundColor: "var(--gold-accent)",
+                    color: "var(--ink-primary)",
                   }}
                 >
                   {contactSending ? "Sending…" : "Send message"}
@@ -625,7 +625,7 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
       {isZoomed && images.length > 0 && (
         <div 
           className="fixed inset-0 z-[100] flex items-center justify-center"
-          style={{ backgroundColor: '#EDE7D9' }}
+          style={{ backgroundColor: 'var(--background)' }}
           onClick={() => setIsZoomed(false)}
         >
           {/* Close Button */}

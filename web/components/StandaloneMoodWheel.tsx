@@ -251,29 +251,21 @@ export function StandaloneMoodWheel({ selectedMoods, onMoodsChange, noResults = 
         >
           <defs>
             <linearGradient id={gradientId}>
-              <stop offset="0%" stopColor="#FFD700" />
-              <stop offset="50%" stopColor="#FDB931" />
-              <stop offset="100%" stopColor="#FFD700" />
+              <stop offset="0%" stopColor="#c5a028" />
+              <stop offset="50%" stopColor="#b89224" />
+              <stop offset="100%" stopColor="#c5a028" />
             </linearGradient>
           </defs>
           
           {/* Outer gold frame */}
           <circle cx="60" cy="60" r="58" fill="none" stroke={`url(#${gradientId})`} strokeWidth="2" />
 
-          {/* Outer ring - deep navy blue */}
-          <circle cx="60" cy="60" r="55" fill="#1E3A8A" opacity="0.95" />
-
-          {/* Middle-outer ring - royal blue */}
-          <circle cx="60" cy="60" r="47" fill="#1E40AF" opacity="0.95" />
-
-          {/* Middle ring - vibrant blue */}
-          <circle cx="60" cy="60" r="39" fill="#2563EB" opacity="0.95" />
-
-          {/* Inner ring - bright blue */}
-          <circle cx="60" cy="60" r="31" fill="#3B82F6" opacity="0.95" />
-
-          {/* Center circle - light blue */}
-          <circle cx="60" cy="60" r="23" fill="#60A5FA" opacity="0.98" />
+          {/* Ink-toned concentric rings */}
+          <circle cx="60" cy="60" r="55" fill="#16193a" opacity="0.95" />
+          <circle cx="60" cy="60" r="47" fill="#1e2248" opacity="0.95" />
+          <circle cx="60" cy="60" r="39" fill="#252a52" opacity="0.95" />
+          <circle cx="60" cy="60" r="31" fill="#2d325c" opacity="0.95" />
+          <circle cx="60" cy="60" r="23" fill="#3a4068" opacity="0.98" />
 
           {/* Radial lines emanating from center */}
           {[0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330].map((angle) => {
@@ -306,21 +298,21 @@ export function StandaloneMoodWheel({ selectedMoods, onMoodsChange, noResults = 
                   cx={round(60 + 51 * cos)}
                   cy={round(60 + 51 * sin)}
                   r="2"
-                  fill="#FFD700"
+                  fill="#c5a028"
                   opacity="0.9"
                 />
                 <circle
                   cx={round(60 + 43 * cos)}
                   cy={round(60 + 43 * sin)}
                   r="1.5"
-                  fill="#FBBF24"
+                  fill="#b89224"
                   opacity="0.8"
                 />
                 <circle
                   cx={round(60 + 35 * cos)}
                   cy={round(60 + 35 * sin)}
                   r="1"
-                  fill="#FCD34D"
+                  fill="#d4b84a"
                   opacity="0.7"
                 />
               </g>
@@ -466,7 +458,7 @@ export function StandaloneMoodWheel({ selectedMoods, onMoodsChange, noResults = 
                           backgroundColor: mood.color,
                           border: '1px solid rgba(255,255,255,0.3)',
                           boxShadow: isSelected
-                            ? '0 0 0 2px #EFBF04, 0 4px 10px rgba(0,0,0,0.4)'
+                            ? '0 0 0 2px var(--gold-accent), 0 4px 10px rgba(0,0,0,0.4)'
                             : '0 2px 4px rgba(0,0,0,0.25)',
                         }}
                       >

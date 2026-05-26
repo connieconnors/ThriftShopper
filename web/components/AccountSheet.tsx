@@ -104,11 +104,11 @@ const AccountSheet: React.FC<AccountSheetProps> = ({ isOpen, onClose }) => {
 
         {/* Header */}
         <div className="flex flex-col items-center px-6">
-          <div className="flex h-9 w-9 flex-col items-center justify-center rounded-full bg-[#000080]">
-            <TSLogo size={36} primaryColor="#ffffff" accentColor="#EFBF04" showStar={true} />
+          <div className="flex h-9 w-9 flex-col items-center justify-center rounded-full bg-[var(--ink-primary)]">
+            <TSLogo size={36} primaryColor="#ffffff" accentColor="var(--gold-accent)" showStar={true} />
           </div>
 
-          <div className="mt-3 text-[17px] font-semibold text-[#000080]" style={{ fontFamily: 'var(--font-editorial)' }}>
+          <div className="mt-3 text-[17px] font-semibold text-[var(--ink-primary)]" style={{ fontFamily: 'var(--font-editorial)' }}>
             ThriftShopper
           </div>
         </div>
@@ -119,7 +119,7 @@ const AccountSheet: React.FC<AccountSheetProps> = ({ isOpen, onClose }) => {
         {/* Content based on auth state */}
         {loading ? (
           <div className="px-6 pt-6 pb-8 text-center">
-            <div className="animate-spin h-6 w-6 border-2 border-[#000080] border-t-transparent rounded-full mx-auto" />
+            <div className="animate-spin h-6 w-6 border-2 border-[var(--ink-primary)] border-t-transparent rounded-full mx-auto" />
           </div>
         ) : user ? (
           /* LOGGED IN STATE */
@@ -132,7 +132,7 @@ const AccountSheet: React.FC<AccountSheetProps> = ({ isOpen, onClose }) => {
                     onClose();
                     router.push("/seller");
                   }}
-                  className="w-full text-left px-4 py-3 text-[15px] font-medium text-[#000080] hover:bg-gray-50 rounded-lg transition-colors"
+                  className="w-full text-left px-4 py-3 text-[15px] font-medium text-[var(--ink-primary)] hover:bg-gray-50 rounded-lg transition-colors"
                 >
                   Your Listings
                 </button>
@@ -141,7 +141,7 @@ const AccountSheet: React.FC<AccountSheetProps> = ({ isOpen, onClose }) => {
                     onClose();
                     router.push("/sell");
                   }}
-                  className="w-full text-left px-4 py-3 text-[15px] font-medium text-[#000080] hover:bg-gray-50 rounded-lg transition-colors"
+                  className="w-full text-left px-4 py-3 text-[15px] font-medium text-[var(--ink-primary)] hover:bg-gray-50 rounded-lg transition-colors"
                 >
                   Add New Listing
                 </button>
@@ -150,7 +150,7 @@ const AccountSheet: React.FC<AccountSheetProps> = ({ isOpen, onClose }) => {
                     onClose();
                     router.push("/canvas");
                   }}
-                  className="w-full text-left px-4 py-3 text-[15px] font-medium text-[#000080] hover:bg-gray-50 rounded-lg transition-colors"
+                  className="w-full text-left px-4 py-3 text-[15px] font-medium text-[var(--ink-primary)] hover:bg-gray-50 rounded-lg transition-colors"
                 >
                   Your Saved Items
                 </button>
@@ -160,7 +160,7 @@ const AccountSheet: React.FC<AccountSheetProps> = ({ isOpen, onClose }) => {
                     onClose();
                     router.push("/settings");
                   }}
-                  className="w-full text-left px-4 py-3 text-[15px] font-medium text-[#000080] hover:bg-gray-50 rounded-lg transition-colors"
+                  className="w-full text-left px-4 py-3 text-[15px] font-medium text-[var(--ink-primary)] hover:bg-gray-50 rounded-lg transition-colors"
                 >
                   Settings
                 </button>
@@ -170,7 +170,7 @@ const AccountSheet: React.FC<AccountSheetProps> = ({ isOpen, onClose }) => {
                     await signOut();
                     router.push("/browse");
                   }}
-                  className="w-full text-left px-4 py-3 text-[15px] font-medium text-[#D4AF37] hover:bg-[#D4AF37]/10 rounded-lg transition-colors"
+                  className="w-full text-left px-4 py-3 text-[15px] font-medium text-[var(--gold-accent)] hover:bg-[rgba(197,160,40,0.08)] rounded-lg transition-colors"
                 >
                   Sign Out
                 </button>
@@ -183,7 +183,7 @@ const AccountSheet: React.FC<AccountSheetProps> = ({ isOpen, onClose }) => {
                     onClose();
                     router.push("/canvas");
                   }}
-                  className="w-full text-left px-4 py-3 text-[15px] font-medium text-[#000080] hover:bg-gray-50 rounded-lg transition-colors"
+                  className="w-full text-left px-4 py-3 text-[15px] font-medium text-[var(--ink-primary)] hover:bg-gray-50 rounded-lg transition-colors"
                 >
                   Your Saved Items
                 </button>
@@ -192,7 +192,7 @@ const AccountSheet: React.FC<AccountSheetProps> = ({ isOpen, onClose }) => {
                     onClose();
                     router.push("/seller/onboarding");
                   }}
-                  className="w-full text-left px-4 py-3 text-[15px] font-medium text-[#000080] hover:bg-gray-50 rounded-lg transition-colors"
+                  className="w-full text-left px-4 py-3 text-[15px] font-medium text-[var(--ink-primary)] hover:bg-gray-50 rounded-lg transition-colors"
                 >
                   Become a Seller
                 </button>
@@ -202,7 +202,7 @@ const AccountSheet: React.FC<AccountSheetProps> = ({ isOpen, onClose }) => {
                     onClose();
                     router.push("/settings");
                   }}
-                  className="w-full text-left px-4 py-3 text-[15px] font-medium text-[#000080] hover:bg-gray-50 rounded-lg transition-colors"
+                  className="w-full text-left px-4 py-3 text-[15px] font-medium text-[var(--ink-primary)] hover:bg-gray-50 rounded-lg transition-colors"
                 >
                   Settings
                 </button>
@@ -212,7 +212,7 @@ const AccountSheet: React.FC<AccountSheetProps> = ({ isOpen, onClose }) => {
                     await signOut();
                     router.push("/browse");
                   }}
-                  className="w-full text-left px-4 py-3 text-[15px] font-medium text-[#D4AF37] hover:bg-[#D4AF37]/10 rounded-lg transition-colors"
+                  className="w-full text-left px-4 py-3 text-[15px] font-medium text-[var(--gold-accent)] hover:bg-[rgba(197,160,40,0.08)] rounded-lg transition-colors"
                 >
                   Sign Out
                 </button>
@@ -230,7 +230,7 @@ const AccountSheet: React.FC<AccountSheetProps> = ({ isOpen, onClose }) => {
               className="
                 w-full
                 rounded-2xl
-                bg-[#000080]
+                bg-[var(--ink-primary)]
                 py-3
                 text-[15px]
                 font-semibold
@@ -252,11 +252,11 @@ const AccountSheet: React.FC<AccountSheetProps> = ({ isOpen, onClose }) => {
                 w-full
                 rounded-2xl
                 border-2
-                border-[#000080]
+                border-[var(--ink-primary)]
                 py-3
                 text-[15px]
                 font-semibold
-                text-[#000080]
+                text-[var(--ink-primary)]
                 bg-white
                 active:opacity-70
               "
@@ -271,7 +271,7 @@ const AccountSheet: React.FC<AccountSheetProps> = ({ isOpen, onClose }) => {
                 w-full
                 text-[15px]
                 font-semibold
-                text-[#000080]
+                text-[var(--ink-primary)]
                 active:opacity-70
               "
             >
@@ -291,7 +291,7 @@ const AccountSheet: React.FC<AccountSheetProps> = ({ isOpen, onClose }) => {
                 px-4
                 py-2
                 text-[14px]
-                text-[#000080]
+                text-[var(--ink-primary)]
                 hover:bg-gray-50
                 rounded-lg
                 transition-colors

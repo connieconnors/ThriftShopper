@@ -10,7 +10,7 @@ interface TSLogoProps {
 export function TSLogo({ 
   size = 24, 
   primaryColor = '#16193a',
-  accentColor = '#cfb53b',
+  accentColor = 'var(--gold-accent)',
   showStar = false
 }: TSLogoProps) {
   return (
@@ -30,7 +30,9 @@ export function TSLogo({
           fontWeight: 400,
           letterSpacing: '-0.04em',
           color: primaryColor,
-          textShadow: `0 0 8px ${accentColor}40`,
+          textShadow: accentColor.startsWith("#")
+            ? `0 0 8px ${accentColor}40`
+            : "0 0 8px rgba(197, 160, 40, 0.25)",
           marginTop: size * 0.02,
         }}
       >

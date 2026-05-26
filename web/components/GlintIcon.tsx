@@ -10,7 +10,7 @@ interface GlintIconProps {
 
 export function GlintIcon({
   size = 24,
-  color = "#D4AF37",
+  color = "var(--gold-accent)",
   filled = true,
   className,
   style,
@@ -22,7 +22,7 @@ export function GlintIcon({
       viewBox="0 0 24 24"
       className={className}
       style={{
-        filter: "drop-shadow(0 0 2px rgba(212, 175, 55, 0.3))",
+        filter: "drop-shadow(0 0 2px rgba(197, 160, 40, 0.3))",
         ...style,
       }}
       fill={filled ? color : "none"}

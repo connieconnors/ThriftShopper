@@ -30,13 +30,12 @@ interface SwipeFeedProps {
   shuffleKey?: number;
 }
 
-// Brand colors from guide
-const COLORS = {
-  navy: '#000080',
-  gold: '#efbf04',
-  midnightBlue: '#16193a',
-  oldGold: '#cfb53b',
-};
+// TS 2.0 brand tokens — CSS variables for shell-safe theming
+const INK = "var(--ink-primary)";
+const LINEN = "var(--background)";
+const GOLD = "var(--gold-accent)";
+const GOLD_RGB = "197, 160, 40";
+const INK_RGB = "22, 25, 58";
 
 export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProps) {
   const router = useRouter();
@@ -773,33 +772,33 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
       return (
         <div 
           className="fixed inset-0 flex flex-col items-center justify-center px-6"
-          style={{ backgroundColor: COLORS.midnightBlue }}
+          style={{ backgroundColor: LINEN }}
         >
-          <p className="text-white text-xl mb-2">No items found</p>
+          <p className="text-xl mb-2 font-editorial" style={{ color: INK }}>No items found</p>
         {isMoodFilterResult && (
           <>
-            <p className="text-white/60 text-sm mb-4">
+            <p className="text-sm mb-4" style={{ color: `rgba(${INK_RGB}, 0.6)` }}>
               for selected moods: {selectedMoods.join(', ')}
             </p>
             <button
               onClick={() => setSelectedMoods([])}
-              className="px-6 py-3 rounded-full text-sm font-medium"
-              style={{ backgroundColor: COLORS.oldGold, color: COLORS.midnightBlue }}
+              className="px-6 py-3 rounded-full text-sm font-medium text-white"
+              style={{ backgroundColor: INK }}
             >
               Clear mood filters
             </button>
           </>
         )}
         {searchResults !== null && lastSearchQuery && (
-          <p className="text-white/60 text-sm mb-4">
+          <p className="text-sm mb-4" style={{ color: `rgba(${INK_RGB}, 0.6)` }}>
             for "{lastSearchQuery}"
           </p>
         )}
         {searchResults !== null && (
           <button
             onClick={clearSearch}
-            className="px-6 py-3 rounded-full text-sm font-medium"
-            style={{ backgroundColor: COLORS.oldGold, color: COLORS.midnightBlue }}
+            className="px-6 py-3 rounded-full text-sm font-medium text-white"
+            style={{ backgroundColor: INK }}
           >
             Clear search
           </button>
@@ -834,7 +833,7 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
         ref={containerRef}
         className="fixed inset-0 overflow-hidden select-none"
         style={{ 
-          backgroundColor: '#001540',
+          backgroundColor: LINEN,
           margin: 0,
           padding: 0,
         }}
@@ -854,9 +853,9 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
             fontFamily: 'var(--font-editorial)',
             fontWeight: 500,
             fontSize: '32px',
-            color: '#000080',
+            color: '#ffffff',
             letterSpacing: '-0.04em',
-            textShadow: '0 0 1px rgba(239, 191, 4, 0.4), 0 0 1px rgba(239, 191, 4, 0.4), 0 1px 2px rgba(0,0,0,0.1)',
+            textShadow: `0 0 10px rgba(${GOLD_RGB}, 0.35), 0 1px 3px rgba(0,0,0,0.35)`,
           }}
         >
           TS
@@ -892,7 +891,7 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
                   padding: '6px 10px',
                   borderRadius: '9999px',
                   fontSize: '13px',
-                  backgroundColor: '#D9A903',
+                  backgroundColor: GOLD,
                   color: 'white',
                   boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
                   border: 'none',
@@ -919,7 +918,7 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
           <div 
             className="mt-4 h-10 px-4 flex items-center justify-between rounded-full max-w-md"
             style={{ 
-              backgroundColor: '#D9A903', 
+              backgroundColor: `rgba(${INK_RGB}, 0.88)`,
               backdropFilter: 'blur(10px)',
               border: voiceError ? '1px solid #ef4444' : 'none',
               pointerEvents: 'auto',
@@ -988,16 +987,16 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
               <div 
                 className="px-4 py-2 rounded-full text-sm"
                 style={{ 
-                  backgroundColor: 'rgba(207, 181, 59, 0.15)',
-                  color: COLORS.oldGold,
-                  border: `1px solid ${COLORS.oldGold}40`
+                  backgroundColor: `rgba(${GOLD_RGB}, 0.15)`,
+                  color: '#ffffff',
+                  border: `1px solid rgba(${GOLD_RGB}, 0.4)`
                 }}
               >
                 "{lastSearchQuery}"
               </div>
             )}
             <div className="flex items-center gap-2">
-              <span className="text-sm" style={{ color: COLORS.oldGold }}>
+              <span className="text-sm" style={{ color: `rgba(${GOLD_RGB}, 0.9)` }}>
                 {displayListings.length} result{displayListings.length !== 1 ? 's' : ''}
               </span>
               <button
@@ -1089,7 +1088,7 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
                   <div 
                     className="w-full h-full flex items-center justify-center"
                     style={{ 
-                      backgroundColor: COLORS.midnightBlue,
+                      backgroundColor: LINEN,
                       margin: 0,
                       padding: 0,
                     }}
@@ -1170,7 +1169,7 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
                 <p 
                   className="font-bold"
                   style={{ 
-                    color: 'rgba(184, 150, 15, 0.60)',
+                    color: `rgba(${GOLD_RGB}, 0.75)`,
                     fontSize: '12px',
                     textShadow: '0 0 8px rgba(0,0,0,0.9), 0 1px 3px rgba(0,0,0,0.8)',
                   }}
@@ -1223,11 +1222,11 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
             width: '48px',
             height: '48px',
             backgroundColor: currentListing && favorites.has(currentListing.id) 
-              ? 'rgba(207, 181, 59, 0.3)' 
+              ? `rgba(${GOLD_RGB}, 0.25)` 
               : 'rgba(255, 255, 255, 0.2)',
             backdropFilter: 'blur(8px)',
             border: currentListing && favorites.has(currentListing.id)
-              ? '1px solid rgba(207, 181, 59, 0.5)'
+              ? `1px solid rgba(${GOLD_RGB}, 0.45)`
               : '1px solid rgba(255, 255, 255, 0.3)',
             boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
           }}
@@ -1235,7 +1234,7 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
         >
           <GlintIcon
             size={24}
-            color={currentListing && favorites.has(currentListing.id) ? "#D4AF37" : "white"}
+            color={currentListing && favorites.has(currentListing.id) ? GOLD : "white"}
             filled={!!(currentListing && favorites.has(currentListing.id))}
             className="transition-colors duration-200"
             style={{ width: "24px", height: "24px" }}
@@ -1245,7 +1244,7 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
           {user && favorites.size > 0 && (
             <span 
               className="absolute -top-1 -right-1 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center"
-              style={{ backgroundColor: '#333333' }}
+              style={{ backgroundColor: INK }}
             >
               {favorites.size}
             </span>
@@ -1271,11 +1270,11 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
             height: '48px',
             minWidth: '44px', // Accessibility: ensure 44px touch target
             minHeight: '44px',
-            backgroundColor: isRecording ? 'rgba(217, 169, 3, 0.6)' : 'rgba(255, 255, 255, 0.2)',
+            backgroundColor: isRecording ? `rgba(${GOLD_RGB}, 0.5)` : 'rgba(255, 255, 255, 0.2)',
             backdropFilter: 'blur(8px)',
             border: isRecording ? '1px solid rgba(255, 255, 255, 0.7)' : '1px solid rgba(255, 255, 255, 0.3)',
             boxShadow: isRecording
-              ? '0 0 12px rgba(217, 169, 3, 0.6), 0 2px 8px rgba(0, 0, 0, 0.2)'
+              ? `0 0 12px rgba(${GOLD_RGB}, 0.45), 0 2px 8px rgba(0, 0, 0, 0.2)`
               : '0 2px 8px rgba(0, 0, 0, 0.15)',
             touchAction: 'manipulation', // Improve touch responsiveness
           }}
@@ -1308,10 +1307,10 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
           setAccountOpen(true);
         }}
         className="fixed bottom-6 right-6 z-10 w-10 h-10 rounded-full shadow-lg transition-all hover:scale-110 flex items-center justify-center opacity-70 hover:opacity-100"
-        style={{ backgroundColor: COLORS.navy }}
+        style={{ backgroundColor: INK }}
         aria-label="Account"
       >
-        <TSLogo size={18} primaryColor="#ffffff" accentColor={COLORS.gold} />
+        <TSLogo size={18} primaryColor="#ffffff" accentColor={GOLD} />
       </button>
 
       {/* Account Sheet */}

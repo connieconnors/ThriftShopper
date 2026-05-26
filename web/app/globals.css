@@ -31,7 +31,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Headings use Playfair */
+/* Headings use Merriweather via --font-editorial */
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-editorial);
   font-weight: 600;
