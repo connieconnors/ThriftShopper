@@ -42,8 +42,7 @@ const CARD_STAGE = "#000000";
 const WARM_GLASS = `rgba(${LINEN_RGB}, 0.22)`;
 const WARM_GLASS_BORDER = `rgba(${LINEN_RGB}, 0.35)`;
 const EDITORIAL_GRADIENT = `
-  linear-gradient(to top, rgba(0, 0, 0, 0.72) 0%, rgba(0, 0, 0, 0.38) 38%, rgba(${LINEN_RGB}, 0.08) 58%, transparent 72%),
-  linear-gradient(to bottom, rgba(0, 0, 0, 0.42) 0%, rgba(${LINEN_RGB}, 0.06) 22%, transparent 32%)
+  linear-gradient(to top, rgba(0, 0, 0, 0.72) 0%, rgba(0, 0, 0, 0.38) 38%, rgba(${LINEN_RGB}, 0.08) 58%, transparent 72%)
 `;
 
 export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProps) {
