@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "../context/AuthContext";
 import { supabase } from "../../lib/supabaseClient";
+import { getAuthCallbackUrl } from "../../lib/authRedirect";
 import { TSLogo } from "../../components/TSLogo";
 import { SellerFeeTransparencyLine } from "../../components/SellerFeeTransparency";
 import { Loader2 } from "lucide-react";
@@ -40,19 +41,17 @@ function SignUpForm() {
     setIsLoading(true);
 
     try {
-      // Sign up directly with Supabase to get full response
-      // Use the current origin for email redirect (works for both localhost and Vercel)
-      const emailRedirectTo = typeof window !== 'undefined' 
-        ? `${window.location.origin}/auth/callback`
-        : undefined;
-      
-      console.log('🔍 Signup: emailRedirectTo =', emailRedirectTo);
-      
+      const isSeller = searchParams.get("seller") === "true";
+      const nextAfterAuth = isSeller ? "/seller/onboarding" : "/browse";
+      const emailRedirectTo = getAuthCallbackUrl(nextAfterAuth);
+
+      console.log("🔍 Signup: emailRedirectTo =", emailRedirectTo);
+
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: emailRedirectTo,
+          emailRedirectTo,
         },
       });
       
@@ -71,10 +70,6 @@ function SignUpForm() {
 
       // Check if email confirmation is required (session will be null)
       const requiresEmailConfirmation = !signUpData.session && signUpData.user;
-      
-      // Check if seller=true in URL
-      const urlParams = new URLSearchParams(window.location.search);
-      const isSeller = urlParams.get('seller') === 'true';
       
       if (requiresEmailConfirmation) {
         // Profile will be created by trigger, but update it with additional info

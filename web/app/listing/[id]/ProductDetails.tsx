@@ -500,6 +500,12 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
             <button
               type="button"
               onClick={() => {
+                if (!user) {
+                  router.push(
+                    `/login?redirect=${encodeURIComponent(`/listing/${listing.id}`)}`
+                  );
+                  return;
+                }
                 setContactError(null);
                 setContactSuccess(false);
                 setContactMessage("");
@@ -527,7 +533,15 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
             </div>
           ) : (
             <button 
-              onClick={() => router.push(`/checkout/${listing.id}`)}
+              onClick={() => {
+                if (!user) {
+                  router.push(
+                    `/login?redirect=${encodeURIComponent(`/checkout/${listing.id}`)}`
+                  );
+                  return;
+                }
+                router.push(`/checkout/${listing.id}`);
+              }}
               className="flex-1 h-14 font-bold text-lg rounded-full transition-colors shadow-md"
               style={{
                 backgroundColor: "#16193a",
@@ -583,9 +597,27 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
       >
         <div className="space-y-4">
           {!user ? (
-            <p className="text-sm text-white/90">
-              Please sign in to message the seller.
-            </p>
+            <div className="space-y-3">
+              <p className="text-sm text-white/90">
+                Please sign in to message the seller.
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  setContactSellerOpen(false);
+                  router.push(
+                    `/login?redirect=${encodeURIComponent(`/listing/${listing.id}`)}`
+                  );
+                }}
+                className="w-full px-4 py-2 text-sm font-semibold rounded-lg"
+                style={{
+                  backgroundColor: "var(--gold-accent)",
+                  color: "var(--ink-primary)",
+                }}
+              >
+                Sign in
+              </button>
+            </div>
           ) : contactSuccess ? (
             <p className="text-sm text-white/90">
               Your message was sent. The seller will reply to your email.

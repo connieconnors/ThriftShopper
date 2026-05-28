@@ -6,6 +6,7 @@ import Link from "next/link";
 import { motion } from "motion/react";
 import { Mail, Loader2, ArrowLeft } from "lucide-react";
 import { supabase } from "../../lib/supabaseClient";
+import { getPasswordResetUrl } from "../../lib/authRedirect";
 import { TSLogo } from "../../components/TSLogo";
 
 function ForgotPasswordForm() {
@@ -22,7 +23,7 @@ function ForgotPasswordForm() {
 
     try {
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
+        redirectTo: getPasswordResetUrl(),
       });
 
       if (resetError) {

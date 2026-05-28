@@ -3,12 +3,17 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabaseClient";
+import { getAuthCallbackUrl } from "../../lib/authRedirect";
 
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   isLoading: boolean;
-  signUp: (email: string, password: string) => Promise<{ error: Error | null }>;
+  signUp: (
+    email: string,
+    password: string,
+    options?: { nextPath?: string }
+  ) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
 }
@@ -81,17 +86,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const signUp = async (email: string, password: string) => {
-    // Use the current origin for email redirect (works for both localhost and Vercel)
-    const emailRedirectTo = typeof window !== 'undefined' 
-      ? `${window.location.origin}/auth/callback`
-      : undefined;
-    
+  const signUp = async (
+    email: string,
+    password: string,
+    options?: { nextPath?: string }
+  ) => {
+    const emailRedirectTo = getAuthCallbackUrl(options?.nextPath);
+
     const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        emailRedirectTo: emailRedirectTo,
+        emailRedirectTo,
       },
     });
     return { error: error as Error | null };

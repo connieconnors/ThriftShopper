@@ -28,9 +28,7 @@ export default function FavoriteButton({
   // Check if already favorited on mount
   const checkFavoriteStatus = useCallback(async () => {
     if (!userId) {
-      // Not logged in - check localStorage only
-      const localFavorites = JSON.parse(localStorage.getItem("favorites") || "[]");
-      setIsFavorited(localFavorites.includes(listingId));
+      setIsFavorited(false);
       setIsLoading(false);
       return;
     }
