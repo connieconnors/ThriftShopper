@@ -23,8 +23,12 @@
   --font-mono: var(--font-geist-mono);
 }
 
+html {
+  background-color: var(--ink-primary);
+}
+
 body {
-  background: var(--background);
+  background-color: var(--ink-primary);
   color: var(--foreground);
   font-family: var(--font-system);
   -webkit-font-smoothing: antialiased;

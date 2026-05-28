@@ -15,6 +15,7 @@ import {
   parseShippingPreferences,
   validateListingShippingPreferences,
 } from "@/lib/shippingPreferences";
+import { useAppShell } from "@/hooks/useAppShell";
 
 interface SellerProfile {
   storeName: string;
@@ -39,6 +40,7 @@ const US_STATES = [
 export default function SellerSettingsPage() {
   const router = useRouter();
   const { user, isLoading: authLoading } = useAuth();
+  useAppShell("linen");
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -165,14 +167,14 @@ export default function SellerSettingsPage() {
 
   if (authLoading || isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#f5f5f5" }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "var(--background)" }}>
         <Loader2 className="w-8 h-8 animate-spin" style={{ color: "#16193a" }} />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen py-8 px-6 overflow-y-auto" style={{ backgroundColor: "#f5f5f5" }}>
+    <div className="min-h-screen py-8 px-6 overflow-y-auto" style={{ backgroundColor: "var(--background)" }}>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -188,7 +190,7 @@ export default function SellerSettingsPage() {
           </Link>
           <h1
             className="text-2xl font-bold font-editorial"
-            style={{ color: "#000080" }}
+            style={{ color: "var(--ink-primary)" }}
           >
             Shop Settings
           </h1>

@@ -16,6 +16,7 @@ import {
   serializeShippingPreferences,
   validateListingShippingPreferences,
 } from "@/lib/shippingPreferences";
+import { useAppShell } from "@/hooks/useAppShell";
 
 interface SellerProfile {
   storeName: string;
@@ -48,6 +49,7 @@ const US_STATES = [
 function SellerOnboardingContent() {
   const router = useRouter();
   const { user, isLoading: authLoading } = useAuth();
+  useAppShell("linen");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
@@ -319,14 +321,14 @@ function SellerOnboardingContent() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#f5f5f5" }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "var(--background)" }}>
         <Loader2 className="w-8 h-8 animate-spin" style={{ color: "#16193a" }} />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen py-12 px-6 overflow-y-auto" style={{ backgroundColor: "#f5f5f5" }}>
+    <div className="min-h-screen py-12 px-6 overflow-y-auto" style={{ backgroundColor: "var(--background)" }}>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -337,11 +339,11 @@ function SellerOnboardingContent() {
             className="inline-flex w-20 h-20 rounded-full items-center justify-center mb-4"
             style={{ backgroundColor: "#16193a" }}
           >
-            <TSLogo size={44} primaryColor="#ffffff" accentColor="#D4AF37" showStar />
+            <TSLogo size={44} primaryColor="#ffffff" accentColor="var(--gold-accent)" showStar />
           </div>
           <h1
             className="text-3xl font-bold mb-2 font-editorial"
-            style={{ color: "#000080" }}
+            style={{ color: "var(--ink-primary)" }}
           >
             Set Up Your Shop
           </h1>

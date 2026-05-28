@@ -42,11 +42,11 @@ export default async function Browse() {
     // If we have an error and no data, show error page
     if (data.length === 0) {
       return (
-        <div className="fixed inset-0 bg-black flex items-center justify-center text-white p-8">
+        <div className="fixed inset-0 flex items-center justify-center p-8" style={{ backgroundColor: "#16193a" }}>
           <div className="text-center">
-            <h1 className="text-xl font-semibold mb-2">Something went wrong</h1>
-            <p className="text-white/60">Could not load listings. Please try again.</p>
-            <p className="text-white/40 text-sm mt-2">Error: {error.message} (Code: {error.code})</p>
+            <h1 className="text-xl font-semibold mb-2 font-editorial" style={{ color: "rgba(237, 233, 225, 0.95)" }}>Something went wrong</h1>
+            <p style={{ color: "rgba(237, 233, 225, 0.65)" }}>Could not load listings. Please try again.</p>
+            <p className="text-sm mt-2" style={{ color: "rgba(237, 233, 225, 0.45)" }}>Error: {error.message} (Code: {error.code})</p>
           </div>
         </div>
       );
@@ -58,10 +58,10 @@ export default async function Browse() {
 
   if (listings.length === 0) {
     return (
-      <div className="fixed inset-0 bg-black flex items-center justify-center text-white p-8">
+      <div className="fixed inset-0 flex items-center justify-center p-8" style={{ backgroundColor: "#16193a" }}>
         <div className="text-center">
-          <h1 className="text-xl font-semibold mb-2">No items yet</h1>
-          <p className="text-white/60">Check back soon for new finds.</p>
+          <h1 className="text-xl font-semibold mb-2 font-editorial" style={{ color: "rgba(237, 233, 225, 0.95)" }}>No items yet</h1>
+          <p style={{ color: "rgba(237, 233, 225, 0.65)" }}>Check back soon for new finds.</p>
         </div>
       </div>
     );

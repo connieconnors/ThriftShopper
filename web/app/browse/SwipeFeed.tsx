@@ -24,6 +24,7 @@ import { Mic, Loader2 } from "lucide-react";
 import { GlintIcon } from "../../components/GlintIcon";
 import { normalizeTagColumn } from "../../lib/utils/tagNormalizer";
 import { matchesMood, getMoodVariations } from "../../lib/moodMappings";
+import { useAppShell } from "../../hooks/useAppShell";
 
 interface SwipeFeedProps {
   initialListings: Listing[];
@@ -36,10 +37,18 @@ const LINEN = "var(--background)";
 const GOLD = "var(--gold-accent)";
 const GOLD_RGB = "197, 160, 40";
 const INK_RGB = "22, 25, 58";
+const LINEN_RGB = "237, 233, 225";
+const WARM_GLASS = `rgba(${LINEN_RGB}, 0.22)`;
+const WARM_GLASS_BORDER = `rgba(${LINEN_RGB}, 0.35)`;
+const EDITORIAL_GRADIENT = `
+  linear-gradient(to top, rgba(${INK_RGB}, 0.78) 0%, rgba(${INK_RGB}, 0.42) 38%, rgba(${LINEN_RGB}, 0.10) 58%, transparent 72%),
+  linear-gradient(to bottom, rgba(${INK_RGB}, 0.48) 0%, rgba(${LINEN_RGB}, 0.08) 22%, transparent 32%)
+`;
 
 export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProps) {
   const router = useRouter();
   const { user } = useAuth();
+  useAppShell("ink");
   const [listings, setListings] = useState<Listing[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -772,33 +781,33 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
       return (
         <div 
           className="fixed inset-0 flex flex-col items-center justify-center px-6"
-          style={{ backgroundColor: LINEN }}
+          style={{ backgroundColor: INK }}
         >
-          <p className="text-xl mb-2 font-editorial" style={{ color: INK }}>No items found</p>
+          <p className="text-xl mb-2 font-editorial" style={{ color: `rgba(${LINEN_RGB}, 0.95)` }}>No items found</p>
         {isMoodFilterResult && (
           <>
-            <p className="text-sm mb-4" style={{ color: `rgba(${INK_RGB}, 0.6)` }}>
+            <p className="text-sm mb-4" style={{ color: `rgba(${LINEN_RGB}, 0.65)` }}>
               for selected moods: {selectedMoods.join(', ')}
             </p>
             <button
               onClick={() => setSelectedMoods([])}
-              className="px-6 py-3 rounded-full text-sm font-medium text-white"
-              style={{ backgroundColor: INK }}
+              className="px-6 py-3 rounded-full text-sm font-medium"
+              style={{ backgroundColor: WARM_GLASS, color: `rgba(${LINEN_RGB}, 0.95)`, border: `1px solid ${WARM_GLASS_BORDER}` }}
             >
               Clear mood filters
             </button>
           </>
         )}
         {searchResults !== null && lastSearchQuery && (
-          <p className="text-sm mb-4" style={{ color: `rgba(${INK_RGB}, 0.6)` }}>
+          <p className="text-sm mb-4" style={{ color: `rgba(${LINEN_RGB}, 0.65)` }}>
             for "{lastSearchQuery}"
           </p>
         )}
         {searchResults !== null && (
           <button
             onClick={clearSearch}
-            className="px-6 py-3 rounded-full text-sm font-medium text-white"
-            style={{ backgroundColor: INK }}
+            className="px-6 py-3 rounded-full text-sm font-medium"
+            style={{ backgroundColor: WARM_GLASS, color: `rgba(${LINEN_RGB}, 0.95)`, border: `1px solid ${WARM_GLASS_BORDER}` }}
           >
             Clear search
           </button>
@@ -833,7 +842,7 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
         ref={containerRef}
         className="fixed inset-0 overflow-hidden select-none"
         style={{ 
-          backgroundColor: LINEN,
+          backgroundColor: INK,
           margin: 0,
           padding: 0,
         }}
@@ -1088,7 +1097,7 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
                   <div 
                     className="w-full h-full flex items-center justify-center"
                     style={{ 
-                      backgroundColor: LINEN,
+                      backgroundColor: INK,
                       margin: 0,
                       padding: 0,
                     }}
@@ -1102,10 +1111,7 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
               <div 
                 className="absolute inset-0 pointer-events-none"
                 style={{ 
-                  background: `
-                    linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.4) 35%, rgba(0,0,0,0.2) 50%, transparent 70%),
-                    linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, transparent 25%)
-                  `
+                  background: EDITORIAL_GRADIENT,
                 }}
               />
 
@@ -1122,10 +1128,11 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
                   <div 
                     className="px-3 py-1.5 rounded-full"
                     style={{ 
-                      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                      backgroundColor: WARM_GLASS,
                       backdropFilter: 'blur(8px)',
+                      border: `1px solid ${WARM_GLASS_BORDER}`,
                       fontSize: '13px',
-                      color: 'rgba(255, 255, 255, 0.9)',
+                      color: `rgba(${LINEN_RGB}, 0.95)`,
                       fontWeight: '500',
                     }}
                   >
@@ -1155,11 +1162,11 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
                 <h1 
                   className="mb-1 font-editorial"
                   style={{ 
-                    color: 'rgba(255, 255, 255, 0.70)',
+                    color: `rgba(${LINEN_RGB}, 0.88)`,
                     fontSize: '15px',
                     fontWeight: '500',
                     lineHeight: '1.1',
-                    textShadow: '0 0 8px rgba(0,0,0,0.9), 0 1px 3px rgba(0,0,0,0.8)',
+                    textShadow: `0 0 12px rgba(${INK_RGB}, 0.85), 0 1px 3px rgba(${INK_RGB}, 0.55)`,
                   }}
                 >
                   {listing.title}
@@ -1169,9 +1176,9 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
                 <p 
                   className="font-bold"
                   style={{ 
-                    color: `rgba(${GOLD_RGB}, 0.75)`,
+                    color: `rgba(${GOLD_RGB}, 0.85)`,
                     fontSize: '12px',
-                    textShadow: '0 0 8px rgba(0,0,0,0.9), 0 1px 3px rgba(0,0,0,0.8)',
+                    textShadow: `0 0 12px rgba(${INK_RGB}, 0.85), 0 1px 3px rgba(${INK_RGB}, 0.55)`,
                   }}
                 >
                   ${listing.price?.toFixed(2) || '0.00'}
@@ -1223,18 +1230,18 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
             height: '48px',
             backgroundColor: currentListing && favorites.has(currentListing.id) 
               ? `rgba(${GOLD_RGB}, 0.25)` 
-              : 'rgba(255, 255, 255, 0.2)',
+              : WARM_GLASS,
             backdropFilter: 'blur(8px)',
             border: currentListing && favorites.has(currentListing.id)
               ? `1px solid rgba(${GOLD_RGB}, 0.45)`
-              : '1px solid rgba(255, 255, 255, 0.3)',
+              : `1px solid ${WARM_GLASS_BORDER}`,
             boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
           }}
           aria-label={currentListing && favorites.has(currentListing.id) ? "Remove from saved" : "Save this find"}
         >
           <GlintIcon
             size={24}
-            color={currentListing && favorites.has(currentListing.id) ? GOLD : "white"}
+            color={currentListing && favorites.has(currentListing.id) ? GOLD : `rgba(${LINEN_RGB}, 0.95)`}
             filled={!!(currentListing && favorites.has(currentListing.id))}
             className="transition-colors duration-200"
             style={{ width: "24px", height: "24px" }}
@@ -1270,9 +1277,9 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
             height: '48px',
             minWidth: '44px', // Accessibility: ensure 44px touch target
             minHeight: '44px',
-            backgroundColor: isRecording ? `rgba(${GOLD_RGB}, 0.5)` : 'rgba(255, 255, 255, 0.2)',
+            backgroundColor: isRecording ? `rgba(${GOLD_RGB}, 0.45)` : WARM_GLASS,
             backdropFilter: 'blur(8px)',
-            border: isRecording ? '1px solid rgba(255, 255, 255, 0.7)' : '1px solid rgba(255, 255, 255, 0.3)',
+            border: isRecording ? `1px solid rgba(${GOLD_RGB}, 0.55)` : `1px solid ${WARM_GLASS_BORDER}`,
             boxShadow: isRecording
               ? `0 0 12px rgba(${GOLD_RGB}, 0.45), 0 2px 8px rgba(0, 0, 0, 0.2)`
               : '0 2px 8px rgba(0, 0, 0, 0.15)',

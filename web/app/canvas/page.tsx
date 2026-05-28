@@ -22,6 +22,7 @@ import {
   X,
   Loader2,
 } from "lucide-react";
+import { useAppShell } from "@/hooks/useAppShell";
 import SupportModal from "@/components/SupportModal";
 import { Listing, getPrimaryImage } from "../../lib/types";
 import FavoriteButton from "../components/FavoriteButton";
@@ -43,6 +44,7 @@ interface Profile {
 export default function BuyerCanvasPage() {
   const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
+  useAppShell("ink");
   const [mounted, setMounted] = useState(false);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [favorites, setFavorites] = useState<Listing[]>([]);
@@ -115,14 +117,6 @@ export default function BuyerCanvasPage() {
       router.push("/login?redirect=/canvas");
     }
   }, [user, authLoading, router]);
-
-  useEffect(() => {
-    const previous = document.body.style.backgroundColor;
-    document.body.style.backgroundColor = "#16193a";
-    return () => {
-      document.body.style.backgroundColor = previous;
-    };
-  }, []);
 
   useEffect(() => {
     const fetchData = async () => {

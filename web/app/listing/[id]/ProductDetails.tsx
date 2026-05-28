@@ -32,6 +32,10 @@ import {
   generateShippingBannerText,
   isShippingJson,
 } from "../../../lib/shippingPreferences";
+import { useAppShell } from "../../../hooks/useAppShell";
+
+const CHROME_GLASS = "rgba(22, 25, 58, 0.48)";
+const CHROME_GLASS_BORDER = "rgba(237, 233, 225, 0.25)";
 
 interface ProductDetailsProps {
   listing: Listing;
@@ -54,6 +58,7 @@ function mapConditionValue(condition: string): string {
 export default function ProductDetails({ listing }: ProductDetailsProps) {
   const router = useRouter();
   const { user } = useAuth();
+  useAppShell("linen");
   const images = getListingImages(listing);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showShareSuccess, setShowShareSuccess] = useState(false);
@@ -197,7 +202,8 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
         <div className="flex items-center gap-3">
           <Link
             href="/browse"
-            className="w-10 h-10 flex items-center justify-center bg-black/40 backdrop-blur-md rounded-full text-white hover:bg-black/60 transition-colors"
+            className="w-10 h-10 flex items-center justify-center backdrop-blur-md rounded-full text-white transition-colors hover:opacity-90"
+            style={{ backgroundColor: CHROME_GLASS, border: `1px solid ${CHROME_GLASS_BORDER}` }}
             aria-label="Back to browse"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -254,9 +260,10 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
           <>
             <button
               onClick={() => currentImageIndex > 0 && setCurrentImageIndex(prev => prev - 1)}
-              className={`hidden sm:flex absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 items-center justify-center bg-black/40 backdrop-blur-sm rounded-full text-white transition-opacity ${
-                currentImageIndex === 0 ? "opacity-30 cursor-not-allowed" : "hover:bg-black/60"
+              className={`hidden sm:flex absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 items-center justify-center backdrop-blur-sm rounded-full text-white transition-opacity ${
+                currentImageIndex === 0 ? "opacity-30 cursor-not-allowed" : "hover:opacity-90"
               }`}
+              style={{ backgroundColor: CHROME_GLASS, border: `1px solid ${CHROME_GLASS_BORDER}` }}
               disabled={currentImageIndex === 0}
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -265,9 +272,10 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
             </button>
             <button
               onClick={() => currentImageIndex < images.length - 1 && setCurrentImageIndex(prev => prev + 1)}
-              className={`hidden sm:flex absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 items-center justify-center bg-black/40 backdrop-blur-sm rounded-full text-white transition-opacity ${
-                currentImageIndex === images.length - 1 ? "opacity-30 cursor-not-allowed" : "hover:bg-black/60"
+              className={`hidden sm:flex absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 items-center justify-center backdrop-blur-sm rounded-full text-white transition-opacity ${
+                currentImageIndex === images.length - 1 ? "opacity-30 cursor-not-allowed" : "hover:opacity-90"
               }`}
+              style={{ backgroundColor: CHROME_GLASS, border: `1px solid ${CHROME_GLASS_BORDER}` }}
               disabled={currentImageIndex === images.length - 1}
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -297,7 +305,10 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
 
         {/* Tap to Zoom Indicator (subtle) */}
         {images.length > 0 && (
-          <div className="absolute top-4 right-4 px-3 py-1.5 bg-black/40 backdrop-blur-md rounded-full flex items-center gap-1.5">
+          <div
+            className="absolute top-4 right-4 px-3 py-1.5 backdrop-blur-md rounded-full flex items-center gap-1.5"
+            style={{ backgroundColor: CHROME_GLASS, border: `1px solid ${CHROME_GLASS_BORDER}` }}
+          >
             <svg className="w-4 h-4 text-white/60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
             </svg>
