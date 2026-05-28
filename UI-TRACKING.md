@@ -3,7 +3,38 @@
 Living notes for design decisions, open polish items, and testing follow-ups.  
 *(Not a spec — just a place to keep track while iterating.)*
 
-**Formal audit:** See [`THRIFTSHOPPER-UI-LOCK-AUDIT.md`](./THRIFTSHOPPER-UI-LOCK-AUDIT.md) (2026-05-28) — drift analysis, blue/black bleed root causes, minimum fix.
+**Formal audit:** See [`THRIFTSHOPPER-UI-LOCK-AUDIT.md`](./THRIFTSHOPPER-UI-LOCK-AUDIT.md) — drift analysis, blue/black bleed root causes.
+
+---
+
+## Browse — LOCKED unless broken
+
+**Status:** Approved and shipped to beta (2026-05-23).
+
+| Decision | Detail |
+|----------|--------|
+| Top gradient | **Removed** |
+| Bottom gradient | **Retained** |
+| Reason | Improves fidelity of light photos while preserving title/price readability |
+| Card stage | Black `#000000` (unchanged) |
+| Opacity | **Do not adjust** until after iPhone beta testing |
+
+**Re-evaluate after:** real-device testing on iPhone (beta.thriftshopper.com).
+
+**Do not change unless broken:** gradients, card stage, shell, typography on Browse.
+
+### Rejected (do not revisit)
+- `experiment/browse-ink-revert` — too blue/navy
+
+---
+
+## Next priorities
+
+1. Settings / account stub audit
+2. Help / support routes
+3. Report listing flow
+4. Legal page wiring
+5. Native launch checklist
 
 ---
 
@@ -22,62 +53,33 @@ Living notes for design decisions, open polish items, and testing follow-ups.
 
 | Commit | What |
 |--------|------|
+| *(pending)* | Browse: bottom-only gradient — top wash removed, bottom readability band kept |
+| `01a8a2b` | Browse shell: linen hardening, theme-color → linen, card stage → black |
 | `56cb42c` | Typography + welcoming auth (login, signup, account sheet, splash Playfair) |
-| `01a8a2b` | Browse shell: linen hardening, theme-color → linen, card stage → black, neutral gradients |
-
-## Experiments (not on main)
-
-| Branch | Status | Decision |
-|--------|--------|----------|
-| `experiment/browse-ink-revert` | **Rejected** | Too blue/navy again — do not merge |
-| `experiment/browse-bottom-gradient` | **Testing** | Remove top gradient only; keep black `CARD_STAGE` + bottom readability gradient |
 
 ---
 
-## Browse card background — decision (2026-05-23)
+## Browse card background — history
 
-### Problem
-- **Navy card fill (`#16193a`)** on full-bleed mobile → whole viewport felt “blue”
-- **Black card fill** + **top gradient overlay** → less blue, but dark wash bleeds down over light product photos (e.g. gray/linen listing backgrounds)
+### Problem (resolved)
+- Navy card fill → whole viewport felt blue on mobile
+- Black card + **top** gradient → dark wash over light product photos
 
-### What causes the “bleed”
-Not the page shell — that’s linen (`#ede9e1`). It’s two layers on the card:
+### What we kept
+- Linen shell (`#ede9e1`), theme-color → linen
+- Black `CARD_STAGE` behind photos
+- Bottom `EDITORIAL_GRADIENT` only (title/price readability)
 
-1. **`CARD_STAGE`** — solid fill behind the photo (`#000` today; was ink)
-2. **`EDITORIAL_GRADIENT`** — full-screen overlay on every slide:
-   - ~~Top band: dark gradient downward (for header/watermark contrast)~~ **removed on experiment branch**
-   - Bottom band: dark gradient upward (for title/price readability) **kept**
-
-Light product images + top gradient = visible dark wash from the top (floral plate, necklace, percolator).
-
-### Rejected: ink revert (`experiment/browse-ink-revert`)
-Restoring ink stage + ink gradients brought back the blue viewport feel. **Do not merge.**
-
-### Current decision (experiment branch)
-**Keep black `CARD_STAGE`. Remove top gradient only. Keep bottom gradient for title/price readability.**
-
-Visual test passed on: Floral Plate and Server Set, Ornate and Delicate Matinee-Length Necklace, Vintage Guardian Service 8 Cup Hammered Aluminum Percolator.
-
-**Not merging yet** — keep testing on `experiment/browse-bottom-gradient`.
-
-### Mobile flash
-Brief **black flash** before image loads = empty card stage showing through until `object-cover` image paints. Less bad than blue shell; could use linen or ink placeholder later.
-
-### Optional follow-ups (separate pass — do not block merge)
-
-- [ ] **D — Loading state** — ink or linen placeholder while image loads (no black flash)
-- [ ] **Product titles** — optional soften to 15px if 16px Playfair 400 still feels heavy
-
-**Do not revisit:** ink card stage restore, top gradient restore, or further Browse gradient tweaks until testing is done.
+### Deferred (separate pass — not blocking)
+- [ ] Loading placeholder while image loads (reduce black flash on swipe)
+- [ ] Product title soften to 15px (only if still feels heavy after device testing)
 
 ---
 
 ## Polish backlog
 
-- [ ] **Product titles** — optional soften to 15px / lighter weight if 16px Playfair 400 still feels heavy
-- [ ] **Browse gradient** — bottom-only experiment on branch; merge after testing (see above)
 - [ ] **Account sheet / auth** — user testing; copy tweaks welcome
-- [ ] **Desktop browse** — confirm linen surround + portrait frame feel right at all breakpoints
+- [ ] **Desktop browse** — confirm linen surround + portrait frame at all breakpoints
 
 ---
 
@@ -85,16 +87,16 @@ Brief **black flash** before image loads = empty card stage showing through unti
 
 ### Browse / discovery
 - [ ] Linen shell visible on desktop (not blue page)
-- [ ] Mobile: acceptable flash on swipe; photos readable
+- [ ] Mobile iPhone: light photos true; titles/prices readable
 - [ ] Title = Playfair; price/metadata = Inter
-- [ ] Gradients don’t ruin light-background listings (note worst offenders)
+- [ ] Swipe flash acceptable
 
 ### Auth
 - [ ] Account sheet → login / signup feel welcoming (linen, not cold modal)
 - [ ] Seller signup path → onboarding chrome matches
 
 ### Backend flows
-- [ ] *(add checkout, orders, shipping snapshot, seller settings, etc.)*
+- [ ] *(checkout, orders, shipping snapshot, seller settings, etc.)*
 
 ---
 
