@@ -94,7 +94,7 @@ export default function SplashScreen({ autoNavigateDelay = 3000 }: SplashScreenP
             className="text-lg sm:text-xl md:text-3xl lg:text-4xl italic"
             style={{ 
               fontFamily: "var(--font-editorial)",
-              color: "#cfb53b",
+              color: "var(--gold-accent)",
               textShadow: "0 2px 12px rgba(0,0,0,0.7)",
               paddingLeft: "8px",
               marginBottom: "40px",
