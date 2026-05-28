@@ -48,7 +48,7 @@ const EDITORIAL_GRADIENT = `
 export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProps) {
   const router = useRouter();
   const { user } = useAuth();
-  useAppShell("ink");
+  useAppShell("linen");
   const [listings, setListings] = useState<Listing[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -781,25 +781,25 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
       return (
         <div 
           className="fixed inset-0 flex flex-col items-center justify-center px-6"
-          style={{ backgroundColor: INK }}
+          style={{ backgroundColor: LINEN }}
         >
-          <p className="text-xl mb-2 font-editorial" style={{ color: `rgba(${LINEN_RGB}, 0.95)` }}>No items found</p>
+          <p className="text-xl mb-2 font-editorial" style={{ color: INK }}>No items found</p>
         {isMoodFilterResult && (
           <>
-            <p className="text-sm mb-4" style={{ color: `rgba(${LINEN_RGB}, 0.65)` }}>
+            <p className="text-sm mb-4" style={{ color: `rgba(${INK_RGB}, 0.65)` }}>
               for selected moods: {selectedMoods.join(', ')}
             </p>
             <button
               onClick={() => setSelectedMoods([])}
               className="px-6 py-3 rounded-full text-sm font-medium"
-              style={{ backgroundColor: WARM_GLASS, color: `rgba(${LINEN_RGB}, 0.95)`, border: `1px solid ${WARM_GLASS_BORDER}` }}
+              style={{ backgroundColor: INK, color: `rgba(${LINEN_RGB}, 0.95)` }}
             >
               Clear mood filters
             </button>
           </>
         )}
         {searchResults !== null && lastSearchQuery && (
-          <p className="text-sm mb-4" style={{ color: `rgba(${LINEN_RGB}, 0.65)` }}>
+          <p className="text-sm mb-4" style={{ color: `rgba(${INK_RGB}, 0.65)` }}>
             for "{lastSearchQuery}"
           </p>
         )}
@@ -807,7 +807,7 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
           <button
             onClick={clearSearch}
             className="px-6 py-3 rounded-full text-sm font-medium"
-            style={{ backgroundColor: WARM_GLASS, color: `rgba(${LINEN_RGB}, 0.95)`, border: `1px solid ${WARM_GLASS_BORDER}` }}
+            style={{ backgroundColor: INK, color: `rgba(${LINEN_RGB}, 0.95)` }}
           >
             Clear search
           </button>
@@ -839,16 +839,19 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
         }
       `}</style>
       <div
-        ref={containerRef}
         className="fixed inset-0 overflow-hidden select-none"
-        style={{ 
-          backgroundColor: INK,
-          margin: 0,
-          padding: 0,
-        }}
+        style={{ backgroundColor: LINEN }}
+      >
+      <div
+        ref={containerRef}
+        className="relative w-full h-full md:flex md:items-center md:justify-center"
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
+      >
+      <div
+        className="relative w-full h-full md:h-[min(100dvh,900px)] md:w-[min(480px,calc(min(100dvh,900px)*9/16))] md:max-w-[min(480px,90vw)] md:rounded-[20px] md:overflow-hidden md:shadow-[0_8px_40px_rgba(22,25,58,0.15)] md:border md:border-[rgba(22,25,58,0.08)]"
+        style={{ backgroundColor: INK }}
       >
       {/* ===== HEADER (TikTok-style, top-left, smaller) ===== */}
       <div
@@ -1192,7 +1195,7 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
 
       {/* ===== RIGHT SIDE FLOATING BUTTONS (TikTok-style) ===== */}
       <div 
-        className="fixed z-20 flex flex-col"
+        className="absolute z-20 flex flex-col"
         style={{ 
           right: '16px',
           top: '50%',
@@ -1313,7 +1316,7 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
           e.stopPropagation();
           setAccountOpen(true);
         }}
-        className="fixed bottom-6 right-6 z-10 w-10 h-10 rounded-full shadow-lg transition-all hover:scale-110 flex items-center justify-center opacity-70 hover:opacity-100"
+        className="absolute bottom-6 right-6 z-10 w-10 h-10 rounded-full shadow-lg transition-all hover:scale-110 flex items-center justify-center opacity-70 hover:opacity-100"
         style={{ backgroundColor: INK }}
         aria-label="Account"
       >
@@ -1323,6 +1326,8 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
       {/* Account Sheet */}
       <AccountSheet isOpen={accountOpen} onClose={() => setAccountOpen(false)} />
 
+    </div>
+    </div>
     </div>
     </>
   );

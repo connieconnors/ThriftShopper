@@ -24,11 +24,11 @@
 }
 
 html {
-  background-color: var(--ink-primary);
+  background-color: var(--background);
 }
 
 body {
-  background-color: var(--ink-primary);
+  background-color: var(--background);
   color: var(--foreground);
   font-family: var(--font-system);
   -webkit-font-smoothing: antialiased;
