@@ -24,25 +24,26 @@ import { Mic, Loader2 } from "lucide-react";
 import { GlintIcon } from "../../components/GlintIcon";
 import { normalizeTagColumn } from "../../lib/utils/tagNormalizer";
 import { matchesMood, getMoodVariations } from "../../lib/moodMappings";
-import { useAppShell } from "../../hooks/useAppShell";
+import { useAppShell, SHELL_LINEN } from "../../hooks/useAppShell";
 
 interface SwipeFeedProps {
   initialListings: Listing[];
   shuffleKey?: number;
 }
 
-// TS 2.0 brand tokens — CSS variables for shell-safe theming
+// TS 2.0 brand tokens
 const INK = "var(--ink-primary)";
-const LINEN = "var(--background)";
 const GOLD = "var(--gold-accent)";
 const GOLD_RGB = "197, 160, 40";
 const INK_RGB = "22, 25, 58";
 const LINEN_RGB = "237, 233, 225";
+/** Photo stage behind listings — neutral black, not navy (avoids blue page bleed) */
+const CARD_STAGE = "#000000";
 const WARM_GLASS = `rgba(${LINEN_RGB}, 0.22)`;
 const WARM_GLASS_BORDER = `rgba(${LINEN_RGB}, 0.35)`;
 const EDITORIAL_GRADIENT = `
-  linear-gradient(to top, rgba(${INK_RGB}, 0.78) 0%, rgba(${INK_RGB}, 0.42) 38%, rgba(${LINEN_RGB}, 0.10) 58%, transparent 72%),
-  linear-gradient(to bottom, rgba(${INK_RGB}, 0.48) 0%, rgba(${LINEN_RGB}, 0.08) 22%, transparent 32%)
+  linear-gradient(to top, rgba(0, 0, 0, 0.72) 0%, rgba(0, 0, 0, 0.38) 38%, rgba(${LINEN_RGB}, 0.08) 58%, transparent 72%),
+  linear-gradient(to bottom, rgba(0, 0, 0, 0.42) 0%, rgba(${LINEN_RGB}, 0.06) 22%, transparent 32%)
 `;
 
 export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProps) {
@@ -781,7 +782,7 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
       return (
         <div 
           className="fixed inset-0 flex flex-col items-center justify-center px-6"
-          style={{ backgroundColor: LINEN }}
+          style={{ backgroundColor: SHELL_LINEN }}
         >
           <p className="text-xl mb-2 font-editorial" style={{ color: INK }}>No items found</p>
         {isMoodFilterResult && (
@@ -840,18 +841,19 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
       `}</style>
       <div
         className="fixed inset-0 overflow-hidden select-none"
-        style={{ backgroundColor: LINEN }}
+        style={{ backgroundColor: SHELL_LINEN }}
       >
       <div
         ref={containerRef}
         className="relative w-full h-full md:flex md:items-center md:justify-center"
+        style={{ backgroundColor: SHELL_LINEN }}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
       <div
         className="relative w-full h-full md:h-[min(100dvh,900px)] md:w-[min(480px,calc(min(100dvh,900px)*9/16))] md:max-w-[min(480px,90vw)] md:rounded-[20px] md:overflow-hidden md:shadow-[0_8px_40px_rgba(22,25,58,0.15)] md:border md:border-[rgba(22,25,58,0.08)]"
-        style={{ backgroundColor: INK }}
+        style={{ backgroundColor: CARD_STAGE }}
       >
       {/* ===== HEADER (TikTok-style, top-left, smaller) ===== */}
       <div
@@ -1092,7 +1094,7 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
                   <div 
                     className="w-full h-full flex items-center justify-center"
                     style={{ 
-                      backgroundColor: INK,
+                      backgroundColor: CARD_STAGE,
                       margin: 0,
                       padding: 0,
                     }}

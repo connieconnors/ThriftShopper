@@ -26,11 +26,13 @@
 }
 
 html {
-  background-color: var(--background);
+  background-color: #ede9e1;
+  background-color: var(--background, #ede9e1);
 }
 
 body {
-  background-color: var(--background);
+  background-color: #ede9e1;
+  background-color: var(--background, #ede9e1);
   color: var(--foreground);
   font-family: var(--font-system);
   -webkit-font-smoothing: antialiased;
