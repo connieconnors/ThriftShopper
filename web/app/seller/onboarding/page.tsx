@@ -339,7 +339,7 @@ function SellerOnboardingContent() {
             className="inline-flex w-20 h-20 rounded-full items-center justify-center mb-4"
             style={{ backgroundColor: "#16193a" }}
           >
-            <TSLogo size={44} primaryColor="#ffffff" accentColor="var(--gold-accent)" showStar />
+            <TSLogo size={44} primaryColor="#ffffff" accentColor="var(--gold-accent)" showStar={true} />
           </div>
           <h1
             className="text-3xl font-bold mb-2 font-editorial"
@@ -657,7 +657,7 @@ function SellerOnboardingContent() {
                     </div>
                     <div className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 border border-[#16193a]/20">
                       <div className="relative h-6 w-6 flex items-center justify-center rounded-full" style={{ backgroundColor: "#16193a" }}>
-                        <TSLogo size={14} primaryColor="#ffffff" accentColor="#D4AF37" />
+                        <TSLogo size={14} primaryColor="#ffffff" accentColor="var(--gold-accent)" showStar={true} />
                         <span
                           className="absolute -bottom-1 -right-1 h-3 w-3 rounded-full flex items-center justify-center"
                           style={{ backgroundColor: "#D4AF37" }}

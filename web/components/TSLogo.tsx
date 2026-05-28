@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 
 interface TSLogoProps {
   size?: number;
@@ -7,50 +7,59 @@ interface TSLogoProps {
   showStar?: boolean;
 }
 
-export function TSLogo({ 
-  size = 24, 
-  primaryColor = '#16193a',
-  accentColor = 'var(--gold-accent)',
-  showStar = false
+/**
+ * Canonical TS wordmark — Merriweather TS with optional gold ✦
+ * tucked between the letters at the baseline (matches app icon).
+ */
+export function TSLogo({
+  size = 24,
+  primaryColor = "#16193a",
+  accentColor = "var(--gold-accent)",
+  showStar = false,
 }: TSLogoProps) {
+  const letterSize = size * 0.65;
+  const starSize = size * 0.45;
+
   return (
-    <div 
-      className="flex flex-col items-center justify-center"
-      style={{ 
+    <div
+      className="relative inline-flex items-center justify-center"
+      style={{
         width: size,
         height: size,
+        lineHeight: 1,
       }}
+      aria-hidden
     >
-      <div 
-        className="flex items-center justify-center"
-        style={{ 
-          fontFamily: 'var(--font-editorial)',
-          fontSize: size * 0.58,
-          lineHeight: 1,
-          fontWeight: 400,
-          letterSpacing: '-0.04em',
+      <span
+        style={{
+          fontFamily: "var(--font-editorial)",
+          fontSize: letterSize,
+          fontWeight: 700,
+          letterSpacing: "-0.06em",
           color: primaryColor,
           textShadow: accentColor.startsWith("#")
             ? `0 0 8px ${accentColor}40`
             : "0 0 8px rgba(197, 160, 40, 0.25)",
-          marginTop: size * 0.02,
         }}
       >
         TS
-      </div>
+      </span>
       {showStar && (
-        <div 
-          style={{ 
-            fontSize: size * 0.25,
+        <span
+          style={{
+            position: "absolute",
+            fontSize: starSize,
             lineHeight: 1,
             color: accentColor,
-            marginTop: size * 0.02,
+            left: "47%",
+            bottom: "10%",
+            transform: "translateX(-52%)",
+            pointerEvents: "none",
           }}
         >
           ✦
-        </div>
+        </span>
       )}
     </div>
   );
 }
-
