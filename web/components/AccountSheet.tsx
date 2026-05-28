@@ -5,7 +5,12 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/context/AuthContext";
 import { supabase } from "@/lib/supabaseClient";
 import { useState, useEffect } from "react";
-import { TSLogo } from "./TSLogo";
+import {
+  WelcomeBrandHeader,
+  authPrimaryButtonClass,
+  authSecondaryButtonClass,
+  authLinkClass,
+} from "./WelcomeBrandHeader";
 
 interface AccountSheetProps {
   isOpen: boolean;
@@ -21,25 +26,23 @@ const AccountSheet: React.FC<AccountSheetProps> = ({ isOpen, onClose }) => {
 
   useEffect(() => {
     if (isOpen) {
-      // Set flag to prevent immediate closure on mobile
       setJustOpened(true);
       const timer = setTimeout(() => {
         setJustOpened(false);
-      }, 300); // 300ms delay before allowing backdrop to close
-      
+      }, 300);
+
       if (user) {
-        // Check if user is a seller
         const checkSellerStatus = async () => {
           try {
             const { data: profile } = await supabase
-              .from('profiles')
-              .select('is_seller')
-              .eq('user_id', user.id)
+              .from("profiles")
+              .select("is_seller")
+              .eq("user_id", user.id)
               .single();
-            
+
             setIsSeller(profile?.is_seller === true);
           } catch (err) {
-            console.error('Error checking seller status:', err);
+            console.error("Error checking seller status:", err);
             setIsSeller(false);
           } finally {
             setLoading(false);
@@ -49,7 +52,7 @@ const AccountSheet: React.FC<AccountSheetProps> = ({ isOpen, onClose }) => {
       } else {
         setLoading(false);
       }
-      
+
       return () => clearTimeout(timer);
     }
   }, [user, isOpen]);
@@ -58,252 +61,182 @@ const AccountSheet: React.FC<AccountSheetProps> = ({ isOpen, onClose }) => {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/35 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/25 backdrop-blur-sm"
       onClick={(e) => {
-        // Only close if clicking the backdrop, not the modal content
-        // Prevent immediate closure on mobile
         if (e.target === e.currentTarget && !justOpened) {
           onClose();
         }
       }}
       onTouchStart={(e) => {
-        // Only close if touching the backdrop, not the modal content
-        // Prevent immediate closure on mobile
         if (e.target === e.currentTarget && !justOpened) {
           e.preventDefault();
           onClose();
         }
       }}
     >
-      {/* iOS-style action sheet */}
       <div
-        className="
-          w-[92%]
-          max-w-[360px]
-          mb-6
-          rounded-[28px]
-          bg-white/95
-          shadow-[0_18px_40px_rgba(0,0,0,0.35)]
-        "
-        style={{ touchAction: 'pan-y' }}
+        className="w-[92%] max-w-[380px] mb-6 rounded-[28px] shadow-[0_12px_32px_rgba(22,25,58,0.18)]"
+        style={{ backgroundColor: "var(--background)", touchAction: "pan-y" }}
         onClick={(e) => e.stopPropagation()}
-        onTouchStart={(e) => {
-          e.stopPropagation();
-        }}
-        onTouchMove={(e) => {
-          e.stopPropagation();
-        }}
-        onTouchEnd={(e) => {
-          e.stopPropagation();
-        }}
+        onTouchStart={(e) => e.stopPropagation()}
+        onTouchMove={(e) => e.stopPropagation()}
+        onTouchEnd={(e) => e.stopPropagation()}
       >
-        {/* Handle */}
-        <div className="flex justify-center pt-8 pb-2">
-          <div className="h-1.5 w-10 rounded-full bg-gray-300" />
+        <div className="flex justify-center pt-5 pb-1">
+          <div className="h-1.5 w-10 rounded-full bg-gray-300/80" />
         </div>
 
-        {/* Header */}
-        <div className="flex flex-col items-center px-6">
-          <div className="flex h-9 w-9 flex-col items-center justify-center rounded-full bg-[var(--ink-primary)]">
-            <TSLogo size={36} primaryColor="#ffffff" accentColor="var(--gold-accent)" showStar={true} />
-          </div>
+        <div className="px-6 pt-2 pb-6">
+          <WelcomeBrandHeader
+            title="ThriftShopper"
+            titleSize="md"
+            subtitle={
+              loading
+                ? undefined
+                : user
+                  ? "Your account"
+                  : "Sign in to save finds and step into the shop."
+            }
+            className="mb-5"
+          />
 
-          <div className="mt-3 text-[17px] font-semibold text-[var(--ink-primary)]" style={{ fontFamily: 'var(--font-editorial)' }}>
-            ThriftShopper
-          </div>
+          {loading ? (
+            <div className="bg-white rounded-2xl shadow-lg px-6 py-8 text-center">
+              <div className="animate-spin h-6 w-6 border-2 border-[var(--ink-primary)] border-t-transparent rounded-full mx-auto" />
+            </div>
+          ) : user ? (
+            <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+              {isSeller ? (
+                <>
+                  <button
+                    onClick={() => {
+                      onClose();
+                      router.push("/seller");
+                    }}
+                    className="w-full text-left px-5 py-3.5 text-[15px] font-medium font-system text-[var(--ink-primary)] hover:bg-gray-50 transition-colors"
+                  >
+                    Your Listings
+                  </button>
+                  <button
+                    onClick={() => {
+                      onClose();
+                      router.push("/sell");
+                    }}
+                    className="w-full text-left px-5 py-3.5 text-[15px] font-medium font-system text-[var(--ink-primary)] hover:bg-gray-50 transition-colors"
+                  >
+                    Add New Listing
+                  </button>
+                  <button
+                    onClick={() => {
+                      onClose();
+                      router.push("/canvas");
+                    }}
+                    className="w-full text-left px-5 py-3.5 text-[15px] font-medium font-system text-[var(--ink-primary)] hover:bg-gray-50 transition-colors"
+                  >
+                    Your Saved Items
+                  </button>
+                  <div className="border-t border-gray-100" />
+                  <button
+                    onClick={() => {
+                      onClose();
+                      router.push("/settings");
+                    }}
+                    className="w-full text-left px-5 py-3.5 text-[15px] font-medium font-system text-[var(--ink-primary)] hover:bg-gray-50 transition-colors"
+                  >
+                    Settings
+                  </button>
+                  <button
+                    onClick={async () => {
+                      onClose();
+                      await signOut();
+                      router.push("/browse");
+                    }}
+                    className="w-full text-left px-5 py-3.5 text-[15px] font-medium font-system text-[var(--gold-accent)] hover:bg-[rgba(197,160,40,0.08)] transition-colors"
+                  >
+                    Sign Out
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={() => {
+                      onClose();
+                      router.push("/canvas");
+                    }}
+                    className="w-full text-left px-5 py-3.5 text-[15px] font-medium font-system text-[var(--ink-primary)] hover:bg-gray-50 transition-colors"
+                  >
+                    Your Saved Items
+                  </button>
+                  <button
+                    onClick={() => {
+                      onClose();
+                      router.push("/seller/onboarding");
+                    }}
+                    className="w-full text-left px-5 py-3.5 text-[15px] font-medium font-system text-[var(--ink-primary)] hover:bg-gray-50 transition-colors"
+                  >
+                    Become a Seller
+                  </button>
+                  <div className="border-t border-gray-100" />
+                  <button
+                    onClick={() => {
+                      onClose();
+                      router.push("/settings");
+                    }}
+                    className="w-full text-left px-5 py-3.5 text-[15px] font-medium font-system text-[var(--ink-primary)] hover:bg-gray-50 transition-colors"
+                  >
+                    Settings
+                  </button>
+                  <button
+                    onClick={async () => {
+                      onClose();
+                      await signOut();
+                      router.push("/browse");
+                    }}
+                    className="w-full text-left px-5 py-3.5 text-[15px] font-medium font-system text-[var(--gold-accent)] hover:bg-[rgba(197,160,40,0.08)] transition-colors"
+                  >
+                    Sign Out
+                  </button>
+                </>
+              )}
+            </div>
+          ) : (
+            <div className="bg-white rounded-2xl shadow-lg p-5 space-y-3">
+              <button
+                onClick={() => {
+                  onClose();
+                  router.push("/login");
+                }}
+                className={authPrimaryButtonClass}
+              >
+                Sign In / Create Account
+              </button>
+
+              <button
+                onClick={() => {
+                  onClose();
+                  router.push("/signup?seller=true");
+                }}
+                className={authSecondaryButtonClass}
+              >
+                Become a Seller
+              </button>
+
+              <button onClick={onClose} className={`w-full pt-2 ${authLinkClass}`}>
+                Continue Browsing →
+              </button>
+
+              <button
+                onClick={() => {
+                  onClose();
+                  router.push("/canvas");
+                }}
+                className={`w-full text-left px-1 py-1 text-[14px] ${authLinkClass}`}
+              >
+                Saved Items
+              </button>
+            </div>
+          )}
         </div>
-
-        {/* Divider */}
-        <div className="mt-8 border-t border-gray-200" />
-
-        {/* Content based on auth state */}
-        {loading ? (
-          <div className="px-6 pt-6 pb-8 text-center">
-            <div className="animate-spin h-6 w-6 border-2 border-[var(--ink-primary)] border-t-transparent rounded-full mx-auto" />
-          </div>
-        ) : user ? (
-          /* LOGGED IN STATE */
-          <div className="px-6 pt-6">
-            {isSeller ? (
-              /* SELLER VIEW */
-              <>
-                <button
-                  onClick={() => {
-                    onClose();
-                    router.push("/seller");
-                  }}
-                  className="w-full text-left px-4 py-3 text-[15px] font-medium text-[var(--ink-primary)] hover:bg-gray-50 rounded-lg transition-colors"
-                >
-                  Your Listings
-                </button>
-                <button
-                  onClick={() => {
-                    onClose();
-                    router.push("/sell");
-                  }}
-                  className="w-full text-left px-4 py-3 text-[15px] font-medium text-[var(--ink-primary)] hover:bg-gray-50 rounded-lg transition-colors"
-                >
-                  Add New Listing
-                </button>
-                <button
-                  onClick={() => {
-                    onClose();
-                    router.push("/canvas");
-                  }}
-                  className="w-full text-left px-4 py-3 text-[15px] font-medium text-[var(--ink-primary)] hover:bg-gray-50 rounded-lg transition-colors"
-                >
-                  Your Saved Items
-                </button>
-                <div className="border-t border-gray-200 my-2" />
-                <button
-                  onClick={() => {
-                    onClose();
-                    router.push("/settings");
-                  }}
-                  className="w-full text-left px-4 py-3 text-[15px] font-medium text-[var(--ink-primary)] hover:bg-gray-50 rounded-lg transition-colors"
-                >
-                  Settings
-                </button>
-                <button
-                  onClick={async () => {
-                    onClose();
-                    await signOut();
-                    router.push("/browse");
-                  }}
-                  className="w-full text-left px-4 py-3 text-[15px] font-medium text-[var(--gold-accent)] hover:bg-[rgba(197,160,40,0.08)] rounded-lg transition-colors"
-                >
-                  Sign Out
-                </button>
-              </>
-            ) : (
-              /* BUYER VIEW */
-              <>
-                <button
-                  onClick={() => {
-                    onClose();
-                    router.push("/canvas");
-                  }}
-                  className="w-full text-left px-4 py-3 text-[15px] font-medium text-[var(--ink-primary)] hover:bg-gray-50 rounded-lg transition-colors"
-                >
-                  Your Saved Items
-                </button>
-                <button
-                  onClick={() => {
-                    onClose();
-                    router.push("/seller/onboarding");
-                  }}
-                  className="w-full text-left px-4 py-3 text-[15px] font-medium text-[var(--ink-primary)] hover:bg-gray-50 rounded-lg transition-colors"
-                >
-                  Become a Seller
-                </button>
-                <div className="border-t border-gray-200 my-2" />
-                <button
-                  onClick={() => {
-                    onClose();
-                    router.push("/settings");
-                  }}
-                  className="w-full text-left px-4 py-3 text-[15px] font-medium text-[var(--ink-primary)] hover:bg-gray-50 rounded-lg transition-colors"
-                >
-                  Settings
-                </button>
-                <button
-                  onClick={async () => {
-                    onClose();
-                    await signOut();
-                    router.push("/browse");
-                  }}
-                  className="w-full text-left px-4 py-3 text-[15px] font-medium text-[var(--gold-accent)] hover:bg-[rgba(197,160,40,0.08)] rounded-lg transition-colors"
-                >
-                  Sign Out
-                </button>
-              </>
-            )}
-          </div>
-        ) : (
-          /* LOGGED OUT STATE */
-          <div className="px-6 pt-6">
-            <button
-              onClick={() => {
-                onClose();
-                router.push("/login");
-              }}
-              className="
-                w-full
-                rounded-2xl
-                bg-[var(--ink-primary)]
-                py-3
-                text-[15px]
-                font-semibold
-                text-white
-                shadow-sm
-                active:opacity-80
-              "
-            >
-              Sign In / Create Account
-            </button>
-
-            <button
-              onClick={() => {
-                onClose();
-                router.push("/signup?seller=true");
-              }}
-              className="
-                mt-3
-                w-full
-                rounded-2xl
-                border-2
-                border-[var(--ink-primary)]
-                py-3
-                text-[15px]
-                font-semibold
-                text-[var(--ink-primary)]
-                bg-white
-                active:opacity-70
-              "
-            >
-              Become a Seller
-            </button>
-
-            <button
-              onClick={onClose}
-              className="
-                mt-4
-                w-full
-                text-[15px]
-                font-semibold
-                text-[var(--ink-primary)]
-                active:opacity-70
-              "
-            >
-              Continue Browsing →
-            </button>
-
-            {/* Saved Items link for guests */}
-            <button
-              onClick={() => {
-                onClose();
-                router.push("/canvas");
-              }}
-              className="
-                mt-4
-                w-full
-                text-left
-                px-4
-                py-2
-                text-[14px]
-                text-[var(--ink-primary)]
-                hover:bg-gray-50
-                rounded-lg
-                transition-colors
-              "
-            >
-              Saved Items
-            </button>
-          </div>
-        )}
-
-        {/* Bottom padding */}
-        <div className="pb-8" />
       </div>
     </div>
   );

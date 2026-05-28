@@ -117,7 +117,7 @@ export function Favorites({
 
                 {/* Product Info */}
                 <div className="p-3">
-                  <h3 className="text-sm mb-1 line-clamp-2 font-editorial" style={{ color: '#ffffff' }}>
+                  <h3 className="text-sm mb-1 line-clamp-2 discovery-title" style={{ color: '#ffffff' }}>
                     {product.title}
                   </h3>
                   <p className="mb-2" style={{ color: '#efbf04' }}>

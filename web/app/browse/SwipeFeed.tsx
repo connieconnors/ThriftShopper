@@ -858,20 +858,12 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
         className="absolute top-0 left-0 z-30 p-4"
         style={{ pointerEvents: 'none' }}
       >
-        {/* Left: TS Header */}
-        <div 
-          className="playfair_display_8964ba03-module_UnR6xq_variable"
-          style={{
-            fontFamily: 'var(--font-editorial)',
-            fontWeight: 500,
-            fontSize: '32px',
-            color: '#ffffff',
-            letterSpacing: '-0.04em',
-            textShadow: `0 0 10px rgba(${GOLD_RGB}, 0.35), 0 1px 3px rgba(0,0,0,0.35)`,
-          }}
-        >
-          TS
-        </div>
+        {/* Left: TS watermark signature */}
+        <TSLogo
+          size={26}
+          primaryColor="rgba(255, 255, 255, 0.38)"
+          style={{ fontWeight: 400 }}
+        />
         
         {/* Active Mood Filters */}
         {selectedMoods.length > 0 && (
@@ -1129,7 +1121,7 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
                 >
                   {/* Image Counter */}
                   <div 
-                    className="px-3 py-1.5 rounded-full"
+                    className="px-3 py-1.5 rounded-full font-system"
                     style={{ 
                       backgroundColor: WARM_GLASS,
                       backdropFilter: 'blur(8px)',
@@ -1161,26 +1153,25 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
                   animate={{ opacity: showProductInfo && !isTransitioning ? 1 : 0 }}
                   transition={{ duration: 0.3 }}
                 >
-                {/* Title (whisper/caption - subtle overlay) */}
-                <h1 
-                  className="mb-1 font-editorial"
-                  style={{ 
-                    color: `rgba(${LINEN_RGB}, 0.88)`,
-                    fontSize: '15px',
-                    fontWeight: '500',
-                    lineHeight: '1.1',
-                    textShadow: `0 0 12px rgba(${INK_RGB}, 0.85), 0 1px 3px rgba(${INK_RGB}, 0.55)`,
+                {/* Title — editorial discovery layer (Playfair) */}
+                <h1
+                  className="mb-1 discovery-title"
+                  style={{
+                    color: `rgba(${LINEN_RGB}, 0.94)`,
+                    fontSize: "16px",
+                    fontWeight: 400,
+                    textShadow: `0 0 10px rgba(${INK_RGB}, 0.8), 0 1px 3px rgba(${INK_RGB}, 0.5)`,
                   }}
                 >
                   {listing.title}
                 </h1>
 
-                {/* Price (subtle context - darker gold) */}
-                <p 
-                  className="font-bold"
-                  style={{ 
+                {/* Price — utility layer (Inter) */}
+                <p
+                  className="font-system font-semibold"
+                  style={{
                     color: `rgba(${GOLD_RGB}, 0.85)`,
-                    fontSize: '12px',
+                    fontSize: "12px",
                     textShadow: `0 0 12px rgba(${INK_RGB}, 0.85), 0 1px 3px rgba(${INK_RGB}, 0.55)`,
                   }}
                 >
@@ -1320,7 +1311,7 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
         style={{ backgroundColor: INK }}
         aria-label="Account"
       >
-        <TSLogo size={18} primaryColor="#ffffff" accentColor={GOLD} />
+        <TSLogo size={20} primaryColor="#ffffff" accentColor={GOLD} />
       </button>
 
       {/* Account Sheet */}

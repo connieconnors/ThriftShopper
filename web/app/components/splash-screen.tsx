@@ -1,67 +1,86 @@
-"use client"
+"use client";
 
-import { useState, useRef, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useState, useRef, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 
-export default function SplashScreen() {
-  const router = useRouter()
-  const [isExiting, setIsExiting] = useState(false)
-  const touchStartY = useRef<number | null>(null)
-  const touchEndY = useRef<number | null>(null)
+interface SplashScreenProps {
+  autoNavigateDelay?: number;
+}
 
-  // Minimum swipe distance (in pixels) to trigger navigation
-  const minSwipeDistance = 50
+export default function SplashScreen({ autoNavigateDelay = 4000 }: SplashScreenProps) {
+  const router = useRouter();
+  const [isExiting, setIsExiting] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const touchStartY = useRef<number | null>(null);
+  const touchEndY = useRef<number | null>(null);
+
+  const minSwipeDistance = 50;
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const handleContinue = useCallback(() => {
+    if (isExiting) return;
+    setIsExiting(true);
+
+    setTimeout(() => {
+      router.push("/browse");
+    }, 500);
+  }, [isExiting, router]);
+
+  useEffect(() => {
+    if (!mounted || !autoNavigateDelay) return;
+
+    const timer = setTimeout(() => {
+      handleContinue();
+    }, autoNavigateDelay);
+
+    return () => clearTimeout(timer);
+  }, [autoNavigateDelay, handleContinue, mounted]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
-    touchStartY.current = e.touches[0].clientY
-  }
+    touchStartY.current = e.touches[0].clientY;
+  };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    touchEndY.current = e.touches[0].clientY
-  }
+    touchEndY.current = e.touches[0].clientY;
+  };
 
   const handleTouchEnd = () => {
-    if (!touchStartY.current || !touchEndY.current) return
+    if (!touchStartY.current || !touchEndY.current) return;
 
-    const distance = touchStartY.current - touchEndY.current
-
-    // Swipe up detected (start Y > end Y, and distance is sufficient)
+    const distance = touchStartY.current - touchEndY.current;
     if (distance > minSwipeDistance) {
-      handleContinue()
+      handleContinue();
     }
 
-    // Reset touch positions
-    touchStartY.current = null
-    touchEndY.current = null
-  }
+    touchStartY.current = null;
+    touchEndY.current = null;
+  };
 
-  // Also allow click/tap as fallback
-  const handleClick = () => {
-    handleContinue()
-  }
-
-  const handleContinue = () => {
-    if (isExiting) return
-    setIsExiting(true)
-    
-    // Wait for fade-out animation, then navigate
-    setTimeout(() => {
-      router.push("/browse")
-    }, 500)
+  if (!mounted) {
+    return (
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center"
+        style={{ backgroundColor: "var(--background)" }}
+      >
+        <div className="animate-spin h-8 w-8 border-2 border-[var(--ink-primary)] border-t-transparent rounded-full" />
+      </div>
+    );
   }
 
   return (
     <div
-      className={`relative h-screen w-full flex flex-col items-center justify-center transition-opacity duration-500 ease-out ${
+      className={`fixed inset-0 z-50 flex flex-col items-center justify-center transition-opacity duration-500 ease-out ${
         isExiting ? "opacity-0" : "opacity-100"
       }`}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
-      onClick={handleClick}
+      onClick={handleContinue}
       style={{ cursor: "pointer" }}
     >
-      {/* Background Image - Option 1 (tighter crop, less glare) */}
       <div className="absolute inset-0 z-0">
         <img
           src="/thrift-shop-option-1.jpg"
@@ -76,9 +95,8 @@ export default function SplashScreen() {
         style={{ marginTop: "calc(15vh + 5pt)" }}
       >
         <h1
-          className="text-white text-4xl sm:text-5xl md:text-6xl lg:text-7xl tracking-tight font-medium"
+          className="text-white text-4xl sm:text-5xl md:text-6xl lg:text-7xl tracking-tight font-medium font-editorial"
           style={{
-            fontFamily: "var(--font-editorial)",
             textShadow: "0 2px 8px rgba(0,0,0,0.5), 0 1px 4px rgba(0,0,0,0.3)",
           }}
         >
@@ -86,15 +104,17 @@ export default function SplashScreen() {
         </h1>
 
         <p
-          className="italic text-white/90 text-sm sm:text-base md:text-lg tracking-wide font-normal"
+          className="italic text-xs sm:text-sm md:text-base font-normal font-editorial"
           style={{
-            fontFamily: "var(--font-editorial)",
+            color: "rgba(196, 178, 128, 0.82)",
+            letterSpacing: "0.06em",
             textShadow: "0 2px 12px rgba(0,0,0,0.5)",
           }}
         >
-          the magic of discovery<span style={{ color: '#EFBF04', fontSize: '0.75em', verticalAlign: 'super' }}>™</span>
+          the magic of discovery
+          <span style={{ fontSize: "0.75em", verticalAlign: "super" }}>™</span>
         </p>
       </div>
     </div>
-  )
+  );
 }

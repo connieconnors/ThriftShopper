@@ -7,7 +7,8 @@ import { motion } from "motion/react";
 import { Mail, Lock, Loader2 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { supabase } from "../../lib/supabaseClient";
-import { TSLogo } from "../../components/TSLogo";
+import { AuthWelcomeLayout } from "../../components/AuthWelcomeLayout";
+import { authPrimaryButtonClass, authLinkClass } from "../../components/WelcomeBrandHeader";
 
 function LoginForm() {
   const router = useRouter();
@@ -226,172 +227,117 @@ function LoginForm() {
   // Show loading while checking auth state
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#f5f5f5" }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "var(--background)" }}>
         <Loader2 className="w-8 h-8 animate-spin" style={{ color: "#16193a" }} />
       </div>
     );
   }
 
-  // If user is already logged in, don't show the form (redirect will happen)
   if (user) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#f5f5f5" }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "var(--background)" }}>
         <Loader2 className="w-8 h-8 animate-spin" style={{ color: "#16193a" }} />
-        <p className="ml-3 text-gray-600">Redirecting...</p>
+        <p className="ml-3 text-gray-600 font-system">Redirecting...</p>
       </div>
     );
   }
 
   return (
-    <div 
-      className="min-h-screen flex items-center justify-center px-6"
-      style={{ backgroundColor: "#f5f5f5" }}
+    <AuthWelcomeLayout
+      title="Welcome Back"
+      subtitle="Sign in to continue your journey"
+      footer={
+        <button
+          onClick={() => router.push("/browse")}
+          className={authLinkClass}
+        >
+          ← Continue browsing
+        </button>
+      }
     >
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-md"
-      >
-        {/* Card */}
-        <div className="bg-white rounded-2xl shadow-xl p-8">
-          {/* Logo */}
-          <div className="flex justify-center mb-6">
-            <div 
-              className="w-20 h-20 rounded-full flex items-center justify-center"
-              style={{ backgroundColor: "#16193a" }}
-            >
-              <TSLogo size={48} primaryColor="#ffffff" accentColor="#efbf04" showStar={true} />
-            </div>
+      {error && (
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
+          <p className="text-red-600 text-sm font-system">{error}</p>
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label className="block mb-2 text-sm font-medium font-system text-[var(--ink-primary)]">
+            Email
+          </label>
+          <div className="relative">
+            <Mail size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 focus:border-[var(--ink-primary)] outline-none transition-colors font-system"
+              placeholder="you@example.com"
+              required
+            />
           </div>
+        </div>
 
-          {/* Header */}
-          <h1 
-            className="text-2xl font-bold text-center mb-2"
-            style={{ 
-              color: "#000080"
-            }}
-          >
-            Welcome Back
-          </h1>
-          <p className="text-center mb-8 text-gray-600">
-            Sign in to continue your journey
-          </p>
-
-          {/* Error */}
-          {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
-              <p className="text-red-600 text-sm">{error}</p>
-            </div>
-          )}
-
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label 
-                className="block mb-2 text-sm font-medium"
-                style={{ color: "#16193a" }}
-              >
-                Email
-              </label>
-              <div className="relative">
-                <Mail size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 focus:border-[#16193a] outline-none transition-colors"
-                  placeholder="you@example.com"
-                  required
-                />
-              </div>
-            </div>
-
-            <div>
-              <label 
-                className="block mb-2 text-sm font-medium"
-                style={{ color: "#16193a" }}
-              >
-                Password
-              </label>
-              <div className="relative">
-                <Lock size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 focus:border-[#16193a] outline-none transition-colors"
-                  placeholder="••••••••"
-                  required
-                />
-              </div>
-              <div className="mt-2 text-right">
-                <Link
-                  href="/forgot-password"
-                  className="text-sm hover:underline"
-                  style={{ color: "#16193a" }}
-                >
-                  Forgot password?
-                </Link>
-              </div>
-            </div>
-
-            <motion.button
-              type="submit"
-              disabled={isLoading}
-              whileTap={{ scale: 0.98 }}
-              className="w-full py-4 rounded-xl text-white font-semibold shadow-lg mt-6 disabled:opacity-50 flex items-center justify-center gap-2"
-              style={{ backgroundColor: "#16193a" }}
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 size={20} className="animate-spin" />
-                  Signing in...
-                </>
-              ) : (
-                "Sign In"
-              )}
-            </motion.button>
-          </form>
-
-          {/* Divider */}
-          <div className="flex items-center gap-4 my-6">
-            <div className="flex-1 h-px bg-gray-200" />
-            <span className="text-sm text-gray-400">or</span>
-            <div className="flex-1 h-px bg-gray-200" />
+        <div>
+          <label className="block mb-2 text-sm font-medium font-system text-[var(--ink-primary)]">
+            Password
+          </label>
+          <div className="relative">
+            <Lock size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 focus:border-[var(--ink-primary)] outline-none transition-colors font-system"
+              placeholder="••••••••"
+              required
+            />
           </div>
-
-          {/* Links */}
-          <p className="text-center text-sm text-gray-600">
-            New to ThriftShopper?{" "}
-            <Link
-              href="/signup"
-              className="font-semibold hover:underline"
-              style={{ color: "#16193a" }}
-            >
-              Create an account
+          <div className="mt-2 text-right">
+            <Link href="/forgot-password" className={authLinkClass}>
+              Forgot password?
             </Link>
-          </p>
-
+          </div>
         </div>
 
-        {/* Back to browse */}
-        <div className="text-center mt-6">
-          <button
-            onClick={() => router.push("/browse")}
-            className="text-[#000080] text-sm hover:underline transition-colors"
-          >
-            ← Continue browsing
-          </button>
-        </div>
-      </motion.div>
-    </div>
+        <motion.button
+          type="submit"
+          disabled={isLoading}
+          whileTap={{ scale: 0.98 }}
+          className={`${authPrimaryButtonClass} mt-6`}
+        >
+          {isLoading ? (
+            <>
+              <Loader2 size={20} className="animate-spin" />
+              Signing in...
+            </>
+          ) : (
+            "Sign In"
+          )}
+        </motion.button>
+      </form>
+
+      <div className="flex items-center gap-4 my-6">
+        <div className="flex-1 h-px bg-gray-200" />
+        <span className="text-sm text-gray-400 font-system">or</span>
+        <div className="flex-1 h-px bg-gray-200" />
+      </div>
+
+      <p className="text-center text-sm text-gray-600 font-system">
+        New to ThriftShopper?{" "}
+        <Link href="/signup" className={`font-semibold ${authLinkClass}`}>
+          Create an account
+        </Link>
+      </p>
+    </AuthWelcomeLayout>
   );
 }
 
 export default function LoginPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#f5f5f5" }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "var(--background)" }}>
         <Loader2 className="w-8 h-8 animate-spin" style={{ color: "#16193a" }} />
       </div>
     }>

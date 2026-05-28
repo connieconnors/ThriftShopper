@@ -962,7 +962,7 @@ export default function SellerPageClient() {
                 )}
               </div>
               <div className="flex-1">
-                <h1 className="text-lg font-semibold font-editorial" style={{ color: "#16193a" }}>
+                <h1 className="text-lg font-semibold font-ui-heading" style={{ color: "#16193a" }}>
                   {profile.display_name || "Seller Dashboard"}
                 </h1>
                 <p className="text-xs text-gray-600">Storytelling seller since {getJoinYear()}</p>
@@ -1118,7 +1118,7 @@ export default function SellerPageClient() {
 
         {/* Sold Items - Match "Your Listings" wrapper structure exactly */}
         <div className="mb-4">
-          <h2 className="text-base font-semibold mb-3 font-editorial" style={{ color: "#16193a" }}>
+          <h2 className="text-base font-semibold mb-3 font-ui-heading" style={{ color: "#16193a" }}>
             Sold Items{allOrders.length > 0 ? ` (${allOrders.length})` : ''}
           </h2>
           
@@ -1259,7 +1259,7 @@ export default function SellerPageClient() {
 
         {/* Your Listings */}
         <div className="mb-4">
-          <h2 className="text-base font-semibold mb-3 font-editorial" style={{ color: "#16193a" }}>
+          <h2 className="text-base font-semibold mb-3 font-ui-heading" style={{ color: "#16193a" }}>
             Your Listings
           </h2>
           
@@ -1572,7 +1572,7 @@ export default function SellerPageClient() {
             <div className="flex items-center gap-3">
               <MessageSquare size={22} style={{ color: "#16193a" }} />
               <div>
-                <h2 className="text-base font-semibold font-editorial" style={{ color: "#16193a" }}>
+                <h2 className="text-base font-semibold font-ui-heading" style={{ color: "#16193a" }}>
                   Messages
                 </h2>
                 <p className="text-xs text-gray-500">

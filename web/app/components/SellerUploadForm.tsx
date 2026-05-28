@@ -1531,7 +1531,7 @@ export default function SellerUploadForm() {
           
           {/* Header */}
           <h2 
-            className="text-2xl font-bold mb-6 font-editorial"
+            className="text-2xl font-bold mb-6 font-ui-heading"
             style={{ color: '#16193a' }}
           >
             {isEditMode ? 'Edit Your Listing' : 'Review Your Listing'}
@@ -1694,7 +1694,7 @@ export default function SellerUploadForm() {
             <div className="space-y-4">
               {/* AI Result Card */}
               <div className="rounded-xl border border-gray-200 p-4 bg-white">
-                <h3 className="font-editorial text-lg font-semibold mb-3" style={{ color: '#16193a' }}>
+                <h3 className="font-ui-heading text-lg font-semibold mb-3" style={{ color: '#16193a' }}>
                   AI Result
                 </h3>
                 <div className="space-y-4">
@@ -2127,7 +2127,7 @@ export default function SellerUploadForm() {
           <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
             <h2
               id="stripe-connect-gate-title"
-              className="text-xl font-semibold mb-2 font-editorial"
+              className="text-xl font-semibold mb-2 font-ui-heading"
               style={{ color: '#16193a' }}
             >
               Connect payments to start selling

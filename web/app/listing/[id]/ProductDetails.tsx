@@ -324,10 +324,10 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
       <section className="px-6 pt-4 pb-6">
         {/* Title & Price */}
         <div>
-          <h1 className="text-base sm:text-lg font-bold text-gray-900 leading-tight mb-1 font-editorial">
+          <h1 className="text-base sm:text-lg text-gray-900 leading-tight mb-1 discovery-title">
             {listing.title}
           </h1>
-          <p className="text-lg font-bold text-gray-900">
+          <p className="text-lg font-semibold text-gray-900 font-system">
             ${listing.price}
           </p>
         </div>

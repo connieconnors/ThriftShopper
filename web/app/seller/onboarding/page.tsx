@@ -8,6 +8,7 @@ import { Store, MapPin, Mail, Phone, Loader2, Upload, Image as ImageIcon, Check 
 import { useAuth } from "@/app/context/AuthContext";
 import { supabase } from "@/lib/supabaseClient";
 import { TSLogo } from "@/components/TSLogo";
+import { WelcomeBrandHeader } from "@/components/WelcomeBrandHeader";
 import { SellerFeeTransparencyLine } from "@/components/SellerFeeTransparency";
 import { ShippingPreferenceForm } from "@/components/ShippingPreferenceForm";
 import {
@@ -334,41 +335,30 @@ function SellerOnboardingContent() {
         animate={{ opacity: 1, y: 0 }}
         className="max-w-2xl mx-auto"
       >
-        <div className="text-center mb-8">
-            <div
-            className="inline-flex w-20 h-20 rounded-full items-center justify-center mb-4"
-            style={{ backgroundColor: "#16193a" }}
-          >
-            <TSLogo size={44} primaryColor="#ffffff" accentColor="var(--gold-accent)" showStar={true} />
-          </div>
-          <h1
-            className="text-3xl font-bold mb-2 font-editorial"
-            style={{ color: "var(--ink-primary)" }}
-          >
-            Set Up Your Shop
-          </h1>
+        <WelcomeBrandHeader
+          title="Set Up Your Shop"
+          subtitle="Let's get you started selling on ThriftShopper"
+          className="mb-8"
+        >
           {isPreviewMode && (
-            <div className="inline-flex items-center gap-2 rounded-full border border-[#16193a]/20 bg-white px-3 py-1 text-[11px] text-[#16193a]">
+            <div className="inline-flex items-center gap-2 rounded-full border border-[#16193a]/20 bg-white px-3 py-1 text-[11px] text-[#16193a] mt-3">
               Preview Mode
             </div>
           )}
-          <p className="text-gray-600">
-            Let&apos;s get you started selling on ThriftShopper
-          </p>
           <SellerFeeTransparencyLine className="mt-3 max-w-md mx-auto" />
           <Link
             href="/canvas"
-            className="mt-4 inline-block text-sm text-[#16193a] hover:underline"
+            className="mt-4 inline-block text-sm text-[#16193a] hover:underline font-system"
           >
             Want to shop instead? Go to My Canvas →
           </Link>
           <Link
             href="/seller/onboarding?preview=1"
-            className="mt-2 block text-xs text-gray-500 hover:underline"
+            className="mt-2 block text-xs text-gray-500 hover:underline font-system"
           >
             Preview mode (bypass seller redirect)
           </Link>
-        </div>
+        </WelcomeBrandHeader>
 
         {error && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">

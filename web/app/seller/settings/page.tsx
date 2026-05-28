@@ -189,7 +189,7 @@ export default function SellerSettingsPage() {
             <ArrowLeft size={24} style={{ color: "#16193a" }} />
           </Link>
           <h1
-            className="text-2xl font-bold font-editorial"
+            className="text-2xl font-bold font-ui-heading"
             style={{ color: "var(--ink-primary)" }}
           >
             Shop Settings

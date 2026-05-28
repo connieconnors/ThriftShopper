@@ -192,7 +192,7 @@ export function ProductCard({ product, onFavorite, onSwipeUp, onTap, isFavorited
       <div className="absolute bottom-0 left-0 right-0 p-4 pb-5 z-10">
         {/* Title */}
         <h2 
-          className="text-xl text-white mb-1 leading-tight overflow-hidden font-editorial"
+          className="text-xl text-white mb-1 leading-tight overflow-hidden discovery-title"
           style={{ 
             lineHeight: 1.2,
             maxHeight: '2.4em',

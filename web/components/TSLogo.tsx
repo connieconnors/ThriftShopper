@@ -5,41 +5,30 @@ interface TSLogoProps {
   primaryColor?: string;
   accentColor?: string;
   showStar?: boolean;
+  className?: string;
+  style?: React.CSSProperties;
 }
 
-/**
- * Canonical TS wordmark — Merriweather TS with optional gold ✦
- * tucked between the letters at the baseline (matches app icon).
- */
 export function TSLogo({
   size = 24,
   primaryColor = "#16193a",
   accentColor = "var(--gold-accent)",
   showStar = false,
+  className = "",
+  style,
 }: TSLogoProps) {
-  const letterSize = size * 0.65;
-  const starSize = size * 0.45;
-
   return (
-    <div
-      className="relative inline-flex items-center justify-center"
-      style={{
-        width: size,
-        height: size,
-        lineHeight: 1,
-      }}
-      aria-hidden
-    >
+    <span className={`inline-flex flex-col items-center ${className}`} aria-hidden>
       <span
         style={{
-          fontFamily: "var(--font-editorial)",
-          fontSize: letterSize,
-          fontWeight: 700,
-          letterSpacing: "-0.06em",
+          fontFamily: 'var(--font-playfair), "Playfair Display", serif',
+          fontSize: size,
+          fontWeight: 500,
+          fontStyle: "normal",
+          letterSpacing: "-0.04em",
+          lineHeight: 1,
           color: primaryColor,
-          textShadow: accentColor.startsWith("#")
-            ? `0 0 8px ${accentColor}40`
-            : "0 0 8px rgba(197, 160, 40, 0.25)",
+          ...style,
         }}
       >
         TS
@@ -47,19 +36,15 @@ export function TSLogo({
       {showStar && (
         <span
           style={{
-            position: "absolute",
-            fontSize: starSize,
-            lineHeight: 1,
+            fontSize: Math.max(8, size * 0.2),
             color: accentColor,
-            left: "47%",
-            bottom: "10%",
-            transform: "translateX(-52%)",
-            pointerEvents: "none",
+            lineHeight: 1,
+            marginTop: size * 0.06,
           }}
         >
           ✦
         </span>
       )}
-    </div>
+    </span>
   );
 }

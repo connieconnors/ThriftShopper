@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useAuth } from "../context/AuthContext";
 import { useState } from "react";
+import { TSLogo } from "@/components/TSLogo";
 
 export default function Navigation() {
   const { user, signOut, isLoading } = useAuth();
@@ -48,10 +49,10 @@ export default function Navigation() {
                   <div className="relative">
                     <button
                       onClick={() => setIsMenuOpen(!isMenuOpen)}
-                      className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center text-white text-[10px] uppercase tracking-[0.2em]"
-                      style={{ fontFamily: "var(--font-editorial)", fontStyle: "italic", fontWeight: 500 }}
+                      className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center"
+                      aria-label="Account menu"
                     >
-                      TS
+                      <TSLogo size={28} primaryColor="#ffffff" accentColor="var(--gold-accent)" />
                     </button>
 
                     {isMenuOpen && (

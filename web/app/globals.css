@@ -1,4 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Merriweather:wght@400;700&display=swap');
 @import "tailwindcss";
 
 :root {
@@ -8,9 +7,10 @@
   --ink-primary: #16193a;
   --gold-accent: #c5a028;
   --card-border: 0.5px solid rgba(197, 160, 40, 0.2);
-  --font-brand: 'Merriweather', serif;
-  --font-editorial: 'Merriweather', serif;
-  --font-system: 'Lato', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
+  --font-brand: var(--font-playfair, "Playfair Display"), Georgia, "Times New Roman", serif;
+  --font-editorial: var(--font-playfair, "Playfair Display"), Georgia, "Times New Roman", serif;
+  --font-system: var(--font-ui, "Inter"), -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
+    "Helvetica Neue", sans-serif;
 }
 
 @theme inline {
@@ -19,7 +19,9 @@
   --color-surface-card: var(--surface-card);
   --color-ink-primary: var(--ink-primary);
   --color-gold-accent: var(--gold-accent);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-ui, "Inter"), -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
+    "Helvetica Neue", sans-serif;
+  --font-serif: var(--font-playfair, "Playfair Display"), Georgia, "Times New Roman", serif;
   --font-mono: var(--font-geist-mono);
 }
 
@@ -35,26 +37,57 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Headings use Merriweather via --font-editorial */
-h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-editorial);
-  font-weight: 600;
+/* Editorial headings — Playfair, restrained weight */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-serif);
+  font-weight: 500;
 }
 
-/* Utility classes for intentional typography */
-.font-brand {
-  font-family: var(--font-brand);
-}
-
+.font-brand,
 .font-editorial {
-  font-family: var(--font-editorial);
+  font-family: var(--font-serif);
 }
 
 .font-system {
   font-family: var(--font-system);
 }
 
-/* Theme-level overrides while keeping existing utility classes */
+@layer components {
+  /* Curated discovery / product story titles — Playfair, story-driven not inventory-like */
+  .discovery-title {
+    font-family: var(--font-serif);
+    font-weight: 400;
+    letter-spacing: 0.012em;
+    line-height: 1.2;
+  }
+
+  /* Utility surfaces — dashboard, settings, forms */
+  .ui-heading {
+    font-family: var(--font-system);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+}
+
+/* Legacy alias — keep for any stale references */
+.font-discovery-title {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  letter-spacing: 0.012em;
+  line-height: 1.2;
+}
+
+.font-ui-heading {
+  font-family: var(--font-system);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
 .bg-white {
   background-color: var(--surface-card) !important;
 }
@@ -63,13 +96,11 @@ h1, h2, h3, h4, h5, h6 {
   background-color: var(--background) !important;
 }
 
-/* Opt-in bordered card surface (use on card containers only) */
 .ts-card-surface {
   background-color: var(--surface-card);
   border: var(--card-border);
 }
 
-/* Upload/listing photo frame treatment */
 .ts-photo-frame {
   border: 1.5px solid var(--gold-accent);
   border-radius: 14px;
@@ -111,7 +142,6 @@ h1, h2, h3, h4, h5, h6 {
   animation: fadeIn 150ms ease-out;
 }
 
-/* Hide Stripe DevTools overlay if injected in dev */
 stripe-devtools,
 #stripe-devtools,
 .__stripe-devtools,

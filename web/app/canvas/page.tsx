@@ -364,7 +364,7 @@ export default function BuyerCanvasPage() {
             )}
           </div>
           <div className="flex-1">
-            <h1 className="text-lg font-semibold mb-0.5 font-editorial" style={{ color: "#16193a" }}>
+            <h1 className="text-lg font-semibold mb-0.5 font-ui-heading" style={{ color: "#16193a" }}>
               My Canvas
             </h1>
             <p className="text-xs text-gray-600">Treasure hunter since {getJoinYear()}</p>

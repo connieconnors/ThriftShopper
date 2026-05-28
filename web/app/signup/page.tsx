@@ -6,7 +6,8 @@ import Link from "next/link";
 import { useAuth } from "../context/AuthContext";
 import { supabase } from "../../lib/supabaseClient";
 import { getAuthCallbackUrl } from "../../lib/authRedirect";
-import { TSLogo } from "../../components/TSLogo";
+import { AuthWelcomeLayout } from "../../components/AuthWelcomeLayout";
+import { authPrimaryButtonClass, authLinkClass } from "../../components/WelcomeBrandHeader";
 import { SellerFeeTransparencyLine } from "../../components/SellerFeeTransparency";
 import { Loader2 } from "lucide-react";
 
@@ -178,195 +179,166 @@ function SignUpForm() {
   };
 
   return (
-    <main className="min-h-screen flex flex-col" style={{ backgroundColor: '#f8f9fa' }}>
-      {/* Header */}
-      <header className="p-4 flex items-center justify-between" style={{ backgroundColor: '#16193a' }}>
-        <Link href="/browse" className="flex items-center gap-2">
-          <TSLogo size={32} primaryColor="#ffffff" accentColor="#efbf04" showStar={false} />
-          <span className="text-white font-semibold">ThriftShopper</span>
-        </Link>
-        <Link
-          href="/login"
-          className="text-sm text-white/80 hover:text-white transition-colors"
-        >
-          Already have an account? <span className="font-semibold" style={{ color: '#efbf04' }}>Log in</span>
-        </Link>
-      </header>
-
-      {/* Sign Up Form */}
-      <div className="flex-1 flex items-center justify-center p-6">
-        <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8">
-          {/* Logo */}
-          <div className="flex justify-center mb-6">
-            <div className="w-20 h-20 rounded-full flex items-center justify-center" style={{ backgroundColor: '#16193a' }}>
-              <TSLogo size={48} primaryColor="#ffffff" accentColor="#efbf04" showStar={true} />
-            </div>
+    <AuthWelcomeLayout
+      title={isSellerSignup ? "Create Your Seller Account" : "Create Your Account"}
+      subtitle={
+        isSellerSignup
+          ? "Let's get you started selling on ThriftShopper"
+          : "Join ThriftShopper and start discovering unique finds"
+      }
+      headerExtra={
+        isSellerSignup ? (
+          <>
+            <SellerFeeTransparencyLine className="mt-3 max-w-md mx-auto" />
+            <Link href="/canvas" className={`mt-4 inline-block ${authLinkClass}`}>
+              Want to shop instead? Go to My Canvas →
+            </Link>
+          </>
+        ) : undefined
+      }
+      footer={
+        <p className="text-sm text-gray-600 font-system">
+          Already have an account?{" "}
+          <Link href="/login" className={`font-semibold ${authLinkClass}`}>
+            Sign in
+          </Link>
+        </p>
+      }
+    >
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {error && (
+          <div className="p-4 bg-red-50 border border-red-200 rounded-xl">
+            <p className="text-red-600 text-sm font-system">{error}</p>
           </div>
+        )}
 
-          <div className="text-center mb-8">
-            <h1 className="text-2xl font-bold mb-2 font-editorial" style={{ color: '#16193a' }}>
-              {isSellerSignup ? 'Create Your Seller Account' : 'Create your account'}
-            </h1>
-            <p className="text-gray-600">
-              {isSellerSignup 
-                ? 'Set up your shop and start selling unique finds' 
-                : 'Join ThriftShopper and start discovering unique finds'}
-            </p>
-            {isSellerSignup && (
-              <SellerFeeTransparencyLine className="mt-3 max-w-sm mx-auto" />
-            )}
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {error && (
-              <div className="p-4 bg-red-50 border border-red-200 rounded-xl">
-                <p className="text-red-600 text-sm">{error}</p>
-              </div>
-            )}
-
-            <div>
-              <label className="block text-sm mb-1.5" style={{ color: '#16193a' }}>Email</label>
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:border-[#16193a] transition-colors"
-                placeholder="you@example.com"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm mb-1.5" style={{ color: '#16193a' }}>Password</label>
-              <input
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:border-[#16193a] transition-colors"
-                placeholder="At least 6 characters"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm mb-1.5" style={{ color: '#16193a' }}>Confirm Password</label>
-              <input
-                type="password"
-                required
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:border-[#16193a] transition-colors"
-                placeholder="Confirm your password"
-              />
-            </div>
-
-            {/* Terms and Privacy Acknowledgment - Required */}
-            <div className="flex items-start gap-3 pt-2">
-              <input
-                type="checkbox"
-                id="accept-terms"
-                required
-                className="mt-1 w-4 h-4 rounded border-gray-300 focus:ring-2 cursor-pointer"
-                style={{ accentColor: '#16193a' }}
-              />
-              <label 
-                htmlFor="accept-terms" 
-                className="text-sm text-gray-600 cursor-pointer select-none"
-              >
-                I acknowledge that I have read and agree to the{" "}
-                <a 
-                  href="https://thriftshopper.com/terms" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="font-semibold hover:underline"
-                  style={{ color: '#16193a' }}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  Terms of Service
-                </a>
-                {" "}and{" "}
-                <a 
-                  href="https://thriftshopper.com/privacy" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="font-semibold hover:underline"
-                  style={{ color: '#16193a' }}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  Privacy Policy
-                </a>
-              </label>
-            </div>
-
-            {/* Marketing opt-in checkbox */}
-            <div className="flex items-start gap-3 pt-2">
-              <input
-                type="checkbox"
-                id="accepts-marketing"
-                checked={acceptsMarketing}
-                onChange={(e) => setAcceptsMarketing(e.target.checked)}
-                className="mt-1 w-4 h-4 rounded border-gray-300 focus:ring-2 cursor-pointer"
-                style={{ accentColor: '#16193a' }}
-              />
-              <label 
-                htmlFor="accepts-marketing" 
-                className="text-sm text-gray-600 cursor-pointer select-none"
-              >
-                I want to receive promotional emails and updates
-              </label>
-            </div>
-
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full h-14 font-bold text-lg rounded-xl text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-6"
-              style={{ backgroundColor: '#16193a' }}
-            >
-              {isLoading ? (
-                <>
-                  <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                  </svg>
-                  Creating account...
-                </>
-              ) : (
-                "Sign Up"
-              )}
-            </button>
-          </form>
-
-          {/* Additional Links */}
-          <div className="text-center text-xs text-gray-500 mt-6 space-y-1">
-            <p>
-              Also review our{" "}
-              <Link
-                href="/marketplace-guidelines"
-                className="font-semibold hover:underline"
-                style={{ color: '#16193a' }}
-              >
-                Marketplace Guidelines
-              </Link>
-              {" "}and{" "}
-              <Link
-                href="/what-we-accept"
-                className="font-semibold hover:underline"
-                style={{ color: '#16193a' }}
-              >
-                What We Accept
-              </Link>
-            </p>
-          </div>
+        <div>
+          <label className="block text-sm mb-1.5 font-system text-[var(--ink-primary)]">Email</label>
+          <input
+            type="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:border-[var(--ink-primary)] transition-colors font-system"
+            placeholder="you@example.com"
+          />
         </div>
+
+        <div>
+          <label className="block text-sm mb-1.5 font-system text-[var(--ink-primary)]">Password</label>
+          <input
+            type="password"
+            required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:border-[var(--ink-primary)] transition-colors font-system"
+            placeholder="At least 6 characters"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm mb-1.5 font-system text-[var(--ink-primary)]">Confirm Password</label>
+          <input
+            type="password"
+            required
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:border-[var(--ink-primary)] transition-colors font-system"
+            placeholder="Confirm your password"
+          />
+        </div>
+
+        <div className="flex items-start gap-3 pt-2">
+          <input
+            type="checkbox"
+            id="accept-terms"
+            required
+            className="mt-1 w-4 h-4 rounded border-gray-300 focus:ring-2 cursor-pointer"
+            style={{ accentColor: "var(--ink-primary)" }}
+          />
+          <label
+            htmlFor="accept-terms"
+            className="text-sm text-gray-600 cursor-pointer select-none font-system"
+          >
+            I acknowledge that I have read and agree to the{" "}
+            <a
+              href="https://thriftshopper.com/terms"
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`font-semibold ${authLinkClass}`}
+              onClick={(e) => e.stopPropagation()}
+            >
+              Terms of Service
+            </a>
+            {" "}and{" "}
+            <a
+              href="https://thriftshopper.com/privacy"
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`font-semibold ${authLinkClass}`}
+              onClick={(e) => e.stopPropagation()}
+            >
+              Privacy Policy
+            </a>
+          </label>
+        </div>
+
+        <div className="flex items-start gap-3 pt-2">
+          <input
+            type="checkbox"
+            id="accepts-marketing"
+            checked={acceptsMarketing}
+            onChange={(e) => setAcceptsMarketing(e.target.checked)}
+            className="mt-1 w-4 h-4 rounded border-gray-300 focus:ring-2 cursor-pointer"
+            style={{ accentColor: "var(--ink-primary)" }}
+          />
+          <label
+            htmlFor="accepts-marketing"
+            className="text-sm text-gray-600 cursor-pointer select-none font-system"
+          >
+            I want to receive promotional emails and updates
+          </label>
+        </div>
+
+        <button
+          type="submit"
+          disabled={isLoading}
+          className={`${authPrimaryButtonClass} mt-6 h-14 text-lg`}
+        >
+          {isLoading ? (
+            <>
+              <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+              </svg>
+              Creating account...
+            </>
+          ) : (
+            "Sign Up"
+          )}
+        </button>
+      </form>
+
+      <div className="text-center text-xs text-gray-500 mt-6 space-y-1 font-system">
+        <p>
+          Also review our{" "}
+          <Link href="/marketplace-guidelines" className={`font-semibold ${authLinkClass}`}>
+            Marketplace Guidelines
+          </Link>
+          {" "}and{" "}
+          <Link href="/what-we-accept" className={`font-semibold ${authLinkClass}`}>
+            What We Accept
+          </Link>
+        </p>
       </div>
-    </main>
+    </AuthWelcomeLayout>
   );
 }
 
 export default function SignUpPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#f5f5f5" }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "var(--background)" }}>
         <Loader2 className="w-8 h-8 animate-spin" style={{ color: "#16193a" }} />
       </div>
     }>

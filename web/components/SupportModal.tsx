@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import TSModal from "./TSModal";
-import { TSLogo } from "./TSLogo";
+import { TSAppIcon } from "./TSAppIcon";
 import { HelpCircle, ExternalLink, ChevronDown, ChevronUp } from "lucide-react";
 
 interface SupportModalProps {
@@ -23,7 +23,7 @@ export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
       onClose={onClose}
       title={
         <div className="flex items-center gap-2">
-          <TSLogo size={20} primaryColor="#ffffff" accentColor="#EFBF05" />
+          <TSAppIcon size={22} className="rounded-md" />
           <span>Support</span>
         </div>
       }
