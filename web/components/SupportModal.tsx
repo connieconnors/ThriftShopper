@@ -113,12 +113,12 @@ export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
                   </p>
                 </div>
                 <div>
-                  <p className="font-semibold mb-1" style={{ color: '#EFBF05' }}>YOU'RE A BETA TESTER</p>
+                  <p className="font-semibold mb-1" style={{ color: '#EFBF05' }}>WE&apos;D LOVE YOUR FEEDBACK</p>
                   <p className="text-white/90 leading-relaxed">
-                    We'd love your feedback — what's working, what's broken, what's missing.
+                    ThriftShopper is always improving. If you have suggestions, questions, or run into an issue, we&apos;d love to hear from you.
                   </p>
                   <p className="text-white/90 leading-relaxed">
-                    Email <a href="mailto:beta@thriftshopper.com" className="underline hover:text-[#EFBF05]">beta@thriftshopper.com</a>
+                    <a href="mailto:support@thriftshopper.com" className="underline hover:text-[#EFBF05]">support@thriftshopper.com</a>
                   </p>
                 </div>
               </div>
@@ -430,14 +430,15 @@ export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
                     </div>
                     <div>
                       <h4 className="text-sm font-semibold mb-2" style={{ color: '#EFBF05' }}>
-                        Beta Access
+                        We&apos;d Love Your Feedback
                       </h4>
                       <p className="text-white/90 leading-relaxed">
-                        During beta, you have early access to ThriftShopper. We&apos;d love your feedback at{" "}
-                        <a href="mailto:beta@thriftshopper.com" className="underline hover:text-[#EFBF05]">
-                          beta@thriftshopper.com
+                        ThriftShopper is always improving. If you have suggestions, questions, or run into an issue, we&apos;d love to hear from you.
+                      </p>
+                      <p className="text-white/90 leading-relaxed mt-2">
+                        <a href="mailto:support@thriftshopper.com" className="underline hover:text-[#EFBF05]">
+                          support@thriftshopper.com
                         </a>
-                        .
                       </p>
                     </div>
                   </div>
