@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import TSModal from "./TSModal";
 import { TSAppIcon } from "./TSAppIcon";
-import { HelpCircle, ExternalLink, ChevronDown, ChevronUp } from "lucide-react";
+import { HelpCircle, ChevronDown, ChevronUp } from "lucide-react";
 
 interface SupportModalProps {
   isOpen: boolean;
@@ -410,53 +410,31 @@ export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
                       <h4 className="text-sm font-semibold mb-2" style={{ color: '#EFBF05' }}>
                         Account Settings
                       </h4>
-                      <ul className="list-disc list-inside text-white/90 leading-relaxed space-y-1 ml-2">
-                        <li>Update your email and password in Settings</li>
-                        <li>Manage notification preferences</li>
-                        <li>Update shipping addresses</li>
-                        <li>Connect your Stripe account (sellers)</li>
-                      </ul>
+                      <p className="text-white/90 leading-relaxed mb-2">
+                        Update your profile, change your password, and find legal policies in{" "}
+                        <a href="/settings" className="underline hover:text-[#EFBF05]">
+                          Settings
+                        </a>
+                        .
+                      </p>
+                      <p className="text-white/90 leading-relaxed">
+                        Sellers: store details and shipping defaults live in{" "}
+                        <a href="/seller/settings" className="underline hover:text-[#EFBF05]">
+                          Seller settings
+                        </a>
+                        . Connect Stripe from your seller dashboard when you&apos;re ready to publish.
+                      </p>
                     </div>
                     <div>
                       <h4 className="text-sm font-semibold mb-2" style={{ color: '#EFBF05' }}>
                         Beta Access
                       </h4>
                       <p className="text-white/90 leading-relaxed">
-                        During beta, you have early access to ThriftShopper. We'd love your feedback as we refine the platform.
-                      </p>
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-semibold mb-2" style={{ color: '#EFBF05' }}>
-                        Privacy & Security
-                      </h4>
-                      <p className="text-white/90 leading-relaxed">
-                        Your data is protected. Review our{" "}
-                        <a
-                          href="https://thriftshopper.com/privacy"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="underline hover:text-[#EFBF05]"
-                        >
-                          Privacy Policy
-                        </a>{" "}
-                        and{" "}
-                        <a
-                          href="https://thriftshopper.com/terms"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="underline hover:text-[#EFBF05]"
-                        >
-                          Terms of Service
+                        During beta, you have early access to ThriftShopper. We&apos;d love your feedback at{" "}
+                        <a href="mailto:beta@thriftshopper.com" className="underline hover:text-[#EFBF05]">
+                          beta@thriftshopper.com
                         </a>
                         .
-                      </p>
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-semibold mb-2" style={{ color: '#EFBF05' }}>
-                        Need Help?
-                      </h4>
-                      <p className="text-white/90 leading-relaxed">
-                        Email <a href="mailto:support@thriftshopper.com" className="underline hover:text-[#EFBF05]">support@thriftshopper.com</a>
                       </p>
                     </div>
                   </div>
@@ -465,28 +443,14 @@ export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
         </div>
 
 
-        {/* Legal Links */}
         <div className="pt-3 border-t border-white/10">
-          <div className="space-y-1.5">
-            <a
-              href="https://thriftshopper.com/terms"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-between text-xs text-white/60 hover:text-white transition-colors"
-            >
-              <span>Terms of Service</span>
-              <ExternalLink className="h-3 w-3" />
+          <p className="text-xs text-white/60 leading-relaxed">
+            Terms, privacy, and marketplace policies are in{" "}
+            <a href="/settings" className="underline hover:text-[#EFBF05] text-white/80">
+              Settings
             </a>
-            <a
-              href="https://thriftshopper.com/privacy"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-between text-xs text-white/60 hover:text-white transition-colors"
-            >
-              <span>Privacy Policy</span>
-              <ExternalLink className="h-3 w-3" />
-            </a>
-          </div>
+            .
+          </p>
         </div>
       </div>
     </TSModal>

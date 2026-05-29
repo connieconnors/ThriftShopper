@@ -18,6 +18,7 @@ import { StandaloneMoodWheel } from "../../components/StandaloneMoodWheel";
 import { TSLogo } from "../../components/TSLogo";
 import { SoldRibbon } from "../../components/SoldRibbon";
 import AccountSheet from "../../components/AccountSheet";
+import SupportModal from "../../components/SupportModal";
 import { useWhisperTranscription } from "../../hooks/useWhisperTranscription";
 import { useAuth } from "../context/AuthContext";
 import { Mic, Loader2 } from "lucide-react";
@@ -61,6 +62,7 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
   const [filteredListings, setFilteredListings] = useState<Listing[]>([]);
   const [noMoodResults, setNoMoodResults] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
+  const [supportOpen, setSupportOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [showProductInfo, setShowProductInfo] = useState(false);
   
@@ -1316,7 +1318,12 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
       </button>
 
       {/* Account Sheet */}
-      <AccountSheet isOpen={accountOpen} onClose={() => setAccountOpen(false)} />
+      <AccountSheet
+        isOpen={accountOpen}
+        onClose={() => setAccountOpen(false)}
+        onOpenSupport={() => setSupportOpen(true)}
+      />
+      <SupportModal isOpen={supportOpen} onClose={() => setSupportOpen(false)} />
 
     </div>
     </div>

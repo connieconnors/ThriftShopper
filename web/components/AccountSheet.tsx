@@ -15,9 +15,10 @@ import {
 interface AccountSheetProps {
   isOpen: boolean;
   onClose: () => void;
+  onOpenSupport?: () => void;
 }
 
-const AccountSheet: React.FC<AccountSheetProps> = ({ isOpen, onClose }) => {
+const AccountSheet: React.FC<AccountSheetProps> = ({ isOpen, onClose, onOpenSupport }) => {
   const router = useRouter();
   const { user, signOut } = useAuth();
   const [isSeller, setIsSeller] = useState(false);
@@ -136,6 +137,17 @@ const AccountSheet: React.FC<AccountSheetProps> = ({ isOpen, onClose }) => {
                     Your Saved Items
                   </button>
                   <div className="border-t border-gray-100" />
+                  {onOpenSupport && (
+                    <button
+                      onClick={() => {
+                        onClose();
+                        onOpenSupport();
+                      }}
+                      className="w-full text-left px-5 py-3.5 text-[15px] font-medium font-system text-[var(--ink-primary)] hover:bg-gray-50 transition-colors"
+                    >
+                      Support
+                    </button>
+                  )}
                   <button
                     onClick={() => {
                       onClose();
@@ -177,6 +189,17 @@ const AccountSheet: React.FC<AccountSheetProps> = ({ isOpen, onClose }) => {
                     Become a Seller
                   </button>
                   <div className="border-t border-gray-100" />
+                  {onOpenSupport && (
+                    <button
+                      onClick={() => {
+                        onClose();
+                        onOpenSupport();
+                      }}
+                      className="w-full text-left px-5 py-3.5 text-[15px] font-medium font-system text-[var(--ink-primary)] hover:bg-gray-50 transition-colors"
+                    >
+                      Support
+                    </button>
+                  )}
                   <button
                     onClick={() => {
                       onClose();
@@ -234,6 +257,18 @@ const AccountSheet: React.FC<AccountSheetProps> = ({ isOpen, onClose }) => {
               >
                 Saved Items
               </button>
+
+              {onOpenSupport && (
+                <button
+                  onClick={() => {
+                    onClose();
+                    onOpenSupport();
+                  }}
+                  className={`w-full text-left px-1 py-1 text-[14px] ${authLinkClass}`}
+                >
+                  Support
+                </button>
+              )}
             </div>
           )}
         </div>

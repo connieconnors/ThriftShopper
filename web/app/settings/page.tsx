@@ -7,7 +7,8 @@ import { useAuth } from "../context/AuthContext"
 import { supabase } from "../../lib/supabaseClient"
 import { TSLogo } from "@/components/TSLogo"
 import TSModal from "@/components/TSModal"
-import { ArrowLeft, User, ExternalLink, LogOut, Scale, Loader2 } from "lucide-react"
+import SupportModal from "@/components/SupportModal"
+import { ArrowLeft, User, ExternalLink, LogOut, Scale, Loader2, HelpCircle } from "lucide-react"
 
 export default function SettingsPage() {
   const router = useRouter()
@@ -28,6 +29,7 @@ export default function SettingsPage() {
     seller_story: "",
   })
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
+  const [supportOpen, setSupportOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState<string | null>(null)
 
@@ -436,7 +438,45 @@ export default function SettingsPage() {
               <span>Allowed & Prohibited Items</span>
               <ExternalLink className="h-3 w-3 text-gray-400" />
             </Link>
+            <Link
+              href="/marketplace-guidelines"
+              className="flex items-center justify-between w-full py-2.5 text-xs rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors px-3 text-gray-700"
+            >
+              <span>Marketplace Guidelines</span>
+              <ExternalLink className="h-3 w-3 text-gray-400" />
+            </Link>
+            <Link
+              href="/returns"
+              className="flex items-center justify-between w-full py-2.5 text-xs rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors px-3 text-gray-700"
+            >
+              <span>Returns & Buyer Protection</span>
+              <ExternalLink className="h-3 w-3 text-gray-400" />
+            </Link>
+            {userType === "seller" && (
+              <Link
+                href="/seller/settings"
+                className="flex items-center justify-between w-full py-2.5 text-xs rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors px-3 text-gray-700"
+              >
+                <span>Store & Shipping Settings</span>
+                <ExternalLink className="h-3 w-3 text-gray-400" />
+              </Link>
+            )}
           </div>
+        </div>
+
+        {/* Help */}
+        <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
+          <button
+            type="button"
+            onClick={() => setSupportOpen(true)}
+            className="flex items-center justify-between w-full py-2.5 text-xs rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors px-3 text-gray-700"
+          >
+            <span className="flex items-center gap-2">
+              <HelpCircle className="h-4 w-4" style={{ color: "#16193a" }} />
+              Need help? Open Support
+            </span>
+            <ExternalLink className="h-3 w-3 text-gray-400" />
+          </button>
         </div>
 
         {/* Account Actions */}
@@ -518,6 +558,8 @@ export default function SettingsPage() {
           </div>
         </div>
       </TSModal>
+
+      <SupportModal isOpen={supportOpen} onClose={() => setSupportOpen(false)} />
     </div>
   )
 }
