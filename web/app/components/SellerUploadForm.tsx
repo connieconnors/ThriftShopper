@@ -220,7 +220,6 @@ export default function SellerUploadForm() {
   const [isSaved, setIsSaved] = useState(false);
   const [draftSaved, setDraftSaved] = useState(false); // Track if draft was just saved
   const [isRemovingBackground, setIsRemovingBackground] = useState(false);
-  const [isAIAnalyzing, setIsAIAnalyzing] = useState(false);
   const [isStripeReady, setIsStripeReady] = useState<boolean | null>(null);
   
   // Editable fields
@@ -771,7 +770,6 @@ export default function SellerUploadForm() {
     } else {
       // In edit mode, keep the current form visible and swap the preview image in place
       setShowProcessedImage(true);
-      setIsAIAnalyzing(false);
       setProcessingStep('idle');
       setResult((prev) =>
         prev
@@ -854,7 +852,6 @@ export default function SellerUploadForm() {
       // Simulate processing steps for better UX
       setTimeout(() => {
         setProcessingStep('analyzing');
-        setIsAIAnalyzing(true);
       }, 500);
       setTimeout(() => setProcessingStep('generating'), 2000);
       setTimeout(() => setProcessingStep('pricing'), 4000);
@@ -884,17 +881,14 @@ export default function SellerUploadForm() {
       });
 
       if (!response.ok) {
-        setIsAIAnalyzing(false);
         throw new Error(data.error || 'Upload failed');
       }
 
       if (!data.success) {
-        setIsAIAnalyzing(false);
         throw new Error(data.error || 'Upload failed');
       }
 
       setProcessingStep('complete');
-      setIsAIAnalyzing(false);
       
       // Store listing ID and original image for toggle
       if (data.listingId) {
@@ -977,7 +971,6 @@ export default function SellerUploadForm() {
       console.error('❌ Upload error:', err);
       setError(err instanceof Error ? err.message : 'Upload failed');
       setProcessingStep('idle');
-      setIsAIAnalyzing(false);
       // On error, keep the form visible but show the error
       // Don't clear result - user might want to try again or edit manually
     } finally {
@@ -1371,6 +1364,8 @@ export default function SellerUploadForm() {
     setShowStripeConnectGate(false);
   };
 
+  const canToggleBackground = Boolean(result?.backgroundRemoved && !isEditMode);
+  const photoIsInteractive = isEditMode || canToggleBackground;
 
   return (
     <div className="max-w-4xl mx-auto p-6" style={{ colorScheme: 'light' }}>
@@ -1537,78 +1532,108 @@ export default function SellerUploadForm() {
           
           {/* Header */}
           <h2 
-            className="text-2xl font-bold mb-6 font-ui-heading"
+            className="text-2xl font-bold mb-4 font-ui-heading"
             style={{ color: '#16193a' }}
           >
             {isEditMode ? 'Edit Your Listing' : 'Review Your Listing'}
           </h2>
 
-          <AIAnalysisIndicator isAnalyzing={isAIAnalyzing} />
-
           <div className="grid md:grid-cols-2 gap-8 mb-8">
             {/* Photo Section */}
             <div>
-              {/* Main Photo - Toggleable */}
-              <div 
-                className="relative cursor-pointer group mb-3"
+              <div
+                className={`relative group mb-3 ${photoIsInteractive ? 'cursor-pointer' : ''}`}
                 onClick={() => {
                   if (isEditMode) {
                     fileInputRef.current?.click();
                     return;
                   }
-                  setShowProcessedImage(!showProcessedImage);
+                  if (canToggleBackground) {
+                    setShowProcessedImage(!showProcessedImage);
+                  }
                 }}
-                title={isEditMode ? "Replace photo" : "Click to toggle background"}
+                title={
+                  isEditMode
+                    ? 'Replace photo'
+                    : canToggleBackground
+                      ? 'Toggle original / cleaned'
+                      : undefined
+                }
               >
                 <img
                   src={showProcessedImage ? result.processedImageUrl : originalImageUrl}
                   alt="Product"
                   className="w-full ts-photo-frame transition-all duration-300"
                 />
-                {/* Hover overlay hint */}
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all rounded-lg flex items-center justify-center">
-                  <span className="opacity-0 group-hover:opacity-100 text-white bg-black/50 px-3 py-1 rounded-full text-sm transition-opacity">
-                    {isEditMode ? "Replace photo" : "Click to toggle view"}
-                  </span>
-                </div>
-              </div>
-              <div className="mb-3">
-                {result.backgroundRemoved ? (
-                  <button
-                    type="button"
-                    onClick={() => setShowProcessedImage(!showProcessedImage)}
-                    className={`text-sm font-semibold ${
-                      showProcessedImage ? "text-green-600" : "text-gray-500"
-                    }`}
-                  >
-                    ✓ Remove Background&nbsp;&nbsp;&nbsp;&nbsp;○━━━
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={handleRemoveBackground}
-                    disabled={isRemovingBackground}
-                    className="text-sm font-semibold text-orange-600 disabled:opacity-60 disabled:cursor-not-allowed"
-                  >
-                    Remove Background
-                  </button>
+                {photoIsInteractive && (
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all rounded-lg flex items-center justify-center">
+                    <span className="opacity-0 group-hover:opacity-100 text-white bg-black/50 px-3 py-1 rounded-full text-sm transition-opacity">
+                      {isEditMode ? 'Replace photo' : 'Toggle view'}
+                    </span>
+                  </div>
                 )}
-                {/* Replace Photo Button */}
+              </div>
+
+              <AIAnalysisIndicator step={processingStep} />
+
+              <div className="mb-3 space-y-2">
                 <button
                   type="button"
                   onClick={handleReplacePhoto}
-                  className="mt-2 w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition flex items-center justify-center gap-2 border border-gray-300"
+                  className="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition flex items-center justify-center gap-2 border border-gray-300"
                 >
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
                   Replace Photo
                 </button>
-                {isRemovingBackground && (
-                  <div className="mt-2 flex items-center gap-2 text-xs text-gray-500">
-                    <Loader2 className="w-3 h-3 animate-spin" />
-                    Removing background...
+
+                {result.backgroundRemoved ? (
+                  <div className="flex justify-center">
+                    <div className="inline-flex rounded-lg border border-gray-200 p-0.5 text-xs font-medium">
+                      <button
+                        type="button"
+                        onClick={() => setShowProcessedImage(false)}
+                        className={`px-3 py-1.5 rounded-md transition-colors ${
+                          !showProcessedImage
+                            ? 'bg-[#16193a] text-white'
+                            : 'text-gray-600 hover:text-gray-900'
+                        }`}
+                      >
+                        Original
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowProcessedImage(true)}
+                        className={`px-3 py-1.5 rounded-md transition-colors ${
+                          showProcessedImage
+                            ? 'bg-[#16193a] text-white'
+                            : 'text-gray-600 hover:text-gray-900'
+                        }`}
+                      >
+                        Cleaned
+                      </button>
+                    </div>
                   </div>
+                ) : (
+                  listingId &&
+                  processingStep === 'complete' &&
+                  (isRemovingBackground ? (
+                    <p className="text-center text-xs text-gray-400 flex items-center justify-center gap-1.5">
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                      Cleaning background…
+                    </p>
+                  ) : (
+                    <p className="text-center">
+                      <button
+                        type="button"
+                        onClick={handleRemoveBackground}
+                        className="text-xs text-gray-400 hover:text-gray-600 underline underline-offset-2"
+                      >
+                        Optional: clean up background
+                      </button>
+                    </p>
+                  ))
                 )}
               </div>
 

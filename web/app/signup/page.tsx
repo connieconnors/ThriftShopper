@@ -317,14 +317,14 @@ function SignUpForm() {
       </form>
 
       <div className="text-center text-xs text-gray-500 mt-6 space-y-1 font-system">
+        <p>Curious what belongs on ThriftShopper?</p>
         <p>
-          Also review our{" "}
-          <Link href={legalHref("/seller-guidelines", "signup")} className={`font-semibold ${authLinkClass}`}>
-            Selling on ThriftShopper
-          </Link>
-          {" "}and{" "}
           <Link href="/what-we-accept" className={`font-semibold ${authLinkClass}`}>
             What We Accept
+          </Link>
+          {" • "}
+          <Link href={legalHref("/seller-guidelines", "signup")} className={`font-semibold ${authLinkClass}`}>
+            Seller Guidelines
           </Link>
         </p>
       </div>

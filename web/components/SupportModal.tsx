@@ -81,7 +81,7 @@ export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
                     Get paid via Stripe Connect • Turn on notifications in Settings
                   </p>
                   <p className="text-white/90 leading-relaxed">
-                    Read Selling on ThriftShopper before listing
+                    Read Seller Guidelines before listing
                   </p>
                 </div>
                 <div>
@@ -126,7 +126,7 @@ export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
           )}
         </div>
 
-        {/* Selling on ThriftShopper */}
+        {/* Seller Guidelines */}
         <div className="rounded-lg bg-white/5 border border-transparent hover:border-[#16193a]/50 overflow-hidden">
           <button 
             className="w-full p-3 rounded-lg hover:bg-[#16193a]/30 transition-colors text-left flex items-center justify-between"
@@ -135,7 +135,7 @@ export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
             <div className="flex items-center gap-2 flex-1">
               <HelpCircle className="h-4 w-4" style={{ color: "#EFBF05" }} />
               <div>
-                <p className="text-sm text-white">Selling on ThriftShopper</p>
+                <p className="text-sm text-white">Seller Guidelines</p>
                 <p className="text-xs text-white/60">Seller support & common questions</p>
               </div>
             </div>

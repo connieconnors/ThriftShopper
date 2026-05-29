@@ -1,7 +1,7 @@
 import type { LegalDocumentMeta } from "@/lib/legal/types";
 
 export const sellerGuidelinesDocument: LegalDocumentMeta = {
-  title: "Selling on ThriftShopper",
+  title: "Seller Guidelines",
   lastUpdated: "June 1, 2026",
   intro: [
     "Welcome to selling on ThriftShopper — a curated marketplace built around discovery for secondhand, vintage, collectible, and one-of-a-kind items.",

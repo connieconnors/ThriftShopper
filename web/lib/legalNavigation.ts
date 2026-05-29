@@ -42,7 +42,7 @@ export const SETTINGS_LEGAL_LINKS = [
   { href: "/terms", label: "Terms of Service" },
   { href: "/privacy", label: "Privacy Policy" },
   { href: "/returns", label: "Buyer Protection & Returns" },
-  { href: "/seller-guidelines", label: "Selling on ThriftShopper" },
+  { href: "/seller-guidelines", label: "Seller Guidelines" },
   { href: "/prohibited-items", label: "Prohibited Items" },
 ] as const;
 

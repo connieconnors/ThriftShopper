@@ -2,115 +2,144 @@
 
 import { useId } from 'react';
 
+export type AIProcessingStep =
+  | 'idle'
+  | 'uploading'
+  | 'analyzing'
+  | 'generating'
+  | 'pricing'
+  | 'complete';
+
+const STEP_ORDER: AIProcessingStep[] = [
+  'uploading',
+  'analyzing',
+  'generating',
+  'pricing',
+];
+
+const STEP_LABELS: Record<Exclude<AIProcessingStep, 'idle' | 'complete'>, string> = {
+  uploading: 'Uploading photo…',
+  analyzing: 'Analyzing your item…',
+  generating: 'Writing your listing…',
+  pricing: 'Checking prices…',
+};
+
 interface AIAnalysisIndicatorProps {
-  isAnalyzing: boolean;
+  step: AIProcessingStep;
 }
 
-export default function AIAnalysisIndicator({ isAnalyzing }: AIAnalysisIndicatorProps) {
+function CompassIcon({ gradientId, className }: { gradientId: string; className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 120 120"
+      className={className}
+      aria-hidden
+    >
+      <defs>
+        <linearGradient id={gradientId}>
+          <stop offset="0%" stopColor="#DFAF37" />
+          <stop offset="50%" stopColor="#FDB931" />
+          <stop offset="100%" stopColor="#DFAF37" />
+        </linearGradient>
+      </defs>
+
+      <circle cx="60" cy="60" r="58" fill="none" stroke={`url(#${gradientId})`} strokeWidth="2" />
+      <circle cx="60" cy="60" r="55" fill="#16193a" opacity="0.98" />
+      <circle cx="60" cy="60" r="47" fill="#1e2248" opacity="0.95" />
+      <circle cx="60" cy="60" r="39" fill="#252a5a" opacity="0.95" />
+      <circle cx="60" cy="60" r="31" fill="#2f3568" opacity="0.95" />
+      <circle cx="60" cy="60" r="23" fill="#3d4578" opacity="0.98" />
+
+      {[0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330].map((angle) => {
+        const angleRad = (angle * Math.PI) / 180;
+        const round = (n: number) => Math.round(n * 100) / 100;
+        return (
+          <line
+            key={angle}
+            x1="60"
+            y1="60"
+            x2={round(60 + 20 * Math.cos(angleRad))}
+            y2={round(60 + 20 * Math.sin(angleRad))}
+            stroke={`url(#${gradientId})`}
+            strokeWidth="1"
+            opacity="0.85"
+          />
+        );
+      })}
+
+      {[0, 45, 90, 135, 180, 225, 270, 315].map((angle) => {
+        const angleRad = (angle * Math.PI) / 180;
+        const cos = Math.cos(angleRad);
+        const sin = Math.sin(angleRad);
+        const round = (n: number) => Math.round(n * 100) / 100;
+        return (
+          <circle
+            key={`dot-${angle}`}
+            cx={round(60 + 51 * cos)}
+            cy={round(60 + 51 * sin)}
+            r="2"
+            fill="#DFAF37"
+            opacity="0.9"
+          />
+        );
+      })}
+    </svg>
+  );
+}
+
+export default function AIAnalysisIndicator({ step }: AIAnalysisIndicatorProps) {
   const gradientId = useId();
 
-  if (!isAnalyzing) return null;
+  if (step === 'idle' || step === 'complete') return null;
+
+  const currentIndex = STEP_ORDER.indexOf(step);
+  const statusLabel = STEP_LABELS[step as keyof typeof STEP_LABELS] ?? 'Working on it…';
 
   return (
-    <div className="flex items-center justify-center my-4">
-      <svg
-        viewBox="0 0 120 120"
-        className="w-6 h-6 drop-shadow-lg animate-spin"
-        style={{ animationDuration: '8s' }}
-      >
-        <defs>
-          <linearGradient id={gradientId}>
-            <stop offset="0%" stopColor="#FFD700" />
-            <stop offset="50%" stopColor="#FDB931" />
-            <stop offset="100%" stopColor="#FFD700" />
-          </linearGradient>
-        </defs>
-        
-        {/* Outer gold frame */}
-        <circle cx="60" cy="60" r="58" fill="none" stroke={`url(#${gradientId})`} strokeWidth="2" />
+    <div
+      className="mb-3 rounded-xl border px-4 py-3 flex items-center gap-4"
+      style={{
+        borderColor: 'rgba(22, 25, 58, 0.12)',
+        backgroundColor: 'rgba(22, 25, 58, 0.04)',
+      }}
+      role="status"
+      aria-live="polite"
+      aria-label={statusLabel}
+    >
+      <div className="relative flex-shrink-0">
+        <CompassIcon
+          gradientId={gradientId}
+          className="w-14 h-14 sm:w-16 sm:h-16 drop-shadow-md animate-spin [animation-duration:6s]"
+        />
+        <span
+          className="absolute inset-0 rounded-full animate-ping opacity-20"
+          style={{ backgroundColor: '#DFAF37' }}
+        />
+      </div>
 
-        {/* Outer ring - deep navy blue */}
-        <circle cx="60" cy="60" r="55" fill="#1E3A8A" opacity="0.95" />
-
-        {/* Middle-outer ring - royal blue */}
-        <circle cx="60" cy="60" r="47" fill="#1E40AF" opacity="0.95" />
-
-        {/* Middle ring - vibrant blue */}
-        <circle cx="60" cy="60" r="39" fill="#2563EB" opacity="0.95" />
-
-        {/* Inner ring - bright blue */}
-        <circle cx="60" cy="60" r="31" fill="#3B82F6" opacity="0.95" />
-
-        {/* Center circle - light blue */}
-        <circle cx="60" cy="60" r="23" fill="#60A5FA" opacity="0.98" />
-
-        {/* Radial lines emanating from center */}
-        {[0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330].map((angle) => {
-          const angleRad = (angle * Math.PI) / 180;
-          const round = (n: number) => Math.round(n * 100) / 100;
-          return (
-            <line
-              key={angle}
-              x1="60"
-              y1="60"
-              x2={round(60 + 20 * Math.cos(angleRad))}
-              y2={round(60 + 20 * Math.sin(angleRad))}
-              stroke={`url(#${gradientId})`}
-              strokeWidth="1"
-              opacity="0.8"
-            />
-          );
-        })}
-
-        {/* Decorative dots on rings - multi-mode indicators */}
-        {[0, 45, 90, 135, 180, 225, 270, 315].map((angle) => {
-          const angleRad = (angle * Math.PI) / 180;
-          const cos = Math.cos(angleRad);
-          const sin = Math.sin(angleRad);
-          const round = (n: number) => Math.round(n * 100) / 100;
-          return (
-            <g key={`dots-${angle}`}>
-              <circle
-                cx={round(60 + 51 * cos)}
-                cy={round(60 + 51 * sin)}
-                r="2"
-                fill="#FFD700"
-                opacity="0.9"
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-semibold leading-snug" style={{ color: '#16193a' }}>
+          {statusLabel}
+        </p>
+        <div className="flex items-center gap-1.5 mt-2.5">
+          {STEP_ORDER.map((s, index) => {
+            const isDone = index < currentIndex;
+            const isActive = index === currentIndex;
+            return (
+              <span
+                key={s}
+                className={`h-1.5 flex-1 rounded-full transition-colors duration-300 ${
+                  isActive ? 'animate-pulse' : ''
+                }`}
+                style={{
+                  backgroundColor: isDone || isActive ? '#16193a' : 'rgba(22, 25, 58, 0.15)',
+                  opacity: isActive ? 1 : isDone ? 0.7 : 1,
+                }}
               />
-              <circle
-                cx={round(60 + 43 * cos)}
-                cy={round(60 + 43 * sin)}
-                r="1.5"
-                fill="#FBBF24"
-                opacity="0.8"
-              />
-              <circle
-                cx={round(60 + 35 * cos)}
-                cy={round(60 + 35 * sin)}
-                r="1"
-                fill="#FCD34D"
-                opacity="0.7"
-              />
-            </g>
-          );
-        })}
-
-        {/* Center starburst pattern */}
-        {[0, 72, 144, 216, 288].map((angle) => {
-          const angleRad = (angle * Math.PI) / 180;
-          const round = (n: number) => Math.round(n * 100) / 100;
-          return (
-            <circle
-              key={`center-${angle}`}
-              cx={round(60 + 12 * Math.cos(angleRad))}
-              cy={round(60 + 12 * Math.sin(angleRad))}
-              r="1.5"
-              fill="#FFFFFF"
-              opacity="0.8"
-            />
-          );
-        })}
-      </svg>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }
