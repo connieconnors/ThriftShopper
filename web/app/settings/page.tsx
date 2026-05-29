@@ -8,7 +8,8 @@ import { supabase } from "../../lib/supabaseClient"
 import { TSLogo } from "@/components/TSLogo"
 import TSModal from "@/components/TSModal"
 import SupportModal from "@/components/SupportModal"
-import { ArrowLeft, User, ExternalLink, LogOut, Scale, Loader2, HelpCircle } from "lucide-react"
+import { SETTINGS_LEGAL_LINKS, legalHref } from "@/lib/legalNavigation"
+import { ArrowLeft, User, ExternalLink, LogOut, Scale, Loader2, HelpCircle, Store } from "lucide-react"
 
 export default function SettingsPage() {
   const router = useRouter()
@@ -404,63 +405,49 @@ export default function SettingsPage() {
           </Link>
         </div>
 
+        {userType === "seller" && (
+          <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
+            <div className="flex items-center gap-2 mb-2">
+              <Store className="h-4 w-4" style={{ color: "#16193a" }} />
+              <h2 className="text-sm font-semibold" style={{ color: "#16193a" }}>
+                Seller
+              </h2>
+            </div>
+            <p className="text-xs text-gray-500 mb-4 leading-relaxed">
+              Store details, location, and default shipping for your listings.
+            </p>
+            <Link
+              href="/seller/settings"
+              className="flex items-center justify-between w-full py-2.5 text-xs rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors px-3 text-gray-700"
+            >
+              <span>Store & Shipping Settings</span>
+              <ExternalLink className="h-3 w-3 text-gray-400" />
+            </Link>
+          </div>
+        )}
+
         {/* Legal Section */}
         <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
-          <div className="flex items-center gap-2 mb-4">
+          <div className="flex items-center gap-2 mb-2">
             <Scale className="h-4 w-4" style={{ color: "#16193a" }} />
             <h2 className="text-sm font-semibold" style={{ color: "#16193a" }}>
               Legal
             </h2>
           </div>
+          <p className="text-xs text-gray-500 mb-4 leading-relaxed">
+            Policies that help keep ThriftShopper safe, fair, and trustworthy.
+          </p>
           <div className="space-y-3">
-            <a
-              href="https://thriftshopper.com/terms"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-between w-full py-2.5 text-xs rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors px-3 text-gray-700"
-            >
-              <span>Terms of Service</span>
-              <ExternalLink className="h-3 w-3 text-gray-400" />
-            </a>
-            <a
-              href="https://thriftshopper.com/privacy"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-between w-full py-2.5 text-xs rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors px-3 text-gray-700"
-            >
-              <span>Privacy Policy</span>
-              <ExternalLink className="h-3 w-3 text-gray-400" />
-            </a>
-            <Link
-              href="/prohibited-items"
-              className="flex items-center justify-between w-full py-2.5 text-xs rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors px-3 text-gray-700"
-            >
-              <span>Allowed & Prohibited Items</span>
-              <ExternalLink className="h-3 w-3 text-gray-400" />
-            </Link>
-            <Link
-              href="/marketplace-guidelines"
-              className="flex items-center justify-between w-full py-2.5 text-xs rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors px-3 text-gray-700"
-            >
-              <span>Marketplace Guidelines</span>
-              <ExternalLink className="h-3 w-3 text-gray-400" />
-            </Link>
-            <Link
-              href="/returns"
-              className="flex items-center justify-between w-full py-2.5 text-xs rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors px-3 text-gray-700"
-            >
-              <span>Returns & Buyer Protection</span>
-              <ExternalLink className="h-3 w-3 text-gray-400" />
-            </Link>
-            {userType === "seller" && (
+            {SETTINGS_LEGAL_LINKS.map(({ href, label }) => (
               <Link
-                href="/seller/settings"
+                key={href}
+                href={legalHref(href, "settings")}
                 className="flex items-center justify-between w-full py-2.5 text-xs rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors px-3 text-gray-700"
               >
-                <span>Store & Shipping Settings</span>
+                <span>{label}</span>
                 <ExternalLink className="h-3 w-3 text-gray-400" />
               </Link>
-            )}
+            ))}
           </div>
         </div>
 

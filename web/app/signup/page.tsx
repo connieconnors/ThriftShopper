@@ -3,6 +3,7 @@
 import { useState, FormEvent, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { legalHref } from "@/lib/legalNavigation";
 import { useAuth } from "../context/AuthContext";
 import { supabase } from "../../lib/supabaseClient";
 import { getAuthCallbackUrl } from "../../lib/authRedirect";
@@ -261,25 +262,21 @@ function SignUpForm() {
             className="text-sm text-gray-600 cursor-pointer select-none font-system"
           >
             I acknowledge that I have read and agree to the{" "}
-            <a
-              href="https://thriftshopper.com/terms"
-              target="_blank"
-              rel="noopener noreferrer"
+            <Link
+              href={legalHref("/terms", "signup")}
               className={`font-semibold ${authLinkClass}`}
               onClick={(e) => e.stopPropagation()}
             >
               Terms of Service
-            </a>
+            </Link>
             {" "}and{" "}
-            <a
-              href="https://thriftshopper.com/privacy"
-              target="_blank"
-              rel="noopener noreferrer"
+            <Link
+              href={legalHref("/privacy", "signup")}
               className={`font-semibold ${authLinkClass}`}
               onClick={(e) => e.stopPropagation()}
             >
               Privacy Policy
-            </a>
+            </Link>
           </label>
         </div>
 
@@ -322,8 +319,8 @@ function SignUpForm() {
       <div className="text-center text-xs text-gray-500 mt-6 space-y-1 font-system">
         <p>
           Also review our{" "}
-          <Link href="/marketplace-guidelines" className={`font-semibold ${authLinkClass}`}>
-            Marketplace Guidelines
+          <Link href={legalHref("/seller-guidelines", "signup")} className={`font-semibold ${authLinkClass}`}>
+            Selling on ThriftShopper
           </Link>
           {" "}and{" "}
           <Link href="/what-we-accept" className={`font-semibold ${authLinkClass}`}>

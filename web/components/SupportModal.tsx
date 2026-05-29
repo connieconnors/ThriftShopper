@@ -81,7 +81,7 @@ export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
                     Get paid via Stripe Connect • Turn on notifications in Settings
                   </p>
                   <p className="text-white/90 leading-relaxed">
-                    Read Seller Guidelines before listing
+                    Read Selling on ThriftShopper before listing
                   </p>
                 </div>
                 <div>
@@ -353,7 +353,10 @@ export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
                         Full Policy Details
                       </h4>
                       <p className="text-white/90 leading-relaxed">
-                        Read our complete <a href="/returns" className="underline hover:text-[#EFBF05]">Returns and Exchanges Policy</a>.
+                        Read our complete{" "}
+                        <a href="/returns?from=help" className="underline hover:text-[#EFBF05]">
+                          Buyer Protection & Returns Policy
+                        </a>.
                       </p>
                     </div>
                     <div>
