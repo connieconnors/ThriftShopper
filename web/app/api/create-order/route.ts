@@ -310,7 +310,9 @@ export async function POST(request: NextRequest) {
       payment_intent_id: paymentIntentId,
     });
 
-    const { data: order, error: orderError } = await supabase
+    // Use service role for insert — buyer is already verified above; matches webhook path
+    // and avoids RLS / JWT context issues on server-side inserts.
+    const { data: order, error: orderError } = await supabaseAdmin
       .from("orders")
       .insert(orderData)
       .select()
@@ -344,7 +346,7 @@ export async function POST(request: NextRequest) {
       // Check if it's a duplicate key error
       if (orderError.code === '23505' || orderError.message?.includes('duplicate')) {
         // Try to find the existing order
-        const { data: existing } = await supabase
+        const { data: existing } = await supabaseAdmin
           .from("orders")
           .select("id")
           .eq("payment_intent_id", paymentIntentId)

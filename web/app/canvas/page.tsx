@@ -7,14 +7,14 @@ import { useAuth } from "../context/AuthContext";
 import { supabase } from "../../lib/supabaseClient";
 import { TSLogo } from "@/components/TSLogo";
 import {
-  HeadphonesIcon,
+  MessageSquare,
+  Store,
+  Package,
   Mic,
   Heart,
   Award,
   ArrowLeft,
   Upload,
-  Search,
-  User,
   HelpCircle,
   ChevronDown,
   ChevronUp,
@@ -25,7 +25,6 @@ import {
 import { useAppShell } from "@/hooks/useAppShell";
 import SupportModal from "@/components/SupportModal";
 import { Listing, getPrimaryImage } from "../../lib/types";
-import FavoriteButton from "../components/FavoriteButton";
 import {
   getRecentlyViewed,
   getSavedSearches,
@@ -39,6 +38,7 @@ interface Profile {
   avatar_url: string | null;
   email: string | null;
   created_at: string;
+  is_seller: boolean;
 }
 
 export default function BuyerCanvasPage() {
@@ -126,7 +126,7 @@ export default function BuyerCanvasPage() {
         // Fetch profile
         const { data: profileData } = await supabase
           .from("profiles")
-          .select("display_name, avatar_url, email, created_at")
+          .select("display_name, avatar_url, email, created_at, is_seller")
           .eq("user_id", user.id)
           .maybeSingle();
 
@@ -136,6 +136,7 @@ export default function BuyerCanvasPage() {
             avatar_url: profileData.avatar_url,
             email: profileData.email || user.email || null,
             created_at: profileData.created_at,
+            is_seller: profileData.is_seller === true,
           });
         }
 
@@ -266,16 +267,32 @@ export default function BuyerCanvasPage() {
     }
   }, [user]);
 
-  const getJoinYear = () => {
-    if (!profile?.created_at) return new Date().getFullYear();
-    return new Date(profile.created_at).getFullYear();
-  };
-
   const [showFavorites, setShowFavorites] = useState(false);
   const [showPurchases, setShowPurchases] = useState(false);
+  const [showMessages, setShowMessages] = useState(false);
   const [showBadges, setShowBadges] = useState(false);
   const [supportOpen, setSupportOpen] = useState(false);
   const [removingBookmarkId, setRemovingBookmarkId] = useState<string | null>(null);
+  const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
+
+  useEffect(() => {
+    if (!user || !profile?.is_seller) return;
+    (async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.access_token) return;
+        const res = await fetch("/api/seller/unread-count", {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setUnreadMessagesCount(data.unreadCount ?? 0);
+        }
+      } catch {
+        setUnreadMessagesCount(0);
+      }
+    })();
+  }, [user, profile?.is_seller]);
 
   // Remove bookmark function
   const removeBookmark = async (listingId: string, e: React.MouseEvent) => {
@@ -350,7 +367,7 @@ export default function BuyerCanvasPage() {
       <div className="bg-gray-50">
       {/* Profile Section */}
       <div className="bg-white px-4 py-4 mb-3">
-        <div className="flex items-center gap-3 mb-4">
+        <div className="flex items-center gap-3">
           <div
             className="w-12 h-12 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0 shadow-sm"
             style={{ backgroundColor: "#16193a" }}
@@ -363,91 +380,303 @@ export default function BuyerCanvasPage() {
               </span>
             )}
           </div>
-          <div className="flex-1">
-            <h1 className="text-lg font-semibold mb-0.5 font-ui-heading" style={{ color: "#16193a" }}>
+          <div className="flex-1 min-w-0">
+            <h1 className="text-lg font-semibold mb-1 font-ui-heading" style={{ color: "#16193a" }}>
               My Canvas
             </h1>
-            <p className="text-xs text-gray-600">Treasure hunter since {getJoinYear()}</p>
+            <p className="text-xs text-gray-600 leading-relaxed">
+              Your place for favorites, purchases, messages, and the treasures you&apos;re still thinking about.
+            </p>
           </div>
         </div>
+      </div>
 
-        {/* Voice Input */}
-        <div className="mb-3">
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="What's your treasure vibe today?"
-              value={vibeInput}
-              onChange={(e) => setVibeInput(e.target.value)}
-              className="w-full bg-gray-50 rounded-full px-4 py-3 pr-14 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#16193a]/20 border border-gray-200"
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  const query = vibeInput.trim();
-                  if (query) {
-                    // Save the search
-                    if (user) {
-                      addSavedSearch(user.id, query);
-                      setSavedSearches(getSavedSearches(user.id));
-                    }
-                    // Navigate to browse with search
-                    router.push(`/browse?search=${encodeURIComponent(query)}`);
-                  }
-                }
-              }}
-            />
-            <button
-              onClick={toggleVibeRecording}
-              disabled={!isVibeVoiceSupported || isProcessingVibe}
-              className={`absolute right-2 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full flex items-center justify-center transition-colors shadow-sm hover:shadow-md ${
-                isRecordingVibe
-                  ? "bg-rose-500 animate-pulse"
-                  : isProcessingVibe
-                  ? "bg-violet-500 cursor-wait"
-                  : ""
-              } ${!isVibeVoiceSupported ? "opacity-50 cursor-not-allowed" : ""}`}
-              style={!isRecordingVibe && !isProcessingVibe ? { backgroundColor: "#16193a" } : {}}
-            >
-              {isProcessingVibe ? (
-                <Loader2 className="h-4 w-4 text-white animate-spin" />
+      {/* Hub — favorites, purchases, messages, listings */}
+      <div className="px-4 pb-4 space-y-3">
+        {/* Favorites */}
+        <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
+          <button
+            onClick={() => setShowFavorites(!showFavorites)}
+            className="flex items-center justify-between w-full"
+          >
+            <div className="flex items-center gap-3">
+              <Heart className="h-5 w-5 flex-shrink-0" style={{ color: "#16193a" }} />
+              <div className="text-left">
+                <h2 className="text-sm font-semibold" style={{ color: "#16193a" }}>
+                  Favorites
+                </h2>
+                <p className="text-xs text-gray-500">
+                  {favorites.length === 0 ? "Items you've saved" : `${favorites.length} saved`}
+                </p>
+              </div>
+            </div>
+            {showFavorites ? (
+              <ChevronUp className="h-5 w-5 text-gray-400 flex-shrink-0" />
+            ) : (
+              <ChevronDown className="h-5 w-5 text-gray-400 flex-shrink-0" />
+            )}
+          </button>
+          {showFavorites && (
+            <div className="flex flex-col gap-3 mt-3 pt-3 border-t border-gray-100">
+              {favorites.length === 0 ? (
+                <p className="text-xs text-gray-400 italic">No favorites yet — start exploring!</p>
               ) : (
-                <Mic className="h-4 w-4 text-white" />
+                favorites.slice(0, 10).map((item) => {
+                  const imageUrl = getPrimaryImage(item);
+                  return (
+                    <div
+                      key={item.id}
+                      className="relative group w-full min-w-0"
+                    >
+                      <Link
+                        href={`/listing/${item.id}`}
+                        className="flex items-start gap-2 px-3 py-2 pr-8 rounded-lg border border-gray-200 bg-gray-50 hover:bg-gray-100 hover:border-[#16193a] transition-all shadow-sm w-full min-w-0"
+                      >
+                        {imageUrl && (
+                          <img
+                            src={imageUrl}
+                            alt={item.title}
+                            className="w-12 h-12 rounded object-cover flex-shrink-0"
+                          />
+                        )}
+                        <span className="text-xs text-gray-700 flex-1 min-w-0 break-words leading-snug line-clamp-3 [overflow-wrap:anywhere]">
+                          {item.title}
+                        </span>
+                      </Link>
+                      <button
+                        onClick={(e) => removeBookmark(item.id, e)}
+                        disabled={removingBookmarkId === item.id}
+                        className="absolute top-0 right-0 -mt-1 -mr-1 w-5 h-5 rounded-full bg-[#16193a] text-white flex items-center justify-center hover:opacity-90 transition-colors disabled:opacity-50 z-10"
+                        aria-label="Remove favorite"
+                      >
+                        {removingBookmarkId === item.id ? (
+                          <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <X className="h-3 w-3" />
+                        )}
+                      </button>
+                    </div>
+                  );
+                })
               )}
-            </button>
-          </div>
-          <p className="text-[10px] text-gray-400 italic mt-1.5 ml-4">we'll keep a look out</p>
-          {vibeTranscript && isRecordingVibe && (
-            <p className="text-[10px] text-gray-500 italic mt-1 ml-4">Listening: {vibeTranscript}</p>
+            </div>
           )}
         </div>
 
-        {/* Vibe Tags */}
-        {vibes.length > 0 && (
-          <div className="flex flex-wrap gap-2 items-center">
-            <span className="text-xs text-gray-500">Your vibe:</span>
-            {vibes.map((vibe) => (
-              <span
-                key={vibe}
-                className="px-3 py-1 rounded-full text-xs font-medium shadow-sm"
-                style={{ backgroundColor: "#16193a", color: "#ffffff" }}
-              >
-                {vibe}
-              </span>
-            ))}
-          </div>
+        {/* Purchases */}
+        <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
+          <button
+            onClick={() => setShowPurchases(!showPurchases)}
+            className="flex items-center justify-between w-full"
+          >
+            <div className="flex items-center gap-3">
+              <Package className="h-5 w-5 flex-shrink-0" style={{ color: "#16193a" }} />
+              <div className="text-left">
+                <h2 className="text-sm font-semibold" style={{ color: "#16193a" }}>
+                  Purchases
+                </h2>
+                <p className="text-xs text-gray-500">
+                  {purchases.length === 0 ? "Orders you've placed" : `${purchases.length} order${purchases.length === 1 ? "" : "s"}`}
+                </p>
+              </div>
+            </div>
+            {showPurchases ? (
+              <ChevronUp className="h-5 w-5 text-gray-400 flex-shrink-0" />
+            ) : (
+              <ChevronDown className="h-5 w-5 text-gray-400 flex-shrink-0" />
+            )}
+          </button>
+          {showPurchases && (
+            <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-gray-100">
+              {purchases.length === 0 ? (
+                <p className="text-xs text-gray-400 italic">No purchases yet — your treasures await!</p>
+              ) : (
+                purchases.map((order) => (
+                  <Link
+                    key={order.id}
+                    href={`/orders/${order.id}`}
+                    className="px-3 py-1.5 rounded-full border border-gray-200 bg-gray-50 flex items-center gap-1.5 hover:bg-gray-100 hover:border-[#16193a] transition-all shadow-sm"
+                  >
+                    <span className="text-xs text-gray-700">{order.listing?.title || "Item"}</span>
+                    {order.status && (
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
+                        order.status === 'paid' ? 'bg-blue-100 text-blue-700' :
+                        order.status === 'shipped' ? 'bg-purple-100 text-purple-700' :
+                        order.status === 'delivered' ? 'bg-green-100 text-green-700' :
+                        'bg-gray-100 text-gray-700'
+                      }`}>
+                        {order.status}
+                      </span>
+                    )}
+                  </Link>
+                ))
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Messages */}
+        <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
+          <button
+            onClick={() => setShowMessages(!showMessages)}
+            className="flex items-center justify-between w-full"
+          >
+            <div className="flex items-center gap-3">
+              <MessageSquare className="h-5 w-5 flex-shrink-0" style={{ color: "#16193a" }} />
+              <div className="text-left">
+                <h2 className="text-sm font-semibold" style={{ color: "#16193a" }}>
+                  Messages
+                </h2>
+                <p className="text-xs text-gray-500">
+                  {profile?.is_seller
+                    ? unreadMessagesCount > 0
+                      ? `${unreadMessagesCount} unread`
+                      : "Buyer inquiries"
+                    : "Contact sellers from listings"}
+                </p>
+              </div>
+              {profile?.is_seller && unreadMessagesCount > 0 && (
+                <span
+                  className="px-2 py-0.5 text-xs font-bold rounded-full text-white flex-shrink-0"
+                  style={{ backgroundColor: "#16193a" }}
+                >
+                  {unreadMessagesCount}
+                </span>
+              )}
+            </div>
+            {showMessages ? (
+              <ChevronUp className="h-5 w-5 text-gray-400 flex-shrink-0" />
+            ) : (
+              <ChevronDown className="h-5 w-5 text-gray-400 flex-shrink-0" />
+            )}
+          </button>
+          {showMessages && (
+            <div className="mt-3 pt-3 border-t border-gray-100">
+              {profile?.is_seller ? (
+                <Link
+                  href="/seller"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white transition-opacity hover:opacity-90"
+                  style={{ backgroundColor: "#16193a" }}
+                >
+                  <MessageSquare className="h-4 w-4" />
+                  Open message inbox
+                </Link>
+              ) : (
+                <p className="text-xs text-gray-400 italic leading-relaxed">
+                  Use &ldquo;Contact seller&rdquo; on any listing to reach out. Replies come by email for now.
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* My Listings — sellers only */}
+        {profile?.is_seller && (
+          <Link
+            href="/seller"
+            className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm flex items-center justify-between hover:bg-gray-50 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <Store className="h-5 w-5 flex-shrink-0" style={{ color: "#16193a" }} />
+              <div className="text-left">
+                <h2 className="text-sm font-semibold" style={{ color: "#16193a" }}>
+                  My Listings
+                </h2>
+                <p className="text-xs text-gray-500">Manage your shop</p>
+              </div>
+            </div>
+            <ChevronDown className="h-5 w-5 text-gray-400 flex-shrink-0 -rotate-90" />
+          </Link>
         )}
       </div>
 
-      {/* Playground Section */}
-      <div className="bg-gray-50 px-4 py-5 -mt-8 mb-3">
-        <div className="text-center mb-4">
-          <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Playground</h2>
+      {/* Playground — experimental tools */}
+      <div className="bg-gray-50 px-4 py-5 mb-3">
+        <div className="mb-4 max-w-md mx-auto">
+          <div className="flex items-center gap-2 mb-1">
+            <h2 className="text-sm font-semibold font-ui-heading" style={{ color: "#16193a" }}>
+              Playground
+            </h2>
+            <span className="text-[10px] uppercase tracking-wider text-gray-400 font-medium">
+              Optional
+            </span>
+          </div>
+          <p className="text-xs text-gray-600 leading-relaxed">
+            Capture ideas, stories, and things you&apos;re still searching for.
+          </p>
         </div>
 
         <div className="space-y-3 max-w-md mx-auto">
-          {/* Discovery */}
+          {/* Vibe search */}
+          <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
+            <h3 className="text-sm font-semibold mb-2" style={{ color: "#16193a" }}>
+              Treasure vibe search
+            </h3>
+            <p className="text-xs text-gray-600 leading-relaxed mb-3">
+              Tell us what you&apos;re hunting for — we&apos;ll keep a look out
+            </p>
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="What's your treasure vibe today?"
+                value={vibeInput}
+                onChange={(e) => setVibeInput(e.target.value)}
+                className="w-full bg-gray-50 rounded-full px-4 py-3 pr-14 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#16193a]/20 border border-gray-200"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    const query = vibeInput.trim();
+                    if (query) {
+                      if (user) {
+                        addSavedSearch(user.id, query);
+                        setSavedSearches(getSavedSearches(user.id));
+                      }
+                      router.push(`/browse?search=${encodeURIComponent(query)}`);
+                    }
+                  }
+                }}
+              />
+              <button
+                onClick={toggleVibeRecording}
+                disabled={!isVibeVoiceSupported || isProcessingVibe}
+                className={`absolute right-2 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full flex items-center justify-center transition-colors shadow-sm hover:shadow-md ${
+                  isRecordingVibe
+                    ? "bg-rose-500 animate-pulse"
+                    : isProcessingVibe
+                    ? "bg-violet-500 cursor-wait"
+                    : ""
+                } ${!isVibeVoiceSupported ? "opacity-50 cursor-not-allowed" : ""}`}
+                style={!isRecordingVibe && !isProcessingVibe ? { backgroundColor: "#16193a" } : {}}
+              >
+                {isProcessingVibe ? (
+                  <Loader2 className="h-4 w-4 text-white animate-spin" />
+                ) : (
+                  <Mic className="h-4 w-4 text-white" />
+                )}
+              </button>
+            </div>
+            {vibeTranscript && isRecordingVibe && (
+              <p className="text-[10px] text-gray-500 italic mt-1.5">Listening: {vibeTranscript}</p>
+            )}
+            {vibes.length > 0 && (
+              <div className="flex flex-wrap gap-2 items-center mt-3">
+                <span className="text-xs text-gray-500">Your vibe:</span>
+                {vibes.map((vibe) => (
+                  <span
+                    key={vibe}
+                    className="px-3 py-1 rounded-full text-xs font-medium shadow-sm"
+                    style={{ backgroundColor: "#16193a", color: "#ffffff" }}
+                  >
+                    {vibe}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Discovery Notes */}
           <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm min-h-[180px]">
             <h3 className="text-sm font-semibold mb-2" style={{ color: "#16193a" }}>
-              Discovery
+              Discovery Notes
             </h3>
             <p className="text-xs text-gray-600 leading-relaxed mb-5">
               Create boards with photos, notes, and inspiration
@@ -580,121 +809,8 @@ export default function BuyerCanvasPage() {
         </div>
       </div>
 
-      {/* Bookmarks, Purchases, and Badges Section */}
-      <div className="px-4 pb-20 space-y-3 -mt-3">
-        {/* Bookmarks */}
-        <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
-          <button
-            onClick={() => setShowFavorites(!showFavorites)}
-            className="flex items-center justify-between w-full"
-          >
-            <div className="flex items-center gap-2">
-              <h2 className="text-sm font-semibold" style={{ color: "#16193a" }}>
-                Favorites
-              </h2>
-              <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">{favorites.length}</span>
-            </div>
-            {showFavorites ? (
-              <ChevronUp className="h-5 w-5 text-gray-400" />
-            ) : (
-              <ChevronDown className="h-5 w-5 text-gray-400" />
-            )}
-          </button>
-          {showFavorites && (
-            <div className="flex flex-col gap-3 mt-3 pt-3 border-t border-gray-100">
-              {favorites.length === 0 ? (
-                <p className="text-xs text-gray-400 italic">No favorites yet — start exploring!</p>
-              ) : (
-                favorites.slice(0, 10).map((item) => {
-                  const imageUrl = getPrimaryImage(item);
-                  return (
-                    <div
-                      key={item.id}
-                      className="relative group w-full min-w-0"
-                    >
-                      <Link
-                        href={`/listing/${item.id}`}
-                        className="flex items-start gap-2 px-3 py-2 pr-8 rounded-lg border border-gray-200 bg-gray-50 hover:bg-gray-100 hover:border-[#16193a] transition-all shadow-sm w-full min-w-0"
-                      >
-                        {imageUrl && (
-                          <img
-                            src={imageUrl}
-                            alt={item.title}
-                            className="w-12 h-12 rounded object-cover flex-shrink-0"
-                          />
-                        )}
-                        <span className="text-xs text-gray-700 flex-1 min-w-0 break-words leading-snug line-clamp-3 [overflow-wrap:anywhere]">
-                          {item.title}
-                        </span>
-                      </Link>
-                      <button
-                        onClick={(e) => removeBookmark(item.id, e)}
-                        disabled={removingBookmarkId === item.id}
-                        className="absolute top-0 right-0 -mt-1 -mr-1 w-5 h-5 rounded-full bg-[#16193a] text-white flex items-center justify-center hover:opacity-90 transition-colors disabled:opacity-50 z-10"
-                        aria-label="Remove favorite"
-                      >
-                        {removingBookmarkId === item.id ? (
-                          <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        ) : (
-                          <X className="h-3 w-3" />
-                        )}
-                      </button>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Purchases */}
-        <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
-          <button
-            onClick={() => setShowPurchases(!showPurchases)}
-            className="flex items-center justify-between w-full"
-          >
-            <div className="flex items-center gap-2">
-              <h2 className="text-sm font-semibold" style={{ color: "#16193a" }}>
-                Purchases
-              </h2>
-              <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">{purchases.length}</span>
-            </div>
-            {showPurchases ? (
-              <ChevronUp className="h-5 w-5 text-gray-400" />
-            ) : (
-              <ChevronDown className="h-5 w-5 text-gray-400" />
-            )}
-          </button>
-          {showPurchases && (
-            <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-gray-100">
-              {purchases.length === 0 ? (
-                <p className="text-xs text-gray-400 italic">No purchases yet — your treasures await!</p>
-              ) : (
-                purchases.map((order) => (
-                  <Link
-                    key={order.id}
-                    href={`/orders/${order.id}`}
-                    className="px-3 py-1.5 rounded-full border border-gray-200 bg-gray-50 flex items-center gap-1.5 hover:bg-gray-100 hover:border-[#16193a] transition-all shadow-sm"
-                  >
-                    <span className="text-xs text-gray-700">{order.listing?.title || "Item"}</span>
-                    {order.status && (
-                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
-                        order.status === 'paid' ? 'bg-blue-100 text-blue-700' :
-                        order.status === 'shipped' ? 'bg-purple-100 text-purple-700' :
-                        order.status === 'delivered' ? 'bg-green-100 text-green-700' :
-                        'bg-gray-100 text-gray-700'
-                      }`}>
-                        {order.status}
-                      </span>
-                    )}
-                  </Link>
-                ))
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Badges */}
+      {/* Badges */}
+      <div className="px-4 pb-20 space-y-3">
         <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
           <button onClick={() => setShowBadges(!showBadges)} className="flex items-center justify-between w-full">
             <div className="flex items-center gap-2">

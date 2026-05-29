@@ -38,6 +38,7 @@ function CheckoutForm({
   const elements = useElements();
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [paidPaymentIntentId, setPaidPaymentIntentId] = useState<string | null>(null);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -65,6 +66,8 @@ function CheckoutForm({
       }
 
       if (paymentIntent && paymentIntent.status === "succeeded") {
+        setPaidPaymentIntentId(paymentIntent.id);
+
         // Create order in database
         // Note: buyer_id is now set server-side from authenticated user
         // Get auth token from Supabase session for Authorization header
@@ -91,7 +94,12 @@ function CheckoutForm({
         // Only show "order creation failed" if there's an actual error
         if (orderData.error) {
           console.error("❌ Order creation error:", orderData.error, orderData.details);
-          setError(`Order creation failed: ${orderData.error}. Please contact support.`);
+          const ref = paymentIntent.id ? ` Reference: ${paymentIntent.id.slice(-12)}.` : "";
+          setError(
+            orderData.error === "Failed to create order"
+              ? `Your payment went through, but we couldn't save the order.${ref} Email support@thriftshopper.com — we'll fix this.`
+              : `Order creation failed: ${orderData.error}.${ref} Please contact support@thriftshopper.com.`
+          );
         } else if (orderData.orderId) {
           // Success - redirect to confirmation
           console.log("✅ Order created successfully:", orderData.orderId);
@@ -111,39 +119,65 @@ function CheckoutForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="bg-slate-900/50 rounded-xl p-4 border border-white/10">
-        <PaymentElement 
+    <form onSubmit={handleSubmit} className="pb-36">
+      {error && (
+        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-xl">
+          <p className="text-red-700 text-sm leading-relaxed">{error}</p>
+          {paidPaymentIntentId && (
+            <p className="text-red-600/80 text-xs mt-2 font-mono">
+              Payment ref: {paidPaymentIntentId}
+            </p>
+          )}
+        </div>
+      )}
+
+      <div className="rounded-xl border border-gray-200 overflow-hidden bg-white">
+        <PaymentElement
           options={{
             layout: "tabs",
           }}
         />
       </div>
 
-      {error && (
-        <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl">
-          <p className="text-red-400 text-sm">{error}</p>
-        </div>
-      )}
-
-      <button
-        type="submit"
-        disabled={!stripe || isProcessing}
-        className="w-full h-14 bg-white text-black font-bold text-lg rounded-full hover:bg-white/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+      {/* Sticky pay bar — matches listing Buy Now pattern */}
+      <div
+        className="fixed bottom-0 left-0 right-0 z-40 border-t border-gray-200 px-4 py-3"
+        style={{ backgroundColor: "rgba(237, 233, 225, 0.97)" }}
       >
-        {isProcessing ? (
-          <>
-            <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-            </svg>
-            Processing...
-          </>
-        ) : (
-          `Pay $${buyerTotal.toFixed(2)}`
-        )}
-      </button>
-
+        <div className="max-w-2xl mx-auto space-y-2">
+          <p className="text-xs text-gray-600 text-center leading-relaxed">
+            {paidPaymentIntentId
+              ? "Payment received — contact support if the order doesn't appear."
+              : "When your payment details look right, tap below to complete your purchase."}
+          </p>
+          <button
+            type="submit"
+            disabled={!stripe || isProcessing || !!paidPaymentIntentId}
+            className="w-full h-14 font-bold text-lg rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-md"
+            style={{
+              backgroundColor: "#16193a",
+              color: "#ffffff",
+            }}
+          >
+            {isProcessing ? (
+              <>
+                <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+                Processing…
+              </>
+            ) : paidPaymentIntentId ? (
+              "Payment received"
+            ) : (
+              <>Complete Purchase · ${buyerTotal.toFixed(2)}</>
+            )}
+          </button>
+          <p className="text-[10px] text-gray-500 text-center">
+            Secure payment processed by Stripe
+          </p>
+        </div>
+      </div>
     </form>
   );
 }
@@ -263,9 +297,9 @@ export default function CheckoutClient({ listing }: CheckoutClientProps) {
   const stripePromise = getStripe();
 
   return (
-    <main className="min-h-screen bg-white text-gray-900">
+    <main className="min-h-screen text-gray-900" style={{ backgroundColor: "#ede9e1" }}>
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-lg border-b border-gray-200">
+      <header className="sticky top-0 z-40 backdrop-blur-lg border-b border-gray-200/80" style={{ backgroundColor: "rgba(237, 233, 225, 0.95)" }}>
         <div className="px-4 py-4 flex items-center justify-between max-w-2xl mx-auto">
           <Link
             href={`/listing/${listing.id}`}
@@ -485,9 +519,9 @@ export default function CheckoutClient({ listing }: CheckoutClientProps) {
                 appearance: {
                   theme: "flat",
                   variables: {
-                    colorPrimary: "#111827",
+                    colorPrimary: "#16193a",
                     colorBackground: "#ffffff",
-                    colorText: "#111827",
+                    colorText: "#16193a",
                     colorDanger: "#dc2626",
                     fontFamily: "var(--font-system)",
                     borderRadius: "12px",
@@ -506,8 +540,8 @@ export default function CheckoutClient({ listing }: CheckoutClientProps) {
         )}
       </div>
 
-      {/* Bottom padding */}
-      <div className="h-8" />
+      {/* Bottom padding for sticky pay bar */}
+      <div className="h-4" />
     </main>
   );
 }
