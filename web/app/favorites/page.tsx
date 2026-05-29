@@ -278,7 +278,7 @@ export default function BuyerHomePage() {
             </div>
           ) : (
             <div className="p-4">
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 items-stretch">
                 {listings.map((listing) => {
                   const imageSrc = getPrimaryImage(listing);
                   const sellerName = getSellerDisplayName(listing);
@@ -288,15 +288,15 @@ export default function BuyerHomePage() {
                   return (
                     <div
                       key={listing.id}
-                      className={`relative group transition-all duration-300 ${
+                      className={`relative group h-full min-w-0 transition-all duration-300 ${
                         isRemoving ? "opacity-0 scale-95" : "opacity-100 scale-100"
                       }`}
                     >
                       <Link
                         href={`/listing/${listing.id}`}
-                        className="block rounded-xl overflow-hidden bg-slate-900 border border-white/10 hover:border-white/20 transition-colors"
+                        className="flex h-full flex-col rounded-xl overflow-hidden bg-slate-900 border border-white/10 hover:border-white/20 transition-colors min-w-0"
                       >
-                        <div className="aspect-square relative overflow-hidden">
+                        <div className="aspect-square relative overflow-hidden flex-shrink-0">
                           {imageSrc ? (
                             <img
                               src={imageSrc}
@@ -308,21 +308,21 @@ export default function BuyerHomePage() {
                               <span className="text-3xl">📦</span>
                             </div>
                           )}
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                          <div className="absolute bottom-2 left-2">
-                            <span className="px-2 py-1 bg-black/70 backdrop-blur-sm rounded-lg text-sm font-bold">
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
+                          <div className="absolute bottom-2 left-2 right-10">
+                            <span className="inline-block max-w-full px-2 py-1 bg-black/70 backdrop-blur-sm rounded-lg text-sm font-bold truncate">
                               ${listing.price}
                             </span>
                           </div>
                         </div>
-                        <div className="p-3">
-                          <h3 className="text-sm font-medium text-white line-clamp-2 mb-1">
+                        <div className="p-3 min-w-0 flex-1">
+                          <h3 className="text-sm font-medium text-white mb-1.5 break-words leading-snug line-clamp-3 [overflow-wrap:anywhere]">
                             {listing.title}
                           </h3>
-                          <div className="flex items-center gap-1 text-xs text-white/50">
-                            <span>{sellerName}</span>
+                          <div className="flex items-center gap-1 text-xs text-white/50 min-w-0">
+                            <span className="truncate min-w-0">{sellerName}</span>
                             {hasBadge && (
-                              <img src={TS_BADGE_URL} alt="Verified" className="w-3.5 h-3.5" />
+                              <img src={TS_BADGE_URL} alt="Verified" className="w-3.5 h-3.5 flex-shrink-0" />
                             )}
                           </div>
                         </div>

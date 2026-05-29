@@ -14,6 +14,7 @@ import { ShippingPreferenceForm } from "@/components/ShippingPreferenceForm";
 import {
   type ShippingPreferences,
   DEFAULT_SHIPPING_PREFERENCES,
+  parseShippingPreferences,
   serializeShippingPreferences,
   validateListingShippingPreferences,
 } from "@/lib/shippingPreferences";
@@ -118,9 +119,37 @@ function SellerOnboardingContent() {
             router.push("/seller");
             return;
           }
-          
-          // If already a seller but incomplete, stay on onboarding (they need to complete it)
-          // If not a seller yet, stay on onboarding (they're becoming a seller)
+
+          // Incomplete profile — reload saved fields (including shipping defaults)
+          const { data: savedProfile } = await supabase
+            .from("profiles")
+            .select(
+              "display_name, seller_description, seller_story, location_city, location_state, location_zip, email, phone_main, shipping_info, gives_back, gives_back_name, gives_back_pct, is_non_profit_org, avatar_url"
+            )
+            .eq("user_id", user.id)
+            .maybeSingle();
+
+          if (savedProfile) {
+            setFormData((prev) => ({
+              ...prev,
+              storeName: savedProfile.display_name || prev.storeName,
+              description: savedProfile.seller_description || prev.description,
+              sellerInfo: savedProfile.seller_story || prev.sellerInfo,
+              city: savedProfile.location_city || prev.city,
+              state: savedProfile.location_state || prev.state,
+              zipCode: savedProfile.location_zip || prev.zipCode,
+              email: savedProfile.email || prev.email || user.email || "",
+              phone: savedProfile.phone_main || prev.phone,
+              shippingPreferences:
+                parseShippingPreferences(savedProfile.shipping_info) ??
+                prev.shippingPreferences,
+              givesBack: savedProfile.gives_back ?? prev.givesBack,
+              givesBackName: savedProfile.gives_back_name || prev.givesBackName,
+              givesBackPct: savedProfile.gives_back_pct || prev.givesBackPct,
+              isNonProfit: savedProfile.is_non_profit_org ?? prev.isNonProfit,
+              avatarPreview: savedProfile.avatar_url || prev.avatarPreview,
+            }));
+          }
         } catch (err) {
           console.error("Error checking seller status:", err);
         }
@@ -543,6 +572,9 @@ function SellerOnboardingContent() {
 
           {/* Shipping */}
           <div>
+            <p className="text-sm text-gray-600 mb-3">
+              This is your store default. You can change shipping for any item when you list it.
+            </p>
             <ShippingPreferenceForm
               label="How do you ship?"
               value={formData.shippingPreferences}

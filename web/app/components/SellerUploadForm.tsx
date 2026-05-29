@@ -269,6 +269,7 @@ export default function SellerUploadForm() {
   // Per-listing shipping (default: free shipping)
   const [sellerDefaultShippingPreferences, setSellerDefaultShippingPreferences] = useState<ShippingPreferences>(DEFAULT_SHIPPING_PREFERENCES);
   const [listingShippingPreferences, setListingShippingPreferences] = useState<ShippingPreferences>(DEFAULT_SHIPPING_PREFERENCES);
+  const listingShippingInitializedRef = useRef(false);
   const [showStripeConnectGate, setShowStripeConnectGate] = useState(false);
   const [isConnectingStripe, setIsConnectingStripe] = useState(false);
   
@@ -299,6 +300,10 @@ export default function SellerUploadForm() {
         .single();
       const prefs = parseShippingPreferences(data?.shipping_info ?? null) ?? DEFAULT_SHIPPING_PREFERENCES;
       setSellerDefaultShippingPreferences(prefs);
+      if (!listingShippingInitializedRef.current) {
+        setListingShippingPreferences(prefs);
+        listingShippingInitializedRef.current = true;
+      }
     })();
   }, [user]);
 
@@ -484,8 +489,7 @@ export default function SellerUploadForm() {
             DEFAULT_SHIPPING_PREFERENCES;
         }
         setListingShippingPreferences(shippingPrefs);
-        
-        // Use AI suggested keywords for detectedAttributes, or fallback to categorized keywords
+        listingShippingInitializedRef.current = true;
         const detectedAttributes = dbAiSuggested.length > 0 ? dbAiSuggested : keywordsArrayForDisplay;
         
         // Create a result object to show the form in edit mode
@@ -1361,7 +1365,9 @@ export default function SellerUploadForm() {
     setUserHasEditedPrice(false);
     setRemovedAITags(new Set()); // Reset removed AI tags
     setIsDirty(false);
+    listingShippingInitializedRef.current = false;
     setListingShippingPreferences(sellerDefaultShippingPreferences);
+    listingShippingInitializedRef.current = true;
     setShowStripeConnectGate(false);
   };
 
@@ -1938,8 +1944,8 @@ export default function SellerUploadForm() {
               <div>
                 <label className="block font-semibold mb-1 text-gray-900">Shipping</label>
                 <p className="text-xs text-gray-500 mb-3 leading-relaxed">
-                  You can offer free shipping or set a shipping amount for this item.
-                  Default: {generateShippingBannerText(DEFAULT_SHIPPING_PREFERENCES)}.
+                  Override your store default for this item if needed. Store default:{" "}
+                  {generateShippingBannerText(sellerDefaultShippingPreferences)}.
                 </p>
                 <div className="p-3 bg-gray-50 border border-gray-200 rounded-xl">
                   {isBuyerPaysMissingFlatRate(listingShippingPreferences) && (

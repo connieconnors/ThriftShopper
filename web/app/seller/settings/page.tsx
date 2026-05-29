@@ -95,7 +95,7 @@ export default function SellerSettingsPage() {
           state: data.location_state || "",
           zipCode: data.location_zip || "",
           email: data.email || user.email || "",
-          phone: data.phone || "",
+          phone: data.phone_main || data.phone || "",
           shippingPreferences: parseShippingPreferences(data.shipping_info) ?? DEFAULT_SHIPPING_PREFERENCES,
         });
       } else {
@@ -140,7 +140,7 @@ export default function SellerSettingsPage() {
           location_zip: formData.zipCode,
           location_country: "US",
           email: formData.email,
-          phone: formData.phone || null,
+          phone_main: formData.phone || null,
           shipping_info: serializeShippingPreferences(formData.shippingPreferences),
           is_seller: true,
         }, {
@@ -346,6 +346,9 @@ export default function SellerSettingsPage() {
 
           {/* Shipping */}
           <div>
+            <p className="text-sm text-gray-600 mb-3">
+              Store default for new listings. You can override shipping on each item when you list it.
+            </p>
             <ShippingPreferenceForm
               label="How do you ship?"
               value={formData.shippingPreferences}

@@ -1,21 +1,25 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { useAuth } from "../context/AuthContext"
 import { supabase } from "../../lib/supabaseClient"
 import { TSLogo } from "@/components/TSLogo"
-import { ArrowLeft, User, MapPin, CreditCard, Bell, Shield, Plus, Trash2, Edit, ExternalLink, LogOut, FileText, Scale } from "lucide-react"
+import TSModal from "@/components/TSModal"
+import { ArrowLeft, User, ExternalLink, LogOut, Scale, Loader2 } from "lucide-react"
 
 export default function SettingsPage() {
   const router = useRouter()
   const { user, isLoading: authLoading, signOut } = useAuth()
+  const avatarInputRef = useRef<HTMLInputElement>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [isSaving, setIsSaving] = useState(false)
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
   const [profile, setProfile] = useState<any>(null)
   const [userType, setUserType] = useState<"buyer" | "seller">("buyer")
-  const [addresses, setAddresses] = useState<any[]>([])
-  const [selectedAddress, setSelectedAddress] = useState("")
+  const [avatarFile, setAvatarFile] = useState<File | null>(null)
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     display_name: "",
     email: "",
@@ -23,14 +27,9 @@ export default function SettingsPage() {
     seller_description: "",
     seller_story: "",
   })
-  const [preferences, setPreferences] = useState({
-    email_notifications: true,
-    push_notifications: true,
-    marketing_emails: false,
-    sales_notifications: true,
-    language: "en",
-    currency: "usd",
-  })
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -46,7 +45,6 @@ export default function SettingsPage() {
     if (!user) return
 
     try {
-      // Load profile
       const { data: profileData } = await supabase
         .from("profiles")
         .select("*")
@@ -59,7 +57,7 @@ export default function SettingsPage() {
         setFormData({
           display_name: profileData.display_name || "",
           email: profileData.email || user.email || "",
-          phone: profileData.phone_main || profileData.phone || "", // Support both phone_main (new) and phone (legacy)
+          phone: profileData.phone_main || profileData.phone || "",
           seller_description: profileData.seller_description || "",
           seller_story: profileData.seller_story || "",
         })
@@ -72,13 +70,6 @@ export default function SettingsPage() {
           seller_story: "",
         })
       }
-
-      // TODO: Load addresses from a addresses table
-      // For now, using mock data
-      setAddresses([
-        { id: 1, type: "Shipping", street: "123 Main St", city: "New York", state: "NY", zip: "10001", isDefault: true },
-      ])
-      setSelectedAddress("1")
     } catch (error) {
       console.error("Error loading settings:", error)
     } finally {
@@ -86,34 +77,154 @@ export default function SettingsPage() {
     }
   }
 
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (!file.type.startsWith("image/")) {
+      alert("Please select an image file")
+      return
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert("Image must be less than 5MB")
+      return
+    }
+
+    setAvatarFile(file)
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      setAvatarPreview(reader.result as string)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const uploadAvatar = async (): Promise<string | null> => {
+    if (!avatarFile || !user) return null
+
+    setIsUploadingAvatar(true)
+    try {
+      const fileExt = avatarFile.name.split(".").pop()
+      const fileName = `${user.id}-${Date.now()}.${fileExt}`
+      const filePath = `avatars/${fileName}`
+
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(filePath, avatarFile, {
+          cacheControl: "3600",
+          upsert: false,
+        })
+
+      if (uploadError) throw uploadError
+
+      const { data: { publicUrl } } = supabase.storage
+        .from("avatars")
+        .getPublicUrl(filePath)
+
+      return publicUrl
+    } catch (err) {
+      console.error("Error uploading avatar:", err)
+      alert("Failed to upload profile photo")
+      return null
+    } finally {
+      setIsUploadingAvatar(false)
+    }
+  }
+
   const handleSaveProfile = async () => {
     if (!user) return
 
+    setIsSaving(true)
     try {
+      let avatarUrl: string | null = null
+      if (avatarFile) {
+        avatarUrl = await uploadAvatar()
+        if (!avatarUrl) {
+          setIsSaving(false)
+          return
+        }
+      }
+
+      const updateData: Record<string, string | null> = {
+        user_id: user.id,
+        display_name: formData.display_name,
+        phone_main: formData.phone || null,
+        seller_description: formData.seller_description || null,
+        seller_story: formData.seller_story || null,
+      }
+
+      if (avatarUrl) {
+        updateData.avatar_url = avatarUrl
+      }
+
       const { error } = await supabase
         .from("profiles")
-        .upsert({
-          user_id: user.id,
-          display_name: formData.display_name,
-          email: formData.email,
-          phone_main: formData.phone || null, // Use phone_main (stores can have store phone and mobile)
-          seller_description: formData.seller_description || null,
-          seller_story: formData.seller_story || null,
-        }, {
+        .upsert(updateData, {
           onConflict: "user_id",
         })
 
       if (error) throw error
+
+      if (avatarUrl) {
+        setProfile((prev: any) => (prev ? { ...prev, avatar_url: avatarUrl } : prev))
+        setAvatarFile(null)
+        setAvatarPreview(null)
+      }
+
       alert("Profile updated successfully!")
     } catch (error) {
       console.error("Error saving profile:", error)
       alert("Failed to save profile")
+    } finally {
+      setIsSaving(false)
     }
   }
 
   const handleLogout = async () => {
     await signOut()
     router.push("/browse")
+  }
+
+  const handleDeleteAccount = async () => {
+    if (!user || isDeleting) return
+
+    setIsDeleting(true)
+    setDeleteError(null)
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.access_token) {
+        setDeleteError("Your session expired. Please sign in again and retry.")
+        return
+      }
+
+      const response = await fetch("/api/account/delete", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      })
+
+      const payload = await response.json().catch(() => ({}))
+
+      if (!response.ok) {
+        setDeleteError(
+          typeof payload.error === "string"
+            ? payload.error
+            : "We couldn't delete your account. Please try again."
+        )
+        return
+      }
+
+      setDeleteModalOpen(false)
+      await signOut()
+      router.push("/browse")
+    } catch (error) {
+      console.error("Error deleting account:", error)
+      setDeleteError("Something went wrong. Please try again.")
+    } finally {
+      setIsDeleting(false)
+    }
   }
 
   if (authLoading || isLoading) {
@@ -125,15 +236,15 @@ export default function SettingsPage() {
   }
 
   const backUrl = userType === "seller" ? "/seller" : "/canvas"
+  const avatarSrc = avatarPreview || profile?.avatar_url
 
   return (
     <div className="min-h-screen bg-gray-50 pb-16">
-      {/* Header */}
       <header className="bg-[#16193a] px-4 py-2 flex items-center justify-between sticky top-0 z-10">
         <Link href={backUrl} className="flex items-center gap-3">
-          <button className="text-white/80 hover:text-white transition-colors">
+          <span className="text-white/80 hover:text-white transition-colors">
             <ArrowLeft className="h-5 w-5" style={{ color: "#EFBF05" }} />
-          </button>
+          </span>
           <TSLogo size={24} primaryColor="#ffffff" accentColor="#EFBF05" />
         </Link>
         <h1 className="text-base font-semibold text-white">Settings</h1>
@@ -155,16 +266,28 @@ export default function SettingsPage() {
               className="w-12 h-12 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0 shadow-sm"
               style={{ backgroundColor: "#EFBF05" }}
             >
-              {profile?.avatar_url ? (
-                <img src={profile.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+              {avatarSrc ? (
+                <img src={avatarSrc} alt="Profile" className="w-full h-full object-cover" />
               ) : (
                 <span className="text-sm font-bold text-white">
                   {formData.display_name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || "U"}
                 </span>
               )}
             </div>
-            <button className="px-3 py-1.5 text-xs rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
-              Change Photo
+            <input
+              ref={avatarInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleAvatarChange}
+              className="hidden"
+            />
+            <button
+              type="button"
+              onClick={() => avatarInputRef.current?.click()}
+              disabled={isUploadingAvatar || isSaving}
+              className="px-3 py-1.5 text-xs rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors disabled:opacity-50"
+            >
+              {isUploadingAvatar ? "Uploading…" : "Change Photo"}
             </button>
           </div>
 
@@ -190,10 +313,12 @@ export default function SettingsPage() {
                 id="email"
                 type="email"
                 value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="w-full h-9 px-3 text-sm rounded-lg border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#16193a]/20"
-                placeholder="your@email.com"
+                readOnly
+                className="w-full h-9 px-3 text-sm rounded-lg border border-gray-200 bg-gray-100 text-gray-600 cursor-not-allowed"
               />
+              <p className="text-[10px] text-gray-500 mt-1">
+                Login email is managed through account security below.
+              </p>
             </div>
             <div>
               <label htmlFor="phone" className="text-xs text-gray-600 mb-1.5 block">
@@ -230,9 +355,9 @@ export default function SettingsPage() {
                     id="story"
                     value={formData.seller_story}
                     onChange={(e) => {
-                      const value = e.target.value;
+                      const value = e.target.value
                       if (value.length <= 500) {
-                        setFormData({ ...formData, seller_story: value });
+                        setFormData({ ...formData, seller_story: value })
                       }
                     }}
                     maxLength={500}
@@ -243,7 +368,7 @@ export default function SettingsPage() {
                     <p className="text-[10px] text-gray-500">
                       Tell buyers about your shop, what you sell, or what makes your items special (optional)
                     </p>
-                    <p className={`text-[10px] ${(formData.seller_story?.length || 0) >= 500 ? 'text-red-500' : 'text-gray-400'}`}>
+                    <p className={`text-[10px] ${(formData.seller_story?.length || 0) >= 500 ? "text-red-500" : "text-gray-400"}`}>
                       {formData.seller_story?.length || 0}/500
                     </p>
                   </div>
@@ -251,315 +376,30 @@ export default function SettingsPage() {
               </>
             )}
             <button
+              type="button"
               onClick={handleSaveProfile}
-              className="w-full mt-2 py-2 text-xs font-medium rounded-lg transition-colors"
+              disabled={isSaving || isUploadingAvatar}
+              className="w-full mt-2 py-2 text-xs font-medium rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
               style={{ backgroundColor: "#16193a", color: "white" }}
             >
+              {(isSaving || isUploadingAvatar) && <Loader2 className="h-3 w-3 animate-spin" />}
               Save Changes
             </button>
           </div>
         </div>
 
-        {/* Addresses Section */}
+        {/* Security */}
         <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <MapPin className="h-4 w-4" style={{ color: "#16193a" }} />
-              <h2 className="text-sm font-semibold" style={{ color: "#16193a" }}>
-                Addresses
-              </h2>
-            </div>
-            <button className="px-3 py-1.5 text-xs rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors flex items-center gap-1">
-              <Plus className="h-3 w-3" />
-              Add New
-            </button>
-          </div>
-
-          {addresses.length > 0 ? (
-            <div className="space-y-3">
-              <div>
-                <label htmlFor="addressSelect" className="text-xs text-gray-600 mb-1.5 block">
-                  Select Address
-                </label>
-                <select
-                  id="addressSelect"
-                  value={selectedAddress}
-                  onChange={(e) => setSelectedAddress(e.target.value)}
-                  className="w-full h-9 px-3 text-sm rounded-lg border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#16193a]/20"
-                >
-                  {addresses.map((addr) => (
-                    <option key={addr.id} value={addr.id.toString()}>
-                      {addr.type} - {addr.street} {addr.isDefault && "(Default)"}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {addresses
-                .filter((addr) => addr.id.toString() === selectedAddress)
-                .map((addr) => (
-                  <div key={addr.id} className="space-y-3 border-t pt-3">
-                    <div>
-                      <label htmlFor="addressType" className="text-xs text-gray-600 mb-1.5 block">
-                        Address Type
-                      </label>
-                      <input
-                        id="addressType"
-                        type="text"
-                        defaultValue={addr.type}
-                        className="w-full h-9 px-3 text-sm rounded-lg border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#16193a]/20"
-                      />
-                    </div>
-                    <div>
-                      <label htmlFor="street" className="text-xs text-gray-600 mb-1.5 block">
-                        Street Address
-                      </label>
-                      <input
-                        id="street"
-                        type="text"
-                        defaultValue={addr.street}
-                        className="w-full h-9 px-3 text-sm rounded-lg border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#16193a]/20"
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label htmlFor="city" className="text-xs text-gray-600 mb-1.5 block">
-                          City
-                        </label>
-                        <input
-                          id="city"
-                          type="text"
-                          defaultValue={addr.city}
-                          className="w-full h-9 px-3 text-sm rounded-lg border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#16193a]/20"
-                        />
-                      </div>
-                      <div>
-                        <label htmlFor="state" className="text-xs text-gray-600 mb-1.5 block">
-                          State
-                        </label>
-                        <input
-                          id="state"
-                          type="text"
-                          defaultValue={addr.state}
-                          className="w-full h-9 px-3 text-sm rounded-lg border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#16193a]/20"
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <label htmlFor="zip" className="text-xs text-gray-600 mb-1.5 block">
-                        ZIP Code
-                      </label>
-                      <input
-                        id="zip"
-                        type="text"
-                        defaultValue={addr.zip}
-                        className="w-full h-9 px-3 text-sm rounded-lg border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#16193a]/20"
-                      />
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <button className="flex-1 py-1.5 text-xs rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors flex items-center justify-center gap-1">
-                        <Edit className="h-3 w-3" />
-                        Save Changes
-                      </button>
-                      <button className="px-3 py-1.5 text-xs rounded-lg border border-red-200 text-red-600 hover:bg-red-50 transition-colors flex items-center gap-1">
-                        <Trash2 className="h-3 w-3" />
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-                ))}
-            </div>
-          ) : (
-            <div className="text-center py-6">
-              <p className="text-xs text-gray-500 mb-3">No addresses saved yet</p>
-              <button className="px-4 py-2 text-xs font-medium rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors flex items-center gap-1 mx-auto">
-                <Plus className="h-3 w-3" />
-                Add Your First Address
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* Payment Methods Section */}
-        <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
-          <div className="flex items-center gap-2 mb-4">
-            <CreditCard className="h-4 w-4" style={{ color: "#16193a" }} />
-            <h2 className="text-sm font-semibold" style={{ color: "#16193a" }}>
-              Payment Methods
-            </h2>
-          </div>
-
-          {userType === "buyer" && (
-            <div className="space-y-3">
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-14 bg-gradient-to-br from-blue-600 to-blue-800 rounded flex items-center justify-center text-white text-xs font-bold">
-                    VISA
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium text-gray-900">•••• •••• •••• 4242</p>
-                    <p className="text-[10px] text-gray-500">Expires 12/25</p>
-                  </div>
-                </div>
-                <button className="px-3 py-1 text-xs rounded-lg border border-gray-200 hover:bg-white transition-colors">
-                  Edit
-                </button>
-              </div>
-              <button className="w-full py-2 text-xs rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors flex items-center justify-center gap-1">
-                <Plus className="h-3 w-3" />
-                Add Payment Method
-              </button>
-              <button className="w-full py-2 text-xs rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors flex items-center justify-center gap-1 text-[#16193a]">
-                <ExternalLink className="h-3 w-3" />
-                Manage via Stripe
-              </button>
-            </div>
-          )}
-
-          {userType === "seller" && (
-            <div className="space-y-3">
-              <div className="p-3 bg-[#EFBF05]/10 rounded-lg border border-[#EFBF05]/20">
-                <p className="text-xs font-medium text-gray-900 mb-1.5">Stripe Account Connected</p>
-                <p className="text-[10px] text-gray-600 mb-3">
-                  Your payouts are processed through Stripe. Manage your payout settings and view transaction history.
-                </p>
-                <button className="w-full py-2 text-xs rounded-lg border border-[#EFBF05]/30 hover:bg-[#EFBF05]/20 transition-colors flex items-center justify-center gap-1" style={{ color: "#16193a" }}>
-                  <ExternalLink className="h-3 w-3" />
-                  Open Stripe Dashboard
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Preferences Section */}
-        <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
-          <div className="flex items-center gap-2 mb-4">
-            <Bell className="h-4 w-4" style={{ color: "#16193a" }} />
-            <h2 className="text-sm font-semibold" style={{ color: "#16193a" }}>
-              Preferences
-            </h2>
-          </div>
-
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <p className="text-xs font-medium text-gray-900">Email Notifications</p>
-                <p className="text-[10px] text-gray-500">Receive updates about your orders and account</p>
-              </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={preferences.email_notifications}
-                  onChange={(e) => setPreferences({ ...preferences, email_notifications: e.target.checked })}
-                  className="sr-only peer"
-                />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-[#16193a]/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#16193a]"></div>
-              </label>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <p className="text-xs font-medium text-gray-900">Push Notifications</p>
-                <p className="text-[10px] text-gray-500">Get notified about new messages and updates</p>
-              </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={preferences.push_notifications}
-                  onChange={(e) => setPreferences({ ...preferences, push_notifications: e.target.checked })}
-                  className="sr-only peer"
-                />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-[#16193a]/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#16193a]"></div>
-              </label>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <p className="text-xs font-medium text-gray-900">Marketing Emails</p>
-                <p className="text-[10px] text-gray-500">Discover new treasures and special offers</p>
-              </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={preferences.marketing_emails}
-                  onChange={(e) => setPreferences({ ...preferences, marketing_emails: e.target.checked })}
-                  className="sr-only peer"
-                />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-[#16193a]/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#16193a]"></div>
-              </label>
-            </div>
-            {userType === "seller" && (
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <p className="text-xs font-medium text-gray-900">Sales Notifications</p>
-                  <p className="text-[10px] text-gray-500">Get notified immediately when items sell</p>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={preferences.sales_notifications}
-                    onChange={(e) => setPreferences({ ...preferences, sales_notifications: e.target.checked })}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-[#16193a]/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#16193a]"></div>
-                </label>
-              </div>
-            )}
-            <div className="pt-3 border-t">
-              <label htmlFor="language" className="text-xs text-gray-600 mb-2 block">
-                Language
-              </label>
-              <select
-                id="language"
-                value={preferences.language}
-                onChange={(e) => setPreferences({ ...preferences, language: e.target.value })}
-                className="w-full h-9 px-3 text-sm rounded-lg border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#16193a]/20"
-              >
-                <option value="en">English</option>
-                <option value="es">Español</option>
-                <option value="fr">Français</option>
-              </select>
-            </div>
-            <div>
-              <label htmlFor="currency" className="text-xs text-gray-600 mb-2 block">
-                Currency
-              </label>
-              <select
-                id="currency"
-                value={preferences.currency}
-                onChange={(e) => setPreferences({ ...preferences, currency: e.target.value })}
-                className="w-full h-9 px-3 text-sm rounded-lg border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#16193a]/20"
-              >
-                <option value="usd">USD ($)</option>
-                <option value="eur">EUR (€)</option>
-                <option value="gbp">GBP (£)</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        {/* Security & Privacy Section */}
-        <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
-          <div className="flex items-center gap-2 mb-4">
-            <Shield className="h-4 w-4" style={{ color: "#16193a" }} />
-            <h2 className="text-sm font-semibold" style={{ color: "#16193a" }}>
-              Security & Privacy
-            </h2>
-          </div>
-
-          <div className="space-y-2">
-            <button className="w-full justify-start py-2.5 text-xs rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors text-left px-3">
-              Change Password
-            </button>
-            <button className="w-full justify-start py-2.5 text-xs rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors text-left px-3">
-              Two-Factor Authentication
-            </button>
-            <button className="w-full justify-start py-2.5 text-xs rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors text-left px-3">
-              Privacy Settings
-            </button>
-            <button className="w-full justify-start py-2.5 text-xs rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors text-left px-3">
-              Download My Data
-            </button>
-          </div>
+          <h2 className="text-sm font-semibold mb-3" style={{ color: "#16193a" }}>
+            Security
+          </h2>
+          <Link
+            href="/forgot-password"
+            className="flex items-center justify-between w-full py-2.5 text-xs rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors px-3 text-gray-700"
+          >
+            <span>Change Password</span>
+            <ExternalLink className="h-3 w-3 text-gray-400" />
+          </Link>
         </div>
 
         {/* Legal Section */}
@@ -600,26 +440,84 @@ export default function SettingsPage() {
         </div>
 
         {/* Account Actions */}
-        <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
-          <div className="space-y-2">
-            <button
-              onClick={handleLogout}
-              className="w-full py-2.5 text-xs rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
-            >
-              <LogOut className="h-4 w-4" />
-              Log Out
-            </button>
-            <button className="w-full py-2.5 text-xs rounded-lg border border-red-200 text-red-600 hover:bg-red-50 transition-colors">
-              Delete Account
-            </button>
-          </div>
+        <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm space-y-2">
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="w-full py-2.5 text-xs rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+          >
+            <LogOut className="h-4 w-4" />
+            Log Out
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setDeleteError(null)
+              setDeleteModalOpen(true)
+            }}
+            className="w-full py-2.5 text-xs rounded-lg border border-red-200 text-red-600 hover:bg-red-50 transition-colors"
+          >
+            Delete Account
+          </button>
         </div>
 
         <div className="text-center text-[10px] text-gray-500 py-4">
-          ThriftShopper v1.0.0 • Terms of Service • Privacy Policy
+          ThriftShopper v1.0.0
         </div>
       </div>
+
+      <TSModal
+        isOpen={deleteModalOpen}
+        onClose={() => {
+          if (isDeleting) return
+          setDeleteModalOpen(false)
+          setDeleteError(null)
+        }}
+        disableBackdropClose={isDeleting}
+        title="Delete account?"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-white/90 leading-relaxed">
+            This permanently deletes your ThriftShopper account, profile, saved favorites, listings, and messages.
+            It cannot be undone.
+          </p>
+          {userType === "seller" && (
+            <p className="text-xs text-white/70 leading-relaxed">
+              If you have open orders to ship, you&apos;ll need to fulfill them before deleting your account.
+            </p>
+          )}
+          {deleteError && (
+            <p className="text-xs text-red-300 leading-relaxed">{deleteError}</p>
+          )}
+          <div className="flex justify-end gap-2 pt-1">
+            <button
+              type="button"
+              onClick={() => {
+                if (isDeleting) return
+                setDeleteModalOpen(false)
+                setDeleteError(null)
+              }}
+              disabled={isDeleting}
+              className="px-4 py-2 text-sm font-medium text-white/80 hover:text-white transition-colors disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleDeleteAccount}
+              disabled={isDeleting}
+              className="px-4 py-2 text-sm font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              style={{
+                backgroundColor: "#dc2626",
+                color: "#ffffff",
+              }}
+            >
+              {isDeleting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+              {isDeleting ? "Deleting…" : "Delete account"}
+            </button>
+          </div>
+        </div>
+      </TSModal>
     </div>
   )
 }
-
