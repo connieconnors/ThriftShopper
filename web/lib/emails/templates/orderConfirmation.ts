@@ -2,6 +2,8 @@
  * Order Confirmation Email Template (to buyer)
  */
 
+import { getEmailFooterHtml, getEmailFooterText } from "./emailFooter";
+
 export interface OrderConfirmationData {
   buyerName: string;
   orderId: string;
@@ -93,17 +95,7 @@ export function getOrderConfirmationEmailHtml(data: OrderConfirmationData): stri
             </td>
           </tr>
           
-          <!-- Footer -->
-          <tr>
-            <td style="padding: 30px 40px; background-color: #f8f9fa; text-align: center;">
-              <p style="margin: 0; font-size: 16px; font-family: 'Merriweather', serif; color: #000080; font-weight: 500; line-height: 1.1;">
-                ThriftShopper
-              </p>
-              <p style="margin: 2px 0 0; font-size: 12px; color: #efbf04; font-style: italic; font-weight: 400; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif; line-height: 1.1;">
-                the magic of discovery<sup style="font-size: 0.6em; color: #efbf04;">TM</sup>
-              </p>
-            </td>
-          </tr>
+          ${getEmailFooterHtml()}
         </table>
       </td>
     </tr>
@@ -135,7 +127,6 @@ Questions? Reply to this email or contact the seller directly through your Thrif
 
 View your order: ${data.orderUrl}
 
-ThriftShopper
-the magic of discovery™
+${getEmailFooterText()}
   `.trim();
 }

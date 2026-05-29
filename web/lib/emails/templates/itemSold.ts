@@ -2,6 +2,8 @@
  * Item Sold Email Template (to seller)
  */
 
+import { getEmailFooterHtml, getEmailFooterText } from "./emailFooter";
+
 export interface ItemSoldData {
   sellerName: string;
   itemName: string;
@@ -90,7 +92,7 @@ export function getItemSoldEmailHtml(data: ItemSoldData): string {
               </div>
               
               <p style="margin: 20px 0; font-size: 15px; line-height: 1.6; color: #333333;">
-                Your payment will be processed to your Stripe account after the item is delivered.
+                Your share of this sale transfers to your connected Stripe account when the buyer&apos;s payment clears. Deposits to your bank follow your Stripe payout schedule.
               </p>
               
               <!-- CTA Button -->
@@ -106,17 +108,7 @@ export function getItemSoldEmailHtml(data: ItemSoldData): string {
             </td>
           </tr>
           
-          <!-- Footer -->
-          <tr>
-            <td style="padding: 30px 40px; background-color: #f8f9fa; text-align: center;">
-              <p style="margin: 0; font-size: 16px; font-family: 'Merriweather', serif; color: #000080; font-weight: 500; line-height: 1.1;">
-                ThriftShopper
-              </p>
-              <p style="margin: 2px 0 0; font-size: 12px; color: #efbf04; font-style: italic; font-weight: 400; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif; line-height: 1.1;">
-                the magic of discovery<sup style="font-size: 0.6em; color: #efbf04;">TM</sup>
-              </p>
-            </td>
-          </tr>
+          ${getEmailFooterHtml()}
         </table>
       </td>
     </tr>
@@ -148,11 +140,10 @@ Next steps:
 2. Add tracking in your seller dashboard
 3. Ship within ${shippingDays} days
 
-Your payment will be processed to your Stripe account after the item is delivered.
+Your share of this sale transfers to your connected Stripe account when the buyer's payment clears. Deposits to your bank follow your Stripe payout schedule.
 
 Manage this order: ${data.sellerDashboardUrl}
 
-ThriftShopper
-the magic of discovery™
+${getEmailFooterText()}
   `.trim();
 }
