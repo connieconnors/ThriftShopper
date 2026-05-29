@@ -244,7 +244,7 @@ function SellerOnboardingContent() {
         gives_back: formData.givesBack,
         gives_back_name: formData.givesBack ? formData.givesBackName || null : null,
         gives_back_pct: formData.givesBack ? formData.givesBackPct || null : null,
-        is_non_profit: formData.isNonProfit,
+        is_non_profit_org: formData.isNonProfit,
         is_seller: true,
       };
 
@@ -278,7 +278,7 @@ function SellerOnboardingContent() {
           gives_back: formData.givesBack,
           gives_back_name: formData.givesBack ? formData.givesBackName || null : null,
           gives_back_pct: formData.givesBack ? formData.givesBackPct || null : null,
-          is_non_profit: formData.isNonProfit,
+          is_non_profit_org: formData.isNonProfit,
           is_seller: true,
         };
 

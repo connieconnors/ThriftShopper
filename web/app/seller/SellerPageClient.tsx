@@ -1002,7 +1002,7 @@ export default function SellerPageClient() {
                         <p className="leading-relaxed">
                           {badgeInfoOpen === "founding"
                             ? `${profile.display_name || "This seller"} is a founding member of ThriftShopper, helping build the future of secondhand discovery.`
-                            : profile.is_non_profit
+                            : profile.is_non_profit_org
                             ? `${profile.display_name || "This seller"} is a registered non-profit. 100% of proceeds support their mission.`
                             : profile.gives_back_name
                             ? `${profile.display_name || "This seller"} gives back${profile.gives_back_pct ? ` ${profile.gives_back_pct}% of sales` : ""} to ${profile.gives_back_name}.`

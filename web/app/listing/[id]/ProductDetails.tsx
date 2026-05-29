@@ -149,7 +149,7 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
     (listing as { givesBack?: boolean | null }).givesBack === true;
   const givesBackName = listing.profiles?.gives_back_name ?? null;
   const givesBackPct = listing.profiles?.gives_back_pct ?? null;
-  const isNonProfit = listing.profiles?.is_non_profit === true;
+  const isNonProfit = listing.profiles?.is_non_profit_org === true;
   
   // Check TS badge
   const hasTSBadge = hasSellerTSBadge(listing);

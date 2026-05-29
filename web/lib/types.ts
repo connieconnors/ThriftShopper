@@ -44,7 +44,7 @@ export type Listing = {
     gives_back?: boolean | null;
     gives_back_name?: string | null;
     gives_back_pct?: number | null;
-    is_non_profit?: boolean | null;
+    is_non_profit_org?: boolean | null;
   } | null;
 };
 
