@@ -1516,7 +1516,7 @@ export default function SellerUploadForm() {
 
           {selectedFile && processingStep === 'idle' && (
             <button
-              onClick={handleUpload}
+              onClick={() => handleUpload()}
               className="w-full text-white py-3 rounded-lg font-semibold transition"
               style={{ backgroundColor: '#16193a' }}
             >
@@ -1543,7 +1543,7 @@ export default function SellerUploadForm() {
             <div className="mb-6 px-6 py-5 bg-blue-50 border-2 border-blue-300 rounded-lg shadow-sm">
               <p className="text-blue-900 mb-3 font-medium text-sm">Ready to analyze your listing with AI?</p>
               <button
-                onClick={handleUpload}
+                onClick={() => handleUpload()}
                 className="w-full text-white py-3.5 px-4 rounded-lg font-semibold transition text-base shadow-md"
                 style={{ backgroundColor: '#16193a' }}
               >
