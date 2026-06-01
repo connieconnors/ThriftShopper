@@ -1517,11 +1517,11 @@ export default function SellerUploadForm() {
                 </p>
               </div>
             ) : (
-              <div className="relative ts-photo-frame">
+              <div className="relative ts-photo-frame p-3 box-border">
                 <img
                   src={previewUrl}
                   alt="Preview"
-                  className="w-full max-h-96 object-contain rounded-[14px]"
+                  className="w-full max-h-96 object-contain rounded-[10px] block mx-auto"
                 />
                 <div className="absolute top-2 right-2 flex gap-2">
                   <button
@@ -1641,13 +1641,15 @@ export default function SellerUploadForm() {
                       : undefined
                 }
               >
-                <img
-                  src={showProcessedImage ? result.processedImageUrl : originalImageUrl}
-                  alt="Product"
-                  className="w-full ts-photo-frame transition-all duration-300"
-                />
+                <div className="ts-photo-frame p-3 box-border">
+                  <img
+                    src={showProcessedImage ? result.processedImageUrl : originalImageUrl}
+                    alt="Product"
+                    className="w-full max-h-96 object-contain rounded-[10px] block mx-auto transition-all duration-300"
+                  />
+                </div>
                 {photoIsInteractive && (
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all rounded-lg flex items-center justify-center">
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all rounded-[14px] flex items-center justify-center pointer-events-none">
                     <span className="opacity-0 group-hover:opacity-100 text-white bg-black/50 px-3 py-1 rounded-full text-sm transition-opacity">
                       {isEditMode ? 'Replace photo' : 'Toggle view'}
                     </span>
