@@ -28,7 +28,11 @@ import {
   formatUsd,
   parseValidListingPrice,
 } from '@/lib/marketplaceFees';
-import { createTimeoutSignal } from '@/lib/fetchTimeout';
+
+function isImageFile(file: File): boolean {
+  if (file.type.startsWith('image/')) return true;
+  return /\.(jpe?g|png|gif|webp|heic|heif)$/i.test(file.name);
+}
 
 interface UploadResult {
   processedImageUrl: string;
@@ -201,10 +205,11 @@ export default function SellerUploadForm() {
 
 
   // ... rest of your existing code
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, session: authSession, isLoading: authLoading } = useAuth();
   const router = useRouter();
   
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const selectedFileRef = useRef<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string>('');
   const [processingStep, setProcessingStep] = useState<ProcessingStep>('idle');
   const [result, setResult] = useState<UploadResult | null>(null);
@@ -701,13 +706,70 @@ export default function SellerUploadForm() {
     ];
   };
 
+  const resolveAccessToken = async (): Promise<string | null> => {
+    if (authSession?.access_token) return authSession.access_token;
+
+    const { data: { session: refreshed } } = await supabase.auth.refreshSession();
+    if (refreshed?.access_token) return refreshed.access_token;
+
+    const { data: { session } } = await supabase.auth.getSession();
+    return session?.access_token ?? null;
+  };
+
+  const resolveUploadFile = async (fileOverride?: File): Promise<File | null> => {
+    const direct = fileOverride ?? selectedFileRef.current ?? selectedFile;
+    if (direct && direct.size > 0) return direct;
+
+    const blobSource = previewUrl || originalImageUrl || result?.processedImageUrl;
+    if (blobSource?.startsWith('blob:')) {
+      try {
+        const blobResponse = await fetch(blobSource);
+        const blob = await blobResponse.blob();
+        if (blob.size === 0) return null;
+        const type = blob.type || 'image/jpeg';
+        const extension = type.includes('png') ? 'png' : 'jpg';
+        const recovered = new File([blob], `photo.${extension}`, { type });
+        selectedFileRef.current = recovered;
+        setSelectedFile(recovered);
+        return recovered;
+      } catch (recoverError) {
+        console.error('Failed to recover photo from preview:', recoverError);
+      }
+    }
+
+    return null;
+  };
+
+  const parseUploadResponse = async (response: Response) => {
+    const text = await response.text();
+    if (!text) {
+      throw new Error(`Upload failed (${response.status}). Empty response from server.`);
+    }
+
+    try {
+      return JSON.parse(text) as {
+        success?: boolean;
+        error?: string;
+        listingId?: string;
+        data?: UploadResult;
+      };
+    } catch {
+      throw new Error(`Upload failed (${response.status}). Please try again.`);
+    }
+  };
+
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     // Validate file type
-    if (!file.type.startsWith('image/')) {
+    if (!isImageFile(file)) {
       setError('Please select an image file');
+      return;
+    }
+
+    if (file.size === 0) {
+      setError('Photo file is empty — please try taking the photo again.');
       return;
     }
 
@@ -724,12 +786,20 @@ export default function SellerUploadForm() {
     });
 
     if (listingId) {
+      selectedFileRef.current = file;
       setSelectedFile(file);
       setError('');
       await handleMainPhotoReplace(file);
       return;
     }
 
+    if (uploadInProgressRef.current) {
+      selectedFileRef.current = file;
+      setSelectedFile(file);
+      return;
+    }
+
+    selectedFileRef.current = file;
     setSelectedFile(file);
     const preview = URL.createObjectURL(file);
     setPreviewUrl(preview);
@@ -803,10 +873,10 @@ export default function SellerUploadForm() {
   };
 
   const handleUpload = async (fileOverride?: File) => {
-    const file = fileOverride ?? selectedFile;
-    console.log('🔵 handleUpload called', { hasSelectedFile: !!file });
+    const file = await resolveUploadFile(fileOverride);
+    console.log('🔵 handleUpload called', { hasSelectedFile: !!file, size: file?.size });
     if (!file) {
-      console.log('❌ handleUpload called but no file available');
+      setError('Photo file missing — tap Replace Photo and choose your image again.');
       return;
     }
     
@@ -825,39 +895,26 @@ export default function SellerUploadForm() {
     scheduleProcessingSteps();
 
     try {
-      // Get the current session token
-      const { data: { session } } = await supabase.auth.getSession();
+      const accessToken = await resolveAccessToken();
       
-      if (!session?.access_token) {
-        setError('Please log in to create a listing');
-        setProcessingStep('idle');
-        setUploadStartedAt(null);
-        clearProcessingTimers();
-        uploadInProgressRef.current = false;
-        return;
+      if (!accessToken) {
+        throw new Error('Session expired — please log out and back in, then try again.');
       }
 
       const formData = new FormData();
       formData.append('image', file);
 
-      console.log('📤 Sending upload request to API...');
-      const timeout = createTimeoutSignal(120_000);
-      let response: Response;
-      try {
-        response = await fetch('/api/seller/upload', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${session.access_token}`,
-          },
-          body: formData,
-          signal: timeout.signal,
-        });
-      } finally {
-        timeout.clear();
-      }
+      console.log('📤 Sending upload request to API...', { fileSize: file.size, fileType: file.type });
+      const response = await fetch('/api/seller/upload', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+        },
+        body: formData,
+      });
 
       console.log('📥 Upload response received, status:', response.status);
-      const data = await response.json();
+      const data = await parseUploadResponse(response);
       console.log('📥 Upload response data:', { success: data.success, hasListingId: !!data.listingId, hasData: !!data.data });
 
       // Debug logging
@@ -944,9 +1001,7 @@ export default function SellerUploadForm() {
         }
         
         // Price: Auto-fill ONLY if completely untouched + empty, otherwise store as pending
-        const aiPrice = data.data.pricingIntelligence?.avgPrice 
-          ? data.data.pricingIntelligence.avgPrice.toString()
-          : data.data.suggestedPrice?.toString() || null;
+        const aiPrice = data.data.pricingIntelligence?.avgPrice?.toString() ?? null;
         if (aiPrice) {
           if (!price.trim() && !userHasEditedPrice) {
             setPrice(aiPrice);
@@ -960,19 +1015,11 @@ export default function SellerUploadForm() {
 
     } catch (err) {
       console.error('❌ Upload error:', err);
-      const message =
-        err instanceof Error &&
-        (err.name === 'TimeoutError' || err.name === 'AbortError')
-          ? 'Analysis is taking too long. Please try again — your photo is saved.'
-          : err instanceof Error
-            ? err.message
-            : 'Upload failed';
+      const message = err instanceof Error ? err.message : 'Upload failed';
       setError(message);
       setProcessingStep('idle');
       setUploadStartedAt(null);
       clearProcessingTimers();
-      // On error, keep the form visible but show the error
-      // Don't clear result - user might want to try again or edit manually
     } finally {
       uploadInProgressRef.current = false;
     }
@@ -1328,6 +1375,7 @@ export default function SellerUploadForm() {
   };
 
   const resetForm = () => {
+    selectedFileRef.current = null;
     setSelectedFile(null);
     setPreviewUrl('');
     setProcessingStep('idle');
@@ -1523,18 +1571,30 @@ export default function SellerUploadForm() {
           )}
 
           {/* Show upload button if we have placeholder data but upload hasn't started */}
-          {!result.suggestedTitle && processingStep === 'idle' && (
+          {!result.suggestedTitle && processingStep !== 'complete' && (
             <div className="mb-6 px-6 py-5 bg-blue-50 border-2 border-blue-300 rounded-lg shadow-sm">
-              <p className="text-blue-900 mb-3 font-medium text-sm">Ready to analyze your listing with AI?</p>
-              <button
-                type="button"
-                onClick={() => handleUpload()}
-                disabled={!selectedFile}
-                className="w-full text-white py-3.5 px-4 rounded-lg font-semibold transition text-base shadow-md disabled:opacity-60"
-                style={{ backgroundColor: '#16193a' }}
-              >
-                ✨ Let AI Create Your Listing
-              </button>
+              {processingStep === 'idle' ? (
+                <>
+                  <p className="text-blue-900 mb-3 font-medium text-sm">Ready to analyze your listing with AI?</p>
+                  {error && (
+                    <p className="mb-3 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                      {error}
+                    </p>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => handleUpload()}
+                    className="w-full text-white py-3.5 px-4 rounded-lg font-semibold transition text-base shadow-md"
+                    style={{ backgroundColor: '#16193a' }}
+                  >
+                    ✨ Let AI Create Your Listing
+                  </button>
+                </>
+              ) : (
+                <p className="text-blue-900 font-medium text-sm text-center">
+                  AI is analyzing your photo…
+                </p>
+              )}
             </div>
           )}
           
