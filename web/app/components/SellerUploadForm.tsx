@@ -209,6 +209,8 @@ export default function SellerUploadForm() {
   const [result, setResult] = useState<UploadResult | null>(null);
   const [error, setError] = useState<string>('');
   const uploadInProgressRef = useRef(false); // Prevent duplicate uploads
+  const processingTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const [uploadStartedAt, setUploadStartedAt] = useState<number | null>(null);
   
   // Listing tracking
   const [listingId, setListingId] = useState<string | null>(null);
@@ -684,6 +686,20 @@ export default function SellerUploadForm() {
     'complete': '✅ Ready to review!',
   };
 
+  const clearProcessingTimers = () => {
+    processingTimersRef.current.forEach(clearTimeout);
+    processingTimersRef.current = [];
+  };
+
+  const scheduleProcessingSteps = () => {
+    clearProcessingTimers();
+    processingTimersRef.current = [
+      setTimeout(() => setProcessingStep('analyzing'), 800),
+      setTimeout(() => setProcessingStep('generating'), 3500),
+      setTimeout(() => setProcessingStep('pricing'), 8000),
+    ];
+  };
+
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -806,17 +822,18 @@ export default function SellerUploadForm() {
         });
         // File is captured in closure, but we need to use state - but state might not be ready
         // So we'll check state in handleUpload itself
-        handleUpload();
+        handleUpload(fileToUpload);
       }, 100);
     } else {
       console.log('⏭️ Skipping auto-upload:', { hasListingId: !!listingId, uploadInProgress: uploadInProgressRef.current });
     }
   };
 
-  const handleUpload = async () => {
-    console.log('🔵 handleUpload called', { hasSelectedFile: !!selectedFile });
-    if (!selectedFile) {
-      console.log('❌ handleUpload called but no selectedFile');
+  const handleUpload = async (fileOverride?: File) => {
+    const file = fileOverride ?? selectedFile;
+    console.log('🔵 handleUpload called', { hasSelectedFile: !!file });
+    if (!file) {
+      console.log('❌ handleUpload called but no file available');
       return;
     }
     
@@ -828,8 +845,11 @@ export default function SellerUploadForm() {
 
     console.log('🚀 Starting upload process...');
     uploadInProgressRef.current = true;
+    setUploadStartedAt(Date.now());
     setProcessingStep('uploading');
     setError('');
+    clearProcessingTimers();
+    scheduleProcessingSteps();
 
     try {
       // Get the current session token
@@ -838,23 +858,14 @@ export default function SellerUploadForm() {
       if (!session?.access_token) {
         setError('Please log in to create a listing');
         setProcessingStep('idle');
-        uploadInProgressRef.current = false; // Reset ref before returning
+        setUploadStartedAt(null);
+        clearProcessingTimers();
+        uploadInProgressRef.current = false;
         return;
       }
 
       const formData = new FormData();
-      formData.append('image', selectedFile);
-      
-      // Don't send title/description/category on upload - let AI always generate fresh suggestions
-      // This ensures AI analysis runs every time, even on subsequent uploads
-      // User can edit the AI-generated fields after they're populated
-
-      // Simulate processing steps for better UX
-      setTimeout(() => {
-        setProcessingStep('analyzing');
-      }, 500);
-      setTimeout(() => setProcessingStep('generating'), 2000);
-      setTimeout(() => setProcessingStep('pricing'), 4000);
+      formData.append('image', file);
 
       console.log('📤 Sending upload request to API...');
       const response = await fetch('/api/seller/upload', {
@@ -863,6 +874,7 @@ export default function SellerUploadForm() {
           'Authorization': `Bearer ${session.access_token}`,
         },
         body: formData,
+        signal: AbortSignal.timeout(120_000),
       });
 
       console.log('📥 Upload response received, status:', response.status);
@@ -889,6 +901,8 @@ export default function SellerUploadForm() {
       }
 
       setProcessingStep('complete');
+      clearProcessingTimers();
+      setUploadStartedAt(null);
       
       // Store listing ID and original image for toggle
       if (data.listingId) {
@@ -969,8 +983,16 @@ export default function SellerUploadForm() {
 
     } catch (err) {
       console.error('❌ Upload error:', err);
-      setError(err instanceof Error ? err.message : 'Upload failed');
+      const message =
+        err instanceof Error && err.name === 'TimeoutError'
+          ? 'Analysis is taking too long. Please try again — your photo is saved.'
+          : err instanceof Error
+            ? err.message
+            : 'Upload failed';
+      setError(message);
       setProcessingStep('idle');
+      setUploadStartedAt(null);
+      clearProcessingTimers();
       // On error, keep the form visible but show the error
       // Don't clear result - user might want to try again or edit manually
     } finally {
@@ -1574,7 +1596,7 @@ export default function SellerUploadForm() {
                 )}
               </div>
 
-              <AIAnalysisIndicator step={processingStep} />
+              <AIAnalysisIndicator step={processingStep} startedAt={uploadStartedAt} />
 
               <div className="mb-3 space-y-2">
                 <button

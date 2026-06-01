@@ -3,6 +3,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { uploadAndCreateListing } from '@/lib/seller-upload-service';
 
+export const runtime = 'nodejs';
+export const maxDuration = 60;
+
 // Create Supabase client for server-side auth
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,

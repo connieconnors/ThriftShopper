@@ -16,6 +16,20 @@ if (!supabaseServiceKey) {
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+const PRICING_LOOKUP_TIMEOUT_MS = 8_000;
+
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T | null> {
+  return Promise.race([
+    promise,
+    new Promise<null>((resolve) => {
+      setTimeout(() => {
+        console.warn(`⏱️ ${label} timed out after ${ms}ms`);
+        resolve(null);
+      }, ms);
+    }),
+  ]);
+}
+
 // Helper function to determine if text/marking is brand/manufacturer vs pattern/label
 function isBrandOrManufacturer(text: string, textAnnotations: any[], materialStoplist: Set<string>): boolean {
   const lowerText = text.toLowerCase();
@@ -1034,31 +1048,32 @@ export async function uploadAndCreateListing(
       );
     }
     
-    // Run all pricing sources in parallel, then select best result
-    const pricingTask = Promise.allSettled(pricingTasks).then((results) => {
-      // Extract successful results with proper typing
-      const successfulResults: Array<{
-        minPrice: number;
-        maxPrice: number;
-        avgPrice: number;
-        recentSales: number;
-        source: 'firstdibs' | 'etsy' | 'ebay' | 'apify';
-      }> = [];
-      
-      results.forEach((result, index) => {
-        if (result.status === 'fulfilled' && result.value) {
-          const source = index === 0 ? 'firstdibs' : index === 1 ? 'etsy' : index === 2 ? 'ebay' : 'apify';
-          successfulResults.push({ ...result.value, source });
+    // Run all pricing sources in parallel, then select best result (hard timeout so eBay can't block upload)
+    const pricingTask = withTimeout(
+      Promise.allSettled(pricingTasks).then((results) => {
+        const successfulResults: Array<{
+          minPrice: number;
+          maxPrice: number;
+          avgPrice: number;
+          recentSales: number;
+          source: 'firstdibs' | 'etsy' | 'ebay' | 'apify';
+        }> = [];
+
+        results.forEach((result, index) => {
+          if (result.status === 'fulfilled' && result.value) {
+            const source = index === 0 ? 'firstdibs' : index === 1 ? 'etsy' : index === 2 ? 'ebay' : 'apify';
+            successfulResults.push({ ...result.value, source });
+          }
+        });
+
+        if (successfulResults.length > 0) {
+          return successfulResults[0];
         }
-      });
-      
-      // Priority selection: 1st Dibs > Etsy > eBay > Apify
-      // Use first successful result in priority order
-      if (successfulResults.length > 0) {
-        return successfulResults[0];
-      }
-      return null;
-    });
+        return null;
+      }),
+      PRICING_LOOKUP_TIMEOUT_MS,
+      'External pricing lookup'
+    );
     
     postProcessingTasks.push(pricingTask);
     
@@ -1138,6 +1153,7 @@ Return ONLY valid JSON:
             temperature: 0.3,
             max_tokens: 200,
           }),
+          signal: AbortSignal.timeout(15_000),
         });
 
         const data = await response.json();
@@ -2154,9 +2170,10 @@ Return the following JSON structure:
           ],
         },
       ],
-      max_tokens: 500,
+      max_tokens: 2000,
       temperature: 0.7,
     }),
+    signal: AbortSignal.timeout(60_000),
   });
 
   if (!response.ok) {
@@ -2876,7 +2893,9 @@ export async function getEbayPricing(searchQuery: string): Promise<{
     'paginationInput.entriesPerPage': '20',
   });
 
-  const response = await fetch(`${endpoint}?${params.toString()}`);
+  const response = await fetch(`${endpoint}?${params.toString()}`, {
+    signal: AbortSignal.timeout(PRICING_LOOKUP_TIMEOUT_MS),
+  });
   const data = await response.json();
 
   const items = data.findCompletedItemsResponse?.[0]?.searchResult?.[0]?.item || [];
@@ -2908,6 +2927,7 @@ async function generateEmbedding(text: string): Promise<number[]> {
       model: 'text-embedding-3-small',
       input: text,
     }),
+    signal: AbortSignal.timeout(15_000),
   });
 
   if (!response.ok) {

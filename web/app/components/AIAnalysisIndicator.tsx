@@ -1,6 +1,6 @@
 'use client';
 
-import { useId } from 'react';
+import { useEffect, useId, useState } from 'react';
 
 export type AIProcessingStep =
   | 'idle'
@@ -26,6 +26,7 @@ const STEP_LABELS: Record<Exclude<AIProcessingStep, 'idle' | 'complete'>, string
 
 interface AIAnalysisIndicatorProps {
   step: AIProcessingStep;
+  startedAt?: number | null;
 }
 
 function CompassIcon({ gradientId, className }: { gradientId: string; className?: string }) {
@@ -87,13 +88,30 @@ function CompassIcon({ gradientId, className }: { gradientId: string; className?
   );
 }
 
-export default function AIAnalysisIndicator({ step }: AIAnalysisIndicatorProps) {
+export default function AIAnalysisIndicator({ step, startedAt }: AIAnalysisIndicatorProps) {
   const gradientId = useId();
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    if (step === 'idle' || step === 'complete') return;
+
+    const interval = setInterval(() => setNow(Date.now()), 2000);
+    return () => clearInterval(interval);
+  }, [step]);
 
   if (step === 'idle' || step === 'complete') return null;
 
   const currentIndex = STEP_ORDER.indexOf(step);
-  const statusLabel = STEP_LABELS[step as keyof typeof STEP_LABELS] ?? 'Working on it…';
+  const elapsedMs = startedAt ? now - startedAt : 0;
+  const baseLabel = STEP_LABELS[step as keyof typeof STEP_LABELS] ?? 'Working on it…';
+  const statusLabel =
+    elapsedMs > 20_000
+      ? 'Almost ready…'
+      : elapsedMs > 12_000 && step === 'pricing'
+        ? 'Finishing up…'
+        : baseLabel;
+  const helperText =
+    elapsedMs > 12_000 ? 'Detailed items can take up to a minute.' : null;
 
   return (
     <div
@@ -121,6 +139,9 @@ export default function AIAnalysisIndicator({ step }: AIAnalysisIndicatorProps) 
         <p className="text-sm font-semibold leading-snug" style={{ color: '#16193a' }}>
           {statusLabel}
         </p>
+        {helperText && (
+          <p className="text-xs text-gray-500 mt-1 leading-snug">{helperText}</p>
+        )}
         <div className="flex items-center gap-1.5 mt-2.5">
           {STEP_ORDER.map((s, index) => {
             const isDone = index < currentIndex;
