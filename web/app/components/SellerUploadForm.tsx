@@ -28,6 +28,7 @@ import {
   formatUsd,
   parseValidListingPrice,
 } from '@/lib/marketplaceFees';
+import { createTimeoutSignal } from '@/lib/fetchTimeout';
 
 interface UploadResult {
   processedImageUrl: string;
@@ -770,8 +771,7 @@ export default function SellerUploadForm() {
       setRemovedAITags(new Set());
       setIsDirty(true);
       
-      // OPTION 2: Show form immediately with placeholder result
-      // This allows user to start editing while AI processes in background
+      // Show form immediately with placeholder result; user starts AI via Let AI button
       console.log('📝 Setting placeholder result to show form immediately');
       setResult({
         processedImageUrl: preview,
@@ -781,8 +781,10 @@ export default function SellerUploadForm() {
         detectedCategory: '',
         detectedAttributes: [],
       });
-      // Don't set processingStep here - let it stay 'idle' until upload actually starts
-      // This way the manual button will show if auto-upload fails
+      setProcessingStep('idle');
+      clearProcessingTimers();
+      setUploadStartedAt(null);
+      uploadInProgressRef.current = false;
     } else {
       // In edit mode, keep the current form visible and swap the preview image in place
       setShowProcessedImage(true);
@@ -797,35 +799,6 @@ export default function SellerUploadForm() {
           : prev
       );
       setIsDirty(true);
-    }
-
-    // OPTIMIZATION: Start upload and AI analysis immediately when file is selected
-    // User can now start editing while AI processes in background
-    console.log('🔍 Checking if upload should start...', { 
-      listingId, 
-      uploadInProgress: uploadInProgressRef.current,
-      shouldStart: !listingId && !uploadInProgressRef.current 
-    });
-    if (!listingId && !uploadInProgressRef.current) {
-      console.log('📋 File selected, will start upload in 100ms...', { 
-        hasFile: !!file, 
-        listingId, 
-        uploadInProgress: uploadInProgressRef.current 
-      });
-      // Small delay to ensure state is updated
-      // Use the file parameter directly (closure captures it correctly)
-      const fileToUpload = file;
-      setTimeout(() => {
-        console.log('⏰ Timeout fired, starting upload...', { 
-          hasFile: !!fileToUpload,
-          uploadInProgress: uploadInProgressRef.current 
-        });
-        // File is captured in closure, but we need to use state - but state might not be ready
-        // So we'll check state in handleUpload itself
-        handleUpload(fileToUpload);
-      }, 100);
-    } else {
-      console.log('⏭️ Skipping auto-upload:', { hasListingId: !!listingId, uploadInProgress: uploadInProgressRef.current });
     }
   };
 
@@ -868,14 +841,20 @@ export default function SellerUploadForm() {
       formData.append('image', file);
 
       console.log('📤 Sending upload request to API...');
-      const response = await fetch('/api/seller/upload', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-        body: formData,
-        signal: AbortSignal.timeout(120_000),
-      });
+      const timeout = createTimeoutSignal(120_000);
+      let response: Response;
+      try {
+        response = await fetch('/api/seller/upload', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+          body: formData,
+          signal: timeout.signal,
+        });
+      } finally {
+        timeout.clear();
+      }
 
       console.log('📥 Upload response received, status:', response.status);
       const data = await response.json();
@@ -900,6 +879,10 @@ export default function SellerUploadForm() {
         throw new Error(data.error || 'Upload failed');
       }
 
+      if (!data.data) {
+        throw new Error('Upload completed but no AI analysis data was returned. Please try again.');
+      }
+
       setProcessingStep('complete');
       clearProcessingTimers();
       setUploadStartedAt(null);
@@ -911,12 +894,10 @@ export default function SellerUploadForm() {
       // Store original image URL (the preview URL before processing)
       setOriginalImageUrl(previewUrl);
       
-      // Set result for display
+      setResult(data.data);
+      
+      // Pre-fill the form with AI suggestions - only if user hasn't manually edited
       if (data.data) {
-        setResult(data.data);
-        
-        // Pre-fill the form with AI suggestions - only if user hasn't manually edited
-        // This allows user to start typing while AI processes, without overwriting their input
         const aiTitle = data.data.suggestedTitle;
         const aiDescription = data.data.suggestedDescription;
         const aiCategory = data.data.detectedCategory;
@@ -975,16 +956,13 @@ export default function SellerUploadForm() {
             console.log('💾 Stored AI price as pending (field has content or user edited)');
           }
         }
-      } else {
-        // No data returned - this shouldn't happen but handle gracefully
-        console.error('❌ No data in upload response:', data);
-        setError('Upload completed but no AI analysis data was returned. Please try again.');
       }
 
     } catch (err) {
       console.error('❌ Upload error:', err);
       const message =
-        err instanceof Error && err.name === 'TimeoutError'
+        err instanceof Error &&
+        (err.name === 'TimeoutError' || err.name === 'AbortError')
           ? 'Analysis is taking too long. Please try again — your photo is saved.'
           : err instanceof Error
             ? err.message
@@ -1538,13 +1516,21 @@ export default function SellerUploadForm() {
       {/* Results Section */}
       {result && (
         <div className="bg-white rounded-lg shadow-md p-8">
+          {error && (
+            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+              {error}
+            </div>
+          )}
+
           {/* Show upload button if we have placeholder data but upload hasn't started */}
           {!result.suggestedTitle && processingStep === 'idle' && (
             <div className="mb-6 px-6 py-5 bg-blue-50 border-2 border-blue-300 rounded-lg shadow-sm">
               <p className="text-blue-900 mb-3 font-medium text-sm">Ready to analyze your listing with AI?</p>
               <button
+                type="button"
                 onClick={() => handleUpload()}
-                className="w-full text-white py-3.5 px-4 rounded-lg font-semibold transition text-base shadow-md"
+                disabled={!selectedFile}
+                className="w-full text-white py-3.5 px-4 rounded-lg font-semibold transition text-base shadow-md disabled:opacity-60"
                 style={{ backgroundColor: '#16193a' }}
               >
                 ✨ Let AI Create Your Listing
