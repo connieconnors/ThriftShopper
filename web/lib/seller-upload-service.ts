@@ -2,6 +2,7 @@
 // Saves to listings table in Supabase
 
 import { createClient } from '@supabase/supabase-js';
+import { identifySellerItem, type IdentificationEnrichment } from './seller-item-identification';
 
 // Use the correct environment variable names
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -866,71 +867,7 @@ export async function uploadAndCreateListing(
     // REFACTOR: Changed from sequential to parallel processing for speed improvement
     // Using Promise.allSettled() to gracefully handle failures without blocking other operations
     
-    const parallelTasks = [];
-
-    // Task 1: OpenAI Vision Analysis (PRIMARY - for product identification)
-    // REVERT: OpenAI Vision is PRIMARY for title, category, description, pricing
-    const openAITask = process.env.OPENAI_API_KEY
-      ? analyzeWithOpenAI(originalUrl).catch((err) => {
-          console.error('❌ OpenAI Vision failed:', err);
-          return null; // Return null on failure for graceful degradation
-        })
-      : Promise.resolve(null);
-    parallelTasks.push(openAITask);
-
-    // Task 2: Claude Vision Analysis (PARALLEL PRIMARY - alternative analysis for better keywords)
-    // Claude Vision runs in parallel with OpenAI - may provide better keywords/tags
-    const claudeTask = process.env.ANTHROPIC_API_KEY
-      ? analyzeWithClaude(originalUrl).catch((err) => {
-          // Log error with more context for debugging
-          console.error('❌ Claude Vision failed:', {
-            error: err instanceof Error ? err.message : String(err),
-            imageUrl: originalUrl.substring(0, 100) + '...', // Log partial URL for debugging
-            hasApiKey: !!process.env.ANTHROPIC_API_KEY,
-          });
-          // Return null on failure for graceful degradation - system will use OpenAI instead
-          return null;
-        })
-      : Promise.resolve(null);
-    parallelTasks.push(claudeTask);
-
-    // Task 3: Google Vision Analysis (SUPPLEMENTARY - for additional tags/attributes only)
-    // REVERT: Google Vision is SECONDARY - only adds extra tags/attributes to supplement OpenAI
-    const googleVisionTask = process.env.VISION_API_KEY
-      ? analyzeWithGoogleVision(originalUrl).catch((err) => {
-          console.error('❌ Google Vision failed:', err);
-          return null; // Return null on failure for graceful degradation
-        })
-      : Promise.resolve(null);
-    parallelTasks.push(googleVisionTask);
-
-    // Task 3: Background Removal (optional, independent operation)
-    // REFACTOR: Background removal now runs in parallel instead of sequentially
-    const backgroundRemovalTask = (options?.removeBackground && process.env.REMOVE_BG_KEY && imageFile)
-      ? removeBackground(imageFile).catch((err) => {
-          console.error('✗ Background removal failed:', err instanceof Error ? err.message : String(err));
-          return null; // Return null on failure, will use original image
-        })
-      : Promise.resolve(null);
-    parallelTasks.push(backgroundRemovalTask);
-
-    // Timing diagnostics: Start timing for parallel processing and total upload
-    console.time('Parallel Processing');
-    console.time('Total Upload');
-
-    // Execute all parallel tasks simultaneously
-    const [openAIResult, claudeResult, googleResult, processedImageUrlResult] = await Promise.allSettled(parallelTasks);
-
-    // Timing diagnostics: End parallel processing timing and log status of each operation
-    console.timeEnd('Parallel Processing');
-    console.log('OpenAI status:', openAIResult.status);
-    console.log('Claude Vision status:', claudeResult.status);
-    console.log('Google Vision status:', googleResult.status);
-    console.log('Background removal status:', processedImageUrlResult.status);
-
-    // Extract results from Promise.allSettled responses (order matches parallelTasks array)
-    // Type guard: ensure openAIEnrichment is the expected object type (not string or other types)
-    type OpenAIEnrichmentType = {
+    type VisionEnrichmentType = {
       title: string;
       description: string;
       category: string;
@@ -941,56 +878,105 @@ export async function uploadAndCreateListing(
       intents?: string[];
       era?: string;
     };
-    
-    const openAIEnrichment: OpenAIEnrichmentType | null = 
-      openAIResult.status === 'fulfilled' && 
-      openAIResult.value && 
-      typeof openAIResult.value === 'object' &&
-      'title' in openAIResult.value
-        ? (openAIResult.value as OpenAIEnrichmentType)
+
+    const parallelTasks: Promise<unknown>[] = [];
+
+    // Task 1: GoShed-style Opus identification (PRIMARY — title, description, category)
+    const identificationTask = process.env.ANTHROPIC_API_KEY
+      ? identifySellerItem(originalUrl).catch((err) => {
+          console.error('❌ Opus item identification failed:', {
+            error: err instanceof Error ? err.message : String(err),
+            imageUrl: originalUrl,
+          });
+          return null;
+        })
+      : Promise.resolve(null);
+    parallelTasks.push(identificationTask);
+
+    // Task 2: Google Vision (SUPPLEMENTARY — tags/attributes only, never primary title)
+    const googleVisionTask = process.env.VISION_API_KEY
+      ? analyzeWithGoogleVision(originalUrl).catch((err) => {
+          console.error('❌ Google Vision failed:', err);
+          return null;
+        })
+      : Promise.resolve(null);
+    parallelTasks.push(googleVisionTask);
+
+    // Task 3: Background removal (optional)
+    const backgroundRemovalTask = (options?.removeBackground && process.env.REMOVE_BG_KEY && imageFile)
+      ? removeBackground(imageFile).catch((err) => {
+          console.error('✗ Background removal failed:', err instanceof Error ? err.message : String(err));
+          return null;
+        })
+      : Promise.resolve(null);
+    parallelTasks.push(backgroundRemovalTask);
+
+    console.time('Parallel Processing');
+    console.time('Total Upload');
+
+    const [identificationResult, googleResult, processedImageUrlResult] = await Promise.allSettled(parallelTasks);
+
+    console.timeEnd('Parallel Processing');
+    console.log('Opus identification status:', identificationResult.status);
+    console.log('Google Vision status:', googleResult.status);
+    console.log('Background removal status:', processedImageUrlResult.status);
+
+    let primaryEnrichment: VisionEnrichmentType | null =
+      identificationResult.status === 'fulfilled' &&
+      identificationResult.value &&
+      typeof identificationResult.value === 'object' &&
+      'title' in identificationResult.value
+        ? (identificationResult.value as IdentificationEnrichment)
         : null;
-    
-    // Extract Claude Vision results (same structure as OpenAI)
-    type ClaudeEnrichmentType = OpenAIEnrichmentType; // Same structure
-    const claudeEnrichment: ClaudeEnrichmentType | null = 
-      claudeResult.status === 'fulfilled' && 
-      claudeResult.value && 
-      typeof claudeResult.value === 'object' &&
-      'title' in claudeResult.value
-        ? (claudeResult.value as ClaudeEnrichmentType)
-        : null;
-    
-    // Hybrid strategy: Claude-first identification, OpenAI fallback.
-    const primaryEnrichment: OpenAIEnrichmentType | null = claudeEnrichment || openAIEnrichment || null;
-        
+
+    let identificationFallbackUsed = false;
+
+    // Fallback: OpenAI hypotheses path only when Opus identification fails
+    if (!primaryEnrichment && process.env.OPENAI_API_KEY) {
+      console.warn('[seller-upload:identify] Opus failed — falling back to OpenAI Vision');
+      try {
+        const fallback = await analyzeWithOpenAI(originalUrl);
+        primaryEnrichment = fallback;
+        identificationFallbackUsed = true;
+        console.log('[seller-upload:identify] fallback result', {
+          imageUrl: originalUrl,
+          model: 'gpt-4o',
+          mappedListing: {
+            title: fallback.title,
+            description: fallback.description,
+            category: fallback.category,
+            attributes: fallback.attributes,
+          },
+          fallbackUsed: true,
+        });
+      } catch (err) {
+        console.error('❌ OpenAI Vision fallback failed:', err);
+      }
+    }
+
     type GoogleVisionDataType = {
       title: string;
       category: string;
       attributes: string[];
       brandInfo?: string;
     };
-    
-    const googleVisionData: GoogleVisionDataType | null = googleResult.status === 'fulfilled' && 
+
+    const googleVisionData: GoogleVisionDataType | null =
+      googleResult.status === 'fulfilled' &&
       googleResult.value &&
       typeof googleResult.value === 'object' &&
       'title' in googleResult.value
         ? (googleResult.value as GoogleVisionDataType)
         : null;
-    
-    // Log what we got from OpenAI for debugging
-    if (openAIEnrichment) {
-      console.log('🔍 OpenAI enrichment result:', {
-        hasData: true,
-        hasTitle: !!openAIEnrichment.title,
-        hasDescription: !!openAIEnrichment.description,
-        hasCategory: !!openAIEnrichment.category,
-        hasEstimatedPrice: !!openAIEnrichment.estimatedPrice,
-        estimatedPrice: openAIEnrichment.estimatedPrice,
-        category: openAIEnrichment.category,
-        title: openAIEnrichment.title || 'MISSING',
+
+    if (primaryEnrichment) {
+      console.log('[seller-upload:identify] primary enrichment ready', {
+        title: primaryEnrichment.title,
+        category: primaryEnrichment.category,
+        fallbackUsed: identificationFallbackUsed,
       });
     } else {
-      console.log('🔍 OpenAI enrichment result: null');
+      console.warn('[seller-upload:identify] no primary enrichment — will use Google Vision if available');
     }
     const processedImageUrl: string = (processedImageUrlResult.status === 'fulfilled' && 
       processedImageUrlResult.value && 
@@ -1321,7 +1307,7 @@ Return ONLY valid JSON:
       finalPrice = null;
     }
 
-    // Step 3: COMBINE RESULTS - Claude Vision (primary) + OpenAI/Google supplementary sources
+    // Step 3: COMBINE RESULTS — Opus identification (primary) + Google supplementary tags
     
     let visionData = {
       category: userInput?.category || primaryEnrichment?.category || googleVisionData?.category || 'General',
@@ -1338,52 +1324,35 @@ Return ONLY valid JSON:
       description: userInput?.description || '',
     };
 
-    // PRIMARY SOURCE: Claude Vision for product identification
-    if (claudeEnrichment) {
-      listing.title = claudeEnrichment.title || listing.title;
-      visionData.category = claudeEnrichment.category || visionData.category;
-      listing.description = claudeEnrichment.description || listing.description;
-      visionData.attributes = claudeEnrichment.attributes || [];
-      visionData.suggestedTitle = claudeEnrichment.title || '';
-      visionData.suggestedDescription = claudeEnrichment.description || '';
-      visionData.suggestedPrice = claudeEnrichment.estimatedPrice || visionData.suggestedPrice;
-    } else if (openAIEnrichment) {
-      // FALLBACK: If Claude failed, use OpenAI Vision for product identification
-      listing.title = openAIEnrichment.title || listing.title;
-      visionData.category = openAIEnrichment.category || visionData.category;
-      listing.description = openAIEnrichment.description || listing.description;
-      visionData.attributes = openAIEnrichment.attributes || [];
-      visionData.suggestedTitle = openAIEnrichment.title || '';
-      visionData.suggestedDescription = openAIEnrichment.description || '';
+    if (primaryEnrichment) {
+      listing.title = primaryEnrichment.title || listing.title;
+      visionData.category = primaryEnrichment.category || visionData.category;
+      listing.description = primaryEnrichment.description || listing.description;
+      visionData.attributes = primaryEnrichment.attributes || [];
+      visionData.suggestedTitle = primaryEnrichment.title || '';
+      visionData.suggestedDescription = primaryEnrichment.description || '';
+      visionData.suggestedPrice = primaryEnrichment.estimatedPrice || visionData.suggestedPrice;
+      if (primaryEnrichment.styles?.length) {
+        visionData.styles = [...primaryEnrichment.styles];
+      }
+      if (primaryEnrichment.moods?.length) {
+        visionData.moods = [...primaryEnrichment.moods];
+      }
     } else if (googleVisionData) {
-      // FALLBACK: If both Claude and OpenAI failed, use Google Vision for basic identification
+      // Last resort: Google Vision only when Opus and OpenAI both failed
       listing.title = googleVisionData.title || listing.title;
       visionData.category = googleVisionData.category || visionData.category;
       visionData.attributes = googleVisionData.attributes || [];
       visionData.suggestedTitle = googleVisionData.title || '';
+      console.log('[seller-upload:identify] using Google Vision as last-resort title source');
     }
 
-    // SUPPLEMENTARY SOURCES: Claude and Google Vision add extra tags/attributes
-    // Merge attributes from all available sources (OpenAI, Claude, Google) for best keyword coverage
-    if (openAIEnrichment || claudeEnrichment || googleVisionData) {
-      const allAttributes: string[] = [];
-      
-      // Add OpenAI attributes (primary)
-      if (openAIEnrichment?.attributes) {
-        allAttributes.push(...openAIEnrichment.attributes);
-      }
-      
-      // Add Claude attributes (may be better for keywords - supplements OpenAI)
-      if (claudeEnrichment?.attributes) {
-        allAttributes.push(...claudeEnrichment.attributes);
-      }
-      
-      // Add Google Vision attributes (supplementary labels/tags)
+    // SUPPLEMENTARY: merge Google Vision tags into attributes (never override Opus title)
+    if (primaryEnrichment || googleVisionData) {
+      const allAttributes: string[] = [...(primaryEnrichment?.attributes || [])];
+
       if (googleVisionData) {
-        const googleAttributes = googleVisionData.attributes || [];
-        allAttributes.push(...googleAttributes);
-        
-        // Add brand info from Google Vision if detected
+        allAttributes.push(...(googleVisionData.attributes || []));
         if (googleVisionData.brandInfo) {
           allAttributes.push(googleVisionData.brandInfo);
         }
@@ -1459,21 +1428,15 @@ Return ONLY valid JSON:
         finalTags: visionData.attributes,
       });
       
-      // Also merge styles and moods from OpenAI and Claude if available
-      const allStyles = new Set<string>();
-      const allMoods = new Set<string>();
-      
-      if (openAIEnrichment?.styles) {
-        openAIEnrichment.styles.forEach(style => allStyles.add(style));
+      // Merge styles/moods from primary enrichment (Opus or OpenAI fallback)
+      const allStyles = new Set<string>(visionData.styles);
+      const allMoods = new Set<string>(visionData.moods);
+
+      if (primaryEnrichment?.styles) {
+        primaryEnrichment.styles.forEach((style) => allStyles.add(style));
       }
-      if (claudeEnrichment?.styles) {
-        claudeEnrichment.styles.forEach(style => allStyles.add(style));
-      }
-      if (openAIEnrichment?.moods) {
-        openAIEnrichment.moods.forEach(mood => allMoods.add(mood));
-      }
-      if (claudeEnrichment?.moods) {
-        claudeEnrichment.moods.forEach(mood => allMoods.add(mood));
+      if (primaryEnrichment?.moods) {
+        primaryEnrichment.moods.forEach((mood) => allMoods.add(mood));
       }
       
       // Store combined styles/moods (will be used later in the flow)
@@ -1483,6 +1446,16 @@ Return ONLY valid JSON:
 
     // Step 4: Results from parallel post-processing are already extracted above
     // (eBay pricing, categorization, and embedding all completed in parallel)
+
+    console.log('[seller-upload:identify] final mapped listing', {
+      imageUrl: originalUrl,
+      title: listing.title,
+      description: listing.description?.slice(0, 200),
+      category: visionData.category,
+      attributes: visionData.attributes,
+      price: finalPrice,
+      fallbackUsed: identificationFallbackUsed,
+    });
 
     // Step 5: Create listing in database (same schema, all fields preserved)
     const listingInsert: any = {
