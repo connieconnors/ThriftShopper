@@ -28,6 +28,7 @@ import {
   formatUsd,
   parseValidListingPrice,
 } from '@/lib/marketplaceFees';
+import { compressImageForUpload } from '@/lib/compressImageForUpload';
 
 function isImageFile(file: File): boolean {
   if (file.type.startsWith('image/')) return true;
@@ -754,6 +755,9 @@ export default function SellerUploadForm() {
         data?: UploadResult;
       };
     } catch {
+      if (response.status === 413) {
+        throw new Error('Photo is too large to upload. Try Replace Photo — we compress automatically, but this one may need a closer crop.');
+      }
       throw new Error(`Upload failed (${response.status}). Please try again.`);
     }
   };
@@ -773,9 +777,9 @@ export default function SellerUploadForm() {
       return;
     }
 
-    // Validate file size (max 10MB)
-    if (file.size > 10 * 1024 * 1024) {
-      setError('Image must be less than 10MB');
+    // Allow large camera originals — compressed before upload (Vercel limit ~4.5MB)
+    if (file.size > 20 * 1024 * 1024) {
+      setError('Image must be less than 20MB');
       return;
     }
 
@@ -902,9 +906,14 @@ export default function SellerUploadForm() {
       }
 
       const formData = new FormData();
-      formData.append('image', file);
+      const uploadFile = await compressImageForUpload(file);
+      formData.append('image', uploadFile);
 
-      console.log('📤 Sending upload request to API...', { fileSize: file.size, fileType: file.type });
+      console.log('📤 Sending upload request to API...', {
+        originalSize: file.size,
+        uploadSize: uploadFile.size,
+        fileType: uploadFile.type,
+      });
       const response = await fetch('/api/seller/upload', {
         method: 'POST',
         headers: {
@@ -929,7 +938,10 @@ export default function SellerUploadForm() {
       });
 
       if (!response.ok) {
-        throw new Error(data.error || 'Upload failed');
+        if (response.status === 413) {
+          throw new Error('Photo is too large to upload. Try Replace Photo — we compress automatically, but this one may need a closer crop.');
+        }
+        throw new Error(data.error || `Upload failed (${response.status}). Please try again.`);
       }
 
       if (!data.success) {
