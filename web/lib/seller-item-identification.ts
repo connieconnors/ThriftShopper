@@ -32,6 +32,8 @@ export type SellerItemIdentification = {
   marketplace_description: string;
   category: string;
   suggested_keywords: string[];
+  estimated_value_low: number;
+  estimated_value_high: number;
   confidence: 'high' | 'medium' | 'low';
   uncertainty_notes: string | null;
 };
@@ -42,6 +44,8 @@ export type IdentificationEnrichment = {
   category: string;
   attributes: string[];
   estimatedPrice: number | null;
+  estimatedValueLow: number | null;
+  estimatedValueHigh: number | null;
   styles?: string[];
   moods?: string[];
   intents?: string[];
@@ -66,8 +70,12 @@ Required JSON keys:
 - marketplace_description: 1-2 sentences for buyers; mention brand, era, and distinguishing features when visible; warm, practical tone
 - category: exactly one of: Kitchen & Dining, Home Decor, Collectibles, Books & Media, Furniture, Art, Electronics, Fashion, Jewelry, Toys & Games, Sports & Outdoors, General
 - suggested_keywords: 4-8 plain-language discovery keywords buyers might search (e.g. die-cast, Thunderbird, Texaco, Fire Chief, collectible)
+- estimated_value_low: estimated resale value low end in USD as an integer (no dollar sign), e.g. 15
+- estimated_value_high: estimated resale value high end in USD as an integer (no dollar sign), e.g. 40. Must be >= estimated_value_low.
 - confidence: exactly one of "high", "medium", or "low"
-- uncertainty_notes: only if confidence is not high — brief note on what would help confirm; otherwise null`;
+- uncertainty_notes: only if confidence is not high — brief note on what would help confirm; otherwise null
+
+For estimated_value_low/high: give a practical resale range for this specific item type and condition visible in the photo. Be conservative rather than speculative.`;
 
 function detectMediaType(buf: Buffer): string {
   if (buf.length >= 3 && buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff) return 'image/jpeg';
@@ -175,6 +183,18 @@ function parseIdentificationJson(rawText: string): SellerItemIdentification {
     return String(v).trim() || null;
   };
 
+  const parseUsdNumber = (v: unknown): number | null => {
+    if (v == null || v === '') return null;
+    const n = typeof v === 'number' ? v : parseFloat(String(v).replace(/[^0-9.]/g, ''));
+    return Number.isFinite(n) && n >= 0 ? Math.round(n) : null;
+  };
+
+  const estimated_value_low = parseUsdNumber(parsed.estimated_value_low);
+  const estimated_value_high = parseUsdNumber(parsed.estimated_value_high);
+  if (estimated_value_low == null || estimated_value_high == null) {
+    throw new Error('Missing or invalid estimated_value_low / estimated_value_high');
+  }
+
   return {
     item_label: String(parsed.item_label).trim(),
     likely_brand_or_maker: nullableString(parsed.likely_brand_or_maker),
@@ -186,6 +206,8 @@ function parseIdentificationJson(rawText: string): SellerItemIdentification {
     marketplace_description: String(parsed.marketplace_description).trim(),
     category,
     suggested_keywords: keywords,
+    estimated_value_low: Math.min(estimated_value_low, estimated_value_high),
+    estimated_value_high: Math.max(estimated_value_low, estimated_value_high),
     confidence: confidence as SellerItemIdentification['confidence'],
     uncertainty_notes: nullableString(parsed.uncertainty_notes),
   };
@@ -221,12 +243,20 @@ export function mapIdentificationToEnrichment(
     description = `${description} ${identification.uncertainty_notes}`.trim();
   }
 
+  const { estimated_value_low, estimated_value_high } = identification;
+  const estimatedPrice =
+    estimated_value_low >= 0 && estimated_value_high >= estimated_value_low
+      ? Math.round((estimated_value_low + estimated_value_high) / 2)
+      : null;
+
   return {
     title,
     description,
     category: identification.category,
     attributes: [...new Set(attributes.map((a) => a.trim()).filter(Boolean))],
-    estimatedPrice: null,
+    estimatedPrice,
+    estimatedValueLow: estimated_value_low,
+    estimatedValueHigh: estimated_value_high,
     styles,
     moods: [],
     intents: [],
@@ -309,6 +339,9 @@ export async function identifySellerItem(imageUrl: string): Promise<Identificati
       category: enrichment.category,
       attributes: enrichment.attributes,
       styles: enrichment.styles,
+      estimatedValueLow: enrichment.estimatedValueLow,
+      estimatedValueHigh: enrichment.estimatedValueHigh,
+      estimatedPrice: enrichment.estimatedPrice,
     },
     fallbackUsed: false,
   });

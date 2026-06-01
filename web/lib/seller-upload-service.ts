@@ -788,6 +788,7 @@ interface UploadAndSaveResult {
       recentSales: number;
       source: 'firstdibs' | 'etsy' | 'ebay' | 'apify' | 'ai_estimate';
     };
+    pricingUnavailable?: boolean;
   };
   error?: string;
 }
@@ -873,6 +874,8 @@ export async function uploadAndCreateListing(
       category: string;
       attributes: string[];
       estimatedPrice: number | null;
+      estimatedValueLow?: number | null;
+      estimatedValueHigh?: number | null;
       styles?: string[];
       moods?: string[];
       intents?: string[];
@@ -1291,16 +1294,24 @@ Return ONLY valid JSON:
         priceConfidence = 0.7;
       }
       
-      // Create pricingIntelligence from AI estimate if we don't have eBay data
+      // Create pricingIntelligence from Opus AI estimate when eBay has no comps
       if (!pricingIntelligence && finalPrice) {
+        const aiLow =
+          primaryEnrichment?.estimatedValueLow != null
+            ? primaryEnrichment.estimatedValueLow
+            : Math.round(finalPrice * 0.7);
+        const aiHigh =
+          primaryEnrichment?.estimatedValueHigh != null
+            ? primaryEnrichment.estimatedValueHigh
+            : Math.round(finalPrice * 1.3);
         pricingIntelligence = {
-          minPrice: Math.round(finalPrice * 0.7),
-          maxPrice: Math.round(finalPrice * 1.3),
+          minPrice: aiLow,
+          maxPrice: aiHigh,
           avgPrice: finalPrice,
           recentSales: 0,
           source: 'ai_estimate' as const,
         };
-        console.log('💰 Created pricingIntelligence from AI estimate:', pricingIntelligence);
+        console.log('💰 Created pricingIntelligence from Opus AI estimate:', pricingIntelligence);
       }
     } else {
       // No price available
@@ -1533,6 +1544,7 @@ Return ONLY valid JSON:
           console.warn('⚠️ No pricingIntelligence and no finalPrice available');
           return undefined;
         })(),
+        pricingUnavailable: !pricingIntelligence && !finalPrice,
       },
     };
   } catch (error) {

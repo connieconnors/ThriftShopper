@@ -47,8 +47,9 @@ interface UploadResult {
     maxPrice: number;
     avgPrice: number;
     recentSales: number;
-    source?: 'ebay' | 'ai_estimate';
+    source?: 'ebay' | 'ai_estimate' | 'firstdibs' | 'etsy' | 'apify';
   };
+  pricingUnavailable?: boolean;
 }
 
 type ProcessingStep = 'idle' | 'uploading' | 'analyzing' | 'generating' | 'pricing' | 'complete';
@@ -1951,6 +1952,19 @@ export default function SellerUploadForm() {
                         ? `Based on ${result.pricingIntelligence.recentSales} recent eBay sales`
                         : 'Estimated based on item type, condition, and market trends'
                       }
+                    </p>
+                  </div>
+                )}
+                {!result.pricingIntelligence && result.pricingUnavailable && (
+                  <div
+                    className="mt-2 p-3 rounded-lg text-sm"
+                    style={{
+                      backgroundColor: '#f9fafb',
+                      borderLeft: '3px solid #9ca3af',
+                    }}
+                  >
+                    <p style={{ color: '#4b5563' }}>
+                      We couldn&apos;t find reliable comps for this item. Enter a price manually, or check similar listings on eBay or Etsy.
                     </p>
                   </div>
                 )}
