@@ -108,6 +108,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email,
       password,
     });
+    if (error) {
+      const msg = error.message.toLowerCase();
+      if (
+        msg.includes('invalid login credentials') ||
+        msg.includes('invalid email or password')
+      ) {
+        return {
+          error: new Error(
+            "We couldn't sign you in. Please check your email/password, or reset your password."
+          ),
+        };
+      }
+    }
     return { error: error as Error | null };
   };
 
