@@ -6,17 +6,24 @@ import { uploadAndCreateListing } from '@/lib/seller-upload-service';
 export const runtime = 'nodejs';
 export const maxDuration = 60;
 
-// Create Supabase client for server-side auth
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
+function isAllowedListingImageUrl(imageUrl: string): boolean {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!supabaseUrl) return false;
+  return (
+    imageUrl.startsWith(supabaseUrl) &&
+    imageUrl.includes('/storage/v1/object/public/listings/')
+  );
+}
+
 export async function POST(request: NextRequest) {
   try {
-    // Get auth token from request header
     const authHeader = request.headers.get('authorization');
-    
+
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return NextResponse.json(
         { error: 'Authentication required. Please log in to create a listing.' },
@@ -25,10 +32,8 @@ export async function POST(request: NextRequest) {
     }
 
     const token = authHeader.replace('Bearer ', '');
-    
-    // Verify the token and get user
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    
+
     if (authError || !user) {
       return NextResponse.json(
         { error: 'Invalid or expired session. Please log in again.' },
@@ -37,10 +42,43 @@ export async function POST(request: NextRequest) {
     }
 
     const sellerId = user.id;
+    const contentType = request.headers.get('content-type') || '';
+
+    if (contentType.includes('application/json')) {
+      const body = await request.json();
+      const imageUrl = typeof body.imageUrl === 'string' ? body.imageUrl.trim() : '';
+
+      if (!imageUrl) {
+        return NextResponse.json({ error: 'No imageUrl provided' }, { status: 400 });
+      }
+
+      if (!isAllowedListingImageUrl(imageUrl)) {
+        return NextResponse.json({ error: 'Invalid image URL' }, { status: 400 });
+      }
+
+      const userInput = {
+        title: body.title as string | undefined,
+        description: body.description as string | undefined,
+        price: body.price !== undefined ? Number(body.price) : undefined,
+        category: body.category as string | undefined,
+      };
+
+      const result = await uploadAndCreateListing(null, sellerId, userInput, {
+        removeBackground: body.removeBackground === true,
+        preUploadedImageUrl: imageUrl,
+      });
+
+      if (!result.success) {
+        console.error('❌ Upload failed:', result.error);
+        return NextResponse.json({ error: result.error }, { status: 500 });
+      }
+
+      return NextResponse.json(result);
+    }
 
     const formData = await request.formData();
     const imageFile = formData.get('image') as File;
-    
+
     if (!imageFile) {
       return NextResponse.json({ error: 'No image provided' }, { status: 400 });
     }
@@ -52,8 +90,6 @@ export async function POST(request: NextRequest) {
       category: formData.get('category') as string | undefined,
     };
 
-    // Background removal is now optional and happens AFTER AI analysis
-    // Default to false - user can request it after seeing results
     const removeBackground = formData.get('removeBackground') === 'true';
 
     const result = await uploadAndCreateListing(
@@ -68,7 +104,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: result.error }, { status: 500 });
     }
 
-    // Log response structure for debugging
     console.log('✅ Upload success - Response structure:', {
       hasListingId: !!result.listingId,
       hasData: !!result.data,

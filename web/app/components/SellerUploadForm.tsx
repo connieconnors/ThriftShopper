@@ -28,7 +28,7 @@ import {
   formatUsd,
   parseValidListingPrice,
 } from '@/lib/marketplaceFees';
-import { compressImageForUpload } from '@/lib/compressImageForUpload';
+import { uploadListingImageToStorage } from '@/lib/compressImageForUpload';
 
 function isImageFile(file: File): boolean {
   if (file.type.startsWith('image/')) return true;
@@ -905,21 +905,26 @@ export default function SellerUploadForm() {
         throw new Error('Session expired — please log out and back in, then try again.');
       }
 
-      const formData = new FormData();
-      const uploadFile = await compressImageForUpload(file);
-      formData.append('image', uploadFile);
+      const imageUrl = await uploadListingImageToStorage(
+        file,
+        async (path, body, opts) => {
+          const { error } = await supabase.storage.from('listings').upload(path, body, opts);
+          return { error: error ? new Error(error.message) : null };
+        },
+        (path) => supabase.storage.from('listings').getPublicUrl(path).data.publicUrl
+      );
 
-      console.log('📤 Sending upload request to API...', {
+      console.log('📤 Starting AI analysis for uploaded photo...', {
         originalSize: file.size,
-        uploadSize: uploadFile.size,
-        fileType: uploadFile.type,
+        imageUrl,
       });
       const response = await fetch('/api/seller/upload', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
         },
-        body: formData,
+        body: JSON.stringify({ imageUrl }),
       });
 
       console.log('📥 Upload response received, status:', response.status);

@@ -792,7 +792,7 @@ interface UploadAndSaveResult {
 }
 
 export async function uploadAndCreateListing(
-  imageFile: File | Buffer,
+  imageFile: File | Buffer | null,
   sellerId: string,
   userInput?: {
     title?: string;
@@ -803,6 +803,7 @@ export async function uploadAndCreateListing(
   options?: {
     removeBackground?: boolean;
     existingListingId?: string; // Optional: if provided, fetch existing listing for price stabilization
+    preUploadedImageUrl?: string;
   }
 ): Promise<UploadAndSaveResult> {
   try {
@@ -824,32 +825,42 @@ export async function uploadAndCreateListing(
       }
     }
 
-    // Step 1: Upload original image to Supabase Storage
-    const originalFilename = `original-${Date.now()}-${Math.random().toString(36).substring(7)}.jpg`;
-    
-    let uploadData: Uint8Array;
-    if (Buffer.isBuffer(imageFile)) {
-      uploadData = new Uint8Array(imageFile);
+    // Step 1: Upload original image to Supabase Storage (or use client pre-upload URL)
+    let originalUrl: string;
+
+    if (options?.preUploadedImageUrl) {
+      originalUrl = options.preUploadedImageUrl;
     } else {
-      // It's a File object
-      const arrayBuffer = await (imageFile as File).arrayBuffer();
-      uploadData = new Uint8Array(arrayBuffer);
+      if (!imageFile) {
+        throw new Error('Image file or pre-uploaded image URL is required');
+      }
+
+      const originalFilename = `original-${Date.now()}-${Math.random().toString(36).substring(7)}.jpg`;
+      
+      let uploadData: Uint8Array;
+      if (Buffer.isBuffer(imageFile)) {
+        uploadData = new Uint8Array(imageFile);
+      } else {
+        const arrayBuffer = await (imageFile as File).arrayBuffer();
+        uploadData = new Uint8Array(arrayBuffer);
+      }
+
+      const { data: originalUpload, error: originalError } = await supabase.storage
+        .from('listings')
+        .upload(originalFilename, uploadData, {
+          contentType: 'image/jpeg',
+          upsert: false,
+        });
+
+      if (originalError) {
+        throw new Error(`Image upload failed: ${originalError.message}`);
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('listings')
+        .getPublicUrl(originalFilename);
+      originalUrl = publicUrl;
     }
-
-    const { data: originalUpload, error: originalError } = await supabase.storage
-      .from('listings')
-      .upload(originalFilename, uploadData, {
-        contentType: 'image/jpeg',
-        upsert: false,
-      });
-
-    if (originalError) {
-      throw new Error(`Image upload failed: ${originalError.message}`);
-    }
-
-    const { data: { publicUrl: originalUrl } } = supabase.storage
-      .from('listings')
-      .getPublicUrl(originalFilename);
 
     // Step 2: PARALLEL PROCESSING - Run independent operations simultaneously
     // REFACTOR: Changed from sequential to parallel processing for speed improvement
@@ -895,7 +906,7 @@ export async function uploadAndCreateListing(
 
     // Task 3: Background Removal (optional, independent operation)
     // REFACTOR: Background removal now runs in parallel instead of sequentially
-    const backgroundRemovalTask = (options?.removeBackground && process.env.REMOVE_BG_KEY)
+    const backgroundRemovalTask = (options?.removeBackground && process.env.REMOVE_BG_KEY && imageFile)
       ? removeBackground(imageFile).catch((err) => {
           console.error('✗ Background removal failed:', err instanceof Error ? err.message : String(err));
           return null; // Return null on failure, will use original image
