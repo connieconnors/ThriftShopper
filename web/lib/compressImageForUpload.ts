@@ -1,6 +1,5 @@
-/** Vercel serverless request bodies are capped at ~4.5MB — always compress for storage + AI. */
-const MAX_UPLOAD_BYTES = 2 * 1024 * 1024;
-const MAX_DIMENSION = 1600;
+/** Prepare listing photos for direct Supabase upload (bypasses Vercel body limit). */
+const MAX_DIRECT_UPLOAD_BYTES = 15 * 1024 * 1024;
 
 function loadImageElement(file: File): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
@@ -18,12 +17,12 @@ function loadImageElement(file: File): Promise<HTMLImageElement> {
   });
 }
 
-function canvasToBlob(canvas: HTMLCanvasElement, quality: number): Promise<Blob> {
+function canvasToJpeg(canvas: HTMLCanvasElement, quality: number): Promise<Blob> {
   return new Promise((resolve, reject) => {
     canvas.toBlob(
       (blob) => {
         if (blob) resolve(blob);
-        else reject(new Error('Could not compress photo'));
+        else reject(new Error('Could not prepare photo for upload'));
       },
       'image/jpeg',
       quality
@@ -31,53 +30,38 @@ function canvasToBlob(canvas: HTMLCanvasElement, quality: number): Promise<Blob>
   });
 }
 
-export async function compressImageForUpload(file: File): Promise<File> {
+/** Convert HEIC/HEIF to JPEG at full resolution for AI + storage compatibility. */
+async function convertToJpeg(file: File): Promise<File> {
   const img = await loadImageElement(file);
-  let width = Math.max(1, img.naturalWidth);
-  let height = Math.max(1, img.naturalHeight);
-
-  const longestEdge = Math.max(width, height);
-  if (longestEdge > MAX_DIMENSION) {
-    const scale = MAX_DIMENSION / longestEdge;
-    width = Math.max(1, Math.round(width * scale));
-    height = Math.max(1, Math.round(height * scale));
+  const canvas = document.createElement('canvas');
+  canvas.width = img.naturalWidth;
+  canvas.height = img.naturalHeight;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) {
+    throw new Error('Could not prepare photo for upload');
   }
-
-  const render = (w: number, h: number) => {
-    const canvas = document.createElement('canvas');
-    canvas.width = w;
-    canvas.height = h;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) {
-      throw new Error('Could not prepare photo for upload');
-    }
-    ctx.drawImage(img, 0, 0, w, h);
-    return canvas;
-  };
-
-  let canvas = render(width, height);
-  let quality = 0.82;
-  let blob = await canvasToBlob(canvas, quality);
-
-  while (blob.size > MAX_UPLOAD_BYTES && quality > 0.4) {
-    quality -= 0.08;
-    blob = await canvasToBlob(canvas, quality);
-  }
-
-  while (blob.size > MAX_UPLOAD_BYTES && Math.max(width, height) > 800) {
-    width = Math.max(800, Math.round(width * 0.85));
-    height = Math.max(800, Math.round(height * 0.85));
-    canvas = render(width, height);
-    quality = 0.75;
-    blob = await canvasToBlob(canvas, quality);
-  }
-
-  if (blob.size > MAX_UPLOAD_BYTES) {
-    throw new Error('Photo is too large even after compression — try a closer crop or lower resolution.');
-  }
-
+  ctx.drawImage(img, 0, 0);
+  const blob = await canvasToJpeg(canvas, 0.92);
   const baseName = file.name.replace(/\.[^.]+$/, '') || 'photo';
   return new File([blob], `${baseName}.jpg`, { type: 'image/jpeg', lastModified: Date.now() });
+}
+
+function isHeic(file: File): boolean {
+  return /heic|heif/i.test(file.type) || /\.heic$|\.heif$/i.test(file.name);
+}
+
+export async function prepareImageForStorageUpload(file: File): Promise<{ file: File; contentType: string }> {
+  if (file.size > MAX_DIRECT_UPLOAD_BYTES) {
+    throw new Error('Photo must be less than 15MB. Try a closer crop or lower resolution in camera settings.');
+  }
+
+  if (isHeic(file)) {
+    const converted = await convertToJpeg(file);
+    return { file: converted, contentType: 'image/jpeg' };
+  }
+
+  const contentType = file.type || 'image/jpeg';
+  return { file, contentType };
 }
 
 export async function uploadListingImageToStorage(
@@ -85,9 +69,10 @@ export async function uploadListingImageToStorage(
   upload: (path: string, body: File, options: { contentType: string }) => Promise<{ error: Error | null }>,
   getPublicUrl: (path: string) => string
 ): Promise<string> {
-  const compressed = await compressImageForUpload(file);
-  const filename = `original-${Date.now()}-${Math.random().toString(36).substring(7)}.jpg`;
-  const { error } = await upload(filename, compressed, { contentType: 'image/jpeg' });
+  const { file: uploadFile, contentType } = await prepareImageForStorageUpload(file);
+  const extension = contentType.includes('png') ? 'png' : 'jpg';
+  const filename = `original-${Date.now()}-${Math.random().toString(36).substring(7)}.${extension}`;
+  const { error } = await upload(filename, uploadFile, { contentType });
   if (error) {
     throw new Error(`Photo upload failed: ${error.message}`);
   }

@@ -217,7 +217,6 @@ export default function SellerUploadForm() {
   const [error, setError] = useState<string>('');
   const uploadInProgressRef = useRef(false); // Prevent duplicate uploads
   const processingTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
-  const [uploadStartedAt, setUploadStartedAt] = useState<number | null>(null);
   
   // Listing tracking
   const [listingId, setListingId] = useState<string | null>(null);
@@ -857,7 +856,6 @@ export default function SellerUploadForm() {
       });
       setProcessingStep('idle');
       clearProcessingTimers();
-      setUploadStartedAt(null);
       uploadInProgressRef.current = false;
     } else {
       // In edit mode, keep the current form visible and swap the preview image in place
@@ -892,7 +890,6 @@ export default function SellerUploadForm() {
 
     console.log('🚀 Starting upload process...');
     uploadInProgressRef.current = true;
-    setUploadStartedAt(Date.now());
     setProcessingStep('uploading');
     setError('');
     clearProcessingTimers();
@@ -959,7 +956,6 @@ export default function SellerUploadForm() {
 
       setProcessingStep('complete');
       clearProcessingTimers();
-      setUploadStartedAt(null);
       
       // Store listing ID and original image for toggle
       if (data.listingId) {
@@ -1035,7 +1031,6 @@ export default function SellerUploadForm() {
       const message = err instanceof Error ? err.message : 'Upload failed';
       setError(message);
       setProcessingStep('idle');
-      setUploadStartedAt(null);
       clearProcessingTimers();
     } finally {
       uploadInProgressRef.current = false;
@@ -1659,7 +1654,7 @@ export default function SellerUploadForm() {
                 )}
               </div>
 
-              <AIAnalysisIndicator step={processingStep} startedAt={uploadStartedAt} />
+              <AIAnalysisIndicator isAnalyzing={processingStep !== 'idle' && processingStep !== 'complete'} />
 
               <div className="mb-3 space-y-2">
                 <button
