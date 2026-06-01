@@ -33,7 +33,13 @@ export function legalHref(path: string, from: LegalFrom): string {
   return `${path}?from=${from}`;
 }
 
-export function resolveLegalBack(from: LegalFrom): { href: string; label: string } {
+export function resolveLegalBack(
+  from: LegalFrom,
+  documentPath?: string
+): { href: string; label: string } {
+  if (from === "help" && documentPath === "/returns") {
+    return { href: "/help?section=shipping-returns", label: "Help Center" };
+  }
   return BACK_TARGETS[from];
 }
 

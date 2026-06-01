@@ -30,7 +30,7 @@ function LegalDocumentLayoutInner({
 }: LegalDocumentLayoutProps) {
   const searchParams = useSearchParams();
   const from = parseLegalFrom(searchParams.get("from"));
-  const back = resolveLegalBack(from);
+  const back = resolveLegalBack(from, path);
   const canonicalUrl = LEGAL_CANONICAL_URLS[path];
 
   return (
