@@ -298,6 +298,14 @@ export default function SellerPageClient() {
     }
   }, [messagesSectionExpanded, user, fetchMessagesForInbox]);
 
+  useEffect(() => {
+    if (!messagesSectionExpanded) return;
+    const timer = window.setTimeout(() => {
+      messagesSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 80);
+    return () => window.clearTimeout(timer);
+  }, [messagesSectionExpanded]);
+
   const markConversationRead = useCallback(async (messageIds: string[]) => {
     if (messageIds.length === 0) return;
     const { data: { session } } = await supabase.auth.getSession();
@@ -1563,7 +1571,7 @@ export default function SellerPageClient() {
         </div>
 
         {/* Messages - collapsible section */}
-        <div ref={messagesSectionRef} className="mb-4">
+        <div ref={messagesSectionRef} className="mb-4 scroll-mt-20 scroll-mb-28">
           <button
             type="button"
             onClick={() => setMessagesSectionExpanded((e) => !e)}
@@ -1757,7 +1765,6 @@ export default function SellerPageClient() {
             type="button"
             onClick={() => {
               setMessagesSectionExpanded(true);
-              setTimeout(() => messagesSectionRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
             }}
             className="flex flex-col items-center gap-0.5 text-white/70 hover:text-white transition-colors"
           >

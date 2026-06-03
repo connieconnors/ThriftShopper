@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabaseClient";
 import { Listing, getSellerDisplayName, getPrimaryImage, TS_BADGE_URL, hasSellerTSBadge } from "../../lib/types";
+import { listingHref } from "../../lib/listingNavigation";
 import { useAuth } from "../context/AuthContext";
 import FavoriteButton from "../components/FavoriteButton";
 import { Package, Settings, ChevronRight } from "lucide-react";
@@ -293,7 +294,7 @@ export default function BuyerHomePage() {
                       }`}
                     >
                       <Link
-                        href={`/listing/${listing.id}`}
+                        href={listingHref(listing.id, "favorites")}
                         className="flex h-full flex-col rounded-xl overflow-hidden bg-slate-900 border border-white/10 hover:border-white/20 transition-colors min-w-0"
                       >
                         <div className="aspect-square relative overflow-hidden flex-shrink-0">
@@ -367,7 +368,7 @@ export default function BuyerHomePage() {
               {orders.map((order) => (
                 <Link
                   key={order.id}
-                  href={`/listing/${order.listing_id}`}
+                  href={listingHref(order.listing_id, "favorites")}
                   className="block bg-slate-900 rounded-xl border border-white/10 p-4 hover:border-white/20 transition-colors"
                 >
                   <div className="flex gap-4">

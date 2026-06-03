@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { supabase } from "../../../lib/supabaseClient";
 import { Listing } from "../../../lib/types";
 import ProductDetails from "./ProductDetails";
@@ -75,5 +76,15 @@ export default async function ListingPage({ params }: ListingPageProps) {
     moods: normalize(raw.moods as string[] | string | null),
   };
 
-  return <ProductDetails listing={listing} />;
+  return (
+    <Suspense
+      fallback={
+        <main className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "var(--background)" }}>
+          <div className="animate-spin h-8 w-8 border-2 border-[#EFBF05] border-t-transparent rounded-full" />
+        </main>
+      }
+    >
+      <ProductDetails listing={listing} />
+    </Suspense>
+  );
 }

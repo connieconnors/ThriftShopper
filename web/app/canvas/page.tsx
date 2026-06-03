@@ -274,6 +274,15 @@ export default function BuyerCanvasPage() {
   const [supportOpen, setSupportOpen] = useState(false);
   const [removingBookmarkId, setRemovingBookmarkId] = useState<string | null>(null);
   const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
+  const messagesSectionRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!showMessages) return;
+    const timer = window.setTimeout(() => {
+      messagesSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 80);
+    return () => window.clearTimeout(timer);
+  }, [showMessages]);
 
   useEffect(() => {
     if (!user || !profile?.is_seller) return;
@@ -429,7 +438,7 @@ export default function BuyerCanvasPage() {
                       className="relative group w-full min-w-0"
                     >
                       <Link
-                        href={`/listing/${item.id}`}
+                        href={`/listing/${item.id}?from=canvas`}
                         className="flex items-start gap-2 px-3 py-2 pr-8 rounded-lg border border-gray-200 bg-gray-50 hover:bg-gray-100 hover:border-[#16193a] transition-all shadow-sm w-full min-w-0"
                       >
                         {imageUrl && (
@@ -516,7 +525,10 @@ export default function BuyerCanvasPage() {
         </div>
 
         {/* Messages */}
-        <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
+        <div
+          ref={messagesSectionRef}
+          className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm scroll-mt-20 scroll-mb-28"
+        >
           <button
             onClick={() => setShowMessages(!showMessages)}
             className="flex items-center justify-between w-full"

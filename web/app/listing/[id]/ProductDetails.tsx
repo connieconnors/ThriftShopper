@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, TouchEvent, useCallback, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { 
   Listing, 
@@ -33,6 +33,7 @@ import {
   isShippingJson,
 } from "../../../lib/shippingPreferences";
 import { useAppShell } from "../../../hooks/useAppShell";
+import { parseListingFrom, resolveListingBack } from "../../../lib/listingNavigation";
 
 const CHROME_GLASS = "rgba(22, 25, 58, 0.48)";
 const CHROME_GLASS_BORDER = "rgba(237, 233, 225, 0.25)";
@@ -57,6 +58,9 @@ function mapConditionValue(condition: string): string {
 
 export default function ProductDetails({ listing }: ProductDetailsProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const listingFrom = parseListingFrom(searchParams.get("from"));
+  const listingBack = resolveListingBack(listingFrom);
   const { user } = useAuth();
   useAppShell("linen");
   const images = getListingImages(listing);
@@ -197,20 +201,20 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
 
   return (
     <main className="min-h-screen text-gray-900" style={{ backgroundColor: 'var(--background)' }}>
-      {/* Fixed Header - Back to Browse */}
+      {/* Fixed Header — back to browse, canvas, or favorites depending on entry */}
       <header className="fixed top-0 left-0 right-0 z-50 p-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Link
-            href="/browse"
+            href={listingBack.href}
             className="w-10 h-10 flex items-center justify-center backdrop-blur-md rounded-full text-white transition-colors hover:opacity-90"
             style={{ backgroundColor: CHROME_GLASS, border: `1px solid ${CHROME_GLASS_BORDER}` }}
-            aria-label="Back to browse"
+            aria-label={`Back to ${listingBack.label}`}
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
           </Link>
-          <Link href="/browse" className="opacity-80 hover:opacity-100 transition-opacity">
+          <Link href={listingBack.href} className="opacity-80 hover:opacity-100 transition-opacity" aria-label={listingBack.label}>
             <TSLogo size={28} primaryColor="#ffffff" accentColor="var(--gold-accent)" />
           </Link>
         </div>
