@@ -27,13 +27,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Convert Blob to File for OpenAI API
     const audioBuffer = await audioFile.arrayBuffer();
-    const audioBlob = new Blob([audioBuffer], { type: 'audio/webm' });
-    
-    // Create FormData for OpenAI API
+    const mimeType = audioFile.type || 'audio/webm';
+    const extension =
+      mimeType.includes('mp4') || mimeType.includes('m4a')
+        ? 'm4a'
+        : mimeType.includes('wav')
+          ? 'wav'
+          : mimeType.includes('ogg')
+            ? 'ogg'
+            : 'webm';
+    const audioBlob = new Blob([audioBuffer], { type: mimeType });
+
     const openAIFormData = new FormData();
-    openAIFormData.append('file', audioBlob, 'recording.webm');
+    openAIFormData.append('file', audioBlob, `recording.${extension}`);
     openAIFormData.append('model', 'whisper-1');
     openAIFormData.append('language', 'en');
     openAIFormData.append('response_format', 'json');

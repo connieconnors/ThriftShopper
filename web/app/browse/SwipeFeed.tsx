@@ -294,12 +294,16 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
 
   // Voice search completes → run search, then return to browse UI (receipt stays visible)
   const handleTranscriptComplete = useCallback(async (transcript: string) => {
-    if (transcript.trim()) {
-      setVoiceTranscript(transcript);
-      await handleSearch(transcript);
+    const trimmed = transcript.trim();
+    if (trimmed) {
+      setVoiceTranscript(trimmed);
+      await handleSearch(trimmed);
+      setIsListening(false);
+      setVoiceTranscript('');
+      return;
     }
-    setIsListening(false);
-    setVoiceTranscript('');
+    setVoiceError("Didn't catch that — tap the mic, speak, then tap again to search");
+    setIsListening(true);
   }, []);
 
   // Whisper-based voice transcription (works on mobile!)

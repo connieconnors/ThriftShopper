@@ -52,6 +52,7 @@ export function useWhisperTranscription(
   const analyserRef = useRef<AnalyserNode | null>(null);
   const silenceCheckIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const skipNextTranscriptionRef = useRef(false);
+  const isRecordingRef = useRef(false);
 
   // Check browser support
   useEffect(() => {
@@ -97,8 +98,16 @@ export function useWhisperTranscription(
     setError(null);
 
     try {
+      const ext =
+        audioBlob.type.includes('mp4') || audioBlob.type.includes('m4a')
+          ? 'm4a'
+          : audioBlob.type.includes('wav')
+            ? 'wav'
+            : audioBlob.type.includes('ogg')
+              ? 'ogg'
+              : 'webm';
       const formData = new FormData();
-      formData.append('audio', audioBlob, 'recording.webm');
+      formData.append('audio', audioBlob, `recording.${ext}`);
 
       const response = await fetch('/api/transcribe', {
         method: 'POST',
@@ -128,29 +137,66 @@ export function useWhisperTranscription(
   }, [onTranscriptChange, onTranscriptComplete, onError]);
 
   const stopRecording = useCallback(() => {
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-      mediaRecorderRef.current.stop();
+    const recorder = mediaRecorderRef.current;
+    if (recorder && recorder.state === 'recording') {
+      try {
+        recorder.requestData();
+      } catch {
+        // requestData not supported on all browsers
+      }
+      recorder.stop();
+    } else if (recorder && recorder.state === 'paused') {
+      recorder.stop();
+    } else {
+      cleanup();
     }
+    isRecordingRef.current = false;
     setIsRecording(false);
-    cleanup();
+    if (maxDurationTimerRef.current) {
+      clearTimeout(maxDurationTimerRef.current);
+      maxDurationTimerRef.current = null;
+    }
+    if (silenceCheckIntervalRef.current) {
+      clearInterval(silenceCheckIntervalRef.current);
+      silenceCheckIntervalRef.current = null;
+    }
+    // Stream cleanup happens in onstop — stopping tracks here drops desktop audio chunks
   }, [cleanup]);
 
   const cancelRecording = useCallback(() => {
     skipNextTranscriptionRef.current = true;
     audioChunksRef.current = [];
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-      mediaRecorderRef.current.stop();
+    const recorder = mediaRecorderRef.current;
+    if (recorder && recorder.state !== 'inactive') {
+      try {
+        if (recorder.state === 'recording') recorder.requestData();
+      } catch {
+        // ignore
+      }
+      recorder.stop();
     } else {
       skipNextTranscriptionRef.current = false;
+      cleanup();
     }
+    isRecordingRef.current = false;
     setIsRecording(false);
     setIsProcessing(false);
-    cleanup();
+    if (maxDurationTimerRef.current) {
+      clearTimeout(maxDurationTimerRef.current);
+      maxDurationTimerRef.current = null;
+    }
+    if (silenceCheckIntervalRef.current) {
+      clearInterval(silenceCheckIntervalRef.current);
+      silenceCheckIntervalRef.current = null;
+    }
   }, [cleanup]);
 
   const setupSilenceDetection = useCallback((stream: MediaStream) => {
     try {
       const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      if (audioContext.state === 'suspended') {
+        void audioContext.resume();
+      }
       const analyser = audioContext.createAnalyser();
       const source = audioContext.createMediaStreamSource(stream);
       
@@ -231,18 +277,35 @@ export function useWhisperTranscription(
       };
 
       mediaRecorder.onstop = async () => {
-        cleanup();
-
         if (skipNextTranscriptionRef.current) {
           skipNextTranscriptionRef.current = false;
           audioChunksRef.current = [];
+          cleanup();
           return;
         }
 
-        if (audioChunksRef.current.length > 0) {
-          const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
-          await transcribeAudio(audioBlob);
+        const chunks = [...audioChunksRef.current];
+        audioChunksRef.current = [];
+        cleanup();
+
+        if (chunks.length === 0) {
+          const message = 'No audio captured — tap the mic and try again';
+          setError(message);
+          onError?.(message);
+          onTranscriptComplete?.('');
+          return;
         }
+
+        const audioBlob = new Blob(chunks, { type: mimeType });
+        if (audioBlob.size < 1000) {
+          const message = 'Recording too short — tap the mic and speak again';
+          setError(message);
+          onError?.(message);
+          onTranscriptComplete?.('');
+          return;
+        }
+
+        await transcribeAudio(audioBlob);
       };
 
       mediaRecorder.onerror = (event) => {
@@ -253,16 +316,19 @@ export function useWhisperTranscription(
         cleanup();
       };
 
-      // Setup silence detection
-      setupSilenceDetection(stream);
+      // Manual-stop mode: skip silence auto-stop (desktop mics + suspended AudioContext false-trigger)
+      if (silenceTimeout < 60_000) {
+        setupSilenceDetection(stream);
+      }
 
       // Start recording
       mediaRecorder.start(100); // Collect data every 100ms
+      isRecordingRef.current = true;
       setIsRecording(true);
 
       // Set max duration timer
       maxDurationTimerRef.current = setTimeout(() => {
-        if (isRecording) {
+        if (isRecordingRef.current) {
           stopRecording();
         }
       }, maxDuration);
