@@ -565,8 +565,8 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
 
       const { listings, interpretation } = await response.json();
 
-      const interpretedTerms = Array.from(
-        new Set(
+      const interpretedTerms: string[] = Array.from(
+        new Set<string>(
           (interpretation?.termGroups ?? [])
             .map((group: { term?: string }) => group.term?.trim())
             .filter((term: string | undefined): term is string => Boolean(term))

@@ -128,12 +128,25 @@ export function useWhisperTranscription(
   }, [onTranscriptChange, onTranscriptComplete, onError]);
 
   const stopRecording = useCallback(() => {
-    if (mediaRecorderRef.current && isRecording) {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
       mediaRecorderRef.current.stop();
     }
     setIsRecording(false);
     cleanup();
-  }, [isRecording, cleanup]);
+  }, [cleanup]);
+
+  const cancelRecording = useCallback(() => {
+    skipNextTranscriptionRef.current = true;
+    audioChunksRef.current = [];
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop();
+    } else {
+      skipNextTranscriptionRef.current = false;
+    }
+    setIsRecording(false);
+    setIsProcessing(false);
+    cleanup();
+  }, [cleanup]);
 
   const setupSilenceDetection = useCallback((stream: MediaStream) => {
     try {
