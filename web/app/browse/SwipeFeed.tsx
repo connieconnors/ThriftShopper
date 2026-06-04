@@ -284,15 +284,14 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
     [listings]
   );
 
-  // Handle completed voice transcription
-  // Keep isListening true so UI stays visible after transcription
+  // Voice search completes → run search, then return to browse UI (receipt stays visible)
   const handleTranscriptComplete = useCallback(async (transcript: string) => {
     if (transcript.trim()) {
       setVoiceTranscript(transcript);
-      // Keep UI visible - don't hide it
-      setIsListening(true);
       await handleSearch(transcript);
     }
+    setIsListening(false);
+    setVoiceTranscript('');
   }, []);
 
   // Whisper-based voice transcription (works on mobile!)
@@ -314,8 +313,8 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
       console.error('Voice transcription error:', error);
       setVoiceError(error);
     },
-    silenceTimeout: 999999999, // Disable auto-stop on silence - user must tap mic to stop
-    maxDuration: 300000,    // 5 minutes max - very long for demo purposes
+    silenceTimeout: 2500, // Auto-stop ~2.5s after user stops speaking
+    maxDuration: 60000,
   });
 
   // Countdown timer when recording
@@ -328,10 +327,6 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
       return () => clearInterval(interval);
     }
   }, [isRecording]);
-
-  // Keep voice UI visible until user explicitly stops recording
-  // isListening is controlled only by toggleVoice, not by recording state
-  // This ensures the UI stays visible even after recording auto-stops
 
   // Display listings: use search results if available, otherwise use filtered listings
   // Compute this early so it can be used in hooks below
@@ -478,29 +473,31 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
     }
   }, [handleWheel]);
 
-  // Voice Search - now using Whisper for reliable mobile support
-  // UI stays visible until user explicitly taps mic again
+  // Voice search: fresh intent — clears mood filters and prior search before listening
   const toggleVoice = () => {
-    console.log('🎤 toggleVoice called', { isListening, isRecording, isVoiceSupported });
-    
     if (isListening) {
-      // User is stopping - hide the UI and clear transcript
-      console.log('🎤 Stopping voice search');
+      // Cancel: stop recording without running search
       setIsListening(false);
       setVoiceTranscript('');
       setVoiceError(null);
       if (isRecording) {
-        toggleRecording(); // Stop the recording if it's still active
+        toggleRecording();
       }
-    } else {
-      // User is starting - show the UI and start recording
-      console.log('🎤 Starting voice search');
-      setIsListening(true);
-      setVoiceTranscript('');
-      setVoiceError(null);
-      // Always call toggleRecording - it handles the start/stop logic
-      toggleRecording();
+      return;
     }
+
+    // New voice search — do not stack on mood wheel or prior search
+    setSelectedMoods([]);
+    setNoMoodResults(false);
+    setFilteredListings(listings);
+    setSearchResults(null);
+    setLastSearchQuery('');
+    setSearchInterpretationTerms([]);
+    setVoiceTranscript('');
+    setVoiceError(null);
+    setIsListening(true);
+    setCurrentIndex(0);
+    toggleRecording();
   };
 
   const parsePriceCap = (query: string): number | null => {
@@ -621,9 +618,6 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
       setSearchResults([]);
       setSearchInterpretationTerms([]);
     }
-    
-    // Don't clear transcript or hide UI - keep it visible for demo
-    // setVoiceTranscript(''); // Keep transcript visible
   };
   
   const clearSearch = () => {
