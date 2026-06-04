@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/app/context/AuthContext';
 import { supabase } from '@/lib/supabaseClient';
@@ -214,6 +214,7 @@ export default function SellerPageClient() {
   const [stats, setStats] = useState({
     totalListings: 0,
     activeListings: 0,
+    draftListings: 0,
     totalViews: 0,
     soldCount: 0,
     totalEarnings: 0,
@@ -738,12 +739,18 @@ export default function SellerPageClient() {
     
     // Calculate stats from whatever data we successfully fetched
     const active = listingsData?.filter(l => l.status === 'active').length || 0;
+    const drafts =
+      listingsData?.filter(l => {
+        const s = l.status || 'draft';
+        return s !== 'active' && s !== 'sold' && s !== 'paid' && s !== 'shipped';
+      }).length || 0;
     // soldCount and totalEarnings are already calculated from paidOrders in the try block
     
     setStats(prev => ({
       ...prev,
       totalListings: listingsData?.length || 0,
       activeListings: active,
+      draftListings: drafts,
       totalViews: 0, // Would need a views table
       soldCount: paidOrders.length,
       totalEarnings,
@@ -878,6 +885,40 @@ export default function SellerPageClient() {
       setUpdatingId(null);
     }
   };
+
+  const { draftListings, activeListings } = useMemo(() => {
+    const drafts: Listing[] = [];
+    const active: Listing[] = [];
+    for (const listing of listings) {
+      const status = listing.status || 'draft';
+      if (status === 'active') {
+        active.push(listing);
+      } else if (status === 'sold' || status === 'paid' || status === 'shipped') {
+        continue;
+      } else {
+        drafts.push(listing);
+      }
+    }
+    return { draftListings: drafts, activeListings: active };
+  }, [listings]);
+
+  const inventorySections = useMemo(
+    () => [
+      {
+        key: 'drafts' as const,
+        title: 'Drafts',
+        items: draftListings,
+        emptyMessage: 'No drafts. Tap Add New Listing to start one.',
+      },
+      {
+        key: 'active' as const,
+        title: 'Active Listings',
+        items: activeListings,
+        emptyMessage: 'No active listings. Publish a draft to go live.',
+      },
+    ],
+    [draftListings, activeListings]
+  );
 
   const handleCopy = async (
     text: string,
@@ -1113,7 +1154,7 @@ export default function SellerPageClient() {
             <div className="text-[11px] font-medium text-gray-600">Active Listings</div>
           </div>
           <div className="bg-white rounded-lg p-4 border border-gray-200">
-            <div className="text-2xl font-bold mb-1" style={{ color: "#16193a" }}>{stats.totalListings - stats.activeListings}</div>
+            <div className="text-2xl font-bold mb-1" style={{ color: "#16193a" }}>{stats.draftListings}</div>
             <div className="text-[11px] font-medium text-gray-600">Drafts</div>
           </div>
           <div className="bg-white rounded-lg p-4 border border-gray-200">
@@ -1124,166 +1165,33 @@ export default function SellerPageClient() {
           </div>
         </div>
 
-        {/* Sold Items - Match "Your Listings" wrapper structure exactly */}
-        <div className="mb-4">
-          <h2 className="text-base font-semibold mb-3 font-ui-heading" style={{ color: "#16193a" }}>
-            Sold Items{allOrders.length > 0 ? ` (${allOrders.length})` : ''}
-          </h2>
-          
-          {allOrders.length === 0 ? (
-            <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
-              <p className="text-sm text-gray-600 mb-2">
-                No sold items yet.
-              </p>
-            </div>
-          ) : (
-            <div className="bg-white rounded-lg border border-gray-200 max-h-[500px] overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
-              <div className="p-2">
-                {allOrders.map((order) => {
-                  // Use 'listings' (plural) to match Order Details page pattern
-                  const listing = order.listings || null;
-                  if (!listing) return null;
+        {/* Inventory: Drafts → Active → Sold (single page scroll) */}
+        {listings.length === 0 && allOrders.length === 0 ? (
+          <div className="mb-4 text-center py-12 bg-white rounded-lg border border-gray-200">
+            <p className="text-sm text-gray-600 mb-2">
+              No listings yet.{" "}
+              <Link href="/sell" className="text-[#16193a] hover:underline font-medium">
+                Create your first listing
+              </Link>
+            </p>
+          </div>
+        ) : (
+          <>
+            {inventorySections.map((section) => (
+              <div key={section.key} className="mb-4">
+                <h2 className="text-base font-semibold mb-3 font-ui-heading" style={{ color: "#16193a" }}>
+                  {section.title}
+                  {section.items.length > 0 ? ` (${section.items.length})` : ""}
+                </h2>
 
-                  // Create derived listing object for card rendering
-                  const orderStatus = order.status || 'paid';
-                  const orderDate = new Date(order.created_at);
-                  const daysAgo = Math.floor((Date.now() - orderDate.getTime()) / (1000 * 60 * 60 * 24));
-                  const timeAgo = daysAgo === 0 ? 'Today' : daysAgo === 1 ? '1 day ago' : `${daysAgo} days ago`;
-                  
-                  // Status badge mapping
-                  let statusBadge;
-                  if (order.shipped_at || orderStatus === 'shipped') {
-                    statusBadge = { bg: 'bg-transparent', text: 'text-[#16193a]', label: 'Shipped', border: 'border border-[#16193a]' };
-                  } else if (orderStatus === 'paid') {
-                    statusBadge = { bg: 'bg-green-100', text: 'text-green-700', label: 'Paid' };
-                  } else if (orderStatus === 'awaiting_payment') {
-                    statusBadge = { bg: 'bg-gray-100', text: 'text-gray-700', label: 'Awaiting payment' };
-                  } else {
-                    statusBadge = { bg: 'bg-gray-100', text: 'text-gray-700', label: orderStatus };
-                  }
-
-                  // Parse amount - handle both dollars and cents
-                  const amount = Number.parseFloat(String(order.amount)) || 0;
-                  const amountInDollars = amount >= 1000 ? amount / 100 : amount;
-
-                  // Subtitle override for meta line: {statusLabel} • {timeAgo}
-                  const subtitleOverride = `${statusBadge.label} • ${timeAgo}`;
-
-                  // Reuse EXACT listing card markup (without three-dot menu)
-                  return (
-                    <div
-                      key={order.id}
-                      className="bg-gray-50 rounded-lg border border-gray-200 p-3 hover:shadow-sm transition-shadow mb-3"
-                      style={{ minHeight: '80px' }}
-                    >
-                      {/* Horizontal Layout: Thumbnail (left) + Text Content (right) */}
-                      <div className="flex items-start justify-between gap-3">
-                        {/* Thumbnail - 60x60px, left side */}
-                        <Link
-                          href={`/orders/${order.id}`}
-                          className="w-[60px] h-[60px] rounded-lg overflow-hidden bg-gray-100 flex-shrink-0"
-                        >
-                          {(listing.original_image_url || listing.clean_image_url || listing.staged_image_url) ? (
-                            <img
-                              src={listing.original_image_url || listing.clean_image_url || listing.staged_image_url || ''}
-                              alt={listing.title}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center text-gray-400 text-[10px]">
-                              No image
-                            </div>
-                          )}
-                        </Link>
-                        
-                        {/* Right Side: Text Content - flex-1 min-w-0 text column */}
-                        <div className="flex-1 min-w-0 flex flex-col">
-                          {/* Title */}
-                          <Link
-                            href={`/orders/${order.id}`}
-                            className="flex-1 min-w-0"
-                            style={{ 
-                              paddingRight: 0,
-                              margin: 0,
-                              paddingTop: 0,
-                              paddingBottom: 0
-                            }}
-                          >
-                            <h3 
-                              className="text-sm font-medium text-gray-900" 
-                              style={{ 
-                                fontSize: '14px', 
-                                lineHeight: '1.4',
-                                margin: 0,
-                                marginBottom: '4px',
-                                padding: 0,
-                                whiteSpace: 'nowrap',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                display: 'block'
-                              }}
-                            >
-                              {listing.title}
-                            </h3>
-                          </Link>
-
-                          {/* Price + Status Badge */}
-                          <div className="flex items-center gap-2 mt-1">
-                            <Link
-                              href={`/orders/${order.id}`}
-                              className="text-base font-medium leading-tight"
-                              style={{ color: "#16193a", fontSize: '16px', margin: 0, padding: 0 }}
-                            >
-                              ${amountInDollars.toFixed(2)}
-                            </Link>
-                            <span 
-                              className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${statusBadge.bg} ${statusBadge.text} ${statusBadge.border || ''}`}
-                              style={{ margin: 0, padding: '2px 6px' }}
-                            >
-                              {statusBadge.label}
-                            </span>
-                          </div>
-
-                          {/* Meta line - use subtitleOverride (Paid • Today, etc.) */}
-                          <div 
-                            className="text-[11px] text-gray-500"
-                            style={{ 
-                              margin: 0,
-                              padding: 0,
-                              lineHeight: '1.2'
-                            }}
-                          >
-                            <span>{subtitleOverride}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Your Listings */}
-        <div className="mb-4">
-          <h2 className="text-base font-semibold mb-3 font-ui-heading" style={{ color: "#16193a" }}>
-            Your Listings
-          </h2>
-          
-          {listings.length === 0 ? (
-            <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
-              <p className="text-sm text-gray-600 mb-2">
-                No listings yet.{" "}
-                <Link href="/sell" className="text-[#16193a] hover:underline font-medium">
-                  Create your first listing
-                </Link>
-              </p>
-            </div>
-          ) : (
-            <div className="bg-white rounded-lg border border-gray-200 max-h-[500px] overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
-              <div className="p-2">
-                {listings.map((listing) => {
+                {section.items.length === 0 ? (
+                  <div className="text-center py-8 bg-white rounded-lg border border-gray-200">
+                    <p className="text-sm text-gray-600">{section.emptyMessage}</p>
+                  </div>
+                ) : (
+                  <div className="bg-white rounded-lg border border-gray-200">
+                    <div className="p-2">
+                      {section.items.map((listing) => {
                   // Calculate time since posted
                   const postedDate = new Date(listing.created_at);
                   const daysAgo = Math.floor((Date.now() - postedDate.getTime()) / (1000 * 60 * 60 * 24));
@@ -1564,11 +1472,144 @@ export default function SellerPageClient() {
                     </div>
                   </div>
                   );
-                })}
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
+            ))}
+
+            <div className="mb-4">
+              <h2 className="text-base font-semibold mb-3 font-ui-heading" style={{ color: "#16193a" }}>
+                Sold Items{allOrders.length > 0 ? ` (${allOrders.length})` : ""}
+              </h2>
+
+              {allOrders.length === 0 ? (
+                <div className="text-center py-8 bg-white rounded-lg border border-gray-200">
+                  <p className="text-sm text-gray-600">No sold items yet.</p>
+                </div>
+              ) : (
+                <div className="bg-white rounded-lg border border-gray-200">
+                  <div className="p-2">
+                    {allOrders.map((order) => {
+                      const listing = order.listings || null;
+                      if (!listing) return null;
+
+                      const orderStatus = order.status || "paid";
+                      const orderDate = new Date(order.created_at);
+                      const daysAgo = Math.floor(
+                        (Date.now() - orderDate.getTime()) / (1000 * 60 * 60 * 24)
+                      );
+                      const timeAgo =
+                        daysAgo === 0 ? "Today" : daysAgo === 1 ? "1 day ago" : `${daysAgo} days ago`;
+
+                      let statusBadge;
+                      if (order.shipped_at || orderStatus === "shipped") {
+                        statusBadge = {
+                          bg: "bg-transparent",
+                          text: "text-[#16193a]",
+                          label: "Shipped",
+                          border: "border border-[#16193a]",
+                        };
+                      } else if (orderStatus === "paid") {
+                        statusBadge = { bg: "bg-green-100", text: "text-green-700", label: "Paid" };
+                      } else if (orderStatus === "awaiting_payment") {
+                        statusBadge = {
+                          bg: "bg-gray-100",
+                          text: "text-gray-700",
+                          label: "Awaiting payment",
+                        };
+                      } else {
+                        statusBadge = {
+                          bg: "bg-gray-100",
+                          text: "text-gray-700",
+                          label: orderStatus,
+                        };
+                      }
+
+                      const amount = Number.parseFloat(String(order.amount)) || 0;
+                      const amountInDollars = amount >= 1000 ? amount / 100 : amount;
+                      const subtitleOverride = `${statusBadge.label} • ${timeAgo}`;
+
+                      return (
+                        <div
+                          key={order.id}
+                          className="bg-gray-50 rounded-lg border border-gray-200 p-3 hover:shadow-sm transition-shadow mb-3"
+                          style={{ minHeight: "80px" }}
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <Link
+                              href={`/orders/${order.id}`}
+                              className="w-[60px] h-[60px] rounded-lg overflow-hidden bg-gray-100 flex-shrink-0"
+                            >
+                              {listing.original_image_url ||
+                              listing.clean_image_url ||
+                              listing.staged_image_url ? (
+                                <img
+                                  src={
+                                    listing.original_image_url ||
+                                    listing.clean_image_url ||
+                                    listing.staged_image_url ||
+                                    ""
+                                  }
+                                  alt={listing.title}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-gray-400 text-[10px]">
+                                  No image
+                                </div>
+                              )}
+                            </Link>
+
+                            <div className="flex-1 min-w-0 flex flex-col">
+                              <Link href={`/orders/${order.id}`} className="flex-1 min-w-0">
+                                <h3
+                                  className="text-sm font-medium text-gray-900"
+                                  style={{
+                                    fontSize: "14px",
+                                    lineHeight: "1.4",
+                                    margin: 0,
+                                    marginBottom: "4px",
+                                    whiteSpace: "nowrap",
+                                    overflow: "hidden",
+                                    textOverflow: "ellipsis",
+                                    display: "block",
+                                  }}
+                                >
+                                  {listing.title}
+                                </h3>
+                              </Link>
+
+                              <div className="flex items-center gap-2 mt-1">
+                                <Link
+                                  href={`/orders/${order.id}`}
+                                  className="text-base font-medium leading-tight"
+                                  style={{ color: "#16193a", fontSize: "16px" }}
+                                >
+                                  ${amountInDollars.toFixed(2)}
+                                </Link>
+                                <span
+                                  className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${statusBadge.bg} ${statusBadge.text} ${statusBadge.border || ""}`}
+                                >
+                                  {statusBadge.label}
+                                </span>
+                              </div>
+
+                              <div className="text-[11px] text-gray-500">
+                                <span>{subtitleOverride}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
-          )}
-        </div>
+          </>
+        )}
 
         {/* Messages - collapsible section */}
         <div ref={messagesSectionRef} className="mb-4 scroll-mt-20 scroll-mb-28">

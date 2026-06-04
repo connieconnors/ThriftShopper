@@ -239,10 +239,12 @@ export default function SettingsPage() {
   }
 
   const backUrl = userType === "seller" ? "/seller" : "/canvas"
+  const dashboardLabel =
+    userType === "seller" ? "Return to Seller Dashboard" : "Return to Your Dashboard"
   const avatarSrc = avatarPreview || profile?.avatar_url
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-16">
+    <div className="min-h-screen bg-gray-50 pb-24">
       <header className="bg-[#16193a] px-4 py-2 flex items-center justify-between sticky top-0 z-10">
         <Link href={backUrl} className="flex items-center gap-3">
           <span className="text-white/80 hover:text-white transition-colors">
@@ -492,6 +494,22 @@ export default function SettingsPage() {
           ThriftShopper v1.0.0
         </div>
       </div>
+
+      <nav
+        className="fixed bottom-0 left-0 right-0 border-t border-white/10 px-4 py-3 z-30"
+        style={{ backgroundColor: "#16193a" }}
+        aria-label="Settings navigation"
+      >
+        <div className="max-w-2xl mx-auto">
+          <Link
+            href={backUrl}
+            className="flex items-center justify-center gap-2 w-full py-2.5 text-sm font-medium text-white/90 hover:text-white transition-colors rounded-lg hover:bg-white/5"
+          >
+            <ArrowLeft className="h-4 w-4 shrink-0" style={{ color: "#EFBF05" }} />
+            {dashboardLabel}
+          </Link>
+        </div>
+      </nav>
 
       <TSModal
         isOpen={deleteModalOpen}
