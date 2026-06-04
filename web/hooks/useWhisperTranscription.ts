@@ -21,6 +21,8 @@ interface UseWhisperTranscriptionReturn {
   isSupported: boolean;
   startRecording: () => Promise<void>;
   stopRecording: () => void;
+  /** Stop mic/stream without sending audio to Whisper */
+  cancelRecording: () => void;
   toggleRecording: () => void;
 }
 
@@ -49,6 +51,7 @@ export function useWhisperTranscription(
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const silenceCheckIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const skipNextTranscriptionRef = useRef(false);
 
   // Check browser support
   useEffect(() => {
@@ -216,7 +219,13 @@ export function useWhisperTranscription(
 
       mediaRecorder.onstop = async () => {
         cleanup();
-        
+
+        if (skipNextTranscriptionRef.current) {
+          skipNextTranscriptionRef.current = false;
+          audioChunksRef.current = [];
+          return;
+        }
+
         if (audioChunksRef.current.length > 0) {
           const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
           await transcribeAudio(audioBlob);
@@ -275,6 +284,7 @@ export function useWhisperTranscription(
     isSupported,
     startRecording,
     stopRecording,
+    cancelRecording,
     toggleRecording,
   };
 }

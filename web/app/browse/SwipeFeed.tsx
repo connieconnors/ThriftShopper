@@ -195,12 +195,6 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
     }
   }, []);
 
-  // Navigate to product detail when card is clicked
-  const handleCardClick = (listingId: string) => {
-    triggerHaptic();
-    router.push(`/listing/${listingId}`);
-  };
-
   /** Voice search is a fresh intent — clear mood filters and any prior voice search UI. */
   const resetForVoiceSearch = useCallback(() => {
     setSelectedMoods([]);
@@ -316,6 +310,7 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
     isProcessing,
     isSupported: isVoiceSupported,
     toggleRecording,
+    cancelRecording,
     error: transcriptionError,
   } = useWhisperTranscription({
     onTranscriptChange: (t) => {
@@ -342,6 +337,25 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
       return () => clearInterval(interval);
     }
   }, [isRecording]);
+
+  /** Stop mic UI and release microphone (no Whisper call). */
+  const stopVoiceSession = useCallback(() => {
+    setIsListening(false);
+    setVoiceTranscript('');
+    setVoiceError(null);
+    if (isRecording || isProcessing) {
+      cancelRecording();
+    }
+  }, [isRecording, isProcessing, cancelRecording]);
+
+  const handleCardClick = useCallback(
+    (listingId: string) => {
+      stopVoiceSession();
+      triggerHaptic();
+      router.push(`/listing/${listingId}`);
+    },
+    [stopVoiceSession, triggerHaptic, router]
+  );
 
   // Display listings: use search results if available, otherwise use filtered listings
   // Compute this early so it can be used in hooks below
@@ -491,13 +505,7 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
   // Voice search: fresh intent — clears mood filters and prior search before listening
   const toggleVoice = () => {
     if (isListening) {
-      // Cancel: stop recording without running search
-      setIsListening(false);
-      setVoiceTranscript('');
-      setVoiceError(null);
-      if (isRecording) {
-        toggleRecording();
-      }
+      stopVoiceSession();
       return;
     }
 
@@ -632,6 +640,8 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
   };
   
   const clearSearch = () => {
+    stopVoiceSession();
+
     // Before clearing, capture the current listing ID from search results
     const currentDisplayListings = searchResults ?? filteredListings;
     const currentListingId = currentDisplayListings[currentIndex]?.id;
@@ -918,7 +928,6 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
                 event.stopPropagation();
                 if (voiceTranscript && !isProcessing) {
                   clearSearch();
-                  setIsListening(false);
                 }
               }}
               onTouchStart={(event) => {

@@ -50,3 +50,6 @@ CREATE POLICY "buyer_events_insert_own"
   WITH CHECK (auth.uid() = user_id);
 
 -- No UPDATE/DELETE for buyers in v1 (append-only log)
+
+-- Required for client inserts (RLS alone is not enough without table grants)
+GRANT SELECT, INSERT ON public.buyer_events TO authenticated;

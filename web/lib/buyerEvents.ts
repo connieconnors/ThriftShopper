@@ -26,21 +26,26 @@ export function trackBuyerEvent(
 ): void {
   void (async () => {
     try {
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
-      if (userError || !user?.id) return;
+      const { data: sessionData } = await supabase.auth.getSession();
+      let userId = sessionData.session?.user?.id;
+      if (!userId) {
+        const {
+          data: { user },
+          error: userError,
+        } = await supabase.auth.getUser();
+        if (userError || !user?.id) return;
+        userId = user.id;
+      }
 
       const { error } = await supabase.from('buyer_events').insert({
-        user_id: user.id,
+        user_id: userId,
         event_type: eventType,
         listing_id: options.listingId ?? null,
         payload: options.payload ?? {},
       });
 
       if (error) {
-        console.warn('[buyer-events] insert failed:', error.message);
+        console.warn('[buyer-events] insert failed:', error.code, error.message);
       }
     } catch (err) {
       console.warn('[buyer-events] unexpected error:', err);
