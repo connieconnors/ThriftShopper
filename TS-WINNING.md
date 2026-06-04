@@ -5,7 +5,7 @@
 
 **Related docs:** `TS-MASTER-BRIEF.md` (ecosystem + founder context) · `TS-DISCOVERY-ROADMAP.md` (technical phases)
 
-**Status:** Not started — implement in order below.
+**Status:** #1 in progress / shipped in code — #2–#3 next.
 
 ---
 
@@ -135,7 +135,7 @@ Align with `TS-MASTER-BRIEF.md` voice: understated, expert, no hype — *curatio
 
 ## Success checklist (before showing investors)
 
-- [ ] Search shows interpretation chips (not only console)
+- [x] Search shows interpretation chips (not only console)
 - [ ] Mood wheel uses semantic-mood API at least once in demo
 - [ ] `buyer_events` rows appear in Supabase when you browse as test user
 - [ ] Logged-in user with 2+ favorites sees “Picked for you”

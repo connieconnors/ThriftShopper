@@ -57,6 +57,8 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
   const [voiceTranscript, setVoiceTranscript] = useState('');
   const [lastSearchQuery, setLastSearchQuery] = useState(''); // Keep track of what was searched
   const [searchResults, setSearchResults] = useState<Listing[] | null>(null);
+  /** AI-parsed search terms from /api/search/semantic — display only; optional UI */
+  const [searchInterpretationTerms, setSearchInterpretationTerms] = useState<string[]>([]);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [selectedMoods, setSelectedMoods] = useState<string[]>([]);
   const [filteredListings, setFilteredListings] = useState<Listing[]>([]);
@@ -528,6 +530,7 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
     if (!query || query.trim().length === 0) {
       setSearchResults(null);
       setLastSearchQuery('');
+      setSearchInterpretationTerms([]);
       return;
     }
 
@@ -552,7 +555,16 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
       }
 
       const { listings, interpretation } = await response.json();
-      
+
+      const interpretedTerms = Array.from(
+        new Set(
+          (interpretation?.termGroups ?? [])
+            .map((group: { term?: string }) => group.term?.trim())
+            .filter((term: string | undefined): term is string => Boolean(term))
+        )
+      );
+      setSearchInterpretationTerms(interpretedTerms);
+
       console.log('🔍 Search query:', query);
       console.log('📊 Found listings:', listings.length);
       if (interpretation) {
@@ -606,6 +618,7 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
     } catch (error) {
       console.error('Search error:', error);
       setSearchResults([]);
+      setSearchInterpretationTerms([]);
     }
     
     // Don't clear transcript or hide UI - keep it visible for demo
@@ -619,6 +632,7 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
     
     setSearchResults(null);
     setLastSearchQuery('');
+    setSearchInterpretationTerms([]);
     setVoiceTranscript('');
     setCurrentIndex(0);
     
@@ -1000,6 +1014,35 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
                 }}
               >
                 "{lastSearchQuery}"
+              </div>
+            )}
+            {searchInterpretationTerms.length > 0 && (
+              <div
+                className="flex flex-col items-center gap-1.5 max-w-[min(100%,320px)]"
+                style={{ pointerEvents: 'none' }}
+              >
+                <span
+                  className="text-[10px] uppercase tracking-wide"
+                  style={{ color: 'rgba(255,255,255,0.55)' }}
+                >
+                  Understood as
+                </span>
+                <div className="flex flex-wrap justify-center gap-1.5">
+                  {searchInterpretationTerms.map((term) => (
+                    <span
+                      key={term}
+                      className="px-2.5 py-1 rounded-full text-xs font-medium capitalize"
+                      style={{
+                        color: '#ffffff',
+                        backgroundColor: 'rgba(255,255,255,0.12)',
+                        border: `1px solid rgba(${GOLD_RGB}, 0.55)`,
+                        boxShadow: '0 1px 4px rgba(0,0,0,0.12)',
+                      }}
+                    >
+                      {term}
+                    </span>
+                  ))}
+                </div>
               </div>
             )}
             <div className="flex items-center gap-2">
