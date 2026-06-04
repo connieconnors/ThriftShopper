@@ -313,7 +313,8 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
       console.error('Voice transcription error:', error);
       setVoiceError(error);
     },
-    silenceTimeout: 2500, // Auto-stop ~2.5s after user stops speaking
+    // Manual stop via mic tap for beta (silence auto-stop deferred — flaky on some mobile mics)
+    silenceTimeout: 999999999,
     maxDuration: 60000,
   });
 
