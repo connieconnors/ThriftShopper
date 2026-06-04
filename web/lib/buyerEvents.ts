@@ -17,7 +17,8 @@ type TrackBuyerEventOptions = {
 };
 
 /**
- * Fire-and-forget buyer event. No-op when logged out or table missing.
+ * Fire-and-forget buyer event. Inserts with the user's Supabase session (RLS).
+ * No-op when logged out. Never blocks UX.
  */
 export function trackBuyerEvent(
   eventType: BuyerEventType,
@@ -26,25 +27,23 @@ export function trackBuyerEvent(
   void (async () => {
     try {
       const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (!session?.access_token) return;
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+      if (userError || !user?.id) return;
 
-      await fetch('/api/buyer-events', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({
-          event_type: eventType,
-          listing_id: options.listingId ?? null,
-          payload: options.payload ?? {},
-        }),
-        keepalive: true,
+      const { error } = await supabase.from('buyer_events').insert({
+        user_id: user.id,
+        event_type: eventType,
+        listing_id: options.listingId ?? null,
+        payload: options.payload ?? {},
       });
-    } catch {
-      // Never block UX for analytics
+
+      if (error) {
+        console.warn('[buyer-events] insert failed:', error.message);
+      }
+    } catch (err) {
+      console.warn('[buyer-events] unexpected error:', err);
     }
   })();
 }

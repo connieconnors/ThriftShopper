@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback, useMemo, TouchEvent } from "react";
+import { flushSync } from "react-dom";
 import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
 import { 
@@ -500,8 +501,10 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
       return;
     }
 
-    // New voice search — clear mood wheel + prior voice receipt, then listen
-    resetForVoiceSearch();
+    // New voice search — clear mood pills immediately, then listen
+    flushSync(() => {
+      resetForVoiceSearch();
+    });
     setIsListening(true);
     if (!isRecording) {
       toggleRecording();
