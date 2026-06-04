@@ -200,6 +200,19 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
     router.push(`/listing/${listingId}`);
   };
 
+  /** Voice search is a fresh intent — clear mood filters and any prior voice search UI. */
+  const resetForVoiceSearch = useCallback(() => {
+    setSelectedMoods([]);
+    setNoMoodResults(false);
+    setFilteredListings(listings);
+    setSearchResults(null);
+    setLastSearchQuery('');
+    setSearchInterpretationTerms([]);
+    setVoiceTranscript('');
+    setVoiceError(null);
+    setCurrentIndex(0);
+  }, [listings]);
+
   const applyMoodFilter = useCallback(
     async (moods: string[]) => {
       setSelectedMoods(moods);
@@ -487,18 +500,12 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
       return;
     }
 
-    // New voice search — do not stack on mood wheel or prior search
-    setSelectedMoods([]);
-    setNoMoodResults(false);
-    setFilteredListings(listings);
-    setSearchResults(null);
-    setLastSearchQuery('');
-    setSearchInterpretationTerms([]);
-    setVoiceTranscript('');
-    setVoiceError(null);
+    // New voice search — clear mood wheel + prior voice receipt, then listen
+    resetForVoiceSearch();
     setIsListening(true);
-    setCurrentIndex(0);
-    toggleRecording();
+    if (!isRecording) {
+      toggleRecording();
+    }
   };
 
   const parsePriceCap = (query: string): number | null => {
