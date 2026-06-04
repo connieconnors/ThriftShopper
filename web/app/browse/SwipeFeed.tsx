@@ -24,7 +24,7 @@ import { useAuth } from "../context/AuthContext";
 import { Mic, Loader2 } from "lucide-react";
 import { GlintIcon } from "../../components/GlintIcon";
 import { normalizeTagColumn } from "../../lib/utils/tagNormalizer";
-import { matchesMood, getMoodVariations } from "../../lib/moodMappings";
+import { getMoodVariations } from "../../lib/moodMappings";
 import { useAppShell, SHELL_LINEN } from "../../hooks/useAppShell";
 
 interface SwipeFeedProps {
@@ -46,6 +46,51 @@ const EDITORIAL_GRADIENT = `
   linear-gradient(to top, rgba(0, 0, 0, 0.72) 0%, rgba(0, 0, 0, 0.38) 38%, rgba(${LINEN_RGB}, 0.08) 58%, transparent 72%)
 `;
 
+/** Tag-based mood filter (fallback when semantic mood API fails or returns nothing). */
+function filterListingsByMoodTags(source: Listing[], moods: string[]): Listing[] {
+  return source.filter((listing) => {
+    const listingStyles = normalizeTagColumn(listing.styles).map((tag) => tag.toLowerCase().trim());
+    const listingMoods = normalizeTagColumn(listing.moods).map((tag) => tag.toLowerCase().trim());
+    const listingIntents = normalizeTagColumn(listing.intents).map((tag) => tag.toLowerCase().trim());
+
+    const textFields = [
+      listing.title || '',
+      listing.description || '',
+      listing.category || '',
+      listing.story_text || '',
+      ...(listing.ai_suggested_keywords || []),
+      (listing as { ai_generated_title?: string | null }).ai_generated_title || '',
+      (listing as { ai_generated_description?: string | null }).ai_generated_description || '',
+    ]
+      .filter(Boolean)
+      .map((field) => field.toLowerCase().trim());
+
+    const allSearchableFields = [...listingStyles, ...listingMoods, ...listingIntents].filter(Boolean);
+
+    return moods.every((selectedMood) => {
+      if (typeof selectedMood !== 'string') return false;
+      const variations = getMoodVariations(selectedMood);
+
+      const arrayMatch = allSearchableFields.some((field) =>
+        variations.some((variation) => {
+          if (field === variation) return true;
+          const escaped = variation.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          return new RegExp(`\\b${escaped}\\b`, 'i').test(field);
+        })
+      );
+
+      const textMatch = textFields.some((textField) =>
+        variations.some((variation) => {
+          const escaped = variation.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          return new RegExp(`\\b${escaped}\\b`, 'i').test(textField);
+        })
+      );
+
+      return arrayMatch || textMatch;
+    });
+  });
+}
+
 export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProps) {
   const router = useRouter();
   const { user } = useAuth();
@@ -63,6 +108,7 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
   const [selectedMoods, setSelectedMoods] = useState<string[]>([]);
   const [filteredListings, setFilteredListings] = useState<Listing[]>([]);
   const [noMoodResults, setNoMoodResults] = useState(false);
+  const [moodFilterLoading, setMoodFilterLoading] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const [supportOpen, setSupportOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -153,143 +199,75 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
     router.push(`/listing/${listingId}`);
   };
 
-  // Apply mood filter function
-  const applyMoodFilter = (moods: string[]) => {
-    // keep track of selection
-    setSelectedMoods(moods);
+  const applyMoodFilter = useCallback(
+    async (moods: string[]) => {
+      setSelectedMoods(moods);
 
-    // If nothing selected, reset to all listings and clear error
-    if (moods.length === 0) {
-      setFilteredListings(listings);
-      setNoMoodResults(false);
-      return;
-    }
+      if (moods.length === 0) {
+        setFilteredListings(listings);
+        setNoMoodResults(false);
+        setMoodFilterLoading(false);
+        return;
+      }
 
-    console.log('🎯 [MOOD FILTER] Starting filter with selections:', moods);
-    console.log('🎯 [MOOD FILTER] Total listings to filter:', listings.length);
+      setMoodFilterLoading(true);
+      let usedSemantic = false;
 
-    // Debug: Show sample of what's in the database
-    if (listings.length > 0) {
-      const sample = listings.slice(0, 3);
-      console.log('🎯 [MOOD FILTER] Sample listing data:', sample.map(l => ({
-        id: l.id?.substring(0, 8),
-        title: l.title?.substring(0, 30),
-        styles: l.styles,
-        moods: l.moods,
-        intents: l.intents,
-        stylesNormalized: normalizeTagColumn(l.styles),
-        moodsNormalized: normalizeTagColumn(l.moods),
-        intentsNormalized: normalizeTagColumn(l.intents),
-      })));
-    }
-
-    const next = listings.filter((listing) => {
-      // HIGHEST PRIORITY: Check styles field first (keyword data is stored here)
-      // Normalize and lowercase ALL database values for case-insensitive matching
-      const listingStyles = normalizeTagColumn(listing.styles).map(tag => tag.toLowerCase().trim());
-      const listingMoods = normalizeTagColumn(listing.moods).map(tag => tag.toLowerCase().trim());
-      const listingIntents = normalizeTagColumn(listing.intents).map(tag => tag.toLowerCase().trim());
-      
-      // Also get text fields (description, title, category, AI-generated text)
-      const textFields = [
-        listing.title || '',
-        listing.description || '',
-        listing.category || '',
-        listing.story_text || '',
-        ...(listing.ai_suggested_keywords || []),
-        (listing as { ai_generated_title?: string | null }).ai_generated_title || '',
-        (listing as { ai_generated_description?: string | null }).ai_generated_description || '',
-      ]
-        .filter(Boolean)
-        .map(field => field.toLowerCase().trim());
-      
-      // Combine all searchable fields (arrays + text fields)
-      const allSearchableFields = [
-        ...listingStyles,
-        ...listingMoods,
-        ...listingIntents,
-      ].filter(Boolean); // Remove any empty strings
-      
-      // Check if ALL selected moods match any field from the listing (AND logic)
-      // Uses fuzzy matching with mood mappings for plural/singular/semantic variations
-      const matches = moods.every(selectedMood => {
-        if (typeof selectedMood !== 'string') {
-          console.warn('Invalid selectedMood type:', selectedMood);
-          return false;
-        }
-        
-        // Get all variations for this mood (handles plural/singular/semantic equivalents)
-        const variations = getMoodVariations(selectedMood);
-        
-        // Check array fields (exact and word boundary match)
-        const arrayMatch = allSearchableFields.some(field => {
-          return variations.some(variation => {
-            // Exact match
-            if (field === variation) return true;
-            
-            // Word boundary match (handles phrases)
-            const escaped = variation.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            const regex = new RegExp(`\\b${escaped}\\b`, 'i');
-            return regex.test(field);
-          });
+      try {
+        const response = await fetch('/api/search/semantic-mood', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ moods, threshold: 0.62, limit: 80 }),
         });
-        
-        // Check text fields (word boundary match only - handles "practical" in description)
-        const textMatch = textFields.some(textField => {
-          return variations.some(variation => {
-            const escaped = variation.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            const regex = new RegExp(`\\b${escaped}\\b`, 'i');
-            return regex.test(textField);
-          });
-        });
-        
-        const matchResult = arrayMatch || textMatch;
-        
-        // Debug logging for first listing and first mood
-        if (listing === listings[0] && selectedMood === moods[0]) {
-          console.log('🎯 [MOOD FILTER] Checking mood with fuzzy matching:', {
-            selectedMood,
-            variations,
-            listingStylesRaw: listing.styles,
-            listingStylesNormalized: listingStyles,
-            listingMoodsRaw: listing.moods,
-            listingMoodsNormalized: listingMoods,
-            listingIntentsRaw: listing.intents,
-            listingIntentsNormalized: listingIntents,
-            title: listing.title?.substring(0, 50),
-            description: listing.description?.substring(0, 50),
-            category: listing.category,
-            allSearchableFields,
-            arrayMatch,
-            textMatch,
-            matchResult,
-          });
+
+        if (response.ok) {
+          const { listings: matches } = await response.json();
+          const ids: string[] = (matches ?? [])
+            .map((row: { id?: string }) => row.id)
+            .filter((id: string | undefined): id is string => Boolean(id));
+
+          if (ids.length > 0) {
+            const byId = new Map(listings.map((l) => [l.id, l]));
+            const ordered = ids
+              .map((id) => byId.get(id))
+              .filter((l): l is Listing => Boolean(l));
+
+            if (ordered.length > 0) {
+              console.log('🎯 [MOOD] Semantic matches:', ordered.length, moods);
+              setNoMoodResults(false);
+              setFilteredListings(ordered);
+              setCurrentIndex(0);
+              usedSemantic = true;
+            }
+          }
+        } else {
+          console.warn('[MOOD] Semantic mood API error:', response.status);
         }
-        
-        return matchResult;
+      } catch (error) {
+        console.warn('[MOOD] Semantic mood search failed, using tag filter', error);
+      } finally {
+        setMoodFilterLoading(false);
+      }
+
+      if (usedSemantic) return;
+
+      const tagFiltered = filterListingsByMoodTags(listings, moods);
+      console.log('🎯 [MOOD] Tag filter fallback:', {
+        selectedMoods: moods,
+        matchedListings: tagFiltered.length,
       });
-      
-      return matches;
-    });
 
-    console.log('🎯 [MOOD FILTER] Filter results:', {
-      selectedMoods: moods,
-      totalListings: listings.length,
-      matchedListings: next.length,
-      matchedIds: next.slice(0, 5).map(l => l.id?.substring(0, 8)),
-    });
+      if (tagFiltered.length === 0) {
+        setNoMoodResults(true);
+        return;
+      }
 
-    if (next.length === 0) {
-      // 🔴 important: do NOT change filteredListings or currentIndex
-      setNoMoodResults(true);
-      return;
-    }
-
-    // We have results – update the feed as normal
-    setNoMoodResults(false);
-    setFilteredListings(next);
-    setCurrentIndex(0); // Reset to first card when filter changes
-  };
+      setNoMoodResults(false);
+      setFilteredListings(tagFiltered);
+      setCurrentIndex(0);
+    },
+    [listings]
+  );
 
   // Handle completed voice transcription
   // Keep isListening true so UI stays visible after transcription
@@ -700,78 +678,17 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
 
   // Removed auto-close of mood wheel on swipe - user must manually close it
 
-  // Update filteredListings when listings change (but not when mood filter changes)
+  // Re-apply mood filter when browse listings refresh
   useEffect(() => {
     if (selectedMoods.length === 0) {
       setFilteredListings(listings);
       setNoMoodResults(false);
-    } else if (!noMoodResults) {
-      // Only re-apply if we're not in a "no results" state
-      // This prevents clearing the current view when listings update
-      const next = listings.filter((listing) => {
-        // HIGHEST PRIORITY: Check styles field first (keyword data is stored here)
-        // Normalize and lowercase ALL database values for case-insensitive matching
-        const listingStyles = normalizeTagColumn(listing.styles).map(tag => tag.toLowerCase().trim());
-        const listingMoods = normalizeTagColumn(listing.moods).map(tag => tag.toLowerCase().trim());
-        const listingIntents = normalizeTagColumn(listing.intents).map(tag => tag.toLowerCase().trim());
-        
-        // Also get text fields (description, title, category, AI-generated text)
-        const textFields = [
-          listing.title || '',
-          listing.description || '',
-          listing.category || '',
-          listing.story_text || '',
-          ...(listing.ai_suggested_keywords || []),
-          (listing as { ai_generated_title?: string | null }).ai_generated_title || '',
-          (listing as { ai_generated_description?: string | null }).ai_generated_description || '',
-        ]
-          .filter(Boolean)
-          .map(field => field.toLowerCase().trim());
-        
-        // Combine all searchable array fields
-        const allSearchableFields = [
-          ...listingStyles,
-          ...listingMoods,
-          ...listingIntents,
-        ].filter(Boolean); // Remove any empty strings
-        
-        return selectedMoods.every(selectedMood => {
-          if (typeof selectedMood !== 'string') return false;
-          
-          // Get all variations for this mood (handles plural/singular/semantic equivalents)
-          const variations = getMoodVariations(selectedMood);
-          
-          // Check array fields (exact and word boundary match)
-          const arrayMatch = allSearchableFields.some(field => {
-            return variations.some(variation => {
-              // Exact match
-              if (field === variation) return true;
-              
-              // Word boundary match (handles phrases)
-              const escaped = variation.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-              const regex = new RegExp(`\\b${escaped}\\b`, 'i');
-              return regex.test(field);
-            });
-          });
-          
-          // Check text fields (word boundary match only - handles "practical" in description)
-          const textMatch = textFields.some(textField => {
-            return variations.some(variation => {
-              const escaped = variation.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-              const regex = new RegExp(`\\b${escaped}\\b`, 'i');
-              return regex.test(textField);
-            });
-          });
-          
-          return arrayMatch || textMatch;
-        });
-      });
-      if (next.length > 0) {
-        setFilteredListings(next);
-        setNoMoodResults(false);
-      }
+      return;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (!noMoodResults) {
+      void applyMoodFilter(selectedMoods);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only refresh when deck data changes
   }, [listings]);
 
   // Ensure currentIndex is within bounds - reset if out of bounds (e.g., after deletions)
@@ -923,7 +840,16 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
                 <span style={{ fontSize: '16px', fontWeight: 'bold', lineHeight: 1 }}>×</span>
               </button>
             ))}
-            {noMoodResults && (
+            {moodFilterLoading && (
+              <span
+                className="text-xs flex items-center gap-1"
+                style={{ color: 'rgba(255,255,255,0.75)', marginLeft: '8px' }}
+              >
+                <Loader2 className="h-3 w-3 animate-spin" />
+                Matching…
+              </span>
+            )}
+            {noMoodResults && !moodFilterLoading && (
               <span 
                 className="text-xs italic"
                 style={{ color: '#ffcccb', marginLeft: '8px' }}

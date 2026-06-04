@@ -5,7 +5,7 @@
 
 **Related docs:** `TS-MASTER-BRIEF.md` (ecosystem + founder context) · `TS-DISCOVERY-ROADMAP.md` (technical phases)
 
-**Status:** #1 in progress / shipped in code — #2–#3 next.
+**Status:** #1–#2 shipped in code — #3 (`buyer_events`) next.
 
 ---
 
@@ -136,7 +136,7 @@ Align with `TS-MASTER-BRIEF.md` voice: understated, expert, no hype — *curatio
 ## Success checklist (before showing investors)
 
 - [x] Search shows interpretation chips (not only console)
-- [ ] Mood wheel uses semantic-mood API at least once in demo
+- [x] Mood wheel uses semantic-mood API (tag filter fallback if API/vectors fail)
 - [ ] `buyer_events` rows appear in Supabase when you browse as test user
 - [ ] Logged-in user with 2+ favorites sees “Picked for you”
 - [ ] Listing detail shows “More like this” with ≥1 result
