@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import React from "react";
 import { GlintIcon } from "../../components/GlintIcon";
+import { trackBuyerEvent } from "../../lib/buyerEvents";
 import { supabase } from "../../lib/supabaseClient";
 import { useAuth } from "../context/AuthContext";
 
@@ -133,6 +134,8 @@ export default function FavoriteButton({
           
         if (error) {
           console.error("Error adding favorite:", error.message);
+        } else {
+          trackBuyerEvent("favorite", { listingId });
         }
       } else {
         // Remove from favorites
@@ -144,6 +147,8 @@ export default function FavoriteButton({
           
         if (error) {
           console.error("Error removing favorite:", error.message);
+        } else {
+          trackBuyerEvent("unfavorite", { listingId });
         }
       }
     } catch (err) {

@@ -34,6 +34,7 @@ import {
 } from "../../../lib/shippingPreferences";
 import { useAppShell } from "../../../hooks/useAppShell";
 import { parseListingFrom, resolveListingBack } from "../../../lib/listingNavigation";
+import { trackBuyerEvent } from "../../../lib/buyerEvents";
 
 const CHROME_GLASS = "rgba(22, 25, 58, 0.48)";
 const CHROME_GLASS_BORDER = "rgba(237, 233, 225, 0.25)";
@@ -74,9 +75,18 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
   const [contactSuccess, setContactSuccess] = useState(false);
   const [contactError, setContactError] = useState<string | null>(null);
 
-  // Track recently viewed
+  const listingViewLogged = useRef(false);
+
+  // Track recently viewed + buyer event (once per page load)
   useEffect(() => {
     if (user && listing) {
+      if (!listingViewLogged.current) {
+        listingViewLogged.current = true;
+        trackBuyerEvent('listing_view', {
+          listingId: listing.id,
+          payload: { from: listingFrom },
+        });
+      }
       const imageUrl = getPrimaryImage(listing);
       addRecentlyViewed(user.id, listing.id, listing.title, imageUrl);
     }

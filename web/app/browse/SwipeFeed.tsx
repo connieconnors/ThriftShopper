@@ -26,6 +26,7 @@ import { GlintIcon } from "../../components/GlintIcon";
 import { normalizeTagColumn } from "../../lib/utils/tagNormalizer";
 import { getMoodVariations } from "../../lib/moodMappings";
 import { useAppShell, SHELL_LINEN } from "../../hooks/useAppShell";
+import { trackBuyerEvent } from "../../lib/buyerEvents";
 
 interface SwipeFeedProps {
   initialListings: Listing[];
@@ -238,6 +239,13 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
               setFilteredListings(ordered);
               setCurrentIndex(0);
               usedSemantic = true;
+              trackBuyerEvent('mood_select', {
+                payload: {
+                  moods,
+                  match_count: ordered.length,
+                  source: 'semantic',
+                },
+              });
             }
           }
         } else {
@@ -265,6 +273,13 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
       setNoMoodResults(false);
       setFilteredListings(tagFiltered);
       setCurrentIndex(0);
+      trackBuyerEvent('mood_select', {
+        payload: {
+          moods,
+          match_count: tagFiltered.length,
+          source: 'tags',
+        },
+      });
     },
     [listings]
   );
@@ -593,6 +608,14 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
       } else {
         setSearchResults([]);
       }
+
+      trackBuyerEvent('search', {
+        payload: {
+          query: query.trim(),
+          interpreted_terms: interpretedTerms,
+          result_count: nextListings.length,
+        },
+      });
     } catch (error) {
       console.error('Search error:', error);
       setSearchResults([]);
@@ -660,6 +683,7 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
           .eq('listing_id', id);
 
         if (error) throw error;
+        trackBuyerEvent('unfavorite', { listingId: id });
       } else {
         // Add to favorites
         const { error } = await supabase
@@ -667,6 +691,7 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
           .insert({ user_id: user.id, listing_id: id });
 
         if (error) throw error;
+        trackBuyerEvent('favorite', { listingId: id });
       }
     } catch (err) {
       console.error('Error updating favorite:', err);

@@ -5,7 +5,7 @@
 
 **Related docs:** `TS-MASTER-BRIEF.md` (ecosystem + founder context) · `TS-DISCOVERY-ROADMAP.md` (technical phases)
 
-**Status:** #1–#2 shipped in code — #3 (`buyer_events`) next.
+**Status:** #1–#3 code shipped — **you must run `buyer-events.sql` on Supabase** for rows to persist.
 
 ---
 
@@ -63,7 +63,7 @@ ThriftShopper is the **predictive discovery layer** on a proprietary graph: **mo
 
 | # | Feature | Effort | Notes |
 |---|---------|--------|--------|
-| **3** | **`buyer_events` table + logging** | 1–2 days | Supabase migration + thin `POST /api/events` (or direct insert with RLS). Fire-and-forget; never block UI. |
+| **3** | **`buyer_events` table + logging** | Run `web/supabase/buyer-events.sql` in Supabase first | `POST /api/buyer-events` + `trackBuyerEvent()` — fire-and-forget. |
 
 **Event types (v1):**
 
@@ -137,7 +137,8 @@ Align with `TS-MASTER-BRIEF.md` voice: understated, expert, no hype — *curatio
 
 - [x] Search shows interpretation chips (not only console)
 - [x] Mood wheel uses semantic-mood API (tag filter fallback if API/vectors fail)
-- [ ] `buyer_events` rows appear in Supabase when you browse as test user
+- [ ] Run `web/supabase/buyer-events.sql` in Supabase SQL Editor
+- [ ] `buyer_events` rows appear when logged-in user searches, moods, favorites, views listing, purchases
 - [ ] Logged-in user with 2+ favorites sees “Picked for you”
 - [ ] Listing detail shows “More like this” with ≥1 result
 - [ ] One rehearsed 90s flow: search → moods → favorite → picked for you → more like this

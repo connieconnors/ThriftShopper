@@ -384,6 +384,20 @@ export async function POST(request: NextRequest) {
 
     console.log("✅ Order created successfully:", order.id);
 
+    const { error: buyerEventError } = await supabaseAdmin.from("buyer_events").insert({
+      user_id: buyerId,
+      event_type: "purchase",
+      listing_id: listingId,
+      payload: {
+        order_id: order.id,
+        amount: order.amount,
+        payment_intent_id: paymentIntentId ?? null,
+      },
+    });
+    if (buyerEventError) {
+      console.warn("[buyer-events] purchase log failed:", buyerEventError.message);
+    }
+
     // Update listing status to sold and set sold_at timestamp
     console.log("Attempting DB update for:", listingId);
     const { error: updateError } = await supabaseAdmin
