@@ -438,6 +438,8 @@ export default function BuyerCanvasPage() {
             listings={pickedForYou}
             from="canvas"
             variant="light"
+            recommendationType="picked_for_you"
+            trackEvents
           />
         </div>
       )}

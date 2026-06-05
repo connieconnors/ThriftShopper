@@ -1,8 +1,14 @@
 'use client';
 
 import Link from 'next/link';
+import { useEffect, useRef } from 'react';
 import { Listing, getPrimaryImage } from '../lib/types';
 import { listingHref, type ListingFrom } from '../lib/listingNavigation';
+import { trackBuyerEvent } from '../lib/buyerEvents';
+import {
+  buildEventPayload,
+  type RecommendationType,
+} from '../lib/buyerEventContext';
 
 type ListingCarouselProps = {
   title: string;
@@ -11,6 +17,9 @@ type ListingCarouselProps = {
   from?: ListingFrom;
   /** 'dark' for browse overlay; 'light' for canvas / listing detail */
   variant?: 'dark' | 'light';
+  /** When set, logs recommendation_impression / recommendation_click */
+  recommendationType?: RecommendationType;
+  trackEvents?: boolean;
 };
 
 export function ListingCarousel({
@@ -19,10 +28,47 @@ export function ListingCarousel({
   listings,
   from = 'browse',
   variant = 'light',
+  recommendationType,
+  trackEvents = false,
 }: ListingCarouselProps) {
+  const impressionLoggedRef = useRef(false);
+
+  useEffect(() => {
+    if (!trackEvents || !recommendationType || listings.length === 0) return;
+    if (impressionLoggedRef.current) return;
+    impressionLoggedRef.current = true;
+
+    const surface =
+      recommendationType === 'picked_for_you' ? 'picked_for_you' : 'more_like_this';
+
+    trackBuyerEvent('recommendation_impression', {
+      listingId: listings[0]?.id ?? null,
+      payload: buildEventPayload({
+        surface,
+        recommendationType,
+        deckSize: listings.length,
+        extra: { listing_ids: listings.map((l) => l.id) },
+      }),
+    });
+  }, [trackEvents, recommendationType, listings]);
+
   if (listings.length === 0) return null;
 
   const isDark = variant === 'dark';
+
+  const handleRecommendationClick = (listing: Listing) => {
+    if (!trackEvents || !recommendationType) return;
+    const surface =
+      recommendationType === 'picked_for_you' ? 'picked_for_you' : 'more_like_this';
+    trackBuyerEvent('recommendation_click', {
+      listingId: listing.id,
+      payload: buildEventPayload({
+        surface,
+        recommendationType,
+        listing,
+      }),
+    });
+  };
 
   return (
     <section className="w-full" aria-label={title}>
@@ -52,6 +98,7 @@ export function ListingCarousel({
             <Link
               key={listing.id}
               href={listingHref(listing.id, from)}
+              onClick={() => handleRecommendationClick(listing)}
               className="flex-shrink-0 w-[140px] snap-start rounded-xl overflow-hidden border transition-opacity hover:opacity-90"
               style={{
                 backgroundColor: isDark ? 'rgba(22, 25, 58, 0.65)' : '#ffffff',

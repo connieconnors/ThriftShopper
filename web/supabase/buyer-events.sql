@@ -15,7 +15,16 @@ CREATE TABLE IF NOT EXISTS public.buyer_events (
       'unfavorite',
       'search',
       'mood_select',
-      'purchase'
+      'purchase',
+      'listing_impression',
+      'listing_dwell',
+      'listing_skip',
+      'listing_click',
+      'recommendation_impression',
+      'recommendation_click',
+      'search_no_results',
+      'voice_search_start',
+      'voice_search_cancel'
     )
   )
 );

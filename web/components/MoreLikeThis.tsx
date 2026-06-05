@@ -56,6 +56,8 @@ export function MoreLikeThis({ listingId }: MoreLikeThisProps) {
         listings={listings}
         from="browse"
         variant="light"
+        recommendationType="more_like_this"
+        trackEvents
       />
     </div>
   );

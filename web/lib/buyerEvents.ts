@@ -1,12 +1,23 @@
 import { supabase } from './supabaseClient';
 
 export const BUYER_EVENT_TYPES = [
+  // v1
   'listing_view',
   'favorite',
   'unfavorite',
   'search',
   'mood_select',
   'purchase',
+  // Tier A — taste graph
+  'listing_impression',
+  'listing_dwell',
+  'listing_skip',
+  'listing_click',
+  'recommendation_impression',
+  'recommendation_click',
+  'search_no_results',
+  'voice_search_start',
+  'voice_search_cancel',
 ] as const;
 
 export type BuyerEventType = (typeof BUYER_EVENT_TYPES)[number];
@@ -26,8 +37,10 @@ export function trackBuyerEvent(
 ): void {
   void (async () => {
     try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      let userId = sessionData.session?.user?.id;
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      let userId = session?.user?.id;
       if (!userId) {
         const {
           data: { user },

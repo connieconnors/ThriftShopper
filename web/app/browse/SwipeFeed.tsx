@@ -28,6 +28,12 @@ import { normalizeTagColumn } from "../../lib/utils/tagNormalizer";
 import { getMoodVariations } from "../../lib/moodMappings";
 import { useAppShell, SHELL_LINEN } from "../../hooks/useAppShell";
 import { trackBuyerEvent } from "../../lib/buyerEvents";
+import {
+  buildEventPayload,
+  getBrowseSessionId,
+  resolveDeckSurface,
+} from "../../lib/buyerEventContext";
+import { useBrowseCardEvents } from "../../hooks/useBrowseCardEvents";
 
 interface SwipeFeedProps {
   initialListings: Listing[];
@@ -131,7 +137,11 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
   // Prevent hydration errors by only rendering after mount
   useEffect(() => {
     setMounted(true);
+    getBrowseSessionId();
   }, []);
+
+  const voiceSearchRef = useRef(false);
+  const pickedImpressionLoggedRef = useRef(false);
 
   // Reset feed state when the incoming dataset changes
   useEffect(() => {
@@ -284,11 +294,15 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
               setCurrentIndex(0);
               usedSemantic = true;
               trackBuyerEvent('mood_select', {
-                payload: {
-                  moods,
-                  match_count: ordered.length,
-                  source: 'semantic',
-                },
+                payload: buildEventPayload({
+                  surface: 'browse',
+                  activeMoods: moods,
+                  extra: {
+                    moods,
+                    match_count: ordered.length,
+                    source: 'semantic',
+                  },
+                }),
               });
             }
           }
@@ -318,11 +332,15 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
       setFilteredListings(tagFiltered);
       setCurrentIndex(0);
       trackBuyerEvent('mood_select', {
-        payload: {
-          moods,
-          match_count: tagFiltered.length,
-          source: 'tags',
-        },
+        payload: buildEventPayload({
+          surface: 'browse',
+          activeMoods: moods,
+          extra: {
+            moods,
+            match_count: tagFiltered.length,
+            source: 'tags',
+          },
+        }),
       });
     },
     [listings]
@@ -333,6 +351,7 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
     const trimmed = transcript.trim();
     if (trimmed) {
       setVoiceTranscript(trimmed);
+      voiceSearchRef.current = true;
       await handleSearch(trimmed);
       setIsListening(false);
       setVoiceTranscript('');
@@ -379,22 +398,34 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
   }, [isRecording]);
 
   /** Stop mic UI and release microphone (no Whisper call). */
-  const stopVoiceSession = useCallback(() => {
-    setIsListening(false);
-    setVoiceTranscript('');
-    setVoiceError(null);
-    if (isRecording || isProcessing) {
-      cancelRecording();
-    }
-  }, [isRecording, isProcessing, cancelRecording]);
-
-  const handleCardClick = useCallback(
-    (listingId: string) => {
-      stopVoiceSession();
-      triggerHaptic();
-      router.push(`/listing/${listingId}`);
+  const stopVoiceSession = useCallback(
+    (options?: { trackCancel?: boolean }) => {
+      const wasListening = isListening;
+      setIsListening(false);
+      setVoiceTranscript('');
+      setVoiceError(null);
+      if (isRecording || isProcessing) {
+        cancelRecording();
+      }
+      if (options?.trackCancel && wasListening && user) {
+        trackBuyerEvent('voice_search_cancel', {
+          payload: buildEventPayload({
+            surface: 'browse',
+            activeMoods: selectedMoods,
+            activeSearchQuery: lastSearchQuery || undefined,
+          }),
+        });
+      }
     },
-    [stopVoiceSession, triggerHaptic, router]
+    [
+      isListening,
+      isRecording,
+      isProcessing,
+      cancelRecording,
+      user,
+      selectedMoods,
+      lastSearchQuery,
+    ]
   );
 
   // Browse deck: prepend semantic picks when not in search/mood mode
@@ -405,6 +436,49 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
   }, [filteredListings, pickedForYou, pickedIdSet]);
 
   const displayListings = searchResults ?? browseListings;
+  const safeIndexForEvents =
+    displayListings.length > 0
+      ? Math.min(currentIndex, displayListings.length - 1)
+      : 0;
+  const listingForEvents = displayListings[safeIndexForEvents];
+
+  const { trackListingClick } = useBrowseCardEvents({
+    enabled: Boolean(user && listingForEvents),
+    currentListing: listingForEvents,
+    currentIndex: safeIndexForEvents,
+    deckSize: displayListings.length,
+    searchResults,
+    selectedMoods,
+    lastSearchQuery,
+    pickedIdSet,
+  });
+
+  useEffect(() => {
+    if (!user || pickedForYou.length === 0 || pickedImpressionLoggedRef.current) {
+      return;
+    }
+    pickedImpressionLoggedRef.current = true;
+    trackBuyerEvent('recommendation_impression', {
+      listingId: pickedForYou[0]?.id ?? null,
+      payload: buildEventPayload({
+        surface: 'picked_for_you',
+        recommendationType: 'picked_for_you',
+        deckSize: pickedForYou.length,
+        extra: { listing_ids: pickedForYou.map((l) => l.id) },
+      }),
+    });
+  }, [user, pickedForYou]);
+
+  const handleCardClick = useCallback(
+    (listingId: string) => {
+      const listing = displayListings.find((l) => l.id === listingId);
+      if (listing) trackListingClick(listing);
+      stopVoiceSession();
+      triggerHaptic();
+      router.push(`/listing/${listingId}`);
+    },
+    [displayListings, trackListingClick, stopVoiceSession, triggerHaptic, router]
+  );
 
   // Show product info after user pauses on a card (fade in after brief delay)
   useEffect(() => {
@@ -550,7 +624,7 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
   // Voice search: fresh intent — clears mood filters and prior search before listening
   const toggleVoice = () => {
     if (isListening) {
-      stopVoiceSession();
+      stopVoiceSession({ trackCancel: true });
       return;
     }
 
@@ -559,6 +633,15 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
       resetForVoiceSearch();
     });
     setIsListening(true);
+    if (user) {
+      trackBuyerEvent('voice_search_start', {
+        payload: buildEventPayload({
+          surface: 'browse',
+          activeMoods: selectedMoods,
+          activeSearchQuery: lastSearchQuery || undefined,
+        }),
+      });
+    }
     if (!isRecording) {
       toggleRecording();
     }
@@ -663,20 +746,40 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
         }
       }
 
+      const voice = voiceSearchRef.current;
+      voiceSearchRef.current = false;
+
       if (nextListings.length > 0) {
         setSearchResults(nextListings);
         setCurrentIndex(0);
+        trackBuyerEvent('search', {
+          payload: buildEventPayload({
+            surface: 'search_results',
+            activeMoods: selectedMoods,
+            activeSearchQuery: query.trim(),
+            extra: {
+              query: query.trim(),
+              interpreted_terms: interpretedTerms,
+              result_count: nextListings.length,
+              voice,
+            },
+          }),
+        });
       } else {
         setSearchResults([]);
+        trackBuyerEvent('search_no_results', {
+          payload: buildEventPayload({
+            surface: 'browse',
+            activeMoods: selectedMoods,
+            activeSearchQuery: query.trim(),
+            extra: {
+              query: query.trim(),
+              interpreted_terms: interpretedTerms,
+              voice,
+            },
+          }),
+        });
       }
-
-      trackBuyerEvent('search', {
-        payload: {
-          query: query.trim(),
-          interpreted_terms: interpretedTerms,
-          result_count: nextListings.length,
-        },
-      });
     } catch (error) {
       console.error('Search error:', error);
       setSearchResults([]);
@@ -743,7 +846,19 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
           .eq('listing_id', id);
 
         if (error) throw error;
-        trackBuyerEvent('unfavorite', { listingId: id });
+        const listing = displayListings.find((l) => l.id === id);
+        trackBuyerEvent('unfavorite', {
+          listingId: id,
+          payload: buildEventPayload({
+            surface: resolveDeckSurface(searchResults, listing, pickedIdSet),
+            position: currentIndex,
+            listing: listing ?? undefined,
+            recommendationType: listing && pickedIdSet.has(id) ? 'picked_for_you' : undefined,
+            activeMoods: selectedMoods,
+            activeSearchQuery: lastSearchQuery || undefined,
+            deckSize: displayListings.length,
+          }),
+        });
       } else {
         // Add to favorites
         const { error } = await supabase
@@ -751,7 +866,19 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
           .insert({ user_id: user.id, listing_id: id });
 
         if (error) throw error;
-        trackBuyerEvent('favorite', { listingId: id });
+        const listing = displayListings.find((l) => l.id === id);
+        trackBuyerEvent('favorite', {
+          listingId: id,
+          payload: buildEventPayload({
+            surface: resolveDeckSurface(searchResults, listing, pickedIdSet),
+            position: currentIndex,
+            listing: listing ?? undefined,
+            recommendationType: listing && pickedIdSet.has(id) ? 'picked_for_you' : undefined,
+            activeMoods: selectedMoods,
+            activeSearchQuery: lastSearchQuery || undefined,
+            deckSize: displayListings.length,
+          }),
+        });
       }
     } catch (err) {
       console.error('Error updating favorite:', err);

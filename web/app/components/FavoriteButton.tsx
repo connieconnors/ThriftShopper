@@ -5,19 +5,31 @@ import { useRouter } from "next/navigation";
 import React from "react";
 import { GlintIcon } from "../../components/GlintIcon";
 import { trackBuyerEvent } from "../../lib/buyerEvents";
+import {
+  buildEventPayload,
+  type BuyerSurface,
+  type RecommendationType,
+} from "../../lib/buyerEventContext";
 import { supabase } from "../../lib/supabaseClient";
 import { useAuth } from "../context/AuthContext";
+import type { Listing } from "../../lib/types";
 
 interface FavoriteButtonProps {
   listingId: string;
   variant?: "card" | "detail" | "small";
   className?: string;
+  listing?: Listing;
+  surface?: BuyerSurface;
+  recommendationType?: RecommendationType;
 }
 
-export default function FavoriteButton({ 
-  listingId, 
+export default function FavoriteButton({
+  listingId,
   variant = "card",
-  className = "" 
+  className = "",
+  listing,
+  surface = "listing_detail",
+  recommendationType,
 }: FavoriteButtonProps) {
   const { user } = useAuth();
   const router = useRouter();
@@ -135,7 +147,14 @@ export default function FavoriteButton({
         if (error) {
           console.error("Error adding favorite:", error.message);
         } else {
-          trackBuyerEvent("favorite", { listingId });
+          trackBuyerEvent("favorite", {
+            listingId,
+            payload: buildEventPayload({
+              surface,
+              listing,
+              recommendationType,
+            }),
+          });
         }
       } else {
         // Remove from favorites
@@ -148,7 +167,14 @@ export default function FavoriteButton({
         if (error) {
           console.error("Error removing favorite:", error.message);
         } else {
-          trackBuyerEvent("unfavorite", { listingId });
+          trackBuyerEvent("unfavorite", {
+            listingId,
+            payload: buildEventPayload({
+              surface,
+              listing,
+              recommendationType,
+            }),
+          });
         }
       }
     } catch (err) {

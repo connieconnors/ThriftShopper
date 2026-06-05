@@ -35,6 +35,7 @@ import {
 import { useAppShell } from "../../../hooks/useAppShell";
 import { parseListingFrom, resolveListingBack } from "../../../lib/listingNavigation";
 import { trackBuyerEvent } from "../../../lib/buyerEvents";
+import { buildEventPayload } from "../../../lib/buyerEventContext";
 import { MoreLikeThis } from "../../../components/MoreLikeThis";
 
 const CHROME_GLASS = "rgba(22, 25, 58, 0.48)";
@@ -85,7 +86,11 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
         listingViewLogged.current = true;
         trackBuyerEvent('listing_view', {
           listingId: listing.id,
-          payload: { from: listingFrom },
+          payload: buildEventPayload({
+            surface: 'listing_detail',
+            listing,
+            extra: { from: listingFrom },
+          }),
         });
       }
       const imageUrl = getPrimaryImage(listing);
@@ -541,7 +546,12 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
       <div className="fixed bottom-0 left-0 right-0 p-4 backdrop-blur-lg border-t border-gray-200" style={{ backgroundColor: 'rgba(237, 231, 217, 0.95)' }}>
         <div className="flex items-center gap-3 max-w-lg mx-auto">
           {/* Left: Bookmark Button */}
-          <FavoriteButton listingId={listing.id} variant="detail" />
+          <FavoriteButton
+            listingId={listing.id}
+            variant="detail"
+            listing={listing}
+            surface="listing_detail"
+          />
 
           {/* Center: Buy Now Button */}
           {isSold ? (
