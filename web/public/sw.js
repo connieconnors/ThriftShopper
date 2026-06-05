@@ -1,5 +1,5 @@
 // Service Worker for ThriftShopper PWA
-const CACHE_NAME = 'thriftshopper-v1';
+const CACHE_NAME = 'thriftshopper-v2';
 const urlsToCache = [
   '/',
   '/browse',

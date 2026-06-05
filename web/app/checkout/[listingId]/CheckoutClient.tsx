@@ -84,6 +84,12 @@ function CheckoutForm({
         return;
       }
 
+      if (!shippingInfo.name.trim()) {
+        setError("Shipping name is required. Edit shipping and try again.");
+        setIsProcessing(false);
+        return;
+      }
+
       const billingDetails = billingDetailsFromShipping(
         shippingInfo,
         buyerEmail
@@ -97,10 +103,6 @@ function CheckoutForm({
             name: billingDetails.name,
             address: billingDetails.address,
             phone: billingDetails.phone,
-          },
-          // Required when Payment Element fields are set to "never"
-          payment_method_data: {
-            billing_details: billingDetails,
           },
         },
         redirect: "if_required",
@@ -195,31 +197,10 @@ function CheckoutForm({
               defaultCollapsed: false,
             },
             defaultValues: {
-              billingDetails: {
-                name: shippingInfo.name,
-                address: {
-                  line1: shippingInfo.address,
-                  city: shippingInfo.city,
-                  state: shippingInfo.state,
-                  postal_code: shippingInfo.zip,
-                  country: "US",
-                },
-              },
-            },
-            fields: {
-              billingDetails: {
-                name: "never",
-                email: "never",
-                phone: "never",
-                address: {
-                  country: "auto",
-                  postalCode: "auto",
-                  line1: "never",
-                  line2: "never",
-                  city: "never",
-                  state: "never",
-                },
-              },
+              billingDetails: billingDetailsFromShipping(
+                shippingInfo,
+                buyerEmail
+              ),
             },
             wallets: {
               link: "never",
