@@ -57,21 +57,27 @@ function CheckoutForm({
     setError(null);
 
     try {
+      const { error: elementsError } = await elements.submit();
+      if (elementsError) {
+        setError(elementsError.message || "Please check your payment details.");
+        setIsProcessing(false);
+        return;
+      }
+
       const { error: submitError, paymentIntent } = await stripe.confirmPayment({
         elements,
         confirmParams: {
           return_url: `${window.location.origin}/checkout/success`,
-          payment_method_data: {
-            billing_details: {
-              name: shippingInfo.name,
-              address: {
-                line1: shippingInfo.address,
-                city: shippingInfo.city,
-                state: shippingInfo.state,
-                postal_code: shippingInfo.zip,
-                country: "US",
-              },
+          shipping: {
+            name: shippingInfo.name,
+            address: {
+              line1: shippingInfo.address,
+              city: shippingInfo.city,
+              state: shippingInfo.state,
+              postal_code: shippingInfo.zip,
+              country: "US",
             },
+            phone: shippingInfo.phone || undefined,
           },
         },
         redirect: "if_required",
@@ -130,7 +136,9 @@ function CheckoutForm({
       }
     } catch (err) {
       console.error("Payment error:", err);
-      setError("An unexpected error occurred");
+      const message =
+        err instanceof Error ? err.message : "An unexpected error occurred";
+      setError(message);
     }
 
     setIsProcessing(false);
@@ -163,12 +171,31 @@ function CheckoutForm({
               type: "tabs",
               defaultCollapsed: false,
             },
+            defaultValues: {
+              billingDetails: {
+                name: shippingInfo.name,
+                address: {
+                  line1: shippingInfo.address,
+                  city: shippingInfo.city,
+                  state: shippingInfo.state,
+                  postal_code: shippingInfo.zip,
+                  country: "US",
+                },
+              },
+            },
             fields: {
               billingDetails: {
                 name: "never",
                 email: "never",
                 phone: "never",
-                address: "never",
+                address: {
+                  country: "auto",
+                  postalCode: "auto",
+                  line1: "never",
+                  line2: "never",
+                  city: "never",
+                  state: "never",
+                },
               },
             },
             wallets: {
