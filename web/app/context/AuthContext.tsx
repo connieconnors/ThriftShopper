@@ -31,34 +31,58 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
         
-        // If there's a refresh token error, clear the invalid session and localStorage
-        if (error && (error.message?.includes('Refresh Token') || error.message?.includes('refresh_token'))) {
-          console.warn('Invalid refresh token detected, clearing session:', error.message);
-          // Clear localStorage to remove invalid tokens
-          if (typeof window !== 'undefined') {
+        // Only clear session when refresh token is truly invalid — not transient network errors
+        const refreshInvalid =
+          error &&
+          (error.message?.includes("Invalid Refresh Token") ||
+            error.message?.includes("refresh_token_not_found") ||
+            (error as { code?: string }).code === "refresh_token_not_found");
+
+        if (refreshInvalid) {
+          console.warn("Invalid refresh token detected, clearing session:", error.message);
+          if (typeof window !== "undefined") {
             const keys = Object.keys(localStorage);
-            keys.forEach(key => {
-              if (key.includes('supabase') || key.includes('auth')) {
+            keys.forEach((key) => {
+              if (key.includes("supabase") || key.includes("auth")) {
                 localStorage.removeItem(key);
               }
             });
           }
-          // Clear the invalid session
           await supabase.auth.signOut();
           setSession(null);
           setUser(null);
           setIsLoading(false);
           return;
         }
+
+        if (error) {
+          console.warn("getSession error (keeping existing client state if any):", error.message);
+        }
         
+        if (!session && typeof window !== "undefined") {
+          const hasStoredAuth = Object.keys(localStorage).some(
+            (key) => key.includes("supabase") && key.includes("auth")
+          );
+          if (hasStoredAuth) {
+            const { data: { session: refreshed }, error: refreshError } =
+              await supabase.auth.refreshSession();
+            if (refreshed) {
+              setSession(refreshed);
+              setUser(refreshed.user ?? null);
+              setIsLoading(false);
+              return;
+            }
+            if (refreshError) {
+              console.warn("Session refresh failed (keeping client state):", refreshError.message);
+            }
+          }
+        }
+
         setSession(session);
         setUser(session?.user ?? null);
         setIsLoading(false);
       } catch (error) {
-        console.error('Error getting session:', error);
-        // On any error, clear session and continue
-        setSession(null);
-        setUser(null);
+        console.error("Error getting session:", error);
         setIsLoading(false);
       }
     };
@@ -67,17 +91,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        // Handle refresh token errors in auth state changes too
-        if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
-          setSession(session);
-          setUser(session?.user ?? null);
-          setIsLoading(false);
-        } else {
-          setSession(session);
-          setUser(session?.user ?? null);
-          setIsLoading(false);
-        }
+      (_event, session) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+        setIsLoading(false);
       }
     );
 

@@ -6,6 +6,8 @@ import "./globals.css";
 
 import { AuthProvider } from "./context/AuthContext";
 
+import { AppShellBaseline } from "../components/AppShellBaseline";
+
 import PWARegister from "./components/PWARegister";
 
 import { PostHogProvider } from "./providers/PostHogProvider";
@@ -112,12 +114,19 @@ export default function RootLayout({
     >
 
       <body className="antialiased">
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `document.documentElement.style.backgroundColor='#ede9e1';document.body.style.backgroundColor='#ede9e1';`,
+          }}
+        />
 
         <PostHogProvider>
 
           <PWARegister />
 
           <AuthProvider>
+
+            <AppShellBaseline />
 
             {children}
 

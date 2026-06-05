@@ -3,7 +3,7 @@
 import React from "react";
 import { motion } from "motion/react";
 import { WelcomeBrandHeader } from "./WelcomeBrandHeader";
-import { useAppShell } from "@/hooks/useAppShell";
+import { useAppShell, SHELL_LINEN } from "@/hooks/useAppShell";
 
 interface AuthWelcomeLayoutProps {
   title: string;
@@ -26,8 +26,12 @@ export function AuthWelcomeLayout({
 
   return (
     <div
-      className="min-h-screen py-12 px-6 overflow-y-auto"
-      style={{ backgroundColor: "var(--background)" }}
+      className="fixed inset-0 overflow-y-auto py-12 px-6"
+      style={{
+        backgroundColor: SHELL_LINEN,
+        paddingTop: "max(3rem, env(safe-area-inset-top))",
+        paddingBottom: "max(3rem, env(safe-area-inset-bottom))",
+      }}
     >
       <motion.div
         initial={{ opacity: 0, y: 20 }}

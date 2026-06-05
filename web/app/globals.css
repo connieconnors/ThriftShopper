@@ -28,6 +28,7 @@
 html {
   background-color: #ede9e1;
   background-color: var(--background, #ede9e1);
+  min-height: 100dvh;
 }
 
 body {
@@ -35,6 +36,7 @@ body {
   background-color: var(--background, #ede9e1);
   color: var(--foreground);
   font-family: var(--font-system);
+  min-height: 100dvh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }

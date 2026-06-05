@@ -5,9 +5,12 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { TSLogo } from "@/components/TSLogo";
 import { useAppShell } from "@/hooks/useAppShell";
+import { useAuth } from "@/app/context/AuthContext";
+import { supabase } from "@/lib/supabaseClient";
 
 function SuccessContent() {
   useAppShell("linen");
+  const { user } = useAuth();
   const searchParams = useSearchParams();
   const orderId = searchParams.get("orderId");
   const [showConfetti, setShowConfetti] = useState(true);
@@ -17,10 +20,20 @@ function SuccessContent() {
     return () => clearTimeout(timer);
   }, []);
 
+  // Keep buyer session warm after payment (Safari can be aggressive about refresh)
+  useEffect(() => {
+    supabase.auth.refreshSession().catch((err) => {
+      console.warn("Checkout success: session refresh failed", err);
+    });
+  }, []);
+
   return (
     <main
-      className="min-h-screen flex flex-col items-center justify-center p-6 relative overflow-hidden"
-      style={{ backgroundColor: "var(--background)" }}
+      className="min-h-screen min-h-dvh flex flex-col items-center justify-center p-6 relative overflow-hidden"
+      style={{
+        backgroundColor: "var(--background)",
+        paddingBottom: "max(1.5rem, env(safe-area-inset-bottom))",
+      }}
     >
       {/* Header Branding */}
       <div className="absolute top-4 left-4 z-20 flex items-center gap-2">
@@ -71,6 +84,12 @@ function SuccessContent() {
         <p className="text-gray-600 mb-4">
           Thank you for your purchase. Your order has been confirmed and the seller has been notified.
         </p>
+
+        {user?.email && (
+          <p className="text-sm text-gray-500 mb-4">
+            Signed in as <span className="font-medium text-gray-700">{user.email}</span>
+          </p>
+        )}
 
         {orderId && (
           <div className="bg-gray-50 rounded-xl p-4 border border-gray-200 mb-8">

@@ -57,12 +57,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Void open orders for this listing so it can be sold again — buyer history keeps the row
     const { error: ordersError } = await supabase
       .from("orders")
-      .update({ status: "cancelled" })
+      .update({
+        status: "cancelled",
+        updated_at: new Date().toISOString(),
+      })
       .eq("listing_id", listingId)
       .eq("seller_id", user.id)
-      .in("status", ["paid", "pending", "shipped"]);
+      .in("status", ["paid", "pending", "shipped", "delivered"]);
 
     if (ordersError) {
       console.error("Relist: failed to cancel orders:", ordersError);

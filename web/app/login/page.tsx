@@ -9,11 +9,13 @@ import { useAuth } from "../context/AuthContext";
 import { supabase } from "../../lib/supabaseClient";
 import { AuthWelcomeLayout } from "../../components/AuthWelcomeLayout";
 import { authPrimaryButtonClass, authLinkClass } from "../../components/WelcomeBrandHeader";
+import { useAppShell, SHELL_LINEN } from "../../hooks/useAppShell";
 
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { signIn, user, isLoading: authLoading } = useAuth();
+  useAppShell("linen");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -227,7 +229,7 @@ function LoginForm() {
   // Show loading while checking auth state
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "var(--background)" }}>
+      <div className="fixed inset-0 flex items-center justify-center" style={{ backgroundColor: SHELL_LINEN }}>
         <Loader2 className="w-8 h-8 animate-spin" style={{ color: "#16193a" }} />
       </div>
     );
@@ -235,7 +237,7 @@ function LoginForm() {
 
   if (user) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "var(--background)" }}>
+      <div className="fixed inset-0 flex items-center justify-center" style={{ backgroundColor: SHELL_LINEN }}>
         <Loader2 className="w-8 h-8 animate-spin" style={{ color: "#16193a" }} />
         <p className="ml-3 text-gray-600 font-system">Redirecting...</p>
       </div>
@@ -337,7 +339,7 @@ function LoginForm() {
 export default function LoginPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "var(--background)" }}>
+      <div className="fixed inset-0 flex items-center justify-center" style={{ backgroundColor: SHELL_LINEN }}>
         <Loader2 className="w-8 h-8 animate-spin" style={{ color: "#16193a" }} />
       </div>
     }>

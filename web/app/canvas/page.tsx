@@ -172,81 +172,56 @@ export default function BuyerCanvasPage() {
           setFavorites((listingsData as Listing[]) || []);
         }
 
-        // Fetch purchases
-        // Note: Orders table may have listing_id or product_id depending on schema
-        // Handle gracefully if table doesn't exist or has no orders
+        // Fetch purchases — same columns as seller dashboard (no legacy product_id)
         try {
           const { data: ordersData, error: ordersError } = await supabase
             .from("orders")
-            .select("id, listing_id, product_id, amount, status, created_at")
+            .select("id, listing_id, amount, status, created_at")
             .eq("buyer_id", user.id)
             .order("created_at", { ascending: false })
-            .limit(10);
-          
+            .limit(20);
+
           if (ordersError) {
-            // Check if error is an empty object or has no meaningful content
-            const errorCode = ordersError?.code;
-            const errorMessage = ordersError?.message || '';
-            const errorDetails = ordersError?.details;
-            const errorHint = ordersError?.hint;
-            
-            // Check if error is completely empty (no properties or all properties are null/undefined/empty)
-            const isEmptyError = (!errorCode && !errorMessage && !errorDetails && !errorHint) ||
-                                 (typeof ordersError === 'object' && 
-                                  ordersError !== null &&
-                                  Object.keys(ordersError).length === 0);
-            
-            // Check for common "no rows" or "table not found" scenarios
-            const isTableNotFound = errorCode === '42P01';
-            const isNoRows = errorCode === 'PGRST116';
-            const isNoRowsMessage = errorMessage.toLowerCase().includes('no rows') || 
-                                   errorMessage.toLowerCase().includes('not found') ||
-                                   errorMessage.toLowerCase().includes('relation') ||
-                                   errorMessage.toLowerCase().includes('does not exist');
-            
-            // Only log if it's a meaningful error (not empty, not table not found, not no rows)
-            if (!isEmptyError && !isTableNotFound && !isNoRows && !isNoRowsMessage && errorMessage) {
-              console.error("Error fetching orders:", {
-                message: errorMessage,
-                code: errorCode || 'NO_CODE',
-                details: errorDetails || null,
-                hint: errorHint || null
-              });
-            }
-            // Silently handle empty errors or expected "no data" scenarios
+            console.error("Error fetching buyer orders:", {
+              message: ordersError.message,
+              code: ordersError.code,
+              details: ordersError.details,
+              hint: ordersError.hint,
+              buyer_id: user.id,
+            });
             setPurchases([]);
           } else if (ordersData && ordersData.length > 0) {
-            // If we have orders, try to fetch listing details separately
-            const listingIds = ordersData
-              .map((o: any) => o.listing_id || o.product_id)
-              .filter(Boolean);
-            
-            let listingsMap: Record<string, any> = {};
+            const listingIds = [
+              ...new Set(ordersData.map((o) => o.listing_id).filter(Boolean)),
+            ];
+            let listingsMap: Record<string, Listing> = {};
             if (listingIds.length > 0) {
               const { data: listingsData, error: listingsError } = await supabase
                 .from("listings")
                 .select("id, title, clean_image_url, original_image_url")
                 .in("id", listingIds);
-              
-              if (!listingsError && listingsData) {
-                listingsMap = listingsData.reduce((acc: any, listing: any) => {
-                  acc[listing.id] = listing;
-                  return acc;
-                }, {});
+              if (listingsError) {
+                console.warn("Buyer orders: could not load listing titles:", listingsError.message);
+              } else if (listingsData) {
+                listingsMap = listingsData.reduce(
+                  (acc, listing) => {
+                    acc[listing.id] = listing as Listing;
+                    return acc;
+                  },
+                  {} as Record<string, Listing>
+                );
               }
             }
-            
             setPurchases(
-              ordersData.map((o: any) => ({
+              ordersData.map((o) => ({
                 ...o,
-                listing: listingsMap[o.listing_id || o.product_id] || null
+                listing: o.listing_id ? listingsMap[o.listing_id] ?? null : null,
               }))
             );
           } else {
             setPurchases([]);
           }
         } catch (err) {
-          // Catch any unexpected errors
           console.error("Unexpected error fetching orders:", err);
           setPurchases([]);
         }
@@ -551,7 +526,16 @@ export default function BuyerCanvasPage() {
                   Purchases
                 </h2>
                 <p className="text-xs text-gray-500">
-                  {purchases.length === 0 ? "Orders you've placed" : `${purchases.length} order${purchases.length === 1 ? "" : "s"}`}
+                  {purchases.length === 0
+                    ? "Orders you've placed"
+                    : (() => {
+                        const active = purchases.filter(
+                          (o) => o.status && !["cancelled", "voided"].includes(o.status)
+                        ).length;
+                        return active > 0
+                          ? `${active} active order${active === 1 ? "" : "s"}`
+                          : `${purchases.length} order${purchases.length === 1 ? "" : "s"}`;
+                      })()}
                 </p>
               </div>
             </div>
@@ -575,12 +559,17 @@ export default function BuyerCanvasPage() {
                     <span className="text-xs text-gray-700">{order.listing?.title || "Item"}</span>
                     {order.status && (
                       <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
-                        order.status === 'paid' ? 'bg-blue-100 text-blue-700' :
-                        order.status === 'shipped' ? 'bg-purple-100 text-purple-700' :
-                        order.status === 'delivered' ? 'bg-green-100 text-green-700' :
-                        'bg-gray-100 text-gray-700'
+                        order.status === "paid"
+                          ? "bg-blue-100 text-blue-700"
+                          : order.status === "shipped"
+                            ? "bg-purple-100 text-purple-700"
+                            : order.status === "delivered"
+                              ? "bg-green-100 text-green-700"
+                              : order.status === "cancelled"
+                                ? "bg-amber-100 text-amber-700"
+                                : "bg-gray-100 text-gray-700"
                       }`}>
-                        {order.status}
+                        {order.status === "cancelled" ? "voided" : order.status}
                       </span>
                     )}
                   </Link>

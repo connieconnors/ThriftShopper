@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useLayoutEffect } from "react";
 
 /** Canonical TS 2.0 shell colors */
 export const SHELL_INK = "#16193a";
@@ -25,10 +25,20 @@ function setThemeColorMeta(color: string) {
 
 /** Per-route shell: syncs html/body background + mobile theme-color (iOS safe-area chrome). */
 export function useAppShell(variant: AppShellVariant) {
-  useEffect(() => {
+  useLayoutEffect(() => {
     const color = SHELL_COLORS[variant];
     document.documentElement.style.backgroundColor = color;
     document.body.style.backgroundColor = color;
+    document.body.style.minHeight = "100dvh";
     setThemeColorMeta(color);
+
+    return () => {
+      // Ink pages paint navy on body; reset on leave so login/checkout never show a split shell
+      if (variant === "ink") {
+        document.documentElement.style.backgroundColor = SHELL_LINEN;
+        document.body.style.backgroundColor = SHELL_LINEN;
+        setThemeColorMeta(SHELL_LINEN);
+      }
+    };
   }, [variant]);
 }
