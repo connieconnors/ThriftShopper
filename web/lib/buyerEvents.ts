@@ -18,6 +18,13 @@ export const BUYER_EVENT_TYPES = [
   'search_no_results',
   'voice_search_start',
   'voice_search_cancel',
+  // Tier B — funnel + intent
+  'share',
+  'contact_seller',
+  'checkout_start',
+  'clear_search',
+  'clear_mood',
+  'deck_reshuffle',
 ] as const;
 
 export type BuyerEventType = (typeof BUYER_EVENT_TYPES)[number];

@@ -24,7 +24,13 @@ CREATE TABLE IF NOT EXISTS public.buyer_events (
       'recommendation_click',
       'search_no_results',
       'voice_search_start',
-      'voice_search_cancel'
+      'voice_search_cancel',
+      'share',
+      'contact_seller',
+      'checkout_start',
+      'clear_search',
+      'clear_mood',
+      'deck_reshuffle'
     )
   )
 );

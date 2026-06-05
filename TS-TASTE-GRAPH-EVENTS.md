@@ -4,7 +4,11 @@
 **Purpose:** Define the buyer-event catalog and payload spec **now** so we do not reconstruct demand-side behavior later.  
 **Scope:** Event catalog + payload spec. **Tier A instrumentation wired in app** (May 2026). **No custom ranker. No UI changes.**
 
-**Deploy:** Run `web/supabase/buyer-events-tier-a.sql` in Supabase if the table was created before Tier A types were added.
+**Deploy:** Run in Supabase SQL Editor (in order if upgrading an existing table):
+
+1. `web/supabase/buyer-events.sql` (new projects)
+2. `web/supabase/buyer-events-tier-a.sql`
+3. `web/supabase/buyer-events-tier-b.sql`
 
 **Related:** `web/supabase/buyer-events.sql` · `web/lib/buyerEvents.ts` · `TS-DISCOVERY-ROADMAP.md` · `TS-WINNING.md`
 
@@ -74,16 +78,16 @@ Extend `buyer_events_event_type_check` in a **single migration** when instrument
 
 **Recommendation favorites:** log as `favorite` with `payload.recommendation_type: picked_for_you | more_like_this` — no separate event type unless analytics need a split.
 
-### Nice later
+### Tier B (wired May 2026)
 
-| `event_type` | Meaning |
-|--------------|---------|
-| `share` | Share sheet or link copied |
-| `contact_seller` | Message modal sent |
-| `checkout_start` | Checkout flow entered |
-| `clear_search` | User cleared active search deck |
-| `clear_mood` | User cleared mood filter |
-| `deck_reshuffle` | End-of-deck reshuffle (engagement pattern) |
+| `event_type` | Meaning | Wired where |
+|--------------|---------|-------------|
+| `share` | Native share or clipboard copy succeeded | `ProductDetails` |
+| `contact_seller` | Message sent successfully | `ProductDetails` |
+| `checkout_start` | Checkout page opened (logged-in) | `CheckoutClient` mount |
+| `clear_search` | Cleared active search | `SwipeFeed.clearSearch` |
+| `clear_mood` | Removed all mood pills | `SwipeFeed.applyMoodFilter([])` |
+| `deck_reshuffle` | Reached end of deck and reshuffled | `SwipeFeed.goToNext` |
 
 ---
 
@@ -239,8 +243,70 @@ Mirror allowlist in `web/lib/buyerEvents.ts` → `BUYER_EVENT_TYPES` when each t
 - [x] Browse impression / dwell / skip / click (`useBrowseCardEvents`)
 - [x] `search_no_results` + voice start/cancel
 - [x] Recommendation impression/click on carousels + picked deck
-- [ ] Tier B (`share`, `contact_seller`, `checkout_start`, `clear_search`, `clear_mood`, `deck_reshuffle`)
+- [x] Tier B (`share`, `contact_seller`, `checkout_start`, `clear_search`, `clear_mood`, `deck_reshuffle`)
 - [ ] `listing_view` dwell on detail unmount
+
+---
+
+## 11. Investor metrics (SQL — run in Supabase)
+
+These are **read-only** queries on `buyer_events`. Counts grow with beta usage; do not quote precise % until you have volume.
+
+### Recommendation click-through rate (CTR)
+
+```sql
+WITH rec AS (
+  SELECT
+    COUNT(*) FILTER (WHERE event_type = 'recommendation_impression') AS impressions,
+    COUNT(*) FILTER (WHERE event_type = 'recommendation_click') AS clicks
+  FROM public.buyer_events
+  WHERE event_type IN ('recommendation_impression', 'recommendation_click')
+    AND created_at > NOW() - INTERVAL '30 days'
+)
+SELECT
+  impressions,
+  clicks,
+  CASE WHEN impressions > 0
+    THEN ROUND(100.0 * clicks / impressions, 2)
+    ELSE NULL
+  END AS ctr_percent
+FROM rec;
+```
+
+**How to say it:** “X% of recommendation impressions led to a click in the last 30 days” — only when `impressions` is large enough (e.g. hundreds+).
+
+### By recommendation surface (payload)
+
+```sql
+SELECT
+  payload->>'recommendation_type' AS rec_type,
+  COUNT(*) FILTER (WHERE event_type = 'recommendation_impression') AS impressions,
+  COUNT(*) FILTER (WHERE event_type = 'recommendation_click') AS clicks,
+  ROUND(
+    100.0 * COUNT(*) FILTER (WHERE event_type = 'recommendation_click')
+    / NULLIF(COUNT(*) FILTER (WHERE event_type = 'recommendation_impression'), 0),
+    2
+  ) AS ctr_percent
+FROM public.buyer_events
+WHERE event_type IN ('recommendation_impression', 'recommendation_click')
+  AND created_at > NOW() - INTERVAL '30 days'
+GROUP BY 1;
+```
+
+Compare `picked_for_you` vs `more_like_this`.
+
+### Funnel: recommendation click → checkout → purchase
+
+```sql
+SELECT
+  COUNT(DISTINCT user_id) FILTER (WHERE event_type = 'recommendation_click') AS users_clicked_rec,
+  COUNT(DISTINCT user_id) FILTER (WHERE event_type = 'checkout_start') AS users_started_checkout,
+  COUNT(DISTINCT user_id) FILTER (WHERE event_type = 'purchase') AS users_purchased
+FROM public.buyer_events
+WHERE created_at > NOW() - INTERVAL '30 days';
+```
+
+Tighter attribution (same `session_id` in payload) — future work when session coverage is complete.
 
 ---
 

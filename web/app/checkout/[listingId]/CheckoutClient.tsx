@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, FormEvent } from "react";
+import { useState, useEffect, useMemo, useRef, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
@@ -9,6 +9,8 @@ import { Listing, getPrimaryImage, getSellerDisplayName } from "../../../lib/typ
 import { useAuth } from "../../context/AuthContext";
 import { supabase } from "../../../lib/supabaseClient";
 import { resolveCheckoutShipping } from "../../../lib/shippingPreferences";
+import { trackBuyerEvent } from "../../../lib/buyerEvents";
+import { buildEventPayload } from "../../../lib/buyerEventContext";
 
 interface ShippingInfo {
   name: string;
@@ -185,6 +187,7 @@ function CheckoutForm({
 export default function CheckoutClient({ listing }: CheckoutClientProps) {
   const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
+  const checkoutStartLogged = useRef(false);
   const checkoutShipping = useMemo(
     () =>
       resolveCheckoutShipping(
@@ -211,6 +214,22 @@ export default function CheckoutClient({ listing }: CheckoutClientProps) {
   useEffect(() => {
     setCheckoutTotals(checkoutShipping);
   }, [checkoutShipping]);
+
+  useEffect(() => {
+    if (!user || checkoutStartLogged.current) return;
+    checkoutStartLogged.current = true;
+    trackBuyerEvent('checkout_start', {
+      listingId: listing.id,
+      payload: buildEventPayload({
+        surface: 'listing_detail',
+        listing,
+        extra: {
+          item_price: listing.price,
+          buyer_total: checkoutShipping.buyerTotal,
+        },
+      }),
+    });
+  }, [user, listing, checkoutShipping.buyerTotal]);
 
   // Redirect to login if not authenticated (only after auth has finished loading)
   useEffect(() => {

@@ -146,15 +146,35 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
     try {
       if (navigator.share && navigator.canShare(shareData)) {
         await navigator.share(shareData);
+        if (user) {
+          trackBuyerEvent('share', {
+            listingId: listing.id,
+            payload: buildEventPayload({
+              surface: 'listing_detail',
+              listing,
+              extra: { method: 'native_share', from: listingFrom },
+            }),
+          });
+        }
       } else {
         await navigator.clipboard.writeText(window.location.href);
         setShowShareSuccess(true);
         setTimeout(() => setShowShareSuccess(false), 2000);
+        if (user) {
+          trackBuyerEvent('share', {
+            listingId: listing.id,
+            payload: buildEventPayload({
+              surface: 'listing_detail',
+              listing,
+              extra: { method: 'clipboard', from: listingFrom },
+            }),
+          });
+        }
       }
-    } catch (err) {
-      console.log("Share cancelled or failed");
+    } catch {
+      // User cancelled share sheet — no event
     }
-  }, [listing.title, listing.price]);
+  }, [listing, listing.title, listing.price, listingFrom, user]);
 
   // Get seller info
   const sellerName = getSellerDisplayName(listing);
@@ -208,6 +228,14 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
       }
       setContactSuccess(true);
       setContactMessage("");
+      trackBuyerEvent('contact_seller', {
+        listingId: listing.id,
+        payload: buildEventPayload({
+          surface: 'listing_detail',
+          listing,
+          extra: { from: listingFrom },
+        }),
+      });
     } catch {
       setContactError("Something went wrong. Please try again.");
     } finally {

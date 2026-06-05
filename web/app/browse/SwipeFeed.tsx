@@ -256,9 +256,21 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
 
   const applyMoodFilter = useCallback(
     async (moods: string[]) => {
+      const clearedMoods =
+        moods.length === 0 && selectedMoods.length > 0 ? [...selectedMoods] : null;
       setSelectedMoods(moods);
 
       if (moods.length === 0) {
+        if (user && clearedMoods) {
+          trackBuyerEvent('clear_mood', {
+            payload: buildEventPayload({
+              surface: 'browse',
+              activeMoods: clearedMoods,
+              activeSearchQuery: lastSearchQuery || undefined,
+              extra: { cleared_moods: clearedMoods },
+            }),
+          });
+        }
         setFilteredListings(listings);
         setNoMoodResults(false);
         setMoodFilterLoading(false);
@@ -343,7 +355,7 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
         }),
       });
     },
-    [listings]
+    [listings, selectedMoods, user, lastSearchQuery]
   );
 
   // Voice search completes → run search, then return to browse UI (receipt stays visible)
@@ -549,6 +561,18 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
       [reshuffled[0], reshuffled[swapIndex]] = [reshuffled[swapIndex], reshuffled[0]];
     }
 
+    if (user) {
+      trackBuyerEvent('deck_reshuffle', {
+        payload: buildEventPayload({
+          surface: searchResults !== null ? 'search_results' : 'browse',
+          activeMoods: selectedMoods,
+          activeSearchQuery: lastSearchQuery || undefined,
+          deckSize: displayListings.length,
+          extra: { last_seen_listing_id: lastSeenId },
+        }),
+      });
+    }
+
     if (searchResults !== null) {
       setSearchResults(reshuffled);
     } else {
@@ -557,7 +581,15 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
     }
     setShowProductInfo(false);
     setCurrentIndex(0);
-  }, [currentIndex, displayListings, isTransitioning, searchResults]);
+  }, [
+    currentIndex,
+    displayListings,
+    isTransitioning,
+    searchResults,
+    user,
+    selectedMoods,
+    lastSearchQuery,
+  ]);
 
   const goToPrevious = useCallback(() => {
     if (currentIndex > 0 && !isTransitioning) {
@@ -789,6 +821,20 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
   
   const clearSearch = () => {
     stopVoiceSession();
+
+    if (user && (searchResults !== null || lastSearchQuery)) {
+      trackBuyerEvent('clear_search', {
+        payload: buildEventPayload({
+          surface: 'search_results',
+          activeMoods: selectedMoods,
+          activeSearchQuery: lastSearchQuery || undefined,
+          extra: {
+            had_results: searchResults !== null && searchResults.length > 0,
+            result_count: searchResults?.length ?? 0,
+          },
+        }),
+      });
+    }
 
     // Before clearing, capture the current listing ID from search results
     const currentDisplayListings = searchResults ?? filteredListings;
