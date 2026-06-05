@@ -29,14 +29,34 @@ interface CheckoutClientProps {
   listing: Listing;
 }
 
+function billingDetailsFromShipping(
+  shippingInfo: ShippingInfo,
+  buyerEmail?: string | null
+) {
+  return {
+    name: shippingInfo.name,
+    email: buyerEmail || undefined,
+    phone: shippingInfo.phone || undefined,
+    address: {
+      line1: shippingInfo.address,
+      city: shippingInfo.city,
+      state: shippingInfo.state,
+      postal_code: shippingInfo.zip,
+      country: "US",
+    },
+  };
+}
+
 function CheckoutForm({ 
   listing, 
   shippingInfo,
+  buyerEmail,
   buyerTotal,
   onSuccess 
 }: { 
   listing: Listing; 
   shippingInfo: ShippingInfo;
+  buyerEmail?: string | null;
   buyerTotal: number;
   onSuccess: (orderId: string) => void;
 }) {
@@ -64,20 +84,23 @@ function CheckoutForm({
         return;
       }
 
+      const billingDetails = billingDetailsFromShipping(
+        shippingInfo,
+        buyerEmail
+      );
+
       const { error: submitError, paymentIntent } = await stripe.confirmPayment({
         elements,
         confirmParams: {
           return_url: `${window.location.origin}/checkout/success`,
           shipping: {
-            name: shippingInfo.name,
-            address: {
-              line1: shippingInfo.address,
-              city: shippingInfo.city,
-              state: shippingInfo.state,
-              postal_code: shippingInfo.zip,
-              country: "US",
-            },
-            phone: shippingInfo.phone || undefined,
+            name: billingDetails.name,
+            address: billingDetails.address,
+            phone: billingDetails.phone,
+          },
+          // Required when Payment Element fields are set to "never"
+          payment_method_data: {
+            billing_details: billingDetails,
           },
         },
         redirect: "if_required",
@@ -606,6 +629,7 @@ export default function CheckoutClient({ listing }: CheckoutClientProps) {
               <CheckoutForm 
                 listing={listing} 
                 shippingInfo={shippingInfo}
+                buyerEmail={user.email}
                 buyerTotal={checkoutTotals.buyerTotal}
                 onSuccess={handlePaymentSuccess}
               />
