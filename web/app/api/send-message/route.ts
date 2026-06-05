@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
+import { getAppOrigin } from '../../../lib/authRedirect';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const supabase = createClient(
@@ -65,8 +66,7 @@ export async function POST(request: Request) {
     const escapedBuyerName = escapeHtml(buyerName);
     const escapedListingTitle = escapeHtml(listing.title);
 
-    // Logo URL from env – works in dev (localhost) and production (Vercel sets NEXT_PUBLIC_SITE_URL)
-    const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000').replace(/\/$/, '');
+    const baseUrl = getAppOrigin();
     const logoUrl = `${baseUrl}/logo-email.png`;
 
     const html = `

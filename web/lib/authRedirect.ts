@@ -1,16 +1,21 @@
 /**
- * Auth redirect URLs for Supabase email flows.
+ * Public app origin for auth redirects, Stripe return URLs, and transactional emails.
  *
- * Set NEXT_PUBLIC_APP_URL in production (e.g. https://beta.thriftshopper.com).
- * Supabase Dashboard → Authentication → URL Configuration:
- *   Site URL: https://beta.thriftshopper.com
+ * Set NEXT_PUBLIC_APP_URL per Vercel environment (no hardcoded host in feature code).
+ * During beta → app cutover, keep beta in env until app is stable; add both hosts in
+ * Supabase redirect allowlist; redirect beta → app only after smoke tests pass.
+ *
+ * Supabase Dashboard → Authentication → URL Configuration (allow both during coexist):
+ *   Site URL: current primary (beta, then app)
  *   Redirect URLs: https://beta.thriftshopper.com/auth/callback
  *                    https://beta.thriftshopper.com/reset-password
+ *                    https://app.thriftshopper.com/auth/callback
+ *                    https://app.thriftshopper.com/reset-password
  *                    http://localhost:3000/auth/callback (dev)
  *                    http://localhost:3000/reset-password (dev)
  */
 
-const PRODUCTION_FALLBACK = "https://beta.thriftshopper.com";
+const PRODUCTION_FALLBACK = "https://app.thriftshopper.com";
 
 function stripTrailingSlash(url: string): string {
   return url.replace(/\/$/, "");

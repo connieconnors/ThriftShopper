@@ -13,6 +13,7 @@ import {
   serializeShippingPreferences,
   BUYER_SHIPPING_UNAVAILABLE_MESSAGE,
 } from "../../../lib/shippingPreferences";
+import { getAppOrigin } from "../../../lib/authRedirect";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2025-11-17.clover",
@@ -431,9 +432,7 @@ export async function POST(request: NextRequest) {
     );
 
     // Send emails (don't block on errors - log and continue)
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL 
-      ? `https://${process.env.VERCEL_URL || 'thriftshopper.com'}` 
-      : 'http://localhost:3000';
+    const baseUrl = getAppOrigin();
 
     // Send order confirmation to buyer
     const buyerEmail = buyerProfile?.email || user.email;

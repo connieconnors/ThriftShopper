@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "../../../../lib/supabaseClient";
 import { sendItemShippedEmail } from "../../../../lib/emails/sendEmail";
 import { sendPaymentReceivedEmail } from "../../../../lib/emails/sendEmail";
+import { getAppOrigin } from "../../../../lib/authRedirect";
 
 export async function POST(request: NextRequest) {
   try {
@@ -90,9 +91,7 @@ export async function POST(request: NextRequest) {
 
     // Send emails based on status change (don't block on errors)
     if (status === 'shipped' || status === 'delivered') {
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL 
-        ? `https://${process.env.VERCEL_URL || 'thriftshopper.com'}` 
-        : 'http://localhost:3000';
+      const baseUrl = getAppOrigin();
 
       // Fetch listing details
       const { data: listing } = await supabase
