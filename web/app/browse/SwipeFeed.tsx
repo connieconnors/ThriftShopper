@@ -46,12 +46,13 @@ const GOLD = "var(--gold-accent)";
 const GOLD_RGB = "197, 160, 40";
 const INK_RGB = "22, 25, 58";
 const LINEN_RGB = "237, 233, 225";
-/** Photo stage behind listings — neutral black, not navy (avoids blue page bleed) */
-const CARD_STAGE = "#000000";
-const WARM_GLASS = `rgba(${LINEN_RGB}, 0.22)`;
-const WARM_GLASS_BORDER = `rgba(${LINEN_RGB}, 0.35)`;
+/** Photo stage matches linen shell — avoids deep-black viewport after checkout/seller nav */
+const CARD_STAGE = SHELL_LINEN;
+const WARM_GLASS = `rgba(${INK_RGB}, 0.08)`;
+const WARM_GLASS_BORDER = `rgba(${INK_RGB}, 0.12)`;
+/** Bottom band only — keeps photos true; title/price sit in the darker strip */
 const EDITORIAL_GRADIENT = `
-  linear-gradient(to top, rgba(0, 0, 0, 0.72) 0%, rgba(0, 0, 0, 0.38) 38%, rgba(${LINEN_RGB}, 0.08) 58%, transparent 72%)
+  linear-gradient(to top, rgba(${INK_RGB}, 0.62) 0%, rgba(${INK_RGB}, 0.28) 32%, transparent 52%)
 `;
 
 /** Tag-based mood filter (fallback when semantic mood API fails or returns nothing). */
@@ -1059,7 +1060,7 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
         {/* Left: TS watermark signature */}
         <TSLogo
           size={26}
-          primaryColor="rgba(255, 255, 255, 0.38)"
+          primaryColor={`rgba(${INK_RGB}, 0.28)`}
           style={{ fontWeight: 400 }}
         />
         
@@ -1380,7 +1381,7 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
                       backdropFilter: 'blur(8px)',
                       border: `1px solid ${WARM_GLASS_BORDER}`,
                       fontSize: '13px',
-                      color: `rgba(${LINEN_RGB}, 0.95)`,
+                      color: `rgba(${INK_RGB}, 0.72)`,
                       fontWeight: '500',
                     }}
                   >
@@ -1488,7 +1489,7 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
         >
           <GlintIcon
             size={24}
-            color={currentListing && favorites.has(currentListing.id) ? GOLD : `rgba(${LINEN_RGB}, 0.95)`}
+            color={currentListing && favorites.has(currentListing.id) ? GOLD : INK}
             filled={!!(currentListing && favorites.has(currentListing.id))}
             className="transition-colors duration-200"
             style={{ width: "24px", height: "24px" }}

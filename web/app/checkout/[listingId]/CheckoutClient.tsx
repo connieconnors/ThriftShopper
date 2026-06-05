@@ -15,6 +15,7 @@ import {
   STRIPE_CHECKOUT_FONTS,
   stripeCheckoutAppearance,
 } from "../../../lib/stripeAppearance";
+import { useAppShell } from "../../../hooks/useAppShell";
 
 interface ShippingInfo {
   name: string;
@@ -255,6 +256,7 @@ function CheckoutForm({
 export default function CheckoutClient({ listing }: CheckoutClientProps) {
   const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
+  useAppShell("linen");
   const checkoutStartLogged = useRef(false);
   const checkoutShipping = useMemo(
     () =>

@@ -4,8 +4,10 @@ import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { TSLogo } from "@/components/TSLogo";
+import { useAppShell } from "@/hooks/useAppShell";
 
 function SuccessContent() {
+  useAppShell("linen");
   const searchParams = useSearchParams();
   const orderId = searchParams.get("orderId");
   const [showConfetti, setShowConfetti] = useState(true);
@@ -16,7 +18,10 @@ function SuccessContent() {
   }, []);
 
   return (
-    <main className="min-h-screen bg-white flex flex-col items-center justify-center p-6 relative overflow-hidden">
+    <main
+      className="min-h-screen flex flex-col items-center justify-center p-6 relative overflow-hidden"
+      style={{ backgroundColor: "var(--background)" }}
+    >
       {/* Header Branding */}
       <div className="absolute top-4 left-4 z-20 flex items-center gap-2">
         <Link href="/browse" className="flex items-center gap-2 opacity-90 hover:opacity-100 transition-opacity">
@@ -163,8 +168,14 @@ function SuccessContent() {
 export default function CheckoutSuccessPage() {
   return (
     <Suspense fallback={
-      <main className="min-h-screen bg-black text-white flex items-center justify-center">
-        <div className="animate-spin h-8 w-8 border-2 border-white border-t-transparent rounded-full" />
+      <main
+        className="min-h-screen flex items-center justify-center"
+        style={{ backgroundColor: "var(--background)" }}
+      >
+        <div
+          className="animate-spin h-8 w-8 border-2 border-t-transparent rounded-full"
+          style={{ borderColor: "#16193a", borderTopColor: "transparent" }}
+        />
       </main>
     }>
       <SuccessContent />

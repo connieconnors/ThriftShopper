@@ -339,14 +339,6 @@ export default function SellerPageClient() {
     if (idsToMark.length > 0) markConversationRead(idsToMark);
   }, [selectedConversationKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => {
-    const previous = document.body.style.backgroundColor;
-    document.body.style.backgroundColor = "#16193a";
-    return () => {
-      document.body.style.backgroundColor = previous;
-    };
-  }, []);
-
   // Debug: Log when orders state changes
   useEffect(() => {
     console.log("allOrders state updated:", allOrders.length, "orders");
