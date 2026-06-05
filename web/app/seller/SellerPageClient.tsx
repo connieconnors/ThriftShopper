@@ -7,7 +7,7 @@ import { supabase } from '@/lib/supabaseClient';
 import { TSLogo } from '@/components/TSLogo';
 import { FounderBadge } from '@/components/FounderBadge';
 import { GivesBackBadge } from '@/components/GivesBackBadge';
-import { Loader2, Plus, ArrowLeft, Settings, MessageSquare, ChevronDown, ChevronUp, MoreVertical, EyeOff, Trash2, CheckCircle, LogOut, Search, Package, HelpCircle, User, Edit, Truck, PackageCheck, Link as LinkIcon, Instagram, X, Mail } from 'lucide-react';
+import { Loader2, Plus, ArrowLeft, Settings, MessageSquare, ChevronDown, ChevronUp, MoreVertical, EyeOff, Trash2, CheckCircle, LogOut, Search, Package, HelpCircle, User, Edit, Truck, PackageCheck, Link as LinkIcon, Instagram, X, Mail, RotateCcw } from 'lucide-react';
 import { GlintIcon } from '../../components/GlintIcon';
 import Link from 'next/link';
 import SupportModal from '@/components/SupportModal';
@@ -220,6 +220,7 @@ export default function SellerPageClient() {
     totalEarnings: 0,
   });
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [relistingId, setRelistingId] = useState<string | null>(null);
   const [showMenuId, setShowMenuId] = useState<string | null>(null);
   const [profile, setProfile] = useState<any>(null);
   const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
@@ -920,6 +921,60 @@ export default function SellerPageClient() {
     [draftListings, activeListings]
   );
 
+  const soldListingsWithoutOrder = useMemo(() => {
+    const orderListingIds = new Set(
+      allOrders.map((order) => order.listing_id).filter(Boolean)
+    );
+    return listings.filter(
+      (listing) => listing.status === "sold" && !orderListingIds.has(listing.id)
+    );
+  }, [listings, allOrders]);
+
+  const handleRelist = async (listingId: string) => {
+    if (!user) return;
+
+    const confirmed = window.confirm(
+      "Put this item back on the market?\n\n" +
+        "Any open order for this item will be marked cancelled. " +
+        "Use only for test sales or if the sale did not go through.\n\n" +
+        "Stripe payments are not refunded automatically."
+    );
+    if (!confirmed) return;
+
+    setRelistingId(listingId);
+
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error("Not authenticated");
+      }
+
+      const response = await fetch("/api/listings/relist", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ listingId }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        alert(data.error || "Failed to relist item");
+        return;
+      }
+
+      await fetchSellerData();
+    } catch (error) {
+      console.error("Error relisting item:", error);
+      alert("Failed to relist item. Please try again.");
+    } finally {
+      setRelistingId(null);
+    }
+  };
+
   const handleCopy = async (
     text: string,
     id: string,
@@ -1600,10 +1655,68 @@ export default function SellerPageClient() {
                                 <span>{subtitleOverride}</span>
                               </div>
                             </div>
+
+                            <button
+                              type="button"
+                              onClick={() => handleRelist(listing.id)}
+                              disabled={relistingId === listing.id}
+                              className="flex-shrink-0 self-center px-3 py-2 text-xs font-medium rounded-lg border border-gray-300 bg-white hover:bg-gray-50 transition-colors disabled:opacity-50 flex items-center gap-1.5 text-gray-700"
+                              title="Put back on the market (test or voided sales only)"
+                            >
+                              {relistingId === listing.id ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              ) : (
+                                <RotateCcw className="h-3.5 w-3.5" />
+                              )}
+                              Relist
+                            </button>
                           </div>
                         </div>
                       );
                     })}
+                  </div>
+                </div>
+              )}
+
+              {soldListingsWithoutOrder.length > 0 && (
+                <div className="mt-4 bg-white rounded-lg border border-amber-200">
+                  <div className="px-4 py-3 border-b border-amber-100">
+                    <p className="text-sm font-medium text-amber-900">
+                      Sold listings without an order record
+                    </p>
+                    <p className="text-xs text-amber-700 mt-1">
+                      These were marked sold but have no matching order — common after test checkouts.
+                    </p>
+                  </div>
+                  <div className="p-2 space-y-2">
+                    {soldListingsWithoutOrder.map((listing) => (
+                      <div
+                        key={listing.id}
+                        className="flex items-center justify-between gap-3 bg-gray-50 rounded-lg border border-gray-200 p-3"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium text-gray-900 truncate">
+                            {listing.title}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            ${listing.price?.toFixed(2) || "0.00"} • marked sold
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleRelist(listing.id)}
+                          disabled={relistingId === listing.id}
+                          className="flex-shrink-0 px-3 py-2 text-xs font-medium rounded-lg border border-gray-300 bg-white hover:bg-gray-50 transition-colors disabled:opacity-50 flex items-center gap-1.5 text-gray-700"
+                        >
+                          {relistingId === listing.id ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <RotateCcw className="h-3.5 w-3.5" />
+                          )}
+                          Relist
+                        </button>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}
