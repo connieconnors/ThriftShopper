@@ -32,6 +32,7 @@ import {
   addSavedSearch,
 } from "../../lib/userPreferences";
 import { useWhisperTranscription } from "@/hooks/useWhisperTranscription";
+import { ListingCarousel } from "@/components/ListingCarousel";
 
 interface Profile {
   display_name: string | null;
@@ -48,6 +49,7 @@ export default function BuyerCanvasPage() {
   const [mounted, setMounted] = useState(false);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [favorites, setFavorites] = useState<Listing[]>([]);
+  const [pickedForYou, setPickedForYou] = useState<Listing[]>([]);
   const [purchases, setPurchases] = useState<any[]>([]);
   const [recentlyViewed, setRecentlyViewed] = useState<ReturnType<typeof getRecentlyViewed>>([]);
   const [savedMoods, setSavedMoods] = useState<ReturnType<typeof getSavedMoods>>([]);
@@ -303,6 +305,34 @@ export default function BuyerCanvasPage() {
     })();
   }, [user, profile?.is_seller]);
 
+  useEffect(() => {
+    if (!user || favorites.length < 2) {
+      setPickedForYou([]);
+      return;
+    }
+
+    let cancelled = false;
+    const loadPicked = async () => {
+      try {
+        const response = await fetch("/api/recommendations/picked-for-you", {
+          credentials: "include",
+        });
+        if (!response.ok) return;
+        const { listings: picks } = await response.json();
+        if (!cancelled && Array.isArray(picks)) {
+          setPickedForYou(picks as Listing[]);
+        }
+      } catch (err) {
+        console.warn("[canvas] picked-for-you failed:", err);
+      }
+    };
+
+    void loadPicked();
+    return () => {
+      cancelled = true;
+    };
+  }, [user, favorites.length]);
+
   // Remove bookmark function
   const removeBookmark = async (listingId: string, e: React.MouseEvent) => {
     e.preventDefault();
@@ -399,6 +429,18 @@ export default function BuyerCanvasPage() {
           </div>
         </div>
       </div>
+
+      {pickedForYou.length > 0 && (
+        <div className="bg-gray-50 pt-2 pb-1">
+          <ListingCarousel
+            title="Picked for you"
+            subtitle="Based on what you've saved"
+            listings={pickedForYou}
+            from="canvas"
+            variant="light"
+          />
+        </div>
+      )}
 
       {/* Hub — favorites, purchases, messages, listings */}
       <div className="px-4 pb-4 space-y-3">

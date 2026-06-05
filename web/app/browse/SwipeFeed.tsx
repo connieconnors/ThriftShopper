@@ -115,6 +115,7 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
   const [supportOpen, setSupportOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [showProductInfo, setShowProductInfo] = useState(false);
+  const [pickedForYou, setPickedForYou] = useState<Listing[]>([]);
   
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -183,6 +184,41 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
       setFavorites(new Set());
     }
   }, [user?.id]); // Only depend on user.id to avoid unnecessary re-renders
+
+  // Picked for you — taste vector from favorited listings (Winning #4)
+  useEffect(() => {
+    if (!user?.id || favorites.size < 2) {
+      setPickedForYou([]);
+      return;
+    }
+
+    let cancelled = false;
+    const loadPicked = async () => {
+      try {
+        const response = await fetch('/api/recommendations/picked-for-you', {
+          credentials: 'include',
+        });
+        if (!response.ok) return;
+        const { listings: picks } = await response.json();
+        if (!cancelled && Array.isArray(picks)) {
+          setPickedForYou(picks as Listing[]);
+        }
+      } catch (err) {
+        console.warn('[browse] picked-for-you failed:', err);
+      }
+    };
+
+    void loadPicked();
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id, favorites.size]);
+
+  const pickedIdSet = useMemo(
+    () => new Set(pickedForYou.map((listing) => listing.id)),
+    [pickedForYou]
+  );
+
   const touchStartY = useRef(0);
   const touchDeltaY = useRef(0);
   const [dragOffset, setDragOffset] = useState(0);
@@ -361,9 +397,14 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
     [stopVoiceSession, triggerHaptic, router]
   );
 
-  // Display listings: use search results if available, otherwise use filtered listings
-  // Compute this early so it can be used in hooks below
-  const displayListings = searchResults ?? filteredListings;
+  // Browse deck: prepend semantic picks when not in search/mood mode
+  const browseListings = useMemo(() => {
+    if (pickedForYou.length === 0) return filteredListings;
+    const rest = filteredListings.filter((listing) => !pickedIdSet.has(listing.id));
+    return [...pickedForYou, ...rest];
+  }, [filteredListings, pickedForYou, pickedIdSet]);
+
+  const displayListings = searchResults ?? browseListings;
 
   // Show product info after user pauses on a card (fade in after brief delay)
   useEffect(() => {
@@ -747,6 +788,12 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
   const safeIndex = displayListings.length > 0 ? Math.min(currentIndex, displayListings.length - 1) : 0;
   const currentListing = displayListings[safeIndex];
 
+  const showPickedForYou =
+    searchResults === null &&
+    selectedMoods.length === 0 &&
+    !isListening &&
+    Boolean(currentListing?.id && pickedIdSet.has(currentListing.id));
+
   // Track if mood filtering resulted in no results
   const hasMoodFilter = selectedMoods.length > 0;
   const hasNoResults = displayListings.length === 0;
@@ -843,6 +890,24 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
           style={{ fontWeight: 400 }}
         />
         
+        {showPickedForYou && (
+          <div
+            className="mt-3 inline-flex items-center font-medium"
+            style={{
+              height: '28px',
+              padding: '6px 12px',
+              borderRadius: '9999px',
+              fontSize: '13px',
+              backgroundColor: `rgba(${GOLD_RGB}, 0.22)`,
+              color: '#ffffff',
+              border: `1px solid rgba(${GOLD_RGB}, 0.45)`,
+              pointerEvents: 'none',
+            }}
+          >
+            Picked for you
+          </div>
+        )}
+
         {/* Active Mood Filters */}
         {selectedMoods.length > 0 && (
           <div 

@@ -5,7 +5,7 @@
 
 **Related docs:** `TS-MASTER-BRIEF.md` (ecosystem + founder context) · `TS-DISCOVERY-ROADMAP.md` (technical phases)
 
-**Status:** #1–#3 code shipped — **you must run `buyer-events.sql` on Supabase** for rows to persist.
+**Status:** #1–#5 code shipped — run `buyer-events.sql` + `GRANT` on Supabase for events; picks need listing `embedding` vectors.
 
 ---
 
@@ -139,8 +139,8 @@ Align with `TS-MASTER-BRIEF.md` voice: understated, expert, no hype — *curatio
 - [x] Mood wheel uses semantic-mood API (tag filter fallback if API/vectors fail)
 - [ ] Run `web/supabase/buyer-events.sql` in Supabase SQL Editor
 - [ ] `buyer_events` rows appear when logged-in user searches, moods, favorites, views listing, purchases
-- [ ] Logged-in user with 2+ favorites sees “Picked for you”
-- [ ] Listing detail shows “More like this” with ≥1 result
+- [ ] Logged-in user with 2+ favorites sees “Picked for you” (browse deck + Canvas)
+- [ ] Listing detail shows “More like this” with ≥1 result (needs listing embeddings)
 - [ ] One rehearsed 90s flow: search → moods → favorite → picked for you → more like this
 
 ---

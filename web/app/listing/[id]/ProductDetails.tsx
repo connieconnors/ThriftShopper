@@ -35,6 +35,7 @@ import {
 import { useAppShell } from "../../../hooks/useAppShell";
 import { parseListingFrom, resolveListingBack } from "../../../lib/listingNavigation";
 import { trackBuyerEvent } from "../../../lib/buyerEvents";
+import { MoreLikeThis } from "../../../components/MoreLikeThis";
 
 const CHROME_GLASS = "rgba(22, 25, 58, 0.48)";
 const CHROME_GLASS_BORDER = "rgba(237, 233, 225, 0.25)";
@@ -432,6 +433,8 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
             <p className="text-gray-700 whitespace-pre-line">{listing.specifications}</p>
           </div>
         )}
+
+        <MoreLikeThis listingId={listing.id} />
 
         {/* Seller Section */}
         <div className="mt-8">
