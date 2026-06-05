@@ -56,9 +56,14 @@ function ForgotPasswordForm() {
           </>
         }
       >
-        <p className="text-center text-sm text-gray-500 mb-6 font-system">
+        <p className="text-center text-sm text-gray-600 mb-4 font-system leading-relaxed">
           Click the link in the email to reset your password. The link will expire in 1 hour.
         </p>
+        <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+          <p className="text-center text-sm text-amber-900 font-medium font-system leading-relaxed">
+            Don&apos;t see the email? Check your spam or junk folder.
+          </p>
+        </div>
 
         <div className="space-y-3">
           <motion.button
@@ -87,6 +92,9 @@ function ForgotPasswordForm() {
       title="Reset Password"
       subtitle="Enter your email and we'll send you a link to reset your password"
     >
+      <p className="text-center text-xs text-gray-500 mb-4 font-system -mt-2">
+        Reset emails sometimes land in spam — check there if you don&apos;t see it within a few minutes.
+      </p>
       {error && (
         <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
           <p className="text-red-600 text-sm font-system">{error}</p>

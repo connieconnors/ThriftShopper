@@ -147,6 +147,12 @@ h6 {
 stripe-devtools,
 #stripe-devtools,
 .__stripe-devtools,
-#__stripe-devtools {
+#__stripe-devtools,
+#stripe-developer-tools,
+.__PrivateStripeElement-devTools {
   display: none !important;
+}
+
+.checkout-pay-bar {
+  padding-bottom: max(12px, env(safe-area-inset-bottom));
 }

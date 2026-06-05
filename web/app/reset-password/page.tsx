@@ -17,20 +17,84 @@ function ResetPasswordForm() {
   const [success, setSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isValidating, setIsValidating] = useState(true);
+  const [canReset, setCanReset] = useState(false);
 
   useEffect(() => {
-    const checkSession = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (!session) {
+    const establishRecoverySession = async () => {
+      try {
+        const hashParams = new URLSearchParams(
+          window.location.hash.substring(1)
+        );
+        const accessToken = hashParams.get("access_token");
+        const refreshToken = hashParams.get("refresh_token");
+
+        if (accessToken && refreshToken) {
+          const { error: sessionError } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          });
+
+          if (sessionError) {
+            setError(
+              sessionError.message ||
+                "Invalid or expired reset link. Please request a new one."
+            );
+            setIsValidating(false);
+            return;
+          }
+
+          window.history.replaceState(null, "", window.location.pathname);
+          setCanReset(true);
+          setIsValidating(false);
+          return;
+        }
+
+        const searchParams = new URLSearchParams(window.location.search);
+        const tokenHash =
+          hashParams.get("token_hash") || searchParams.get("token_hash");
+        const type = hashParams.get("type") || searchParams.get("type");
+
+        if (tokenHash && type === "recovery") {
+          const { data, error: verifyError } = await supabase.auth.verifyOtp({
+            type: "recovery",
+            token_hash: tokenHash,
+          });
+
+          if (verifyError) {
+            setError(
+              verifyError.message ||
+                "Invalid or expired reset link. Please request a new one."
+            );
+            setIsValidating(false);
+            return;
+          }
+
+          if (data.session) {
+            window.history.replaceState(null, "", window.location.pathname);
+            setCanReset(true);
+            setIsValidating(false);
+            return;
+          }
+        }
+
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+
+        if (session) {
+          setCanReset(true);
+        } else {
+          setError("Invalid or expired reset link. Please request a new one.");
+        }
+      } catch (err) {
+        console.error("Reset link validation error:", err);
         setError("Invalid or expired reset link. Please request a new one.");
-        setIsValidating(false);
-        return;
       }
+
       setIsValidating(false);
     };
-    checkSession();
+
+    establishRecoverySession();
   }, []);
 
   const handleSubmit = async (e: FormEvent) => {
@@ -101,11 +165,15 @@ function ResetPasswordForm() {
   return (
     <AuthWelcomeLayout title="Set New Password" subtitle="Enter your new password below">
       {error && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl space-y-3">
           <p className="text-red-600 text-sm font-system">{error}</p>
+          <Link href="/forgot-password" className={`${authLinkClass} text-sm`}>
+            Request a new reset link
+          </Link>
         </div>
       )}
 
+      {canReset && (
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block mb-2 text-sm font-medium font-system text-[var(--ink-primary)]">
@@ -159,6 +227,7 @@ function ResetPasswordForm() {
           )}
         </motion.button>
       </form>
+      )}
 
       <div className="text-center mt-6">
         <Link href="/login" className={authLinkClass}>

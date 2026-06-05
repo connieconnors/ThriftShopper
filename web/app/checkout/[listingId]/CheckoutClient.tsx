@@ -11,6 +11,10 @@ import { supabase } from "../../../lib/supabaseClient";
 import { resolveCheckoutShipping } from "../../../lib/shippingPreferences";
 import { trackBuyerEvent } from "../../../lib/buyerEvents";
 import { buildEventPayload } from "../../../lib/buyerEventContext";
+import {
+  STRIPE_CHECKOUT_FONTS,
+  stripeCheckoutAppearance,
+} from "../../../lib/stripeAppearance";
 
 interface ShippingInfo {
   name: string;
@@ -57,6 +61,18 @@ function CheckoutForm({
         elements,
         confirmParams: {
           return_url: `${window.location.origin}/checkout/success`,
+          payment_method_data: {
+            billing_details: {
+              name: shippingInfo.name,
+              address: {
+                line1: shippingInfo.address,
+                city: shippingInfo.city,
+                state: shippingInfo.state,
+                postal_code: shippingInfo.zip,
+                country: "US",
+              },
+            },
+          },
         },
         redirect: "if_required",
       });
@@ -121,10 +137,10 @@ function CheckoutForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="pb-36">
+    <form onSubmit={handleSubmit} className="pb-48">
       {error && (
         <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-xl">
-          <p className="text-red-700 text-sm leading-relaxed">{error}</p>
+          <p className="text-red-700 text-sm leading-relaxed font-system">{error}</p>
           {paidPaymentIntentId && (
             <p className="text-red-600/80 text-xs mt-2 font-mono">
               Payment ref: {paidPaymentIntentId}
@@ -133,21 +149,42 @@ function CheckoutForm({
         </div>
       )}
 
-      <div className="rounded-xl border border-gray-200 overflow-hidden bg-white">
+      <div className="mb-3 flex items-center justify-center gap-2 text-sm text-gray-600 font-system">
+        <svg className="w-4 h-4 shrink-0 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+        </svg>
+        <span>Your card details are encrypted and processed by Stripe</span>
+      </div>
+
+      <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
         <PaymentElement
           options={{
-            layout: "tabs",
+            layout: {
+              type: "tabs",
+              defaultCollapsed: false,
+            },
+            fields: {
+              billingDetails: {
+                name: "never",
+                email: "never",
+                phone: "never",
+                address: "never",
+              },
+            },
+            wallets: {
+              link: "never",
+            },
           }}
         />
       </div>
 
       {/* Sticky pay bar — matches listing Buy Now pattern */}
       <div
-        className="fixed bottom-0 left-0 right-0 z-40 border-t border-gray-200 px-4 py-3"
-        style={{ backgroundColor: "rgba(237, 233, 225, 0.97)" }}
+        className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 px-4 pt-3 checkout-pay-bar"
+        style={{ backgroundColor: "rgba(237, 233, 225, 0.98)" }}
       >
-        <div className="max-w-2xl mx-auto space-y-2">
-          <p className="text-xs text-gray-600 text-center leading-relaxed">
+        <div className="max-w-2xl mx-auto space-y-2.5 pr-14">
+          <p className="text-xs text-gray-600 text-center leading-relaxed font-system">
             {paidPaymentIntentId
               ? "Payment received — contact support if the order doesn't appear."
               : "When your payment details look right, tap below to complete your purchase."}
@@ -155,7 +192,7 @@ function CheckoutForm({
           <button
             type="submit"
             disabled={!stripe || isProcessing || !!paidPaymentIntentId}
-            className="w-full h-14 font-bold text-lg rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-md"
+            className="w-full h-14 font-bold text-lg rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-md font-system"
             style={{
               backgroundColor: "#16193a",
               color: "#ffffff",
@@ -175,7 +212,7 @@ function CheckoutForm({
               <>Complete Purchase · ${buyerTotal.toFixed(2)}</>
             )}
           </button>
-          <p className="text-[10px] text-gray-500 text-center">
+          <p className="text-[11px] text-gray-500 text-center font-system pb-1">
             Secure payment processed by Stripe
           </p>
         </div>
@@ -328,7 +365,7 @@ export default function CheckoutClient({ listing }: CheckoutClientProps) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
           </Link>
-          <h1 className="text-lg font-semibold text-gray-900">Checkout</h1>
+          <h1 className="text-lg font-semibold text-gray-900 font-system">Checkout</h1>
           <div className="w-10" />
         </div>
       </header>
@@ -535,17 +572,8 @@ export default function CheckoutClient({ listing }: CheckoutClientProps) {
               stripe={stripePromise}
               options={{
                 clientSecret,
-                appearance: {
-                  theme: "flat",
-                  variables: {
-                    colorPrimary: "#16193a",
-                    colorBackground: "#ffffff",
-                    colorText: "#16193a",
-                    colorDanger: "#dc2626",
-                    fontFamily: "var(--font-system)",
-                    borderRadius: "12px",
-                  },
-                },
+                fonts: STRIPE_CHECKOUT_FONTS,
+                appearance: stripeCheckoutAppearance,
               }}
             >
               <CheckoutForm 
