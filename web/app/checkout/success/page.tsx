@@ -95,19 +95,36 @@ function SuccessContent() {
 
         {/* Actions */}
         <div className="space-y-3">
+          {orderId && (
+            <Link
+              href={`/orders/${orderId}`}
+              className="block w-full py-4 text-white font-bold rounded-full hover:opacity-90 transition-colors"
+              style={{ backgroundColor: "#16193a" }}
+            >
+              View your order
+            </Link>
+          )}
           <Link
             href="/browse"
-            className="block w-full py-4 text-white font-bold rounded-full hover:opacity-90 transition-colors"
-            style={{ backgroundColor: "#16193a" }}
+            className={`block w-full py-4 font-bold rounded-full hover:opacity-90 transition-colors ${
+              orderId
+                ? "border-2 text-gray-900 hover:bg-gray-50"
+                : "text-white"
+            }`}
+            style={
+              orderId
+                ? { borderColor: "#16193a" }
+                : { backgroundColor: "#16193a" }
+            }
           >
             Continue Shopping
           </Link>
           <Link
-            href="/favorites"
+            href="/canvas?section=purchases"
             className="block w-full py-4 border-2 text-gray-900 font-semibold rounded-full hover:bg-gray-50 transition-colors"
             style={{ borderColor: "#16193a" }}
           >
-            View Favorites
+            Go to My Canvas
           </Link>
         </div>
       </div>

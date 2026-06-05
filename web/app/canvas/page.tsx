@@ -277,6 +277,25 @@ export default function BuyerCanvasPage() {
   const [removingBookmarkId, setRemovingBookmarkId] = useState<string | null>(null);
   const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
   const messagesSectionRef = useRef<HTMLDivElement>(null);
+  const purchasesSectionRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!mounted) return;
+
+    const section = new URLSearchParams(window.location.search).get("section");
+    if (section === "purchases") {
+      setShowPurchases(true);
+      const timer = window.setTimeout(() => {
+        purchasesSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 200);
+      window.history.replaceState(null, "", "/canvas");
+      return () => window.clearTimeout(timer);
+    }
+    if (section === "favorites") {
+      setShowFavorites(true);
+      window.history.replaceState(null, "", "/canvas");
+    }
+  }, [mounted]);
 
   useEffect(() => {
     if (!showMessages) return;
@@ -517,7 +536,10 @@ export default function BuyerCanvasPage() {
         </div>
 
         {/* Purchases */}
-        <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
+        <div
+          ref={purchasesSectionRef}
+          className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm"
+        >
           <button
             onClick={() => setShowPurchases(!showPurchases)}
             className="flex items-center justify-between w-full"
