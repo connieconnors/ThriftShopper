@@ -251,4 +251,36 @@ When scrolling or rubber-banding, navy from html/body/wrapper bleeds into edges;
 
 ---
 
-*Audit only — no code changed. Browse gradient and typography untouched.*
+## 7. Session log — 2026-05-23 (shipped `39c1b46`) + tomorrow
+
+### What we shipped tonight (partial fix — retest tomorrow)
+
+| Change | File(s) | Intent |
+|--------|---------|--------|
+| **AppShellBaseline** | `web/components/AppShellBaseline.tsx`, `layout.tsx` | Reset html/body + `theme-color` to **linen on every route change** |
+| **useLayoutEffect** + ink cleanup | `web/hooks/useAppShell.ts` | Paint before first frame; leaving ink pages resets to linen |
+| **Early paint script** | `layout.tsx` | Linen on html/body before React hydrates |
+| **globals min-height** | `globals.css` | `html`/`body` `min-height: 100dvh` |
+| **Auth full-bleed linen** | `AuthWelcomeLayout.tsx`, `login/page.tsx` | `fixed inset-0` + `SHELL_LINEN` — covers stale navy body under login |
+| **Browse card stage** | `SwipeFeed.tsx` (prior commit) | `CARD_STAGE` → linen; bottom gradient only (not full black viewport) |
+
+**Known repro still to verify after deploy:** checkout success → Continue Shopping → browse; login after canvas/seller (linen top / black bottom).
+
+### Tomorrow — remaining shell work (in order)
+
+1. **Audit routes still missing `useAppShell`** — Settings, legal pages (`/returns`, etc.), `/favorites` redirect target, loading/Suspense fallbacks on every auth route.
+2. **Remove duplicate body writers** — confirm `SellerPageClient` navy `useEffect` is gone; grep for `document.body.style` / `theme-color` outside hook + baseline.
+3. **Policy: shell vs content** — ink/navy only inside components (canvas/seller fixed nav), not on `html`/`theme-color`, *or* commit fully to ink shell on those routes and gray **content** area only (stop mixing `bg-gray-50` scroll + navy meta).
+4. **Settings + legal** — pick one neutral shell (`linen` or `#f9fafb`) and add `useAppShell` + matching page wrapper.
+5. **PWA** — align `manifest.json` `theme_color` with active shell; bump `sw.js` cache if stale bundles persist on phone.
+6. **iOS test matrix** — iPhone Safari + installed PWA: Browse → Canvas → Settings → Login → Checkout success → Browse.
+
+### If split linen/black persists after above
+
+- Check **stale inline `body` style** from ink (Safari Web Inspector → Elements → body style).
+- Check **safe-area**: `viewportFit: cover` + `env(safe-area-inset-*)` on full-bleed wrappers.
+- Consider **ink routes using linen shell** at document level (navy only in fixed nav/header) — simplest long-term fix per audit §5 recommendation.
+
+---
+
+*Audit updated 2026-05-23 after `39c1b46`. Browse gradient and typography untouched.*

@@ -410,8 +410,8 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
     }
   }, [isRecording]);
 
-  /** Stop mic UI and release microphone (no Whisper call). */
-  const stopVoiceSession = useCallback(
+  /** Dismiss voice UI and discard audio (navigation, clear search, etc.). */
+  const cancelVoiceSession = useCallback(
     (options?: { trackCancel?: boolean }) => {
       const wasListening = isListening;
       setIsListening(false);
@@ -486,11 +486,11 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
     (listingId: string) => {
       const listing = displayListings.find((l) => l.id === listingId);
       if (listing) trackListingClick(listing);
-      stopVoiceSession();
+      cancelVoiceSession();
       triggerHaptic();
       router.push(`/listing/${listingId}`);
     },
-    [displayListings, trackListingClick, stopVoiceSession, triggerHaptic, router]
+    [displayListings, trackListingClick, cancelVoiceSession, triggerHaptic, router]
   );
 
   // Show product info after user pauses on a card (fade in after brief delay)
@@ -654,10 +654,17 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
     }
   }, [handleWheel]);
 
-  // Voice search: fresh intent — clears mood filters and prior search before listening
+  // Voice search: tap mic to start; tap again to stop and transcribe
   const toggleVoice = () => {
     if (isListening) {
-      stopVoiceSession({ trackCancel: true });
+      if (isProcessing) return;
+      setVoiceError(null);
+      if (isRecording) {
+        // Finish recording → Whisper → search (do not cancel)
+        toggleRecording();
+      } else {
+        cancelVoiceSession({ trackCancel: true });
+      }
       return;
     }
 
@@ -821,7 +828,7 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
   };
   
   const clearSearch = () => {
-    stopVoiceSession();
+    cancelVoiceSession();
 
     if (user && (searchResults !== null || lastSearchQuery)) {
       trackBuyerEvent('clear_search', {
