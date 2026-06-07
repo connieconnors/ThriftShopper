@@ -9,7 +9,7 @@ import { ArrowLeft, Package, Truck, CheckCircle, Loader2 } from "lucide-react";
 import Link from "next/link";
 
 interface Order {
-  id: string;
+  id: string | number;
   listing_id: string;
   buyer_id: string;
   seller_id: string;
@@ -38,6 +38,15 @@ const LIFECYCLE_STEPS = [
   { key: "shipped", label: "Shipped" },
   { key: "delivered", label: "Delivered" },
 ] as const;
+
+function formatOrderId(id: string | number): string {
+  return String(id).slice(0, 8);
+}
+
+function formatPaymentRef(paymentIntentId: string | null): string | null {
+  if (!paymentIntentId) return null;
+  return String(paymentIntentId).slice(-16);
+}
 
 function lifecycleIndex(status: string): number {
   if (status === "delivered") return 2;
@@ -256,7 +265,7 @@ export default function OrderDetailsPage() {
               <h2 className="text-lg font-semibold" style={{ color: "#16193a" }}>
                 {statusInfo.label}
               </h2>
-              <p className="text-xs text-gray-500">Order #{order.id.slice(0, 8)}</p>
+              <p className="text-xs text-gray-500">Order #{formatOrderId(order.id)}</p>
             </div>
           </div>
 
@@ -416,7 +425,7 @@ export default function OrderDetailsPage() {
               <div className="flex justify-between gap-4">
                 <span className="text-gray-500 flex-shrink-0">Payment ref</span>
                 <span className="font-mono text-xs text-right break-all">
-                  {order.payment_intent_id.slice(-16)}
+                  {formatPaymentRef(order.payment_intent_id)}
                 </span>
               </div>
             )}
