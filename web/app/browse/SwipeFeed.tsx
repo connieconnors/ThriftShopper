@@ -232,6 +232,7 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
 
   const touchStartY = useRef(0);
   const touchDeltaY = useRef(0);
+  const touchOnControlRef = useRef(false);
   const [dragOffset, setDragOffset] = useState(0);
   const [countdown, setCountdown] = useState(8);
 
@@ -603,6 +604,12 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
 
   // Touch handling
   const handleTouchStart = (e: TouchEvent) => {
+    const target = e.target as HTMLElement;
+    touchOnControlRef.current = Boolean(
+      target.closest("button, a, input, textarea, select, [role='button']")
+    );
+    if (touchOnControlRef.current) return;
+
     touchStartY.current = e.touches[0].clientY;
     touchDeltaY.current = 0;
   };
@@ -619,6 +626,11 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
   };
 
   const handleTouchEnd = (e: TouchEvent) => {
+    if (touchOnControlRef.current) {
+      touchOnControlRef.current = false;
+      return;
+    }
+
     const touchEndY = e.changedTouches[0].clientY;
     const diffY = touchStartY.current - touchEndY;
     
@@ -1591,8 +1603,10 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
           e.stopPropagation();
           setAccountOpen(true);
         }}
+        onTouchStart={(e) => e.stopPropagation()}
+        onTouchEnd={(e) => e.stopPropagation()}
         className="absolute bottom-6 right-6 z-10 w-10 h-10 rounded-full shadow-lg transition-all hover:scale-110 flex items-center justify-center opacity-70 hover:opacity-100"
-        style={{ backgroundColor: INK }}
+        style={{ backgroundColor: INK, touchAction: "manipulation" }}
         aria-label="Account"
       >
         <TSLogo size={20} primaryColor="#ffffff" accentColor={GOLD} />

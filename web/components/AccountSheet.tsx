@@ -4,7 +4,7 @@ import React from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/context/AuthContext";
 import { supabase } from "@/lib/supabaseClient";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useLayoutEffect, useRef } from "react";
 import {
   WelcomeBrandHeader,
   authPrimaryButtonClass,
@@ -23,38 +23,51 @@ const AccountSheet: React.FC<AccountSheetProps> = ({ isOpen, onClose, onOpenSupp
   const { user, signOut } = useAuth();
   const [isSeller, setIsSeller] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [justOpened, setJustOpened] = useState(false);
+  const dismissGuardRef = useRef(false);
+  const dismissTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Sync guard — useEffect runs too late; opening tap hits backdrop first on mobile.
+  useLayoutEffect(() => {
+    if (!isOpen) {
+      dismissGuardRef.current = false;
+      return;
+    }
+
+    dismissGuardRef.current = true;
+    if (dismissTimerRef.current) clearTimeout(dismissTimerRef.current);
+    dismissTimerRef.current = setTimeout(() => {
+      dismissGuardRef.current = false;
+    }, 400);
+
+    return () => {
+      if (dismissTimerRef.current) clearTimeout(dismissTimerRef.current);
+    };
+  }, [isOpen]);
 
   useEffect(() => {
-    if (isOpen) {
-      setJustOpened(true);
-      const timer = setTimeout(() => {
-        setJustOpened(false);
-      }, 300);
+    if (!isOpen) return;
 
-      if (user) {
-        const checkSellerStatus = async () => {
-          try {
-            const { data: profile } = await supabase
-              .from("profiles")
-              .select("is_seller")
-              .eq("user_id", user.id)
-              .single();
+    if (user) {
+      setLoading(true);
+      const checkSellerStatus = async () => {
+        try {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("is_seller")
+            .eq("user_id", user.id)
+            .single();
 
-            setIsSeller(profile?.is_seller === true);
-          } catch (err) {
-            console.error("Error checking seller status:", err);
-            setIsSeller(false);
-          } finally {
-            setLoading(false);
-          }
-        };
-        checkSellerStatus();
-      } else {
-        setLoading(false);
-      }
-
-      return () => clearTimeout(timer);
+          setIsSeller(profile?.is_seller === true);
+        } catch (err) {
+          console.error("Error checking seller status:", err);
+          setIsSeller(false);
+        } finally {
+          setLoading(false);
+        }
+      };
+      void checkSellerStatus();
+    } else {
+      setLoading(false);
     }
   }, [user, isOpen]);
 
@@ -64,13 +77,7 @@ const AccountSheet: React.FC<AccountSheetProps> = ({ isOpen, onClose, onOpenSupp
     <div
       className="fixed inset-0 z-50 flex items-end justify-center bg-black/25 backdrop-blur-sm"
       onClick={(e) => {
-        if (e.target === e.currentTarget && !justOpened) {
-          onClose();
-        }
-      }}
-      onTouchStart={(e) => {
-        if (e.target === e.currentTarget && !justOpened) {
-          e.preventDefault();
+        if (e.target === e.currentTarget && !dismissGuardRef.current) {
           onClose();
         }
       }}
