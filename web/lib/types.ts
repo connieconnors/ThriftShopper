@@ -30,6 +30,8 @@ export type Listing = {
   seller_name?: string | null;
   /** Optional per-listing shipping banner. If set, shown instead of seller default. */
   custom_shipping_policy?: string | null;
+  /** Optional per-listing buyer action. NULL = seller shop default. */
+  seller_action_type?: string | null;
   // Joined from profiles table (optional, for backward compatibility)
   profiles?: {
     display_name: string | null;

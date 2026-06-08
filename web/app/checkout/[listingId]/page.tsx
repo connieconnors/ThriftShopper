@@ -51,7 +51,10 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
     .eq("user_id", listing.seller_id)
     .maybeSingle();
 
-  const sellerActionType = resolveSellerActionType(sellerProfile);
+  const sellerActionType = resolveSellerActionType(
+    sellerProfile,
+    listing.seller_action_type
+  );
   if (sellerActionType !== "stripe_checkout") {
     return (
       <main className="min-h-screen flex flex-col items-center justify-center p-6" style={{ backgroundColor: "#ede9e1" }}>

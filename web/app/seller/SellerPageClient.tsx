@@ -17,7 +17,7 @@ import {
   listingNeedsShippingAmountFix,
   SELLER_LISTING_NEEDS_SHIPPING_MESSAGE,
 } from '@/lib/shippingPreferences';
-import { resolveSellerActionType } from '@/lib/sellerActionType';
+import { resolveSellerActionType, shopDefaultActionBannerCopy } from '@/lib/sellerActionType';
 
 interface Listing {
   id: string;
@@ -908,6 +908,10 @@ export default function SellerPageClient() {
     (profile?.stripe_details_submitted === true || profile?.stripe_charges_enabled === true);
   const sellerActionType = resolveSellerActionType(profile);
   const canSellWithoutStripe = sellerActionType !== "stripe_checkout";
+  const shopActionBanner = shopDefaultActionBannerCopy(
+    sellerActionType,
+    profile?.payment_pickup_label
+  );
 
   const handleUpdateStatus = async (listingId: string, newStatus: 'hidden' | 'sold' | 'active', e: React.MouseEvent) => {
     e.preventDefault();
@@ -1278,20 +1282,10 @@ export default function SellerPageClient() {
             {canSellWithoutStripe ? (
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
                 <h2 className="text-xs font-semibold text-blue-900 leading-tight mb-1">
-                  {sellerActionType === "store_pickup"
-                    ? "🏪 Store Pickup"
-                    : sellerActionType === "local_pickup"
-                      ? "📍 Local Pickup"
-                      : "Contact Seller mode"}
+                  {shopActionBanner.title}
                 </h2>
                 <p className="text-[10px] leading-tight text-blue-800">
-                  {sellerActionType === "store_pickup"
-                    ? profile.payment_pickup_label
-                      ? `Buyers visit ${profile.payment_pickup_label} to purchase in person. No in-app checkout.`
-                      : "Buyers visit your store to purchase in person. No Stripe checkout required."
-                    : sellerActionType === "local_pickup"
-                      ? "Buyers request local pickup — great for home sellers. No in-app checkout."
-                      : "Buyers contact you about items. You follow up outside the app. No in-app payment."}
+                  {shopActionBanner.body}
                 </p>
               </div>
             ) : !isStripeConnectedEnough ? (

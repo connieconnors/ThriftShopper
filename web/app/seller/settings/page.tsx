@@ -418,13 +418,13 @@ export default function SellerSettingsPage() {
             </div>
           </div>
 
-          {/* Seller action type (local stores / Apple-safe) */}
+          {/* Shop default buyer action */}
           <div>
             <label className="block mb-2 font-medium" style={{ color: "#16193a" }}>
-              How buyers get this item
+              How buyers get items <span className="text-gray-400 font-normal">(shop default)</span>
             </label>
             <p className="text-xs text-gray-500 mb-3">
-              Buy Online for Stripe. Local or store pickup for in-person sales. Contact Seller for questions-first items.
+              Default for new listings. Override on each item when you list or edit — same idea as shipping.
             </p>
             <select
               value={formData.sellerActionType}
@@ -492,21 +492,37 @@ export default function SellerSettingsPage() {
             </div>
             {formData.givesBackEnabled && (
               <div className="space-y-3">
-                <input
-                  type="text"
-                  value={formData.givesBackName}
-                  onChange={(e) => updateField("givesBackName", e.target.value)}
-                  className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#16193a] outline-none transition-colors bg-white"
-                  placeholder="Organization or cause name"
-                />
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  value={formData.givesBackPct}
-                  onChange={(e) => updateField("givesBackPct", e.target.value)}
-                  className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#16193a] outline-none transition-colors bg-white"
-                  placeholder="Approximate % given back (e.g. 5%)"
-                />
+                <div>
+                  <label className="block mb-1 text-sm font-medium" style={{ color: "#16193a" }}>
+                    Charity or cause name
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.givesBackName}
+                    onChange={(e) => updateField("givesBackName", e.target.value)}
+                    className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#16193a] outline-none transition-colors bg-white"
+                    placeholder="e.g. St. Boniface Outreach"
+                  />
+                </div>
+                <div>
+                  <label className="block mb-1 text-sm font-medium" style={{ color: "#16193a" }}>
+                    Percentage donated
+                  </label>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={formData.givesBackPct}
+                    onChange={(e) => updateField("givesBackPct", e.target.value)}
+                    className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#16193a] outline-none transition-colors bg-white"
+                    placeholder="e.g. 5 or 10"
+                  />
+                  <p className="text-xs text-gray-500 mt-1.5 leading-relaxed">
+                    Approximate share of proceeds you donate — whole number or percent (e.g.{" "}
+                    <span className="whitespace-nowrap">5</span> or{" "}
+                    <span className="whitespace-nowrap">10%</span>). Buyers see this on your
+                    Gives Back badge. Honor system only.
+                  </p>
+                </div>
                 <div className="flex items-center gap-3">
                   <input
                     id="settings-is-non-profit"

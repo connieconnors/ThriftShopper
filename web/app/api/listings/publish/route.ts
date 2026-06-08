@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
 
     const { data: listing, error: listingError } = await supabase
       .from("listings")
-      .select("id, seller_id, status, custom_shipping_policy")
+      .select("id, seller_id, status, custom_shipping_policy, seller_action_type")
       .eq("id", listingId)
       .single();
 
@@ -123,7 +123,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const sellerActionType = resolveSellerActionType(profile);
+    const sellerActionType = resolveSellerActionType(profile, listing.seller_action_type);
     const requiresStripeCheckout = sellerActionType === "stripe_checkout";
 
     if (requiresStripeCheckout && !isStripeReady) {

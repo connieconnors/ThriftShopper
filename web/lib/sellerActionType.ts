@@ -220,6 +220,40 @@ export function sellerSettingsActionLabel(action: SellerActionType): string {
   }
 }
 
+/** Seller dashboard banner — shop default, not every listing. */
+export function shopDefaultActionBannerCopy(
+  action: SellerActionType,
+  pickupLabel?: string | null
+): { title: string; body: string } {
+  const perItemNote =
+    "This is your shop default for new listings. Set how buyers get each item on the listing form.";
+
+  switch (action) {
+    case "store_pickup":
+      return {
+        title: "Shop default: 🏪 Store Pickup",
+        body: pickupLabel?.trim()
+          ? `${perItemNote} Default: buyers visit ${pickupLabel.trim()} in person.`
+          : `${perItemNote} Default: in-store pickup, no in-app checkout.`,
+      };
+    case "local_pickup":
+      return {
+        title: "Shop default: 📍 Local Pickup",
+        body: `${perItemNote} Default: buyers coordinate local pickup with you.`,
+      };
+    case "contact_seller":
+      return {
+        title: "Shop default: Contact Seller",
+        body: `${perItemNote} Default: buyers message you first. Use Store or Local Pickup on individual items when that fits.`,
+      };
+    case "stripe_checkout":
+      return {
+        title: "Shop default: Buy Online",
+        body: `${perItemNote} Default: Stripe checkout when connected.`,
+      };
+  }
+}
+
 /** Buyer-facing seller name — store pickup uses shop name, not login/email. */
 export function resolvePublicSellerName(
   listing: Listing,

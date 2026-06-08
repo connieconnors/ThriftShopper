@@ -84,7 +84,10 @@ export default async function ListingPage({ params }: ListingPageProps) {
     moods: normalize(raw.moods as string[] | string | null),
   };
 
-  const sellerActionType = resolveSellerActionType(listing.profiles);
+  const sellerActionType = resolveSellerActionType(
+    listing.profiles,
+    listing.seller_action_type
+  );
   const pickupLabel = listing.profiles?.payment_pickup_label ?? null;
 
   return (

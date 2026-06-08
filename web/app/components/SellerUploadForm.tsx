@@ -31,7 +31,9 @@ import {
 import {
   resolveSellerActionType,
   sellFormPriceHelper,
+  sellerSettingsActionLabel,
   type SellerActionType,
+  type SellerActionProfile,
 } from '@/lib/sellerActionType';
 import { uploadListingImageToStorage } from '@/lib/compressImageForUpload';
 
@@ -235,7 +237,9 @@ export default function SellerUploadForm() {
   const [draftSaved, setDraftSaved] = useState(false); // Track if draft was just saved
   const [isRemovingBackground, setIsRemovingBackground] = useState(false);
   const [isStripeReady, setIsStripeReady] = useState<boolean | null>(null);
-  const [sellerActionType, setSellerActionType] = useState<SellerActionType>('stripe_checkout');
+  const [shopDefaultActionType, setShopDefaultActionType] = useState<SellerActionType>('stripe_checkout');
+  const [sellerProfileForAction, setSellerProfileForAction] = useState<SellerActionProfile | null>(null);
+  const [listingActionOverride, setListingActionOverride] = useState<string>('');
   const [sellerPickupLabel, setSellerPickupLabel] = useState<string | null>(null);
   
   // Editable fields
@@ -317,7 +321,8 @@ export default function SellerUploadForm() {
         .single();
       const prefs = parseShippingPreferences(data?.shipping_info ?? null) ?? DEFAULT_SHIPPING_PREFERENCES;
       setSellerDefaultShippingPreferences(prefs);
-      setSellerActionType(resolveSellerActionType(data));
+      setShopDefaultActionType(resolveSellerActionType(data));
+      setSellerProfileForAction(data);
       setSellerPickupLabel(data?.payment_pickup_label ?? null);
       if (!listingShippingInitializedRef.current) {
         setListingShippingPreferences(prefs);
@@ -509,6 +514,10 @@ export default function SellerUploadForm() {
         }
         setListingShippingPreferences(shippingPrefs);
         listingShippingInitializedRef.current = true;
+
+        const listingAction = (listing as { seller_action_type?: string | null })
+          .seller_action_type;
+        setListingActionOverride(listingAction ?? '');
         const detectedAttributes = dbAiSuggested.length > 0 ? dbAiSuggested : keywordsArrayForDisplay;
         
         // Create a result object to show the form in edit mode
@@ -533,7 +542,11 @@ export default function SellerUploadForm() {
     loadListingForEdit();
   }, [user]);
 
-  const usesStripeCheckout = sellerActionType === 'stripe_checkout';
+  const listingActionType = resolveSellerActionType(
+    sellerProfileForAction,
+    listingActionOverride || null
+  );
+  const usesStripeCheckout = listingActionType === 'stripe_checkout';
 
   const earningsPreview = useMemo(() => {
     if (!usesStripeCheckout) return null;
@@ -1196,6 +1209,7 @@ export default function SellerUploadForm() {
         intents,
         // Per-listing shipping override (null = use seller default)
         custom_shipping_policy: serializeShippingPreferences(listingShippingPreferences),
+        seller_action_type: listingActionOverride.trim() || null,
         // Keep status as draft for now - API route will change it
         // Use processed or original image based on toggle
         clean_image_url: showProcessedImage ? result?.processedImageUrl : null,
@@ -1343,6 +1357,7 @@ export default function SellerUploadForm() {
         moods,
         intents,
         custom_shipping_policy: serializeShippingPreferences(listingShippingPreferences),
+        seller_action_type: listingActionOverride.trim() || null,
         // Keep as draft
         status: 'draft',
         clean_image_url: showProcessedImage ? result?.processedImageUrl : null,
@@ -2031,7 +2046,7 @@ export default function SellerUploadForm() {
                       <span>{formatUsd(listingPricePreview)}</span>
                     </div>
                     <p className="text-xs mt-2 leading-relaxed" style={{ color: '#4b5563' }}>
-                      {sellFormPriceHelper(sellerActionType, sellerPickupLabel)}{' '}
+                      {sellFormPriceHelper(listingActionType, sellerPickupLabel)}{' '}
                       No in-app checkout or marketplace fee on this listing.
                     </p>
                   </div>
@@ -2122,6 +2137,36 @@ export default function SellerUploadForm() {
                     }}
                   />
                 </div>
+              </div>
+
+              {/* How buyers get this item */}
+              <div>
+                <label className="block font-semibold mb-1 text-gray-900">
+                  How buyers get this item
+                </label>
+                <p className="text-xs text-gray-500 mb-3 leading-relaxed">
+                  Override your shop default if this item is different. Shop default:{" "}
+                  {sellerSettingsActionLabel(shopDefaultActionType)}.
+                </p>
+                <select
+                  value={listingActionOverride}
+                  onChange={(e) => {
+                    setListingActionOverride(e.target.value);
+                    setIsDirty(true);
+                  }}
+                  className="w-full border border-gray-300 rounded-lg px-4 h-11 bg-white"
+                >
+                  <option value="">Use shop default ({sellerSettingsActionLabel(shopDefaultActionType)})</option>
+                  <option value="stripe_checkout">{sellerSettingsActionLabel("stripe_checkout")}</option>
+                  <option value="local_pickup">{sellerSettingsActionLabel("local_pickup")}</option>
+                  <option value="store_pickup">{sellerSettingsActionLabel("store_pickup")}</option>
+                  <option value="contact_seller">{sellerSettingsActionLabel("contact_seller")}</option>
+                </select>
+                {listingActionOverride && (
+                  <p className="text-xs text-gray-500 mt-2 leading-relaxed">
+                    This listing: {sellerSettingsActionLabel(listingActionType)}.
+                  </p>
+                )}
               </div>
 
               {/* Story (optional) */}

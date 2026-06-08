@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
 
     const { data: listing, error: listingError } = await admin
       .from("listings")
-      .select("id, title, price, seller_id, status, seller_name")
+      .select("id, title, price, seller_id, status, seller_name, seller_action_type")
       .eq("id", listingId)
       .single();
 
@@ -102,7 +102,10 @@ export async function POST(request: NextRequest) {
       .eq("user_id", listing.seller_id)
       .maybeSingle();
 
-    const sellerActionType = resolveSellerActionType(sellerProfile);
+    const sellerActionType = resolveSellerActionType(
+      sellerProfile,
+      listing.seller_action_type
+    );
 
     if (inquiryType === "reserve" && !isPickupAction(sellerActionType)) {
       return NextResponse.json(

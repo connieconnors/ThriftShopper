@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
     const { data: listing, error: listingError } = await supabase
       .from("listings")
       .select(
-        "id, title, price, seller_id, status, seller_stripe_account_id, custom_shipping_policy"
+        "id, title, price, seller_id, status, seller_stripe_account_id, custom_shipping_policy, seller_action_type"
       )
       .eq("id", listingId)
       .single();
@@ -57,7 +57,10 @@ export async function POST(request: NextRequest) {
       .eq("user_id", listing.seller_id)
       .maybeSingle();
 
-    const sellerActionType = resolveSellerActionType(sellerPaymentProfile);
+    const sellerActionType = resolveSellerActionType(
+      sellerPaymentProfile,
+      listing.seller_action_type
+    );
     if (sellerActionType !== "stripe_checkout") {
       return NextResponse.json(
         {
