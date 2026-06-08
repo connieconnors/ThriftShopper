@@ -2,36 +2,15 @@
 
 import { useLayoutEffect } from "react";
 import { usePathname } from "next/navigation";
-import { scheduleLinenShellSync } from "@/hooks/useAppShell";
-
-function syncLinenShell() {
-  scheduleLinenShellSync();
-}
+import { applyLinenShell } from "@/hooks/useAppShell";
 
 /** Reset to linen on every navigation — global shell never goes navy. */
 export function AppShellBaseline() {
   const pathname = usePathname();
 
   useLayoutEffect(() => {
-    syncLinenShell();
+    applyLinenShell();
   }, [pathname]);
-
-  useLayoutEffect(() => {
-    const onPageShow = (event: PageTransitionEvent) => {
-      if (event.persisted) syncLinenShell();
-    };
-    const onVisible = () => {
-      if (document.visibilityState === "visible") syncLinenShell();
-    };
-
-    window.addEventListener("pageshow", onPageShow);
-    document.addEventListener("visibilitychange", onVisible);
-
-    return () => {
-      window.removeEventListener("pageshow", onPageShow);
-      document.removeEventListener("visibilitychange", onVisible);
-    };
-  }, []);
 
   return null;
 }

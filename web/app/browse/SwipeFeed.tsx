@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useLayoutEffect, useCallback, useMemo, TouchEvent } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo, TouchEvent } from "react";
 import { flushSync } from "react-dom";
 import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
@@ -26,7 +26,7 @@ import { Mic, Loader2 } from "lucide-react";
 import { GlintIcon } from "../../components/GlintIcon";
 import { normalizeTagColumn } from "../../lib/utils/tagNormalizer";
 import { getMoodVariations } from "../../lib/moodMappings";
-import { useAppShell, hardResetLinenShell, scheduleLinenShellSync, SHELL_LINEN } from "../../hooks/useAppShell";
+import { SHELL_LINEN } from "../../hooks/useAppShell";
 import { trackBuyerEvent } from "../../lib/buyerEvents";
 import {
   buildEventPayload,
@@ -103,13 +103,6 @@ function filterListingsByMoodTags(source: Listing[], moods: string[]): Listing[]
 export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProps) {
   const router = useRouter();
   const { user } = useAuth();
-  useAppShell();
-
-  // Hard reset on every browse mount — same behavior as product detail entry.
-  useLayoutEffect(() => {
-    hardResetLinenShell();
-    scheduleLinenShellSync();
-  }, []);
 
   const [listings, setListings] = useState<Listing[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -988,6 +981,17 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
   const isMoodFilterResult = hasMoodFilter && hasNoResults && searchResults === null && noMoodResults;
 
   // Safety check: ensure currentListing exists before rendering
+  if (!mounted) {
+    return (
+      <div
+        className="fixed inset-0 flex items-center justify-center"
+        style={{ backgroundColor: SHELL_LINEN }}
+      >
+        <Loader2 className="w-8 h-8 animate-spin" style={{ color: INK }} />
+      </div>
+    );
+  }
+
   if (!currentListing || displayListings.length === 0) {
     if (!noMoodResults) {
       return (
@@ -1027,8 +1031,21 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
         </div>
       );
     }
-    // If noMoodResults is true, return null to prevent error
-    return null;
+    return (
+      <div
+        className="fixed inset-0 flex flex-col items-center justify-center px-6"
+        style={{ backgroundColor: SHELL_LINEN }}
+      >
+        <p className="text-xl mb-4 font-editorial" style={{ color: INK }}>No items match these moods</p>
+        <button
+          onClick={() => setSelectedMoods([])}
+          className="px-6 py-3 rounded-full text-sm font-medium"
+          style={{ backgroundColor: INK, color: `rgba(${LINEN_RGB}, 0.95)` }}
+        >
+          Clear mood filters
+        </button>
+      </div>
+    );
   }
 
   const imageSrc = getPrimaryImage(currentListing);
@@ -1570,11 +1587,6 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
       {/* ===== DASHBOARD/TS BUTTON (Bottom Right) ===== */}
       <button
         onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          setAccountOpen(true);
-        }}
-        onTouchStart={(e) => {
           e.preventDefault();
           e.stopPropagation();
           setAccountOpen(true);

@@ -7,20 +7,22 @@ import { usePathname } from "next/navigation";
 export const SHELL_INK = "#16193a";
 export const SHELL_LINEN = "#ede9e1";
 
-function upsertMeta(name: string, content: string) {
-  document.querySelectorAll<HTMLMetaElement>(`meta[name="${name}"]`).forEach((el) => el.remove());
-  const meta = document.createElement("meta");
-  meta.name = name;
-  meta.content = content;
-  document.head.prepend(meta);
-}
-
 function setThemeColorMeta(color: string) {
-  upsertMeta("theme-color", color);
-  upsertMeta("color-scheme", "light");
+  document
+    .querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]')
+    .forEach((meta) => {
+      meta.content = color;
+    });
+
+  if (!document.querySelector('meta[name="theme-color"]')) {
+    const meta = document.createElement("meta");
+    meta.name = "theme-color";
+    meta.content = color;
+    document.head.appendChild(meta);
+  }
 }
 
-/** Standard linen sync — html/body + meta tags. */
+/** Standard linen sync — html/body + theme-color. Safe to call on every route. */
 export function applyLinenShell() {
   if (typeof document === "undefined") return;
 
@@ -31,42 +33,20 @@ export function applyLinenShell() {
   setThemeColorMeta(SHELL_LINEN);
 }
 
-/**
- * Force browsers to drop ink-route chrome tint (Safari keeps stale theme-color
- * after dashboard nav unless meta tags are replaced, same as product detail entry).
- */
-export function hardResetLinenShell() {
-  if (typeof document === "undefined") return;
-
-  document.documentElement.style.removeProperty("background-color");
-  document.body.style.removeProperty("background-color");
-  applyLinenShell();
-
-  document.documentElement.style.setProperty("background-color", SHELL_LINEN, "important");
-  document.body.style.setProperty("background-color", SHELL_LINEN, "important");
-}
-
-export function scheduleLinenShellSync() {
-  hardResetLinenShell();
-  requestAnimationFrame(() => hardResetLinenShell());
-  window.setTimeout(() => hardResetLinenShell(), 50);
-  window.setTimeout(() => hardResetLinenShell(), 200);
-}
-
-/** Call on dashboard routes when leaving — prevents ink shell bleeding into browse. */
-export function useDashboardRouteCleanup() {
-  useLayoutEffect(() => {
-    return () => {
-      scheduleLinenShellSync();
-    };
-  }, []);
-}
-
-/** Re-assert linen on every route. */
+/** Re-assert linen on every route change. */
 export function useAppShell() {
   const pathname = usePathname();
 
   useLayoutEffect(() => {
-    scheduleLinenShellSync();
+    applyLinenShell();
   }, [pathname]);
+}
+
+/** When leaving ink dashboard routes, reset shell before browse paints. */
+export function useDashboardRouteCleanup() {
+  useLayoutEffect(() => {
+    return () => {
+      applyLinenShell();
+    };
+  }, []);
 }
