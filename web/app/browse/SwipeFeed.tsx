@@ -371,8 +371,8 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
       setVoiceTranscript('');
       return;
     }
-    setVoiceError("Didn't catch that — tap the mic, speak, then tap again to search");
-    setIsListening(true);
+    setVoiceError("Didn't catch that — tap the mic to try again");
+    setIsListening(false);
   }, []);
 
   // Whisper-based voice transcription (works on mobile!)
@@ -394,6 +394,7 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
     onError: (error) => {
       console.error('Voice transcription error:', error);
       setVoiceError(error);
+      setIsListening(false);
     },
     // Manual stop via mic tap for beta (silence auto-stop deferred — flaky on some mobile mics)
     silenceTimeout: 999999999,
@@ -410,6 +411,13 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
       return () => clearInterval(interval);
     }
   }, [isRecording]);
+
+  // Auto-clear voice error so it doesn't block browse
+  useEffect(() => {
+    if (!voiceError) return;
+    const timer = setTimeout(() => setVoiceError(null), 5000);
+    return () => clearTimeout(timer);
+  }, [voiceError]);
 
   /** Dismiss voice UI and discard audio (navigation, clear search, etc.). */
   const cancelVoiceSession = useCallback(
@@ -882,6 +890,18 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
     }
   };
 
+  const handleClearSearchClick = (
+    event: React.MouseEvent | React.TouchEvent | React.PointerEvent
+  ) => {
+    event.preventDefault();
+    event.stopPropagation();
+    clearSearch();
+  };
+
+  const stopSearchOverlayPropagation = (event: React.SyntheticEvent) => {
+    event.stopPropagation();
+  };
+
   const toggleFavorite = async (id: string) => {
     // If not logged in, redirect to login
     if (!user) {
@@ -991,6 +1011,14 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
   const hasMoodFilter = selectedMoods.length > 0;
   const hasNoResults = displayListings.length === 0;
   const isMoodFilterResult = hasMoodFilter && hasNoResults && searchResults === null && noMoodResults;
+
+  const extraInterpretationTerms = useMemo(() => {
+    if (searchInterpretationTerms.length === 0) return [];
+    const queryLower = lastSearchQuery.toLowerCase();
+    return searchInterpretationTerms.filter(
+      (term) => !queryLower.includes(term.toLowerCase())
+    );
+  }, [searchInterpretationTerms, lastSearchQuery]);
 
   // Safety check: ensure currentListing exists before rendering
   if (!mounted) {
@@ -1190,6 +1218,44 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
           </div>
         )}
 
+        {/* Voice error toast — dismissable, exits listening mode */}
+        {voiceError && !isListening && (
+          <div
+            className="mt-4 h-10 px-4 flex items-center justify-between gap-2 rounded-full max-w-md"
+            style={{
+              backgroundColor: `rgba(${INK_RGB}, 0.88)`,
+              backdropFilter: 'blur(10px)',
+              border: '1px solid #ef4444',
+              pointerEvents: 'auto',
+            }}
+            onClick={(event) => event.stopPropagation()}
+            onTouchStart={(event) => event.stopPropagation()}
+            onTouchEnd={(event) => event.stopPropagation()}
+          >
+            <p className="text-sm truncate flex-1" style={{ color: '#ef4444' }}>
+              ⚠️ {voiceError}
+            </p>
+            <button
+              type="button"
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                setVoiceError(null);
+              }}
+              onTouchEnd={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                setVoiceError(null);
+              }}
+              className="shrink-0 text-sm leading-none opacity-80 hover:opacity-100 px-1"
+              style={{ color: '#ef4444' }}
+              aria-label="Dismiss voice search error"
+            >
+              ×
+            </button>
+          </div>
+        )}
+
         {/* Voice Transcript (stays visible until user taps mic again) */}
         {isListening && (
           <div 
@@ -1256,57 +1322,58 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
           </div>
         )}
 
-        {/* Search Results Indicator */}
+        {/* Search Results — compact bar; pointerEvents auto so taps don't hit card below */}
         {searchResults !== null && !isListening && (
-          <div className="mt-4 flex flex-col items-center gap-2">
-            {lastSearchQuery && (
-              <div 
-                className="px-4 py-2 rounded-full text-sm"
-                style={{ 
-                  backgroundColor: `rgba(${GOLD_RGB}, 0.15)`,
-                  color: '#ffffff',
-                  border: `1px solid rgba(${GOLD_RGB}, 0.4)`
-                }}
-              >
-                "{lastSearchQuery}"
-              </div>
-            )}
-            {searchInterpretationTerms.length > 0 && (
-              <div
-                className="flex flex-col items-center gap-1.5 max-w-[min(100%,320px)]"
-                style={{ pointerEvents: 'none' }}
-              >
-                <span
-                  className="text-[10px] uppercase tracking-wide"
-                  style={{ color: 'rgba(255,255,255,0.55)' }}
-                >
-                  Understood as
+          <div
+            className="mt-3 max-w-[min(100%,340px)]"
+            style={{ pointerEvents: 'auto' }}
+            onClick={stopSearchOverlayPropagation}
+            onTouchStart={stopSearchOverlayPropagation}
+            onTouchEnd={stopSearchOverlayPropagation}
+            onPointerDown={stopSearchOverlayPropagation}
+          >
+            <div
+              className="inline-flex flex-wrap items-center gap-x-2 gap-y-1 px-3 py-1.5 rounded-full text-xs"
+              style={{
+                backgroundColor: `rgba(${INK_RGB}, 0.72)`,
+                backdropFilter: 'blur(10px)',
+                border: `1px solid rgba(${GOLD_RGB}, 0.35)`,
+                color: '#ffffff',
+              }}
+            >
+              {lastSearchQuery && (
+                <span className="font-medium truncate max-w-[160px]">
+                  &ldquo;{lastSearchQuery}&rdquo;
                 </span>
-                <div className="flex flex-wrap justify-center gap-1.5">
-                  {searchInterpretationTerms.map((term) => (
+              )}
+              {extraInterpretationTerms.length > 0 && (
+                <span className="inline-flex flex-wrap items-center gap-1 opacity-90">
+                  <span className="opacity-50">→</span>
+                  {extraInterpretationTerms.map((term) => (
                     <span
                       key={term}
-                      className="px-2.5 py-1 rounded-full text-xs font-medium capitalize"
+                      className="px-1.5 py-0.5 rounded-full capitalize"
                       style={{
-                        color: '#ffffff',
                         backgroundColor: 'rgba(255,255,255,0.12)',
-                        border: `1px solid rgba(${GOLD_RGB}, 0.55)`,
-                        boxShadow: '0 1px 4px rgba(0,0,0,0.12)',
+                        border: `1px solid rgba(${GOLD_RGB}, 0.4)`,
                       }}
                     >
                       {term}
                     </span>
                   ))}
-                </div>
-              </div>
-            )}
-            <div className="flex items-center gap-2">
-              <span className="text-sm" style={{ color: `rgba(${GOLD_RGB}, 0.9)` }}>
+                </span>
+              )}
+              <span style={{ color: `rgba(${GOLD_RGB}, 0.95)` }}>
                 {displayListings.length} result{displayListings.length !== 1 ? 's' : ''}
               </span>
               <button
-                onClick={clearSearch}
-                className="text-sm text-white/60 hover:text-white underline"
+                type="button"
+                onClick={handleClearSearchClick}
+                onTouchStart={stopSearchOverlayPropagation}
+                onTouchEnd={handleClearSearchClick}
+                onPointerDown={stopSearchOverlayPropagation}
+                className="font-medium underline opacity-80 hover:opacity-100 shrink-0"
+                style={{ color: '#ffffff' }}
               >
                 Clear
               </button>
@@ -1561,10 +1628,8 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
             triggerHaptic();
             toggleVoice();
           }}
-          onTouchStart={(e) => {
-            e.stopPropagation();
-            triggerHaptic();
-          }}
+          onTouchStart={(e) => e.stopPropagation()}
+          onTouchEnd={(e) => e.stopPropagation()}
           disabled={!isVoiceSupported}
           className="rounded-full hover:opacity-90 transition-all relative flex items-center justify-center disabled:opacity-50 active:scale-95"
           style={{ 
