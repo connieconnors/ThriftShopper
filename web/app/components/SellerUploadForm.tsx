@@ -24,7 +24,6 @@ import {
   SELLER_LISTING_NEEDS_SHIPPING_MESSAGE,
 } from '@/lib/shippingPreferences';
 import {
-  calculateSellerEarningsPreview,
   formatUsd,
   parseValidListingPrice,
 } from '@/lib/marketplaceFees';
@@ -548,13 +547,6 @@ export default function SellerUploadForm() {
     listingActionOverride || null
   );
   const usesStripeCheckout = listingActionType === 'stripe_checkout';
-
-  const earningsPreview = useMemo(() => {
-    if (!usesStripeCheckout) return null;
-    const validPrice = parseValidListingPrice(price);
-    if (validPrice === null) return null;
-    return calculateSellerEarningsPreview(validPrice);
-  }, [price, usesStripeCheckout]);
 
   const listingPricePreview = useMemo(() => {
     const validPrice = parseValidListingPrice(price);
@@ -2026,38 +2018,10 @@ export default function SellerUploadForm() {
                     </p>
                   </div>
                 )}
-                {earningsPreview && (
+                {listingPricePreview !== null && (
                   <div
                     className="mt-3 p-3 rounded-lg text-sm border"
                     style={{ backgroundColor: '#f9fafb', borderColor: '#e5e7eb' }}
-                  >
-                    <p className="text-xs font-medium uppercase tracking-wide mb-2" style={{ color: '#6b7280' }}>
-                      Your earnings preview
-                    </p>
-                    <div className="space-y-1" style={{ color: '#16193a' }}>
-                      <div className="flex justify-between gap-4">
-                        <span>Price</span>
-                        <span>{formatUsd(earningsPreview.price)}</span>
-                      </div>
-                      <div className="flex justify-between gap-4">
-                        <span>Marketplace fee</span>
-                        <span>-{formatUsd(earningsPreview.marketplaceFee)}</span>
-                      </div>
-                      <div className="flex justify-between gap-4 font-semibold pt-1 border-t border-gray-200">
-                        <span>You receive</span>
-                        <span>{formatUsd(earningsPreview.sellerReceives)}</span>
-                      </div>
-                    </div>
-                    <p className="text-xs mt-2 leading-relaxed" style={{ color: '#6b7280' }}>
-                      You receive approximately {formatUsd(earningsPreview.sellerReceives)} after
-                      ThriftShopper&apos;s 10% marketplace fee.
-                    </p>
-                  </div>
-                )}
-                {!usesStripeCheckout && listingPricePreview !== null && (
-                  <div
-                    className="mt-3 p-3 rounded-lg text-sm border"
-                    style={{ backgroundColor: '#f0f7ff', borderColor: '#bfdbfe' }}
                   >
                     <p className="text-xs font-medium uppercase tracking-wide mb-2" style={{ color: '#6b7280' }}>
                       Listing price
@@ -2067,8 +2031,7 @@ export default function SellerUploadForm() {
                       <span>{formatUsd(listingPricePreview)}</span>
                     </div>
                     <p className="text-xs mt-2 leading-relaxed" style={{ color: '#4b5563' }}>
-                      {sellFormPriceHelper(listingActionType, sellerPickupLabel)}{' '}
-                      No in-app checkout or marketplace fee on this listing.
+                      {sellFormPriceHelper(listingActionType, sellerPickupLabel)}
                     </p>
                   </div>
                 )}
@@ -2367,7 +2330,7 @@ export default function SellerUploadForm() {
               Your listing is saved. Connect Stripe so buyers can purchase when you&apos;re ready.
             </p>
             <p className="text-sm text-gray-600 mb-6 leading-relaxed">
-              Listing is free. ThriftShopper takes a 10% marketplace fee only when your item sells.
+              No listing fees. Connect Stripe only if you chose Buy Online in shop settings.
             </p>
             <div className="flex flex-col gap-3">
               <button

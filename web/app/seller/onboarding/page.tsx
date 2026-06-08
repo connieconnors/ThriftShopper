@@ -17,6 +17,10 @@ import {
   serializeShippingPreferences,
   validateListingShippingPreferences,
 } from "@/lib/shippingPreferences";
+import {
+  type SellerActionType,
+  sellerSettingsActionLabel,
+} from "@/lib/sellerActionType";
 
 interface SellerProfile {
   storeName: string;
@@ -28,6 +32,8 @@ interface SellerProfile {
   email: string;
   phone: string;
   shippingPreferences: ShippingPreferences;
+  sellerActionType: SellerActionType;
+  paymentPickupLabel: string;
   avatarFile: File | null;
   avatarPreview: string | null;
 }
@@ -66,6 +72,8 @@ function SellerOnboardingContent() {
     email: "",
     phone: "",
     shippingPreferences: DEFAULT_SHIPPING_PREFERENCES,
+    sellerActionType: "contact_seller",
+    paymentPickupLabel: "",
     avatarFile: null,
     avatarPreview: null,
   });
@@ -113,7 +121,7 @@ function SellerOnboardingContent() {
           const { data: savedProfile } = await supabase
             .from("profiles")
             .select(
-              "display_name, seller_description, seller_story, location_city, location_state, location_zip, email, phone_main, shipping_info, avatar_url"
+              "display_name, seller_description, seller_story, location_city, location_state, location_zip, email, phone_main, shipping_info, avatar_url, seller_action_type, payment_pickup_label"
             )
             .eq("user_id", user.id)
             .maybeSingle();
@@ -132,6 +140,11 @@ function SellerOnboardingContent() {
               shippingPreferences:
                 parseShippingPreferences(savedProfile.shipping_info) ??
                 prev.shippingPreferences,
+              sellerActionType:
+                (savedProfile.seller_action_type as SellerActionType) ||
+                prev.sellerActionType,
+              paymentPickupLabel:
+                savedProfile.payment_pickup_label || prev.paymentPickupLabel,
               avatarPreview: savedProfile.avatar_url || prev.avatarPreview,
             }));
           }
@@ -255,6 +268,12 @@ function SellerOnboardingContent() {
         email: formData.email,
         phone_main: formData.phone || null, // Use phone_main (stores can have store phone and mobile)
         shipping_info: serializeShippingPreferences(formData.shippingPreferences),
+        seller_action_type: formData.sellerActionType,
+        payment_mode: formData.sellerActionType,
+        payment_pickup_label:
+          formData.sellerActionType === "store_pickup"
+            ? formData.paymentPickupLabel.trim() || null
+            : null,
         is_seller: true,
       };
 
@@ -285,6 +304,12 @@ function SellerOnboardingContent() {
           email: formData.email,
           phone_main: formData.phone || null, // Use phone_main (stores can have store phone and mobile)
           shipping_info: serializeShippingPreferences(formData.shippingPreferences),
+          seller_action_type: formData.sellerActionType,
+          payment_mode: formData.sellerActionType,
+          payment_pickup_label:
+            formData.sellerActionType === "store_pickup"
+              ? formData.paymentPickupLabel.trim() || null
+              : null,
           is_seller: true,
         };
 
@@ -543,6 +568,47 @@ function SellerOnboardingContent() {
                 />
               </div>
             </div>
+          </div>
+
+          {/* How buyers get items */}
+          <div>
+            <label className="block mb-2 font-medium" style={{ color: "#16193a" }}>
+              How buyers get items <span className="text-gray-400 font-normal">(shop default)</span>
+            </label>
+            <p className="text-xs text-gray-500 mb-3">
+              Pick what fits your shop. You can change this later in Settings, or override per listing.
+            </p>
+            <select
+              value={formData.sellerActionType}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  sellerActionType: e.target.value as SellerActionType,
+                }))
+              }
+              className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#16193a] outline-none transition-colors mb-3"
+            >
+              <option value="contact_seller">{sellerSettingsActionLabel("contact_seller")}</option>
+              <option value="local_pickup">{sellerSettingsActionLabel("local_pickup")}</option>
+              <option value="store_pickup">{sellerSettingsActionLabel("store_pickup")}</option>
+              <option value="stripe_checkout">{sellerSettingsActionLabel("stripe_checkout")}</option>
+            </select>
+            {formData.sellerActionType === "store_pickup" && (
+              <input
+                type="text"
+                value={formData.paymentPickupLabel}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, paymentPickupLabel: e.target.value }))
+                }
+                className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#16193a] outline-none transition-colors"
+                placeholder="Store name (e.g. Wilson's Dry Dock)"
+              />
+            )}
+            {formData.sellerActionType === "stripe_checkout" && (
+              <p className="text-xs text-gray-500">
+                Requires Stripe payout setup before buyers can checkout in the app.
+              </p>
+            )}
           </div>
 
           {/* Shipping */}

@@ -132,7 +132,7 @@ export async function POST(request: NextRequest) {
           error: "Connect payments to start selling.",
           code: "STRIPE_NOT_COMPLETE",
           message:
-            "Listing is free. ThriftShopper takes a 10% marketplace fee only when your item sells.",
+            "Connect Stripe to publish Buy Online listings, or change how buyers pay in Seller Settings.",
         },
         { status: 409 }
       );

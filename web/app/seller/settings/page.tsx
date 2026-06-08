@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "motion/react";
@@ -56,7 +56,8 @@ export default function SellerSettingsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
+  const saveFooterRef = useRef<HTMLDivElement>(null);
 
   const [formData, setFormData] = useState<SellerProfile>({
     storeName: "",
@@ -68,7 +69,7 @@ export default function SellerSettingsPage() {
     email: "",
     phone: "",
     shippingPreferences: DEFAULT_SHIPPING_PREFERENCES,
-    sellerActionType: "stripe_checkout",
+    sellerActionType: "contact_seller",
     paymentPickupLabel: "",
     givesBackEnabled: false,
     givesBackName: "",
@@ -118,9 +119,12 @@ export default function SellerSettingsPage() {
           sellerActionType: resolveSellerActionType(data),
           paymentPickupLabel: data.payment_pickup_label || "",
           givesBackEnabled: data.gives_back === true,
-          givesBackName: data.gives_back_name || "",
-          givesBackPct: data.gives_back_pct != null ? String(data.gives_back_pct) : "",
-          isNonProfit: data.is_non_profit_org === true,
+          givesBackName: data.gives_back === true ? (data.gives_back_name || "") : "",
+          givesBackPct:
+            data.gives_back === true && data.gives_back_pct != null
+              ? String(data.gives_back_pct)
+              : "",
+          isNonProfit: data.gives_back === true && data.is_non_profit_org === true,
         });
       } else {
         // No profile yet, pre-fill email
@@ -139,8 +143,8 @@ export default function SellerSettingsPage() {
     if (!user) return;
 
     setIsSubmitting(true);
+    setSaveStatus("saving");
     setError(null);
-    setSuccess(false);
 
     const shippingValidationError = validateListingShippingPreferences(
       formData.shippingPreferences
@@ -148,6 +152,7 @@ export default function SellerSettingsPage() {
     if (shippingValidationError) {
       setError(shippingValidationError);
       setIsSubmitting(false);
+      setSaveStatus("idle");
       return;
     }
 
@@ -159,6 +164,7 @@ export default function SellerSettingsPage() {
     if (givesBackValidationError) {
       setError(givesBackValidationError);
       setIsSubmitting(false);
+      setSaveStatus("idle");
       return;
     }
 
@@ -204,21 +210,30 @@ export default function SellerSettingsPage() {
         throw updateError;
       }
 
-      setSuccess(true);
-      setTimeout(() => setSuccess(false), 3000);
+      setSaveStatus("saved");
+      saveFooterRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
     } catch (err) {
       console.error("Error saving profile:", err);
       setError(err instanceof Error ? err.message : "Failed to save profile");
+      setSaveStatus("idle");
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const markFormDirty = () => {
+    if (saveStatus === "saved") {
+      setSaveStatus("idle");
+    }
+  };
+
   const updateField = (field: keyof SellerProfile, value: string) => {
+    markFormDirty();
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleGivesBackToggle = (checked: boolean) => {
+    markFormDirty();
     if (checked && !window.confirm(GIVES_BACK_ENABLE_CONFIRM)) {
       return;
     }
@@ -272,17 +287,6 @@ export default function SellerSettingsPage() {
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
             {error}
           </div>
-        )}
-
-        {success && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm flex items-center gap-2"
-          >
-            <Check size={18} />
-            Settings saved successfully!
-          </motion.div>
         )}
 
         <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-xl p-8 space-y-6">
@@ -429,12 +433,13 @@ export default function SellerSettingsPage() {
             </p>
             <select
               value={formData.sellerActionType}
-              onChange={(e) =>
+              onChange={(e) => {
+                markFormDirty();
                 setFormData((prev) => ({
                   ...prev,
                   sellerActionType: e.target.value as SellerActionType,
-                }))
-              }
+                }));
+              }}
               className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#16193a] outline-none transition-colors mb-3"
             >
               <option value="stripe_checkout">{sellerSettingsActionLabel("stripe_checkout")}</option>
@@ -471,7 +476,10 @@ export default function SellerSettingsPage() {
             <ShippingPreferenceForm
               label="How do you ship?"
               value={formData.shippingPreferences}
-              onChange={(prefs) => setFormData((prev) => ({ ...prev, shippingPreferences: prefs }))}
+              onChange={(prefs) => {
+                markFormDirty();
+                setFormData((prev) => ({ ...prev, shippingPreferences: prefs }));
+              }}
               showLabel={true}
             />
           </div>
@@ -534,12 +542,13 @@ export default function SellerSettingsPage() {
                     id="settings-is-non-profit"
                     type="checkbox"
                     checked={formData.isNonProfit}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      markFormDirty();
                       setFormData((prev) => ({
                         ...prev,
                         isNonProfit: e.target.checked,
-                      }))
-                    }
+                      }));
+                    }}
                     className="h-4 w-4 accent-[#16193a]"
                   />
                   <label htmlFor="settings-is-non-profit" className="text-sm text-gray-700">
@@ -556,22 +565,52 @@ export default function SellerSettingsPage() {
             )}
           </div>
 
-          <motion.button
-            type="submit"
-            disabled={isSubmitting}
-            whileTap={{ scale: 0.98 }}
-            className="w-full py-4 rounded-lg text-white font-medium shadow-lg mt-8 disabled:opacity-50 flex items-center justify-center gap-2"
-            style={{ backgroundColor: "#16193a" }}
-          >
-            {isSubmitting ? (
-              <>
-                <Loader2 size={20} className="animate-spin" />
-                Saving...
-              </>
-            ) : (
-              "Save Changes"
+          <div ref={saveFooterRef} className="mt-8 space-y-3 pt-2 border-t border-gray-100">
+            {saveStatus === "saved" && (
+              <motion.p
+                initial={{ opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-4 py-3 flex items-center gap-2"
+              >
+                <Check size={18} className="shrink-0" />
+                Settings saved successfully!
+              </motion.p>
             )}
-          </motion.button>
+
+            <motion.button
+              type="submit"
+              disabled={isSubmitting || saveStatus === "saved"}
+              whileTap={saveStatus === "saved" ? undefined : { scale: 0.98 }}
+              className="w-full py-4 rounded-lg font-medium shadow-lg disabled:cursor-default flex items-center justify-center gap-2 transition-colors"
+              style={{
+                backgroundColor:
+                  saveStatus === "saved" ? "#6b7280" : "#16193a",
+                color: "white",
+                opacity: isSubmitting ? 0.7 : 1,
+              }}
+            >
+              {saveStatus === "saving" || isSubmitting ? (
+                <>
+                  <Loader2 size={20} className="animate-spin" />
+                  Saving...
+                </>
+              ) : saveStatus === "saved" ? (
+                <>
+                  <Check size={20} />
+                  Changes saved
+                </>
+              ) : (
+                "Save Changes"
+              )}
+            </motion.button>
+
+            <Link
+              href="/seller"
+              className="block w-full py-3 rounded-lg text-center text-sm font-medium border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors"
+            >
+              Back to Seller Dashboard
+            </Link>
+          </div>
         </form>
       </motion.div>
     </div>

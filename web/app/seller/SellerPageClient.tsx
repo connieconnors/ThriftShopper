@@ -942,7 +942,7 @@ export default function SellerPageClient() {
 
         if (!isStripeConnectedEnough && !canSellWithoutStripe) {
           alert(
-            'Connect payments to start selling.\n\nListing is free. ThriftShopper takes a 10% marketplace fee only when your item sells.'
+            'Connect Stripe to publish Buy Online listings.\n\nChange how buyers pay in Seller Settings if you prefer pickup or contact instead.'
           );
           setUpdatingId(null);
           return;
@@ -1285,14 +1285,15 @@ export default function SellerPageClient() {
               </div>
             ) : !isStripeConnectedEnough ? (
               <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-3">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <h2 className="text-xs font-semibold text-amber-900 leading-tight mb-1">Ready to sell</h2>
-                    <p className="text-[10px] leading-tight" style={{ color: "#333333" }}>
-                      Connect payouts to receive payments when buyers purchase your items.
-                    </p>
-                  </div>
+                <h2 className="text-xs font-semibold text-amber-900 leading-tight mb-1">
+                  Buy Online requires Stripe
+                </h2>
+                <p className="text-[10px] leading-relaxed text-amber-900/90 mb-3">
+                  Your shop default is card checkout. Connect payouts so buyers can pay in the app — or switch to pickup or contact in settings.
+                </p>
+                <div className="flex flex-col gap-2">
                   <button
+                    type="button"
                     onClick={async () => {
                       try {
                         const { data: { session } } = await supabase.auth.getSession();
@@ -1300,7 +1301,7 @@ export default function SellerPageClient() {
                           alert('Please log in to set up payouts');
                           return;
                         }
-                        const response = await fetch('/api/stripe/create-account-link', { 
+                        const response = await fetch('/api/stripe/create-account-link', {
                           method: 'POST',
                           headers: {
                             'Authorization': `Bearer ${session.access_token}`,
@@ -1318,10 +1319,16 @@ export default function SellerPageClient() {
                       }
                     }}
                     style={{ backgroundColor: '#16193a', color: 'white' }}
-                    className="hover:opacity-90 text-xs h-8 px-4 shrink-0 leading-none rounded-lg flex items-center justify-center transition-all font-medium shadow-sm"
+                    className="hover:opacity-90 text-xs h-9 px-4 w-full leading-none rounded-lg flex items-center justify-center transition-all font-medium shadow-sm"
                   >
                     Finish payout setup
                   </button>
+                  <Link
+                    href="/seller/settings"
+                    className="text-[10px] font-medium text-center text-amber-900 underline hover:opacity-80 py-1"
+                  >
+                    Change how buyers pay →
+                  </Link>
                 </div>
               </div>
             ) : isStripeFullyConnected ? (

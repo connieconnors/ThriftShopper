@@ -76,7 +76,7 @@ export function resolveSellerActionType(
     return profile?.payment_pickup_label?.trim() ? "store_pickup" : "local_pickup";
   }
 
-  return "stripe_checkout";
+  return "contact_seller";
 }
 
 export function primaryCtaLabel(action: SellerActionType): string {
