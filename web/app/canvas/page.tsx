@@ -22,7 +22,6 @@ import {
   X,
   Loader2,
 } from "lucide-react";
-import { useAppShell } from "@/hooks/useAppShell";
 import SupportModal from "@/components/SupportModal";
 import { Listing, getPrimaryImage } from "../../lib/types";
 import {
@@ -45,7 +44,6 @@ interface Profile {
 export default function BuyerCanvasPage() {
   const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
-  useAppShell("ink");
   const [mounted, setMounted] = useState(false);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [favorites, setFavorites] = useState<Listing[]>([]);
@@ -375,7 +373,7 @@ export default function BuyerCanvasPage() {
 
   return (
     <div
-      className="min-h-screen pb-16 bg-[#16193a]"
+      className="min-h-screen pb-16"
       style={{ overscrollBehaviorY: "contain" }}
     >
       {/* Header */}

@@ -103,7 +103,7 @@ function filterListingsByMoodTags(source: Listing[], moods: string[]): Listing[]
 export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProps) {
   const router = useRouter();
   const { user } = useAuth();
-  useAppShell("linen");
+  useAppShell();
   const [listings, setListings] = useState<Listing[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);

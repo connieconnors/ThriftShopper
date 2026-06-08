@@ -84,7 +84,7 @@ export default function ProductDetails({
   const listingFrom = parseListingFrom(searchParams.get("from"));
   const listingBack = resolveListingBack(listingFrom);
   const { user } = useAuth();
-  useAppShell("linen");
+  useAppShell();
   const images = getListingImages(listing);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showShareSuccess, setShowShareSuccess] = useState(false);

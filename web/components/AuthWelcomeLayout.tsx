@@ -22,7 +22,7 @@ export function AuthWelcomeLayout({
   maxWidthClass = "max-w-md",
   children,
 }: AuthWelcomeLayoutProps) {
-  useAppShell("linen");
+  useAppShell();
 
   return (
     <div

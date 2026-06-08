@@ -256,7 +256,7 @@ function CheckoutForm({
 export default function CheckoutClient({ listing }: CheckoutClientProps) {
   const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
-  useAppShell("linen");
+  useAppShell();
   const checkoutStartLogged = useRef(false);
   const checkoutShipping = useMemo(
     () =>

@@ -1464,7 +1464,7 @@ export default function SellerUploadForm() {
   const photoIsInteractive = isEditMode || canToggleBackground;
 
   return (
-    <div className="max-w-4xl mx-auto p-6" style={{ colorScheme: 'light' }}>
+    <div className="max-w-4xl mx-auto px-4 py-6 sm:p-6 w-full min-w-0 overflow-x-hidden" style={{ colorScheme: 'light' }}>
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <Link
@@ -1492,7 +1492,7 @@ export default function SellerUploadForm() {
 
       {/* Upload Section */}
       {!result && (
-        <div className="bg-white rounded-lg shadow-md p-8 mb-6">
+        <div className="bg-white rounded-lg shadow-md px-4 py-6 sm:p-8 mb-6 overflow-x-hidden">
           <div className="mb-6">
             {!previewUrl ? (
               <div
@@ -1552,11 +1552,11 @@ export default function SellerUploadForm() {
                 </p>
               </div>
             ) : (
-              <div className="relative ts-photo-frame p-3 box-border">
+              <div className="relative ts-photo-frame p-3 w-full min-w-0">
                 <img
                   src={previewUrl}
                   alt="Preview"
-                  className="w-full max-h-96 object-contain rounded-[10px] block mx-auto"
+                  className="w-full max-w-full max-h-96 object-contain rounded-[10px] block"
                 />
                 <div className="absolute top-2 right-2 flex gap-2">
                   <button
@@ -1611,7 +1611,7 @@ export default function SellerUploadForm() {
 
       {/* Results Section */}
       {result && (
-        <div className="bg-white rounded-lg shadow-md p-8">
+        <div className="bg-white rounded-lg shadow-md px-4 py-6 sm:p-8 overflow-x-hidden">
           {error && (
             <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
               {error}
@@ -1654,11 +1654,11 @@ export default function SellerUploadForm() {
             {isEditMode ? 'Edit Your Listing' : 'Review Your Listing'}
           </h2>
 
-          <div className="grid md:grid-cols-2 gap-8 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8 w-full min-w-0">
             {/* Photo Section */}
-            <div>
+            <div className="min-w-0 w-full">
               <div
-                className={`relative group mb-3 ${photoIsInteractive ? 'cursor-pointer' : ''}`}
+                className={`relative group mb-3 w-full min-w-0 ${photoIsInteractive ? 'cursor-pointer' : ''}`}
                 onClick={() => {
                   if (isEditMode) {
                     fileInputRef.current?.click();
@@ -1676,11 +1676,11 @@ export default function SellerUploadForm() {
                       : undefined
                 }
               >
-                <div className="ts-photo-frame p-3 box-border">
+                <div className="ts-photo-frame p-3">
                   <img
                     src={showProcessedImage ? result.processedImageUrl : originalImageUrl}
                     alt="Product"
-                    className="w-full max-h-96 object-contain rounded-[10px] block mx-auto transition-all duration-300"
+                    className="w-full max-w-full max-h-96 object-contain rounded-[10px] block transition-all duration-300"
                   />
                 </div>
                 {photoIsInteractive && (
@@ -1761,11 +1761,13 @@ export default function SellerUploadForm() {
                 <div>
                   {additionalPhoto1 ? (
                     <div className="relative">
-                      <img
-                        src={additionalPhoto1}
-                        alt="Additional"
-                        className="w-full h-24 object-cover ts-photo-frame"
-                      />
+                      <div className="ts-photo-frame p-1.5 overflow-hidden">
+                        <img
+                          src={additionalPhoto1}
+                          alt="Additional"
+                          className="w-full h-24 object-cover rounded-[8px] block"
+                        />
+                      </div>
                       <button
                         type="button"
                         onClick={() => setAdditionalPhoto1('')}
@@ -1795,11 +1797,13 @@ export default function SellerUploadForm() {
                 <div>
                   {additionalPhoto2 ? (
                     <div className="relative">
-                      <img
-                        src={additionalPhoto2}
-                        alt="Additional"
-                        className="w-full h-24 object-cover ts-photo-frame"
-                      />
+                      <div className="ts-photo-frame p-1.5 overflow-hidden">
+                        <img
+                          src={additionalPhoto2}
+                          alt="Additional"
+                          className="w-full h-24 object-cover rounded-[8px] block"
+                        />
+                      </div>
                       <button
                         type="button"
                         onClick={() => setAdditionalPhoto2('')}
@@ -1840,7 +1844,7 @@ export default function SellerUploadForm() {
             </div>
 
             {/* Listing Details - simplified primary flow */}
-            <div className="space-y-4">
+            <div className="space-y-4 min-w-0 w-full">
               {/* AI Result Card */}
               <div className="rounded-xl border border-gray-200 p-4 bg-white">
                 <h3 className="font-ui-heading text-lg font-semibold mb-3" style={{ color: '#16193a' }}>

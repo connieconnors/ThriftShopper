@@ -6,13 +6,6 @@ import { useLayoutEffect } from "react";
 export const SHELL_INK = "#16193a";
 export const SHELL_LINEN = "#ede9e1";
 
-export type AppShellVariant = "ink" | "linen";
-
-const SHELL_COLORS: Record<AppShellVariant, string> = {
-  ink: SHELL_INK,
-  linen: SHELL_LINEN,
-};
-
 function setThemeColorMeta(color: string) {
   let meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
   if (!meta) {
@@ -23,22 +16,17 @@ function setThemeColorMeta(color: string) {
   meta.content = color;
 }
 
-/** Per-route shell: syncs html/body background + mobile theme-color (iOS safe-area chrome). */
-export function useAppShell(variant: AppShellVariant) {
-  useLayoutEffect(() => {
-    const color = SHELL_COLORS[variant];
-    document.documentElement.style.backgroundColor = color;
-    document.body.style.backgroundColor = color;
-    document.body.style.minHeight = "100dvh";
-    setThemeColorMeta(color);
+/** Global app shell — always linen (html/body + iOS theme-color safe-area chrome). */
+export function applyLinenShell() {
+  document.documentElement.style.backgroundColor = SHELL_LINEN;
+  document.body.style.backgroundColor = SHELL_LINEN;
+  document.body.style.minHeight = "100dvh";
+  setThemeColorMeta(SHELL_LINEN);
+}
 
-    return () => {
-      // Ink pages paint navy on body; reset on leave so login/checkout never show a split shell
-      if (variant === "ink") {
-        document.documentElement.style.backgroundColor = SHELL_LINEN;
-        document.body.style.backgroundColor = SHELL_LINEN;
-        setThemeColorMeta(SHELL_LINEN);
-      }
-    };
-  }, [variant]);
+/** Per-route hook: re-asserts linen shell on mount (buyer pages, auth, checkout). */
+export function useAppShell() {
+  useLayoutEffect(() => {
+    applyLinenShell();
+  }, []);
 }

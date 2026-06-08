@@ -54,7 +54,7 @@ const US_STATES = [
 export default function SellerSettingsPage() {
   const router = useRouter();
   const { user, isLoading: authLoading } = useAuth();
-  useAppShell("linen");
+  useAppShell();
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -288,10 +288,10 @@ export default function SellerSettingsPage() {
         )}
 
         <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-xl p-8 space-y-6">
-          {/* Store Name */}
+          {/* Shop or seller name */}
           <div>
             <label className="block mb-2 font-medium" style={{ color: "#16193a" }}>
-              Store Name
+              Shop or seller name
             </label>
             <div className="relative">
               <Store size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -300,10 +300,13 @@ export default function SellerSettingsPage() {
                 value={formData.storeName}
                 onChange={(e) => updateField("storeName", e.target.value)}
                 className="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#16193a] outline-none transition-colors"
-                placeholder="Your Store or Your Name"
+                placeholder="Your name or shop name"
                 required
               />
             </div>
+            <p className="mt-1 text-xs text-gray-500">
+              Shown to buyers. Your personal name is fine if you don&apos;t have a store.
+            </p>
           </div>
 
           {/* Location */}
@@ -452,7 +455,7 @@ export default function SellerSettingsPage() {
             )}
             {formData.sellerActionType === "contact_seller" && (
               <p className="text-xs text-gray-500">
-                Pickup and/or shipping — buyers message you to arrange. Pay in person or as agreed. Listing copy uses your Store Name above.
+                Pickup and/or shipping — buyers message you to arrange. Pay in person or as agreed. Listing copy uses your shop or seller name above.
               </p>
             )}
             {formData.sellerActionType === "local_pickup" && (

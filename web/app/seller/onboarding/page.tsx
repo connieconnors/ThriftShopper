@@ -46,7 +46,7 @@ const US_STATES = [
 function SellerOnboardingContent() {
   const router = useRouter();
   const { user, isLoading: authLoading } = useAuth();
-  useAppShell("linen");
+  useAppShell();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
@@ -414,10 +414,10 @@ function SellerOnboardingContent() {
             </div>
           </div>
 
-          {/* Store Name */}
+          {/* Shop or seller name */}
           <div>
             <label className="block mb-2 font-medium" style={{ color: "#16193a" }}>
-              Store Name
+              Shop or seller name
             </label>
             <div className="relative">
               <Store size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -426,11 +426,13 @@ function SellerOnboardingContent() {
                 value={formData.storeName}
                 onChange={(e) => updateField("storeName", e.target.value)}
                 className="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#16193a] outline-none transition-colors"
-                placeholder="Your Store or Your Name"
+                placeholder="Your name or shop name"
                 required
               />
             </div>
-            <p className="mt-1 text-xs text-gray-500">This will be your display name on ThriftShopper</p>
+            <p className="mt-1 text-xs text-gray-500">
+              Shown to buyers on your listings. Your personal name is fine if you don&apos;t have a store.
+            </p>
           </div>
 
           {/* Description */}

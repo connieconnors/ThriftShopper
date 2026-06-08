@@ -9,7 +9,7 @@ import { useAuth } from "@/app/context/AuthContext";
 import { supabase } from "@/lib/supabaseClient";
 
 function SuccessContent() {
-  useAppShell("linen");
+  useAppShell();
   const { user } = useAuth();
   const searchParams = useSearchParams();
   const orderId = searchParams.get("orderId");
