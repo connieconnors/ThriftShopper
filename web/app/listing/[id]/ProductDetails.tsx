@@ -23,6 +23,7 @@ import { addRecentlyViewed } from "../../../lib/userPreferences";
 import { MessageSquare, Bookmark, X } from "lucide-react";
 import { FounderBadge } from "../../../components/FounderBadge";
 import { GivesBackBadge } from "../../../components/GivesBackBadge";
+import { showsGivesBackBadge } from "../../../lib/givesBack";
 import { SoldRibbon } from "../../../components/SoldRibbon";
 import { JustSoldBanner } from "../../../components/JustSoldBanner";
 import TSModal from "../../../components/TSModal";
@@ -207,9 +208,7 @@ export default function ProductDetails({
   const reviewCount = getSellerReviewCount(listing);
   const sellerStory = getSellerStory(listing);
   const isFoundingSeller = listing.profiles?.is_founding_seller === true;
-  const givesBack =
-    listing.profiles?.gives_back === true ||
-    (listing as { givesBack?: boolean | null }).givesBack === true;
+  const givesBack = showsGivesBackBadge(listing.profiles);
   const givesBackName = listing.profiles?.gives_back_name ?? null;
   const givesBackPct = listing.profiles?.gives_back_pct ?? null;
   const isNonProfit = listing.profiles?.is_non_profit_org === true;

@@ -4,10 +4,9 @@ import React, { useState, useEffect, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "motion/react";
-import { Store, MapPin, Mail, Phone, Loader2, Upload, Image as ImageIcon, Check } from "lucide-react";
+import { Store, MapPin, Mail, Phone, Loader2, Upload, Image as ImageIcon } from "lucide-react";
 import { useAuth } from "@/app/context/AuthContext";
 import { supabase } from "@/lib/supabaseClient";
-import { TSLogo } from "@/components/TSLogo";
 import { WelcomeBrandHeader } from "@/components/WelcomeBrandHeader";
 import { SellerFeeTransparencyLine } from "@/components/SellerFeeTransparency";
 import { ShippingPreferenceForm } from "@/components/ShippingPreferenceForm";
@@ -32,10 +31,6 @@ interface SellerProfile {
   shippingPreferences: ShippingPreferences;
   avatarFile: File | null;
   avatarPreview: string | null;
-  givesBack: boolean;
-  givesBackName: string;
-  givesBackPct: string;
-  isNonProfit: boolean;
 }
 
 const US_STATES = [
@@ -75,10 +70,6 @@ function SellerOnboardingContent() {
     shippingPreferences: DEFAULT_SHIPPING_PREFERENCES,
     avatarFile: null,
     avatarPreview: null,
-    givesBack: false,
-    givesBackName: "",
-    givesBackPct: "",
-    isNonProfit: false,
   });
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
 
@@ -124,7 +115,7 @@ function SellerOnboardingContent() {
           const { data: savedProfile } = await supabase
             .from("profiles")
             .select(
-              "display_name, seller_description, seller_story, location_city, location_state, location_zip, email, phone_main, shipping_info, gives_back, gives_back_name, gives_back_pct, is_non_profit_org, avatar_url"
+              "display_name, seller_description, seller_story, location_city, location_state, location_zip, email, phone_main, shipping_info, avatar_url"
             )
             .eq("user_id", user.id)
             .maybeSingle();
@@ -143,10 +134,6 @@ function SellerOnboardingContent() {
               shippingPreferences:
                 parseShippingPreferences(savedProfile.shipping_info) ??
                 prev.shippingPreferences,
-              givesBack: savedProfile.gives_back ?? prev.givesBack,
-              givesBackName: savedProfile.gives_back_name || prev.givesBackName,
-              givesBackPct: savedProfile.gives_back_pct || prev.givesBackPct,
-              isNonProfit: savedProfile.is_non_profit_org ?? prev.isNonProfit,
               avatarPreview: savedProfile.avatar_url || prev.avatarPreview,
             }));
           }
@@ -270,10 +257,6 @@ function SellerOnboardingContent() {
         email: formData.email,
         phone_main: formData.phone || null, // Use phone_main (stores can have store phone and mobile)
         shipping_info: serializeShippingPreferences(formData.shippingPreferences),
-        gives_back: formData.givesBack,
-        gives_back_name: formData.givesBack ? formData.givesBackName || null : null,
-        gives_back_pct: formData.givesBack ? formData.givesBackPct || null : null,
-        is_non_profit_org: formData.isNonProfit,
         is_seller: true,
       };
 
@@ -304,10 +287,6 @@ function SellerOnboardingContent() {
           email: formData.email,
           phone_main: formData.phone || null, // Use phone_main (stores can have store phone and mobile)
           shipping_info: serializeShippingPreferences(formData.shippingPreferences),
-          gives_back: formData.givesBack,
-          gives_back_name: formData.givesBack ? formData.givesBackName || null : null,
-          gives_back_pct: formData.givesBack ? formData.givesBackPct || null : null,
-          is_non_profit_org: formData.isNonProfit,
           is_seller: true,
         };
 
@@ -342,10 +321,6 @@ function SellerOnboardingContent() {
   };
 
   const updateField = (field: keyof SellerProfile, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const updateToggle = (field: "givesBack" | "isNonProfit", value: boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -581,118 +556,6 @@ function SellerOnboardingContent() {
               onChange={(prefs) => setFormData((prev) => ({ ...prev, shippingPreferences: prefs }))}
               showLabel={true}
             />
-          </div>
-
-          {/* Gives Back */}
-          <div>
-            <label className="block mb-2 font-medium" style={{ color: "#16193a" }}>
-              Gives Back
-            </label>
-            <div className="flex items-center gap-3 mb-3">
-              <input
-                id="gives-back"
-                type="checkbox"
-                checked={formData.givesBack}
-                onChange={(e) => updateToggle("givesBack", e.target.checked)}
-                className="h-4 w-4 accent-[#16193a]"
-              />
-              <label htmlFor="gives-back" className="text-sm text-gray-700">
-                We donate a portion of proceeds to a cause or nonprofit.
-              </label>
-            </div>
-            <p className="text-xs text-gray-500">
-              We’ll review this information before adding a badge to your shop.
-            </p>
-            {formData.givesBack && (
-              <div className="mt-4 space-y-3">
-                <div>
-                  <label className="block mb-2 font-medium" style={{ color: "#16193a" }}>
-                    Who do you give back to?
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.givesBackName}
-                    onChange={(e) => updateField("givesBackName", e.target.value)}
-                    className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#16193a] outline-none transition-colors"
-                    placeholder="Organization or cause name"
-                  />
-                </div>
-                <div>
-                  <label className="block mb-2 font-medium" style={{ color: "#16193a" }}>
-                    Approximate percentage given back
-                  </label>
-                  <input
-                    type="text"
-                    inputMode="decimal"
-                    value={formData.givesBackPct}
-                    onChange={(e) => updateField("givesBackPct", e.target.value)}
-                    className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#16193a] outline-none transition-colors"
-                    placeholder="e.g., 5%"
-                  />
-                </div>
-                <div className="flex items-center gap-3">
-                  <input
-                    id="is-non-profit"
-                    type="checkbox"
-                    checked={formData.isNonProfit}
-                    onChange={(e) => updateToggle("isNonProfit", e.target.checked)}
-                    className="h-4 w-4 accent-[#16193a]"
-                  />
-                  <label htmlFor="is-non-profit" className="text-sm text-gray-700">
-                    We are a registered nonprofit.
-                  </label>
-                </div>
-                <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-                  <p className="text-xs text-gray-500 mb-2">
-                    Badge preview (applied after review)
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    <div className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 border border-[#16193a]/20">
-                      <div className="relative h-6 w-6 flex items-center justify-center rounded-full" style={{ backgroundColor: "#16193a" }}>
-                        <span
-                          style={{
-                            fontFamily: "var(--font-editorial)",
-                            fontSize: "10px",
-                            lineHeight: 1,
-                            color: "#D4AF37",
-                            letterSpacing: "-0.02em",
-                          }}
-                        >
-                          FS
-                        </span>
-                        <span
-                          className="absolute -bottom-1 -right-1 h-3 w-3 rounded-full flex items-center justify-center"
-                          style={{ backgroundColor: "#D4AF37" }}
-                        >
-                          <span
-                            style={{
-                              fontSize: "8px",
-                              lineHeight: 1,
-                              color: "#16193a",
-                            }}
-                          >
-                            ✦
-                          </span>
-                        </span>
-                      </div>
-                      <span className="text-xs text-[#16193a] font-medium">Founding Seller</span>
-                    </div>
-                    <div className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 border border-[#16193a]/20">
-                      <div className="relative h-6 w-6 flex items-center justify-center rounded-full" style={{ backgroundColor: "#16193a" }}>
-                        <TSLogo size={14} primaryColor="#ffffff" accentColor="var(--gold-accent)" showStar={true} />
-                        <span
-                          className="absolute -bottom-1 -right-1 h-3 w-3 rounded-full flex items-center justify-center"
-                          style={{ backgroundColor: "#D4AF37" }}
-                        >
-                          <Check className="h-2 w-2 text-[#16193a]" strokeWidth={2} />
-                        </span>
-                      </div>
-                      <span className="text-xs text-[#16193a] font-medium">Gives Back</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
 
           <motion.button

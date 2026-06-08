@@ -16,6 +16,13 @@ import {
   validateListingShippingPreferences,
 } from "@/lib/shippingPreferences";
 import { type SellerActionType, resolveSellerActionType, sellerSettingsActionLabel } from "@/lib/sellerActionType";
+import {
+  validateGivesBackFields,
+  serializeGivesBackForSave,
+  showsGivesBackBadge,
+  GIVES_BACK_ENABLE_CONFIRM,
+} from "@/lib/givesBack";
+import { GivesBackBadge } from "@/components/GivesBackBadge";
 import { useAppShell } from "@/hooks/useAppShell";
 
 interface SellerProfile {
@@ -30,6 +37,10 @@ interface SellerProfile {
   shippingPreferences: ShippingPreferences;
   sellerActionType: SellerActionType;
   paymentPickupLabel: string;
+  givesBackEnabled: boolean;
+  givesBackName: string;
+  givesBackPct: string;
+  isNonProfit: boolean;
 }
 
 const US_STATES = [
@@ -61,6 +72,10 @@ export default function SellerSettingsPage() {
     shippingPreferences: DEFAULT_SHIPPING_PREFERENCES,
     sellerActionType: "stripe_checkout",
     paymentPickupLabel: "",
+    givesBackEnabled: false,
+    givesBackName: "",
+    givesBackPct: "",
+    isNonProfit: false,
   });
 
   // Redirect if not logged in
@@ -104,6 +119,10 @@ export default function SellerSettingsPage() {
           shippingPreferences: parseShippingPreferences(data.shipping_info) ?? DEFAULT_SHIPPING_PREFERENCES,
           sellerActionType: resolveSellerActionType(data),
           paymentPickupLabel: data.payment_pickup_label || "",
+          givesBackEnabled: data.gives_back === true,
+          givesBackName: data.gives_back_name || "",
+          givesBackPct: data.gives_back_pct != null ? String(data.gives_back_pct) : "",
+          isNonProfit: data.is_non_profit_org === true,
         });
       } else {
         // No profile yet, pre-fill email
@@ -134,6 +153,24 @@ export default function SellerSettingsPage() {
       return;
     }
 
+    const givesBackValidationError = validateGivesBackFields({
+      enabled: formData.givesBackEnabled,
+      name: formData.givesBackName,
+      pct: formData.givesBackPct,
+    });
+    if (givesBackValidationError) {
+      setError(givesBackValidationError);
+      setIsSubmitting(false);
+      return;
+    }
+
+    const givesBackFields = serializeGivesBackForSave({
+      enabled: formData.givesBackEnabled,
+      name: formData.givesBackName,
+      pct: formData.givesBackPct,
+      isNonProfit: formData.isNonProfit,
+    });
+
     try {
       const { error: updateError } = await supabase
         .from("profiles")
@@ -159,6 +196,7 @@ export default function SellerSettingsPage() {
             formData.sellerActionType === "store_pickup"
               ? formData.paymentPickupLabel.trim() || formData.storeName.trim() || null
               : null,
+          ...givesBackFields,
           is_seller: true,
         }, {
           onConflict: "user_id",
@@ -181,6 +219,25 @@ export default function SellerSettingsPage() {
   const updateField = (field: keyof SellerProfile, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
+
+  const handleGivesBackToggle = (checked: boolean) => {
+    if (checked && !window.confirm(GIVES_BACK_ENABLE_CONFIRM)) {
+      return;
+    }
+    setFormData((prev) => ({
+      ...prev,
+      givesBackEnabled: checked,
+      ...(checked
+        ? {}
+        : { givesBackName: "", givesBackPct: "", isNonProfit: false }),
+    }));
+  };
+
+  const givesBackPreview = showsGivesBackBadge({
+    gives_back: formData.givesBackEnabled,
+    gives_back_name: formData.givesBackName,
+    gives_back_pct: formData.givesBackPct,
+  });
 
   if (authLoading || isLoading) {
     return (
@@ -411,6 +468,70 @@ export default function SellerSettingsPage() {
               onChange={(prefs) => setFormData((prev) => ({ ...prev, shippingPreferences: prefs }))}
               showLabel={true}
             />
+          </div>
+
+          {/* Gives Back — optional, settings only */}
+          <div className="rounded-xl border border-gray-200 bg-gray-50/80 p-4">
+            <label className="block mb-1 font-medium" style={{ color: "#16193a" }}>
+              Gives Back badge <span className="text-gray-400 font-normal">(optional)</span>
+            </label>
+            <p className="text-xs text-gray-500 mb-3">
+              Honor system — only enable if you donate a portion of proceeds. The badge appears publicly once you save with a charity name and percentage.
+            </p>
+            <div className="flex items-center gap-3 mb-3">
+              <input
+                id="settings-gives-back"
+                type="checkbox"
+                checked={formData.givesBackEnabled}
+                onChange={(e) => handleGivesBackToggle(e.target.checked)}
+                className="h-4 w-4 accent-[#16193a]"
+              />
+              <label htmlFor="settings-gives-back" className="text-sm text-gray-700">
+                Show a Gives Back badge on my shop and listings
+              </label>
+            </div>
+            {formData.givesBackEnabled && (
+              <div className="space-y-3">
+                <input
+                  type="text"
+                  value={formData.givesBackName}
+                  onChange={(e) => updateField("givesBackName", e.target.value)}
+                  className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#16193a] outline-none transition-colors bg-white"
+                  placeholder="Organization or cause name"
+                />
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  value={formData.givesBackPct}
+                  onChange={(e) => updateField("givesBackPct", e.target.value)}
+                  className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#16193a] outline-none transition-colors bg-white"
+                  placeholder="Approximate % given back (e.g. 5%)"
+                />
+                <div className="flex items-center gap-3">
+                  <input
+                    id="settings-is-non-profit"
+                    type="checkbox"
+                    checked={formData.isNonProfit}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        isNonProfit: e.target.checked,
+                      }))
+                    }
+                    className="h-4 w-4 accent-[#16193a]"
+                  />
+                  <label htmlFor="settings-is-non-profit" className="text-sm text-gray-700">
+                    Registered nonprofit
+                  </label>
+                </div>
+                {givesBackPreview && (
+                  <div className="pt-1">
+                    <p className="text-xs text-gray-500 mb-2">Badge preview after save:</p>
+                    <GivesBackBadge />
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           <motion.button

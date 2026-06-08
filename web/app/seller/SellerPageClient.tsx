@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabaseClient';
 import { TSLogo } from '@/components/TSLogo';
 import { FounderBadge } from '@/components/FounderBadge';
 import { GivesBackBadge } from '@/components/GivesBackBadge';
+import { showsGivesBackBadge } from '@/lib/givesBack';
 import { Loader2, Plus, ArrowLeft, Settings, MessageSquare, ChevronDown, ChevronUp, MoreVertical, EyeOff, Trash2, CheckCircle, LogOut, Search, Package, HelpCircle, User, Edit, Truck, PackageCheck, Link as LinkIcon, Instagram, X, Mail, RotateCcw } from 'lucide-react';
 import { GlintIcon } from '../../components/GlintIcon';
 import Link from 'next/link';
@@ -1150,6 +1151,8 @@ export default function SellerPageClient() {
     return new Date(profile.created_at).getFullYear();
   };
 
+  const showGivesBackBadge = showsGivesBackBadge(profile);
+
   const needsStripeSetup = !hasStripeAccount || (!profile?.stripe_charges_enabled && !profile?.stripe_details_submitted);
   
   // Show "Payments Connected ✓" if fully connected
@@ -1212,7 +1215,7 @@ export default function SellerPageClient() {
                   {profile.display_name || "Seller Dashboard"}
                 </h1>
                 <p className="text-xs text-gray-600">Storytelling seller since {getJoinYear()}</p>
-              {(profile.is_founding_seller || profile.gives_back) && (
+              {(profile.is_founding_seller || showGivesBackBadge) && (
                 <div className="mt-2 relative">
                   <div className="flex flex-wrap gap-2">
                     {profile.is_founding_seller && (
@@ -1225,7 +1228,7 @@ export default function SellerPageClient() {
                         <FounderBadge />
                       </button>
                     )}
-                    {profile.gives_back && (
+                    {showGivesBackBadge && (
                       <button
                         type="button"
                         onClick={() => setBadgeInfoOpen((prev) => (prev === "givesBack" ? null : "givesBack"))}
