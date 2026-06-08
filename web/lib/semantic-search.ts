@@ -28,6 +28,7 @@ interface SemanticSearchDebug {
   minMatchesRequired: number;
   totalListingsScanned: number;
   directMatches: number;
+  relaxedMatch?: boolean;
 }
 
 interface SemanticSearchResult {
@@ -40,8 +41,34 @@ const STOP_WORDS = new Set([
   'a', 'an', 'the', 'and', 'or', 'but', 'with', 'without', 'for', 'to', 'of', 'in', 'on',
   'at', 'by', 'from', 'near', 'around', 'like', 'want', 'looking', 'searching', 'find',
   'me', 'my', 'we', 'our', 'your', 'you', 'i', 'im', 'its', 'it', 'this', 'that', 'these',
-  'those', 'please', 'just', 'really', 'very', 'maybe', 'something', 'anything'
+  'those', 'please', 'just', 'really', 'very', 'maybe', 'something', 'anything',
 ]);
+
+/** Relationship/recipient words — not product attributes; must not be required for a match. */
+const RECIPIENT_TERMS = new Set([
+  'mom', 'mother', 'mum', 'mama', 'mommy', 'dad', 'father', 'papa', 'daddy',
+  'grandma', 'grandmother', 'grandpa', 'grandfather', 'granny', 'nana', 'pop',
+  'sister', 'brother', 'friend', 'wife', 'husband', 'daughter', 'son',
+  'aunt', 'uncle', 'cousin', 'niece', 'nephew', 'boyfriend', 'girlfriend',
+  'partner', 'boss', 'coworker', 'colleague', 'teacher', 'neighbor',
+  'baby', 'kid', 'child', 'children', 'him', 'her', 'them', 'someone', 'everybody', 'everyone',
+]);
+
+/** Strip "for my mom", "for her", etc. — keep the product intent (e.g. "whimsical gift"). */
+function stripRecipientPhrases(query: string): string {
+  const stripped = query
+    .replace(
+      /\bfor\s+(?:(?:my|a|the|your|our)\s+)?(?:mom|mother|mum|mama|mommy|dad|father|papa|daddy|grandma|grandmother|grandpa|grandfather|granny|nana|pop|sister|brother|friend|wife|husband|daughter|son|aunt|uncle|cousin|niece|nephew|boyfriend|girlfriend|partner|boss|coworker|colleague|teacher|neighbor|baby|kid|child|children|him|her|them|someone|everybody|everyone)\b/gi,
+      ' '
+    )
+    .replace(/\s+/g, ' ')
+    .trim();
+  return stripped || query.trim();
+}
+
+function withoutRecipientTerms(termGroups: TermGroup[]): TermGroup[] {
+  return termGroups.filter((group) => !RECIPIENT_TERMS.has(group.term));
+}
 
 const OPTIONAL_STYLE_TERMS = new Set([
   'ceramic',
@@ -179,14 +206,27 @@ export async function semanticSearch(
   }
 
   try {
-    const { termGroups, source } = await extractSearchTerms(trimmedQuery);
-    const normalizedTerms = normalizeTermGroups(termGroups);
+    const coreQuery = stripRecipientPhrases(trimmedQuery);
+    const { termGroups, source } = await extractSearchTerms(coreQuery);
+    let normalizedTerms = normalizeTermGroups(termGroups);
+    normalizedTerms = withoutRecipientTerms(normalizedTerms);
 
-    const { listings, debug } = await searchWithTerms(
+    let { listings, debug } = await searchWithTerms(
       trimmedQuery,
       normalizedTerms,
       limit
     );
+
+    // e.g. "whimsical gift for my mom" → search whimsical + gift only
+    if (listings.length === 0 && normalizedTerms.length > 1) {
+      const relaxed = await searchWithTerms(trimmedQuery, normalizedTerms, limit, {
+        minMatchRatio: 0.5,
+      });
+      if (relaxed.listings.length > 0) {
+        listings = relaxed.listings;
+        debug = { ...relaxed.debug, relaxedMatch: true };
+      }
+    }
 
     return {
       listings,
@@ -199,11 +239,11 @@ export async function semanticSearch(
     };
   } catch (error) {
     console.error('Semantic search error:', error);
-    const fallbackTerms = localExtractTerms(trimmedQuery);
-    const normalizedTerms = normalizeTermGroups(fallbackTerms);
+    const coreQuery = stripRecipientPhrases(trimmedQuery);
+    const fallbackTerms = withoutRecipientTerms(normalizeTermGroups(localExtractTerms(coreQuery)));
     const { listings, debug } = await searchWithTerms(
       trimmedQuery,
-      normalizedTerms,
+      fallbackTerms,
       limit
     );
 
@@ -211,7 +251,7 @@ export async function semanticSearch(
       listings,
       interpretation: {
         originalQuery: trimmedQuery,
-        termGroups: normalizedTerms,
+        termGroups: fallbackTerms,
         source: 'local',
       },
       debug,
@@ -267,7 +307,8 @@ Return a clean list of search term groups containing ONLY the words the user act
 
 Rules:
 - Remove filler words, hedges, and conversational phrases.
-- Extract only meaningful terms the user explicitly said.
+- Ignore gift-recipient context ("for my mom", "for dad", "for her") — do NOT extract people/relationships as terms.
+- Extract only meaningful product/vibe terms the user explicitly said.
 - Do NOT infer additional terms or related concepts.
 - Do NOT expand into categories or adjacent items.
 - Do NOT add synonyms or variants beyond the literal words spoken/typed.
@@ -390,7 +431,7 @@ function localExtractTerms(query: string): TermGroup[] {
   const termGroups = new Map<string, Set<string>>();
 
   rawWords.forEach((word) => {
-    if (STOP_WORDS.has(word)) return;
+    if (STOP_WORDS.has(word) || RECIPIENT_TERMS.has(word)) return;
     const canonical = SYNONYM_MAP[word] || word;
     if (!canonical) return;
 
@@ -446,7 +487,8 @@ type MatchResult = {
 async function searchWithTerms(
   query: string,
   termGroups: TermGroup[],
-  limit: number
+  limit: number,
+  options: { minMatchRatio?: number } = {}
 ): Promise<{ listings: Listing[]; debug: SemanticSearchDebug }> {
   const columnsSearched = [
     'styles', // Highest priority - keyword data stored here
@@ -518,11 +560,15 @@ async function searchWithTerms(
   const effectiveRequiredTerms = optionalOnly ? termGroups : requiredTerms;
   const requiredTermSet = new Set(effectiveRequiredTerms.map((group) => group.term));
 
+  const minMatchRatio = options.minMatchRatio;
+
   const minMatchesRequired = optionalOnly
     ? 1
     : effectiveRequiredTerms.length >= 3
-      ? Math.ceil(effectiveRequiredTerms.length * 0.7)
-      : effectiveRequiredTerms.length;
+      ? Math.max(1, Math.ceil(effectiveRequiredTerms.length * (minMatchRatio ?? 0.7)))
+      : minMatchRatio !== undefined
+        ? Math.max(1, Math.ceil(effectiveRequiredTerms.length * minMatchRatio))
+        : effectiveRequiredTerms.length;
 
   const scored = listings
     .map((listing) => {
