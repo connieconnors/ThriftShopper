@@ -42,6 +42,12 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+#app-root {
+  background-color: #ede9e1;
+  background-color: var(--background, #ede9e1);
+  min-height: 100dvh;
+}
+
 /* Editorial headings — Playfair, restrained weight */
 h1,
 h2,

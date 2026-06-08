@@ -17,7 +17,6 @@ import {
   serializeShippingPreferences,
   validateListingShippingPreferences,
 } from "@/lib/shippingPreferences";
-import { useAppShell } from "@/hooks/useAppShell";
 
 interface SellerProfile {
   storeName: string;
@@ -46,7 +45,6 @@ const US_STATES = [
 function SellerOnboardingContent() {
   const router = useRouter();
   const { user, isLoading: authLoading } = useAuth();
-  useAppShell();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPreviewMode, setIsPreviewMode] = useState(false);

@@ -1,10 +1,10 @@
-"use client";
+/**
+ * Global document shell — linen only, forever.
+ *
+ * ONLY `applyLinenShell()` may set html, body, #app-root, and theme-color.
+ * Dashboard routes use navy inside page components (headers/footers), never here.
+ */
 
-import { useLayoutEffect } from "react";
-import { usePathname } from "next/navigation";
-
-/** Canonical TS 2.0 shell colors */
-export const SHELL_INK = "#16193a";
 export const SHELL_LINEN = "#ede9e1";
 
 function setThemeColorMeta(color: string) {
@@ -22,7 +22,7 @@ function setThemeColorMeta(color: string) {
   }
 }
 
-/** Standard linen sync — html/body + theme-color. Safe to call on every route. */
+/** Apply linen to the full document shell (html, body, app root, theme-color). */
 export function applyLinenShell() {
   if (typeof document === "undefined") return;
 
@@ -30,23 +30,12 @@ export function applyLinenShell() {
   document.documentElement.style.colorScheme = "light only";
   document.body.style.backgroundColor = SHELL_LINEN;
   document.body.style.minHeight = "100dvh";
+
+  const appRoot = document.getElementById("app-root");
+  if (appRoot) {
+    appRoot.style.backgroundColor = SHELL_LINEN;
+    appRoot.style.minHeight = "100dvh";
+  }
+
   setThemeColorMeta(SHELL_LINEN);
-}
-
-/** Re-assert linen on every route change. */
-export function useAppShell() {
-  const pathname = usePathname();
-
-  useLayoutEffect(() => {
-    applyLinenShell();
-  }, [pathname]);
-}
-
-/** When leaving ink dashboard routes, reset shell before browse paints. */
-export function useDashboardRouteCleanup() {
-  useLayoutEffect(() => {
-    return () => {
-      applyLinenShell();
-    };
-  }, []);
 }

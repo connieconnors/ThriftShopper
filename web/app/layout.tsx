@@ -118,7 +118,7 @@ export default function RootLayout({
       <body className="antialiased">
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){var c='#ede9e1';document.documentElement.style.backgroundColor=c;document.body.style.backgroundColor=c;var m=document.querySelector('meta[name="theme-color"]');if(m){m.content=c;}else{var t=document.createElement('meta');t.name='theme-color';t.content=c;document.head.appendChild(t);}})();`,
+            __html: `(function(){var c='#ede9e1';document.documentElement.style.backgroundColor=c;document.documentElement.style.colorScheme='light only';document.body.style.backgroundColor=c;document.body.style.minHeight='100dvh';var m=document.querySelector('meta[name="theme-color"]');if(m){m.content=c;}else{var t=document.createElement('meta');t.name='theme-color';t.content=c;document.head.appendChild(t);}})();`,
           }}
         />
 
@@ -132,7 +132,9 @@ export default function RootLayout({
 
             <SafeAreaShell />
 
-            {children}
+            <div id="app-root" className="min-h-[100dvh]">
+              {children}
+            </div>
 
           </AuthProvider>
 

@@ -4,7 +4,10 @@ import { useLayoutEffect } from "react";
 import { usePathname } from "next/navigation";
 import { applyLinenShell } from "@/hooks/useAppShell";
 
-/** Reset to linen on every navigation — global shell never goes navy. */
+/**
+ * Single client authority for document shell — mounted once in root layout.
+ * Re-applies on navigation so no route can leave ink/navy on html/body/theme-color.
+ */
 export function AppShellBaseline() {
   const pathname = usePathname();
 

@@ -32,7 +32,6 @@ import {
   generateShippingBannerText,
   isShippingJson,
 } from "../../../lib/shippingPreferences";
-import { useAppShell } from "../../../hooks/useAppShell";
 import { parseListingFrom, resolveListingBack } from "../../../lib/listingNavigation";
 import { trackBuyerEvent } from "../../../lib/buyerEvents";
 import { buildEventPayload } from "../../../lib/buyerEventContext";
@@ -84,7 +83,6 @@ export default function ProductDetails({
   const listingFrom = parseListingFrom(searchParams.get("from"));
   const listingBack = resolveListingBack(listingFrom);
   const { user } = useAuth();
-  useAppShell();
   const images = getListingImages(listing);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showShareSuccess, setShowShareSuccess] = useState(false);

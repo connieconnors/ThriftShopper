@@ -3,7 +3,7 @@
 import React from "react";
 import { motion } from "motion/react";
 import { WelcomeBrandHeader } from "./WelcomeBrandHeader";
-import { useAppShell, SHELL_LINEN } from "@/hooks/useAppShell";
+import { SHELL_LINEN } from "@/hooks/useAppShell";
 
 interface AuthWelcomeLayoutProps {
   title: string;
@@ -22,8 +22,6 @@ export function AuthWelcomeLayout({
   maxWidthClass = "max-w-md",
   children,
 }: AuthWelcomeLayoutProps) {
-  useAppShell();
-
   return (
     <div
       className="fixed inset-0 overflow-y-auto py-12 px-6"

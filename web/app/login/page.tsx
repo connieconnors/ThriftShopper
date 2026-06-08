@@ -9,13 +9,12 @@ import { useAuth } from "../context/AuthContext";
 import { supabase } from "../../lib/supabaseClient";
 import { AuthWelcomeLayout } from "../../components/AuthWelcomeLayout";
 import { authPrimaryButtonClass, authLinkClass } from "../../components/WelcomeBrandHeader";
-import { useAppShell, SHELL_LINEN } from "../../hooks/useAppShell";
+import { SHELL_LINEN } from "../../hooks/useAppShell";
 
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { signIn, user, isLoading: authLoading } = useAuth();
-  useAppShell();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);

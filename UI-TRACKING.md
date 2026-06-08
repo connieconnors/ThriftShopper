@@ -3,7 +3,8 @@
 Living notes for design decisions, open polish items, and testing follow-ups.  
 *(Not a spec — just a place to keep track while iterating.)*
 
-**Formal audit:** See [`THRIFTSHOPPER-UI-LOCK-AUDIT.md`](./THRIFTSHOPPER-UI-LOCK-AUDIT.md) — drift analysis, blue/black bleed root causes.
+**Formal audit:** See [`THRIFTSHOPPER-UI-LOCK-AUDIT.md`](./THRIFTSHOPPER-UI-LOCK-AUDIT.md) — drift analysis, blue/black bleed root causes.  
+**Shell chrome history (everything we tried):** [`TS-SHELL-CHROME-HISTORY.md`](./TS-SHELL-CHROME-HISTORY.md)
 
 ---
 

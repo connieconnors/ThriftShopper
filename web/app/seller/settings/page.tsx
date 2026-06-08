@@ -23,7 +23,6 @@ import {
   GIVES_BACK_ENABLE_CONFIRM,
 } from "@/lib/givesBack";
 import { GivesBackBadge } from "@/components/GivesBackBadge";
-import { useAppShell } from "@/hooks/useAppShell";
 
 interface SellerProfile {
   storeName: string;
@@ -54,7 +53,6 @@ const US_STATES = [
 export default function SellerSettingsPage() {
   const router = useRouter();
   const { user, isLoading: authLoading } = useAuth();
-  useAppShell();
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);

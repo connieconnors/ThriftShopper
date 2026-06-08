@@ -4,12 +4,10 @@ import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { TSLogo } from "@/components/TSLogo";
-import { useAppShell } from "@/hooks/useAppShell";
 import { useAuth } from "@/app/context/AuthContext";
 import { supabase } from "@/lib/supabaseClient";
 
 function SuccessContent() {
-  useAppShell();
   const { user } = useAuth();
   const searchParams = useSearchParams();
   const orderId = searchParams.get("orderId");

@@ -23,7 +23,6 @@ import {
   Loader2,
 } from "lucide-react";
 import SupportModal from "@/components/SupportModal";
-import { useAppShell, useDashboardRouteCleanup } from "@/hooks/useAppShell";
 import { DashboardTopBar, DashboardBottomBar } from "@/components/DashboardChrome";
 import { Listing, getPrimaryImage } from "../../lib/types";
 import {
@@ -46,8 +45,6 @@ interface Profile {
 export default function BuyerCanvasPage() {
   const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
-  useAppShell();
-  useDashboardRouteCleanup();
   const [mounted, setMounted] = useState(false);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [favorites, setFavorites] = useState<Listing[]>([]);
