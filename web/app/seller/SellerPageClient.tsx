@@ -12,7 +12,7 @@ import { Loader2, Plus, ArrowLeft, Settings, MessageSquare, ChevronDown, Chevron
 import { GlintIcon } from '../../components/GlintIcon';
 import Link from 'next/link';
 import SupportModal from '@/components/SupportModal';
-import { useAppShell } from '@/hooks/useAppShell';
+import { useAppShell, useDashboardRouteCleanup } from '@/hooks/useAppShell';
 import { DashboardTopBar, DashboardBottomBar } from '@/components/DashboardChrome';
 import {
   listingNeedsShippingAmountFix,
@@ -340,6 +340,7 @@ export default function SellerPageClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
   useAppShell();
+  useDashboardRouteCleanup();
   const [listings, setListings] = useState<Listing[]>([]);
   const [paidOrders, setPaidOrders] = useState<any[]>([]);
   const [allOrders, setAllOrders] = useState<any[]>([]);

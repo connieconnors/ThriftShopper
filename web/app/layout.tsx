@@ -118,7 +118,7 @@ export default function RootLayout({
       <body className="antialiased">
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){var c='#ede9e1';document.documentElement.style.backgroundColor=c;document.body.style.backgroundColor=c;document.querySelectorAll('meta[name="theme-color"]').forEach(function(m){m.setAttribute('content',c);});})();`,
+            __html: `(function(){var c='#ede9e1';document.documentElement.style.setProperty('background-color',c,'important');document.body.style.setProperty('background-color',c,'important');document.querySelectorAll('meta[name="theme-color"]').forEach(function(m){m.remove();});var t=document.createElement('meta');t.name='theme-color';t.content=c;document.head.prepend(t);var s=document.createElement('meta');s.name='color-scheme';s.content='light';document.head.prepend(s);})();`,
           }}
         />
 

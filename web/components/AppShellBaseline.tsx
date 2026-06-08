@@ -2,7 +2,7 @@
 
 import { useLayoutEffect } from "react";
 import { usePathname } from "next/navigation";
-import { applyLinenShell, scheduleLinenShellSync } from "@/hooks/useAppShell";
+import { scheduleLinenShellSync } from "@/hooks/useAppShell";
 
 function syncLinenShell() {
   scheduleLinenShellSync();

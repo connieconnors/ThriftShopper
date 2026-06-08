@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback, useMemo, TouchEvent } from "react";
+import { useState, useRef, useEffect, useLayoutEffect, useCallback, useMemo, TouchEvent } from "react";
 import { flushSync } from "react-dom";
 import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
@@ -26,7 +26,7 @@ import { Mic, Loader2 } from "lucide-react";
 import { GlintIcon } from "../../components/GlintIcon";
 import { normalizeTagColumn } from "../../lib/utils/tagNormalizer";
 import { getMoodVariations } from "../../lib/moodMappings";
-import { useAppShell, SHELL_LINEN } from "../../hooks/useAppShell";
+import { useAppShell, hardResetLinenShell, scheduleLinenShellSync, SHELL_LINEN } from "../../hooks/useAppShell";
 import { trackBuyerEvent } from "../../lib/buyerEvents";
 import {
   buildEventPayload,
@@ -104,6 +104,13 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
   const router = useRouter();
   const { user } = useAuth();
   useAppShell();
+
+  // Hard reset on every browse mount — same behavior as product detail entry.
+  useLayoutEffect(() => {
+    hardResetLinenShell();
+    scheduleLinenShellSync();
+  }, []);
+
   const [listings, setListings] = useState<Listing[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
