@@ -9,7 +9,6 @@ import { useAuth } from "@/app/context/AuthContext";
 import { supabase } from "@/lib/supabaseClient";
 import { WelcomeBrandHeader } from "@/components/WelcomeBrandHeader";
 import { SellerFeeTransparencyLine } from "@/components/SellerFeeTransparency";
-import { legalHref } from "@/lib/legalNavigation";
 import { ShippingPreferenceForm } from "@/components/ShippingPreferenceForm";
 import {
   type ShippingPreferences,
@@ -349,19 +348,6 @@ function SellerOnboardingContent() {
             </div>
           )}
           <SellerFeeTransparencyLine className="mt-3 max-w-md mx-auto" />
-          <p className="text-xs text-gray-500 mt-3 max-w-md mx-auto font-system">
-            Curious what belongs on ThriftShopper?{" "}
-            <Link href="/what-we-accept" className="font-semibold text-[#16193a] hover:underline">
-              What We Accept
-            </Link>
-            {" • "}
-            <Link
-              href={legalHref("/seller-guidelines", "seller")}
-              className="font-semibold text-[#16193a] hover:underline"
-            >
-              Seller Guidelines
-            </Link>
-          </p>
           <Link
             href="/canvas"
             className="mt-4 inline-block text-sm text-[#16193a] hover:underline font-system"

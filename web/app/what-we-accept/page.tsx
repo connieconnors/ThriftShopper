@@ -1,41 +1,63 @@
 "use client";
 
 import Link from "next/link";
-import { TSLogo } from "@/components/TSLogo";
+import { Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
+import { TSLogo } from "@/components/TSLogo";
+import {
+  legalHref,
+  parseLegalFrom,
+  resolveLegalBack,
+} from "@/lib/legalNavigation";
 
-export default function WhatWeAcceptPage() {
+function WhatWeAcceptContent() {
+  const searchParams = useSearchParams();
+  const from = parseLegalFrom(searchParams.get("from"));
+  const back = resolveLegalBack(from);
+
   return (
     <main
       className="min-h-screen flex flex-col"
       style={{ backgroundColor: "#f8f9fa" }}
     >
-      {/* Header */}
-      <header className="p-4 flex items-center justify-between" style={{ backgroundColor: "#16193a" }}>
-        <Link href="/browse" className="flex items-center gap-2">
+      <header
+        className="p-4 flex items-center justify-between sticky top-0 z-10"
+        style={{ backgroundColor: "#16193a" }}
+      >
+        <Link
+          href={back.href}
+          className="flex items-center gap-2 min-w-0"
+          aria-label={`Back to ${back.label}`}
+        >
+          <ArrowLeft size={20} className="text-[#EFBF05] shrink-0" />
           <TSLogo size={32} primaryColor="#ffffff" accentColor="#efbf04" />
-          <span className="text-white font-semibold">ThriftShopper</span>
+          <span className="text-white font-semibold truncate">ThriftShopper</span>
         </Link>
         <Link
-          href="/browse"
-          className="text-sm text-white/80 hover:text-white transition-colors flex items-center gap-1"
+          href={back.href}
+          className="text-sm text-white/80 hover:text-white transition-colors shrink-0"
         >
-          <ArrowLeft size={16} />
-          Back
+          Back to {back.label}
         </Link>
       </header>
 
-      {/* Content */}
       <div className="flex-1 max-w-4xl mx-auto w-full px-4 py-8">
         <div className="bg-white rounded-lg shadow-sm p-8">
-          <h1 className="text-3xl font-bold mb-2 font-editorial" style={{ color: "#16193a" }}>
+          <h1
+            className="text-3xl font-bold mb-2 font-editorial"
+            style={{ color: "#16193a" }}
+          >
             What We Accept
           </h1>
           <p className="text-sm text-gray-500 mb-6">Curated categories and examples</p>
 
           <div className="prose prose-lg max-w-none">
             <section className="mb-8">
-              <h2 className="text-2xl font-bold mb-4 font-editorial" style={{ color: "#16193a" }}>
+              <h2
+                className="text-2xl font-bold mb-4 font-editorial"
+                style={{ color: "#16193a" }}
+              >
                 What Tends to Work Well Here
               </h2>
               <p className="text-gray-700 leading-relaxed mb-4">
@@ -144,13 +166,19 @@ export default function WhatWeAcceptPage() {
               </p>
               <p className="text-gray-700 leading-relaxed">
                 Contact:{" "}
-                <a href="mailto:support@thriftshopper.com" className="text-[#EFBF05] hover:underline font-semibold">
+                <a
+                  href="mailto:support@thriftshopper.com"
+                  className="text-[#EFBF05] hover:underline font-semibold"
+                >
                   support@thriftshopper.com
                 </a>
               </p>
               <p className="text-gray-700 leading-relaxed mt-4">
                 For a detailed list, see our{" "}
-                <Link href="/prohibited-items" className="text-[#EFBF05] hover:underline font-semibold">
+                <Link
+                  href={legalHref("/prohibited-items", from)}
+                  className="text-[#EFBF05] hover:underline font-semibold"
+                >
                   Prohibited and Restricted Items
                 </Link>{" "}
                 page.
@@ -160,5 +188,19 @@ export default function WhatWeAcceptPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function WhatWeAcceptPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="animate-spin h-8 w-8 border-2 border-[#EFBF05] border-t-transparent rounded-full" />
+        </div>
+      }
+    >
+      <WhatWeAcceptContent />
+    </Suspense>
   );
 }

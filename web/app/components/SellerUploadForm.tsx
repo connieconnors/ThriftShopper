@@ -36,6 +36,7 @@ import {
   type SellerActionProfile,
 } from '@/lib/sellerActionType';
 import { uploadListingImageToStorage } from '@/lib/compressImageForUpload';
+import { legalHref } from '@/lib/legalNavigation';
 
 function isImageFile(file: File): boolean {
   if (file.type.startsWith('image/')) return true;
@@ -1549,6 +1550,22 @@ export default function SellerUploadForm() {
                   }}
                 >
                   Perfection isn't the goal — clarity and character are. Vertical photos work best.
+                </p>
+                <p className="text-xs text-gray-500 mt-4 max-w-xs">
+                  Not sure if it fits?{' '}
+                  <Link
+                    href={legalHref('/what-we-accept', 'sell')}
+                    className="font-semibold text-[#16193a] hover:underline"
+                  >
+                    What We Accept
+                  </Link>
+                  {' · '}
+                  <Link
+                    href={legalHref('/seller-guidelines', 'sell')}
+                    className="font-semibold text-[#16193a] hover:underline"
+                  >
+                    Seller Guidelines
+                  </Link>
                 </p>
               </div>
             ) : (
