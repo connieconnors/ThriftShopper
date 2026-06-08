@@ -13,6 +13,7 @@ import { GlintIcon } from '../../components/GlintIcon';
 import Link from 'next/link';
 import SupportModal from '@/components/SupportModal';
 import { useAppShell } from '@/hooks/useAppShell';
+import { DashboardTopBar, DashboardBottomBar } from '@/components/DashboardChrome';
 import {
   listingNeedsShippingAmountFix,
   SELLER_LISTING_NEEDS_SHIPPING_MESSAGE,
@@ -1178,10 +1179,7 @@ export default function SellerPageClient() {
       style={{ overscrollBehaviorY: "contain" }}
     >
       {/* Header */}
-      <header 
-        className="sticky top-0 z-40 px-4 py-2 flex items-center justify-between shadow-sm"
-        style={{ backgroundColor: "#16193a" }}
-      >
+      <DashboardTopBar>
         <Link href="/browse" className="flex items-center gap-2">
           <TSLogo size={28} primaryColor="#ffffff" accentColor="#DFAF37" />
         </Link>
@@ -1193,7 +1191,7 @@ export default function SellerPageClient() {
           <ArrowLeft size={18} className="text-white flex-shrink-0" />
           Back to Discovery
         </Link>
-      </header>
+      </DashboardTopBar>
 
       <div className="bg-gray-50">
       <main className="max-w-4xl mx-auto px-4 py-4">
@@ -2084,10 +2082,7 @@ export default function SellerPageClient() {
       </div>
 
       {/* Footer Navigation - Simplified like v0 */}
-      <nav 
-        className="fixed bottom-0 left-0 right-0 border-t border-gray-200 px-4 py-2.5 z-30"
-        style={{ backgroundColor: "#16193a" }}
-      >
+      <DashboardBottomBar>
         <div className="max-w-2xl mx-auto flex items-center justify-around">
           <button
             type="button"
@@ -2141,7 +2136,7 @@ export default function SellerPageClient() {
             <span className="text-[10px]">Logout</span>
           </button>
         </div>
-      </nav>
+      </DashboardBottomBar>
 
       {/* Modals */}
       

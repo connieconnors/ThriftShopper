@@ -2,11 +2,10 @@
 
 import { useLayoutEffect } from "react";
 import { usePathname } from "next/navigation";
-import { applyLinenShell } from "@/hooks/useAppShell";
+import { applyLinenShell, scheduleLinenShellSync } from "@/hooks/useAppShell";
 
 function syncLinenShell() {
-  applyLinenShell();
-  requestAnimationFrame(() => applyLinenShell());
+  scheduleLinenShellSync();
 }
 
 /** Reset to linen on every navigation — global shell never goes navy. */

@@ -10,6 +10,7 @@ import TSModal from "@/components/TSModal"
 import SupportModal from "@/components/SupportModal"
 import { SETTINGS_LEGAL_LINKS, legalHref } from "@/lib/legalNavigation"
 import { useAppShell } from "@/hooks/useAppShell"
+import { DashboardTopBar, DashboardBottomBar } from "@/components/DashboardChrome"
 import { ArrowLeft, User, ExternalLink, LogOut, Scale, Loader2, HelpCircle, Store } from "lucide-react"
 
 export default function SettingsPage() {
@@ -247,7 +248,7 @@ export default function SettingsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-24">
-      <header className="bg-[#16193a] px-4 py-2 flex items-center justify-between sticky top-0 z-10">
+      <DashboardTopBar>
         <Link href={backUrl} className="flex items-center gap-3">
           <span className="text-white/80 hover:text-white transition-colors">
             <ArrowLeft className="h-5 w-5" style={{ color: "#EFBF05" }} />
@@ -256,7 +257,7 @@ export default function SettingsPage() {
         </Link>
         <h1 className="text-base font-semibold text-white">Settings</h1>
         <div className="w-10"></div>
-      </header>
+      </DashboardTopBar>
 
       <div className="px-4 py-4 space-y-4 max-w-2xl mx-auto">
         {/* Profile Section */}
@@ -497,11 +498,7 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      <nav
-        className="fixed bottom-0 left-0 right-0 border-t border-white/10 px-4 py-3 z-30"
-        style={{ backgroundColor: "#16193a" }}
-        aria-label="Settings navigation"
-      >
+      <DashboardBottomBar>
         <div className="max-w-2xl mx-auto">
           <Link
             href={backUrl}
@@ -511,7 +508,7 @@ export default function SettingsPage() {
             {dashboardLabel}
           </Link>
         </div>
-      </nav>
+      </DashboardBottomBar>
 
       <TSModal
         isOpen={deleteModalOpen}

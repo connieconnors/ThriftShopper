@@ -1045,7 +1045,11 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
       `}</style>
       <div
         className="fixed inset-0 overflow-hidden select-none"
-        style={{ backgroundColor: SHELL_LINEN }}
+        style={{
+          backgroundColor: SHELL_LINEN,
+          paddingTop: "env(safe-area-inset-top, 0px)",
+          paddingBottom: "env(safe-area-inset-bottom, 0px)",
+        }}
       >
       <div
         ref={containerRef}

@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import SupportModal from "@/components/SupportModal";
 import { useAppShell } from "@/hooks/useAppShell";
+import { DashboardTopBar, DashboardBottomBar } from "@/components/DashboardChrome";
 import { Listing, getPrimaryImage } from "../../lib/types";
 import {
   getRecentlyViewed,
@@ -379,10 +380,7 @@ export default function BuyerCanvasPage() {
       style={{ overscrollBehaviorY: "contain" }}
     >
       {/* Header */}
-      <header
-        className="sticky top-0 z-40 px-4 py-2 flex items-center justify-between shadow-sm"
-        style={{ backgroundColor: "#16193a" }}
-      >
+      <DashboardTopBar>
         <Link href="/browse" className="flex items-center gap-2">
           <TSLogo size={28} primaryColor="#ffffff" accentColor="#DFAF37" />
         </Link>
@@ -394,7 +392,7 @@ export default function BuyerCanvasPage() {
           <ArrowLeft size={18} className="text-white flex-shrink-0" />
           Back to Discovery
         </Link>
-      </header>
+      </DashboardTopBar>
 
       {/* Content Wrapper */}
       <div className="bg-gray-50">
@@ -913,10 +911,7 @@ export default function BuyerCanvasPage() {
       </div>
 
       {/* Footer Navigation - Simplified like v0 */}
-      <nav
-        className="fixed bottom-0 left-0 right-0 border-t border-gray-200 px-4 py-2.5 z-30"
-        style={{ backgroundColor: "#16193a" }}
-      >
+      <DashboardBottomBar>
         <div className="max-w-2xl mx-auto flex items-center justify-around">
           <button
             onClick={() => setSupportOpen(true)}
@@ -933,7 +928,7 @@ export default function BuyerCanvasPage() {
             <span className="text-[10px]">Settings</span>
           </Link>
         </div>
-      </nav>
+      </DashboardBottomBar>
 
       {/* Modals */}
       <SupportModal isOpen={supportOpen} onClose={() => setSupportOpen(false)} />

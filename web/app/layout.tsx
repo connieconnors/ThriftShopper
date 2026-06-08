@@ -8,6 +8,8 @@ import { AuthProvider } from "./context/AuthContext";
 
 import { AppShellBaseline } from "../components/AppShellBaseline";
 
+import { SafeAreaShell } from "../components/SafeAreaShell";
+
 import PWARegister from "./components/PWARegister";
 
 import { PostHogProvider } from "./providers/PostHogProvider";
@@ -127,6 +129,8 @@ export default function RootLayout({
           <AuthProvider>
 
             <AppShellBaseline />
+
+            <SafeAreaShell />
 
             {children}
 

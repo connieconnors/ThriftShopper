@@ -1,6 +1,6 @@
 // Service Worker for ThriftShopper PWA
 // v3: network-first for pages — never serve stale HTML/JS after deploys
-const CACHE_NAME = 'thriftshopper-v3';
+const CACHE_NAME = 'thriftshopper-v4';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();

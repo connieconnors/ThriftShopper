@@ -29,6 +29,7 @@ html {
   background-color: #ede9e1;
   background-color: var(--background, #ede9e1);
   min-height: 100dvh;
+  color-scheme: light only;
 }
 
 body {

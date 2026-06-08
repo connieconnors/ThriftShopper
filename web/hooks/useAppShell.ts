@@ -28,9 +28,17 @@ export function applyLinenShell() {
   if (typeof document === "undefined") return;
 
   document.documentElement.style.backgroundColor = SHELL_LINEN;
+  document.documentElement.style.colorScheme = "light only";
   document.body.style.backgroundColor = SHELL_LINEN;
   document.body.style.minHeight = "100dvh";
   setThemeColorMeta(SHELL_LINEN);
+}
+
+export function scheduleLinenShellSync() {
+  applyLinenShell();
+  requestAnimationFrame(() => applyLinenShell());
+  window.setTimeout(() => applyLinenShell(), 100);
+  window.setTimeout(() => applyLinenShell(), 400);
 }
 
 /** Re-assert linen on every route — canvas/seller chrome must not tint the OS shell. */
@@ -38,8 +46,7 @@ export function useAppShell() {
   const pathname = usePathname();
 
   useLayoutEffect(() => {
-    applyLinenShell();
-    // Win races with late layout effects / bfcache restores on iOS Safari
+    scheduleLinenShellSync();
     const raf = requestAnimationFrame(() => applyLinenShell());
     return () => cancelAnimationFrame(raf);
   }, [pathname]);
