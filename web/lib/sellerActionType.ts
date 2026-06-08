@@ -51,43 +51,32 @@ export function isStripeCheckoutReady(
   return status === "completed" || status === "complete";
 }
 
-/** Resolve buyer action for this listing (Apple-safe: no fake checkout). */
+/**
+ * Resolve buyer action for a listing. Seller's explicit choice always wins —
+ * no fallback to Contact Seller when Stripe is disconnected.
+ */
 export function resolveSellerActionType(
   profile: SellerActionProfile | null | undefined,
   listingOverride?: string | null
 ): SellerActionType {
-  let requested =
+  const explicit =
     normalizeSellerActionType(listingOverride) ??
     normalizeSellerActionType(profile?.seller_action_type) ??
-    normalizeSellerActionType(profile?.payment_mode) ??
-    null;
+    normalizeSellerActionType(profile?.payment_mode);
 
-  if (!requested) {
-    const legacyPickup =
-      profile?.payment_mode === "reserve_in_store" ||
-      profile?.seller_action_type === "reserve_pickup";
-    if (legacyPickup) {
-      requested = profile?.payment_pickup_label?.trim()
-        ? "store_pickup"
-        : "local_pickup";
-    } else {
-      requested = "stripe_checkout";
-    }
+  if (explicit) {
+    return explicit;
   }
 
-  if (requested === "stripe_checkout" && isStripeCheckoutReady(profile)) {
-    return "stripe_checkout";
+  // Legacy profiles only — infer once, then seller should set explicitly in Settings
+  const legacyPickup =
+    profile?.payment_mode === "reserve_in_store" ||
+    profile?.seller_action_type === "reserve_pickup";
+  if (legacyPickup) {
+    return profile?.payment_pickup_label?.trim() ? "store_pickup" : "local_pickup";
   }
-  if (requested === "local_pickup" || requested === "store_pickup") {
-    return requested;
-  }
-  if (requested === "contact_seller") {
-    return "contact_seller";
-  }
-  if (profile?.payment_pickup_label?.trim()) {
-    return "store_pickup";
-  }
-  return "contact_seller";
+
+  return "stripe_checkout";
 }
 
 export function primaryCtaLabel(action: SellerActionType): string {
@@ -130,21 +119,43 @@ export function listingActionContext(
       return {
         headline: "📍 Local pickup available",
         subline: city
-          ? `Coordinate pickup in ${city} — no in-app payment`
-          : "Coordinate pickup with the seller — no in-app payment",
+          ? `Coordinate pickup in ${city} — pay directly with the seller`
+          : "Coordinate pickup with the seller — pay directly, no in-app checkout",
       };
     case "store_pickup":
       return {
         headline: store ? `🏪 Available at ${store}` : "🏪 In-store pickup available",
         subline: city
-          ? `Visit the store in ${city}`
-          : "Pay when you pick up — no in-app checkout",
+          ? `Visit the store in ${city} to purchase this item`
+          : "Visit the store to purchase this item — pay in person",
       };
     case "contact_seller":
       return {
-        headline: "Questions about this item?",
-        subline: "Message the seller — no payment in the app",
+        headline: store
+          ? `Available at ${store}`
+          : "Local pickup and shipping available",
+        subline: city
+          ? `Local pickup in ${city}. Shipping may also be available — contact the seller to arrange. Pay in person or as agreed.`
+          : "Local pickup available. Shipping may also be available — contact the seller to arrange. Pay in person or as agreed.",
       };
+  }
+}
+
+export function inquiryModalIntro(
+  action: SellerActionType,
+  pickupLabel?: string | null
+): string {
+  switch (action) {
+    case "store_pickup":
+      return pickupLabel?.trim()
+        ? `No payment in the app. Visit ${pickupLabel.trim()} when you're ready to buy.`
+        : "No payment in the app. Visit the store when you're ready to buy.";
+    case "local_pickup":
+      return "No payment in the app. The seller will follow up to arrange pickup.";
+    case "contact_seller":
+      return "Ask about pickup, shipping, or this item. No payment in the app — the seller will follow up to arrange.";
+    default:
+      return "Send a message to the seller.";
   }
 }
 
@@ -163,8 +174,9 @@ export function reserveConfirmationMessage(storeName: string): string {
   return pickupConfirmationMessage("store_pickup", storeName);
 }
 
-export function contactConfirmationMessage(): string {
-  return "Thanks! The seller will follow up with you soon.";
+export function contactConfirmationMessage(sellerName?: string): string {
+  const who = sellerName?.trim() || "The seller";
+  return `Thanks!\n\n${who} will follow up about pickup, shipping, or your question.\n\nPay in person or as you arrange — no payment in the app.`;
 }
 
 export function sellFormPriceHelper(
@@ -173,15 +185,15 @@ export function sellFormPriceHelper(
 ): string {
   switch (action) {
     case "stripe_checkout":
-      return "";
+      return "Buyers checkout with Stripe. Requires connected payouts.";
     case "local_pickup":
       return "Buyers request local pickup and pay you directly — great for home sellers.";
     case "store_pickup":
       return pickupLabel?.trim()
-        ? `Buyers visit ${pickupLabel.trim()} to purchase in person.`
-        : "Buyers visit your store to purchase in person.";
+        ? `Buyers visit ${pickupLabel.trim()} to purchase in person. No shipping.`
+        : "Buyers visit your store to purchase in person. No shipping.";
     case "contact_seller":
-      return "Buyers contact you about this item — you arrange payment directly.";
+      return "Pickup and/or shipping — buyers message you to arrange. Pay in person or as agreed.";
   }
 }
 
@@ -191,6 +203,8 @@ export function pickupModalTitle(action: SellerActionType): string {
       return "📍 Local Pickup";
     case "store_pickup":
       return "🏪 Store Pickup";
+    case "contact_seller":
+      return "Contact Seller";
     default:
       return "Contact Seller";
   }
@@ -202,6 +216,8 @@ export function pickupSubmitLabel(action: SellerActionType): string {
       return "Request local pickup";
     case "store_pickup":
       return "Request store pickup";
+    case "contact_seller":
+      return "Send message";
     default:
       return "Contact Seller";
   }
@@ -212,11 +228,11 @@ export function sellerSettingsActionLabel(action: SellerActionType): string {
     case "stripe_checkout":
       return "Buy Online (Stripe checkout)";
     case "local_pickup":
-      return "📍 Local Pickup";
+      return "📍 Local Pickup (home seller)";
     case "store_pickup":
-      return "🏪 Store Pickup";
+      return "🏪 Store Pickup (visit store, pay in person)";
     case "contact_seller":
-      return "Contact Seller";
+      return "Contact Seller (pickup and/or shipping)";
   }
 }
 
@@ -226,30 +242,30 @@ export function shopDefaultActionBannerCopy(
   pickupLabel?: string | null
 ): { title: string; body: string } {
   const perItemNote =
-    "This is your shop default for new listings. Set how buyers get each item on the listing form.";
+    "Shop default for new listings. Override on each item when you list or edit.";
 
   switch (action) {
     case "store_pickup":
       return {
         title: "Shop default: 🏪 Store Pickup",
         body: pickupLabel?.trim()
-          ? `${perItemNote} Default: buyers visit ${pickupLabel.trim()} in person.`
-          : `${perItemNote} Default: in-store pickup, no in-app checkout.`,
+          ? `${perItemNote} Buyers visit ${pickupLabel.trim()} in person.`
+          : `${perItemNote} In-store pickup, pay in person.`,
       };
     case "local_pickup":
       return {
         title: "Shop default: 📍 Local Pickup",
-        body: `${perItemNote} Default: buyers coordinate local pickup with you.`,
+        body: `${perItemNote} Buyers coordinate pickup with you directly.`,
       };
     case "contact_seller":
       return {
         title: "Shop default: Contact Seller",
-        body: `${perItemNote} Default: buyers message you first. Use Store or Local Pickup on individual items when that fits.`,
+        body: `${perItemNote} Pickup and/or shipping — buyers message you to arrange.`,
       };
     case "stripe_checkout":
       return {
         title: "Shop default: Buy Online",
-        body: `${perItemNote} Default: Stripe checkout when connected.`,
+        body: `${perItemNote} Stripe checkout for this shop.`,
       };
   }
 }

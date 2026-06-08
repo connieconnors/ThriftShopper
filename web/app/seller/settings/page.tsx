@@ -450,6 +450,11 @@ export default function SellerSettingsPage() {
                 placeholder="Store name (e.g. Wilson's Dry Dock)"
               />
             )}
+            {formData.sellerActionType === "contact_seller" && (
+              <p className="text-xs text-gray-500">
+                Pickup and/or shipping — buyers message you to arrange. Pay in person or as agreed. Listing copy uses your Store Name above.
+              </p>
+            )}
             {formData.sellerActionType === "local_pickup" && (
               <p className="text-xs text-gray-500">
                 For home sellers — buyers coordinate pickup using your city on your profile.

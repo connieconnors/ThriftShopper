@@ -46,6 +46,7 @@ import {
   isPickupAction,
   resolvePublicSellerName,
   pickupModalTitle,
+  inquiryModalIntro,
   pickupSubmitLabel,
 } from "../../../lib/sellerActionType";
 import { supabase } from "../../../lib/supabaseClient";
@@ -280,7 +281,7 @@ export default function ProductDetails({
         data.confirmationMessage ||
           (inquiryType === "reserve"
             ? pickupConfirmationMessage(sellerActionType, storeName)
-            : contactConfirmationMessage())
+            : contactConfirmationMessage(sellerName))
       );
       setInquiryMessage("");
       setInquiryPhone("");
@@ -867,19 +868,13 @@ export default function ProductDetails({
           ) : (
             <>
               <p className="text-xs text-white/70">
-                {sellerActionType === "store_pickup"
-                  ? pickupLabel
-                    ? `No payment in the app. Visit ${pickupLabel} when you're ready to buy.`
-                    : "No payment in the app. Visit the store when you're ready to buy."
-                  : sellerActionType === "local_pickup"
-                    ? "No payment in the app. The seller will follow up to arrange pickup."
-                    : "Send a message to the seller. No payment happens in the app."}
+                {inquiryModalIntro(sellerActionType, pickupLabel)}
               </p>
               {sellerActionType === "contact_seller" && (
                 <textarea
                   value={inquiryMessage}
                   onChange={(e) => setInquiryMessage(e.target.value)}
-                  placeholder="What would you like to know?"
+                  placeholder="Ask about pickup, shipping, or this item…"
                   rows={4}
                   className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/50 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[rgba(197,160,40,0.5)]"
                   disabled={inquirySending}

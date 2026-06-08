@@ -179,7 +179,9 @@ export async function POST(request: NextRequest) {
     const confirmationMessage =
       inquiryType === "reserve"
         ? pickupConfirmationMessage(sellerActionType, pickupLabel)
-        : contactConfirmationMessage();
+        : contactConfirmationMessage(
+            sellerProfile?.display_name || pickupLabel
+          );
 
     return NextResponse.json({
       success: true,
