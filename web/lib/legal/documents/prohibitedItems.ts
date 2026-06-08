@@ -6,7 +6,6 @@ export const prohibitedItemsDocument: LegalDocumentMeta = {
   intro: [
     "To maintain a safe, lawful, and trustworthy marketplace, certain items may not be listed, sold, purchased, advertised, or promoted through ThriftShopper.",
     "This list is not exhaustive. ThriftShopper may remove any listing at its sole discretion. Listings that infringe copyrights, trademarks, publicity rights, or other intellectual-property rights are prohibited.",
-    "For what we love to see on the marketplace, see What We Accept — a separate curated guide, not a legal policy.",
   ],
   blocks: [
     { type: "h2", text: "Weapons", id: "weapons" },
