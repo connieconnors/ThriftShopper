@@ -16,6 +16,7 @@ import {
   listingNeedsShippingAmountFix,
   SELLER_LISTING_NEEDS_SHIPPING_MESSAGE,
 } from '@/lib/shippingPreferences';
+import { resolveSellerActionType } from '@/lib/sellerActionType';
 
 interface Listing {
   id: string;
@@ -26,6 +27,137 @@ interface Listing {
   clean_image_url: string | null;
   created_at: string;
   custom_shipping_policy?: string | null;
+}
+
+interface ListingInquiry {
+  id: string;
+  listing_id: string;
+  inquiry_type: string;
+  status: string;
+  buyer_name: string | null;
+  buyer_email: string | null;
+  buyer_phone: string | null;
+  message: string | null;
+  pickup_location_name: string | null;
+  listing_title: string | null;
+  listing_price: number | null;
+  created_at: string;
+}
+
+function InquiryCard({
+  inquiry,
+  onUpdate,
+}: {
+  inquiry: ListingInquiry;
+  onUpdate: () => void;
+}) {
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  const handleStatus = async (status: "sold" | "cancelled" | "reserved") => {
+    setIsUpdating(true);
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) {
+        alert("Please log in again");
+        return;
+      }
+
+      const res = await fetch("/api/listings/inquiry/update-status", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ inquiryId: inquiry.id, status }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || "Failed to update");
+        return;
+      }
+      onUpdate();
+    } catch (err) {
+      console.error("Inquiry status update failed:", err);
+      alert("Failed to update. Please try again.");
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const typeLabel =
+    inquiry.inquiry_type === "reserve" ? "Reservation" : "Inquiry";
+  const statusLabel =
+    inquiry.status === "reserved"
+      ? "Reserved"
+      : inquiry.status === "pending"
+        ? "Pending"
+        : inquiry.status;
+
+  return (
+    <div className="bg-gray-50 rounded-lg border border-gray-200 p-3 mb-3">
+      <div className="flex items-start justify-between gap-2 mb-2">
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold text-[#16193a] truncate">
+            {inquiry.listing_title || "Listing"}
+          </p>
+          <p className="text-xs text-gray-600">
+            {typeLabel} · {statusLabel}
+            {inquiry.listing_price != null
+              ? ` · $${Number(inquiry.listing_price).toFixed(2)}`
+              : ""}
+          </p>
+        </div>
+        <Link
+          href={`/listing/${inquiry.listing_id}`}
+          className="text-xs text-[#16193a] hover:underline shrink-0"
+        >
+          View
+        </Link>
+      </div>
+      <div className="text-xs text-gray-600 space-y-1 mb-3">
+        {inquiry.buyer_name && <p>Buyer: {inquiry.buyer_name}</p>}
+        {inquiry.buyer_email && <p>{inquiry.buyer_email}</p>}
+        {inquiry.buyer_phone && <p>{inquiry.buyer_phone}</p>}
+        {inquiry.pickup_location_name && (
+          <p>Pay at: {inquiry.pickup_location_name}</p>
+        )}
+        {inquiry.message && (
+          <p className="italic">&ldquo;{inquiry.message}&rdquo;</p>
+        )}
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {inquiry.status === "pending" && inquiry.inquiry_type === "reserve" && (
+          <button
+            type="button"
+            disabled={isUpdating}
+            onClick={() => handleStatus("reserved")}
+            className="text-xs px-3 py-1.5 rounded-full border border-[#16193a] text-[#16193a] hover:bg-[#16193a]/5 disabled:opacity-50"
+          >
+            Mark reserved
+          </button>
+        )}
+        <button
+          type="button"
+          disabled={isUpdating}
+          onClick={() => handleStatus("sold")}
+          className="text-xs px-3 py-1.5 rounded-full text-white disabled:opacity-50"
+          style={{ backgroundColor: "#16193a" }}
+        >
+          Mark sold
+        </button>
+        <button
+          type="button"
+          disabled={isUpdating}
+          onClick={() => handleStatus("cancelled")}
+          className="text-xs px-3 py-1.5 rounded-full border border-gray-300 text-gray-600 hover:bg-gray-100 disabled:opacity-50"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  );
 }
 
 interface OrderCardProps {
@@ -210,6 +342,7 @@ export default function SellerPageClient() {
   const [listings, setListings] = useState<Listing[]>([]);
   const [paidOrders, setPaidOrders] = useState<any[]>([]);
   const [allOrders, setAllOrders] = useState<any[]>([]);
+  const [inquiries, setInquiries] = useState<ListingInquiry[]>([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     totalListings: 0,
@@ -729,6 +862,21 @@ export default function SellerPageClient() {
       paidOrders = [];
       totalEarnings = 0;
     }
+
+    try {
+      const { data: inquiriesData, error: inquiriesError } = await supabase
+        .from("listing_inquiries")
+        .select("*")
+        .eq("seller_id", user.id)
+        .in("status", ["pending", "reserved"])
+        .order("created_at", { ascending: false });
+
+      if (inquiriesError) throw inquiriesError;
+      setInquiries(inquiriesData || []);
+    } catch (err: unknown) {
+      console.error("Seller fetch failed - inquiries", err);
+      setInquiries([]);
+    }
     
     // Calculate stats from whatever data we successfully fetched
     const active = listingsData?.filter(l => l.status === 'active').length || 0;
@@ -757,6 +905,8 @@ export default function SellerPageClient() {
   const hasStripeAccount = !!profile?.stripe_account_id;
   const isStripeConnectedEnough = hasStripeAccount && 
     (profile?.stripe_details_submitted === true || profile?.stripe_charges_enabled === true);
+  const sellerActionType = resolveSellerActionType(profile);
+  const canSellWithoutStripe = sellerActionType !== "stripe_checkout";
 
   const handleUpdateStatus = async (listingId: string, newStatus: 'hidden' | 'sold' | 'active', e: React.MouseEvent) => {
     e.preventDefault();
@@ -787,7 +937,7 @@ export default function SellerPageClient() {
           return;
         }
 
-        if (!isStripeConnectedEnough) {
+        if (!isStripeConnectedEnough && !canSellWithoutStripe) {
           alert(
             'Connect payments to start selling.\n\nListing is free. ThriftShopper takes a 10% marketplace fee only when your item sells.'
           );
@@ -1121,8 +1271,27 @@ export default function SellerPageClient() {
               </div>
             </div>
 
-            {/* Stripe Payment Status Banner */}
-            {!isStripeConnectedEnough ? (
+            {/* Payment mode banner */}
+            {canSellWithoutStripe ? (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
+                <h2 className="text-xs font-semibold text-blue-900 leading-tight mb-1">
+                  {sellerActionType === "store_pickup"
+                    ? "🏪 Store Pickup"
+                    : sellerActionType === "local_pickup"
+                      ? "📍 Local Pickup"
+                      : "Contact Seller mode"}
+                </h2>
+                <p className="text-[10px] leading-tight text-blue-800">
+                  {sellerActionType === "store_pickup"
+                    ? profile.payment_pickup_label
+                      ? `Buyers visit ${profile.payment_pickup_label} to purchase in person. No in-app checkout.`
+                      : "Buyers visit your store to purchase in person. No Stripe checkout required."
+                    : sellerActionType === "local_pickup"
+                      ? "Buyers request local pickup — great for home sellers. No in-app checkout."
+                      : "Buyers contact you about items. You follow up outside the app. No in-app payment."}
+                </p>
+              </div>
+            ) : !isStripeConnectedEnough ? (
               <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-3">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
@@ -1213,7 +1382,7 @@ export default function SellerPageClient() {
         </div>
 
         {/* Inventory: Drafts → Active → Sold (single page scroll) */}
-        {listings.length === 0 && allOrders.length === 0 ? (
+        {listings.length === 0 && allOrders.length === 0 && inquiries.length === 0 ? (
           <div className="mb-4 text-center py-12 bg-white rounded-lg border border-gray-200">
             <p className="text-sm text-gray-600 mb-2">
               No listings yet.{" "}
@@ -1525,6 +1694,23 @@ export default function SellerPageClient() {
                 )}
               </div>
             ))}
+
+            {inquiries.length > 0 && (
+              <div className="mb-4">
+                <h2 className="text-base font-semibold mb-3 font-ui-heading" style={{ color: "#16193a" }}>
+                  Reservations & inquiries ({inquiries.length})
+                </h2>
+                <div className="bg-white rounded-lg border border-gray-200 p-2">
+                  {inquiries.map((inquiry) => (
+                    <InquiryCard
+                      key={inquiry.id}
+                      inquiry={inquiry}
+                      onUpdate={fetchSellerData}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="mb-4">
               <h2 className="text-base font-semibold mb-3 font-ui-heading" style={{ color: "#16193a" }}>

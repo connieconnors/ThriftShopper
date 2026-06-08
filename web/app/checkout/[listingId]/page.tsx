@@ -2,6 +2,7 @@ import { supabase } from "../../../lib/supabaseClient";
 import { Listing, getPrimaryImage, getSellerDisplayName } from "../../../lib/types";
 import CheckoutClient from "./CheckoutClient";
 import Link from "next/link";
+import { resolveSellerActionType } from "../../../lib/sellerActionType";
 
 interface CheckoutPageProps {
   params: Promise<{ listingId: string }>;
@@ -44,9 +45,34 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
 
   const { data: sellerProfile } = await supabase
     .from("profiles")
-    .select("shipping_info")
+    .select(
+      "shipping_info, seller_action_type, payment_mode, payment_pickup_label, stripe_account_id, stripe_onboarding_status"
+    )
     .eq("user_id", listing.seller_id)
     .maybeSingle();
+
+  const sellerActionType = resolveSellerActionType(sellerProfile);
+  if (sellerActionType !== "stripe_checkout") {
+    return (
+      <main className="min-h-screen flex flex-col items-center justify-center p-6" style={{ backgroundColor: "#ede9e1" }}>
+        <div className="text-center max-w-md">
+          <h1 className="text-2xl font-bold mb-4" style={{ color: "#16193a" }}>
+            Pay with seller directly
+          </h1>
+          <p className="text-gray-600 mb-8">
+            This item is not available for in-app checkout. Use Local Pickup, Store Pickup, or Contact Seller on the listing page.
+          </p>
+          <Link
+            href={`/listing/${listingId}`}
+            className="inline-block px-6 py-3 font-semibold rounded-full text-white"
+            style={{ backgroundColor: "#16193a" }}
+          >
+            Back to listing
+          </Link>
+        </div>
+      </main>
+    );
+  }
 
   const listingForCheckout = {
     ...(listing as Listing),

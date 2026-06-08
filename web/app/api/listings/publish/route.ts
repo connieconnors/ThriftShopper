@@ -5,6 +5,7 @@ import {
   listingNeedsShippingAmountFix,
   SELLER_LISTING_NEEDS_SHIPPING_MESSAGE,
 } from "../../../../lib/shippingPreferences";
+import { resolveSellerActionType } from "../../../../lib/sellerActionType";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2025-11-17.clover",
@@ -72,7 +73,7 @@ export async function POST(request: NextRequest) {
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
       .select(
-        "stripe_account_id, stripe_details_submitted, stripe_charges_enabled, display_name, shipping_info"
+        "stripe_account_id, stripe_details_submitted, stripe_charges_enabled, stripe_onboarding_status, display_name, shipping_info, seller_action_type, payment_mode, payment_pickup_label"
       )
       .eq("user_id", user.id)
       .single();
@@ -122,7 +123,10 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    if (!isStripeReady) {
+    const sellerActionType = resolveSellerActionType(profile);
+    const requiresStripeCheckout = sellerActionType === "stripe_checkout";
+
+    if (requiresStripeCheckout && !isStripeReady) {
       return NextResponse.json(
         {
           error: "Connect payments to start selling.",

@@ -20,10 +20,14 @@ export default async function Browse() {
       profiles:seller_id (
         display_name,
         location_city,
+        location_state,
         avatar_url,
         ts_badge,
         rating,
-        review_count
+        review_count,
+        seller_action_type,
+        payment_mode,
+        payment_pickup_label
       )
     `)
     ;

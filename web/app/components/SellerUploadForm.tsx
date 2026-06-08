@@ -28,6 +28,11 @@ import {
   formatUsd,
   parseValidListingPrice,
 } from '@/lib/marketplaceFees';
+import {
+  resolveSellerActionType,
+  sellFormPriceHelper,
+  type SellerActionType,
+} from '@/lib/sellerActionType';
 import { uploadListingImageToStorage } from '@/lib/compressImageForUpload';
 
 function isImageFile(file: File): boolean {
@@ -230,6 +235,8 @@ export default function SellerUploadForm() {
   const [draftSaved, setDraftSaved] = useState(false); // Track if draft was just saved
   const [isRemovingBackground, setIsRemovingBackground] = useState(false);
   const [isStripeReady, setIsStripeReady] = useState<boolean | null>(null);
+  const [sellerActionType, setSellerActionType] = useState<SellerActionType>('stripe_checkout');
+  const [sellerPickupLabel, setSellerPickupLabel] = useState<string | null>(null);
   
   // Editable fields
   const [title, setTitle] = useState('');
@@ -303,11 +310,15 @@ export default function SellerUploadForm() {
     (async () => {
       const { data } = await supabase
         .from('profiles')
-        .select('shipping_info')
+        .select(
+          'shipping_info, seller_action_type, payment_mode, payment_pickup_label, stripe_account_id, stripe_onboarding_status'
+        )
         .eq('user_id', user.id)
         .single();
       const prefs = parseShippingPreferences(data?.shipping_info ?? null) ?? DEFAULT_SHIPPING_PREFERENCES;
       setSellerDefaultShippingPreferences(prefs);
+      setSellerActionType(resolveSellerActionType(data));
+      setSellerPickupLabel(data?.payment_pickup_label ?? null);
       if (!listingShippingInitializedRef.current) {
         setListingShippingPreferences(prefs);
         listingShippingInitializedRef.current = true;
@@ -522,10 +533,19 @@ export default function SellerUploadForm() {
     loadListingForEdit();
   }, [user]);
 
+  const usesStripeCheckout = sellerActionType === 'stripe_checkout';
+
   const earningsPreview = useMemo(() => {
+    if (!usesStripeCheckout) return null;
     const validPrice = parseValidListingPrice(price);
     if (validPrice === null) return null;
     return calculateSellerEarningsPreview(validPrice);
+  }, [price, usesStripeCheckout]);
+
+  const listingPricePreview = useMemo(() => {
+    const validPrice = parseValidListingPrice(price);
+    if (validPrice === null) return null;
+    return validPrice;
   }, [price]);
 
   // Voice input handlers - MUST be before any returns (React Hooks rules)
@@ -1220,8 +1240,8 @@ export default function SellerUploadForm() {
 
       console.log('✅ [handlePublish] Successfully saved to database');
 
-      // Publish requires Stripe — list and save drafts freely; connect when ready to sell
-      if (isStripeReady !== true) {
+      // Stripe checkout sellers need Connect; reserve/contact sellers can publish without it
+      if (isStripeReady !== true && usesStripeCheckout) {
         setShowStripeConnectGate(true);
         return;
       }
@@ -1995,6 +2015,24 @@ export default function SellerUploadForm() {
                     <p className="text-xs mt-2 leading-relaxed" style={{ color: '#6b7280' }}>
                       You receive approximately {formatUsd(earningsPreview.sellerReceives)} after
                       ThriftShopper&apos;s 10% marketplace fee.
+                    </p>
+                  </div>
+                )}
+                {!usesStripeCheckout && listingPricePreview !== null && (
+                  <div
+                    className="mt-3 p-3 rounded-lg text-sm border"
+                    style={{ backgroundColor: '#f0f7ff', borderColor: '#bfdbfe' }}
+                  >
+                    <p className="text-xs font-medium uppercase tracking-wide mb-2" style={{ color: '#6b7280' }}>
+                      Listing price
+                    </p>
+                    <div className="flex justify-between gap-4 font-semibold" style={{ color: '#16193a' }}>
+                      <span>Buyers see</span>
+                      <span>{formatUsd(listingPricePreview)}</span>
+                    </div>
+                    <p className="text-xs mt-2 leading-relaxed" style={{ color: '#4b5563' }}>
+                      {sellFormPriceHelper(sellerActionType, sellerPickupLabel)}{' '}
+                      No in-app checkout or marketplace fee on this listing.
                     </p>
                   </div>
                 )}

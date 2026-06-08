@@ -2,6 +2,14 @@ import { Suspense } from "react";
 import { supabase } from "../../../lib/supabaseClient";
 import { Listing } from "../../../lib/types";
 import ProductDetails from "./ProductDetails";
+import {
+  resolveSellerActionType,
+  listingActionContext,
+  primaryCtaLabel,
+  reserveConfirmationMessage,
+  contactConfirmationMessage,
+  type SellerActionType,
+} from "../../../lib/sellerActionType";
 
 type ListingPageProps = {
   params: {
@@ -76,6 +84,9 @@ export default async function ListingPage({ params }: ListingPageProps) {
     moods: normalize(raw.moods as string[] | string | null),
   };
 
+  const sellerActionType = resolveSellerActionType(listing.profiles);
+  const pickupLabel = listing.profiles?.payment_pickup_label ?? null;
+
   return (
     <Suspense
       fallback={
@@ -84,7 +95,11 @@ export default async function ListingPage({ params }: ListingPageProps) {
         </main>
       }
     >
-      <ProductDetails listing={listing} />
+      <ProductDetails
+        listing={listing}
+        sellerActionType={sellerActionType}
+        pickupLabel={pickupLabel}
+      />
     </Suspense>
   );
 }

@@ -6,13 +6,13 @@ import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
 import { 
   Listing, 
-  getSellerDisplayName, 
   getSellerLocation,
   getSellerAvatar,
   hasSellerTSBadge,
   getPrimaryImage,
   TS_BADGE_URL
 } from "../../lib/types";
+import { resolvePublicSellerName } from "../../lib/sellerActionType";
 import { isJustSold } from "../../lib/listingStatus";
 import { supabase } from "../../lib/supabaseClient";
 import { StandaloneMoodWheel } from "../../components/StandaloneMoodWheel";
@@ -1025,7 +1025,7 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
   }
 
   const imageSrc = getPrimaryImage(currentListing);
-  const sellerName = getSellerDisplayName(currentListing);
+  const sellerName = resolvePublicSellerName(currentListing);
   const sellerLocation = getSellerLocation(currentListing);
   const sellerAvatar = getSellerAvatar(currentListing);
   const hasTSBadge = hasSellerTSBadge(currentListing);
@@ -1290,7 +1290,7 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
           if (!isVisible) return null;
 
           const listingImage = getPrimaryImage(listing);
-          const listingSellerName = getSellerDisplayName(listing);
+          const listingSellerName = resolvePublicSellerName(listing);
           const listingSellerAvatar = getSellerAvatar(listing);
           const listingHasTSBadge = hasSellerTSBadge(listing);
 

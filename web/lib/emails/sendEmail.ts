@@ -177,3 +177,70 @@ export async function sendNewMessageEmail(
   }
 }
 
+export type ListingInquiryEmailData = {
+  sellerName: string;
+  buyerName: string;
+  buyerEmail: string;
+  buyerPhone?: string;
+  listingTitle: string;
+  listingPrice: number;
+  inquiryType: "reserve" | "contact";
+  message?: string;
+  pickupLocationName?: string;
+};
+
+/** Notify seller of reserve / ask-about-this inquiry (no in-app payment). */
+export async function sendListingInquiryEmail(
+  to: string,
+  data: ListingInquiryEmailData
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const isReserve = data.inquiryType === "reserve";
+    const subject = isReserve
+      ? `Reservation: ${data.listingTitle}`
+      : `Inquiry: ${data.listingTitle}`;
+
+    const lines = [
+      `Hi ${data.sellerName},`,
+      "",
+      isReserve
+        ? `A buyer reserved "${data.listingTitle}" ($${data.listingPrice.toFixed(2)}).`
+        : `A buyer asked about "${data.listingTitle}" ($${data.listingPrice.toFixed(2)}).`,
+      "",
+      `Buyer: ${data.buyerName}`,
+      `Email: ${data.buyerEmail}`,
+    ];
+    if (data.buyerPhone) lines.push(`Phone: ${data.buyerPhone}`);
+    if (data.pickupLocationName && isReserve) {
+      lines.push("", `Pickup / pay at: ${data.pickupLocationName}`);
+    }
+    if (data.message) {
+      lines.push("", "Message:", data.message);
+    }
+    lines.push("", "— ThriftShopper");
+
+    const text = lines.join("\n");
+    const html = lines.map((l) => `<p>${l || "&nbsp;"}</p>`).join("");
+
+    const { error } = await resend.emails.send({
+      from: FROM_EMAIL_MESSAGES,
+      to,
+      replyTo: data.buyerEmail,
+      subject,
+      html,
+      text,
+    });
+
+    if (error) {
+      console.error("Error sending listing inquiry email:", error);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true };
+  } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : "Unknown error";
+    console.error("Error sending listing inquiry email:", err);
+    return { success: false, error: errorMessage };
+  }
+}
+

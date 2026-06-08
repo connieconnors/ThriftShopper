@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { 
   Listing, 
-  getSellerDisplayName, 
   getSellerLocation, 
   getSellerAvatar,
   hasSellerTSBadge,
@@ -37,12 +36,26 @@ import { parseListingFrom, resolveListingBack } from "../../../lib/listingNaviga
 import { trackBuyerEvent } from "../../../lib/buyerEvents";
 import { buildEventPayload } from "../../../lib/buyerEventContext";
 import { MoreLikeThis } from "../../../components/MoreLikeThis";
+import {
+  type SellerActionType,
+  primaryCtaLabel,
+  listingActionContext,
+  pickupConfirmationMessage,
+  contactConfirmationMessage,
+  isPickupAction,
+  resolvePublicSellerName,
+  pickupModalTitle,
+  pickupSubmitLabel,
+} from "../../../lib/sellerActionType";
+import { supabase } from "../../../lib/supabaseClient";
 
 const CHROME_GLASS = "rgba(22, 25, 58, 0.48)";
 const CHROME_GLASS_BORDER = "rgba(237, 233, 225, 0.25)";
 
 interface ProductDetailsProps {
   listing: Listing;
+  sellerActionType: SellerActionType;
+  pickupLabel?: string | null;
 }
 
 // Map old condition values to new ones for graceful migration
@@ -59,7 +72,11 @@ function mapConditionValue(condition: string): string {
   return oldToNew[condition] || condition;
 }
 
-export default function ProductDetails({ listing }: ProductDetailsProps) {
+export default function ProductDetails({
+  listing,
+  sellerActionType,
+  pickupLabel,
+}: ProductDetailsProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const listingFrom = parseListingFrom(searchParams.get("from"));
@@ -76,6 +93,12 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
   const [contactSending, setContactSending] = useState(false);
   const [contactSuccess, setContactSuccess] = useState(false);
   const [contactError, setContactError] = useState<string | null>(null);
+  const [inquiryOpen, setInquiryOpen] = useState(false);
+  const [inquiryMessage, setInquiryMessage] = useState("");
+  const [inquiryPhone, setInquiryPhone] = useState("");
+  const [inquirySending, setInquirySending] = useState(false);
+  const [inquirySuccess, setInquirySuccess] = useState<string | null>(null);
+  const [inquiryError, setInquiryError] = useState<string | null>(null);
 
   const listingViewLogged = useRef(false);
 
@@ -176,8 +199,8 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
     }
   }, [listing, listing.title, listing.price, listingFrom, user]);
 
-  // Get seller info
-  const sellerName = getSellerDisplayName(listing);
+  // Get seller info (store pickup → shop name, not login/email)
+  const sellerName = resolvePublicSellerName(listing, sellerActionType);
   const sellerLocation = getSellerLocation(listing);
   const sellerAvatar = getSellerAvatar(listing);
   const sellerRating = getSellerRating(listing);
@@ -205,6 +228,100 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
     ...(listing.intents || []),
   ].filter(Boolean);
   const isSold = listing.status === "sold";
+
+  const ctaLabel = primaryCtaLabel(sellerActionType);
+  const actionContext = listingActionContext(sellerActionType, {
+    storeName: sellerName,
+    pickupLabel,
+    locationCity: listing.profiles?.location_city,
+  });
+
+  const handleSubmitInquiry = async () => {
+    if (!user) return;
+    if (sellerActionType === "contact_seller" && !inquiryMessage.trim()) {
+      setInquiryError("Please add a short message for the seller.");
+      return;
+    }
+
+    setInquiryError(null);
+    setInquirySending(true);
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) {
+        setInquiryError("Please sign in again.");
+        return;
+      }
+
+      const inquiryType = isPickupAction(sellerActionType) ? "reserve" : "contact";
+
+      const res = await fetch("/api/listings/inquiry", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          listingId: listing.id,
+          inquiryType,
+          message: inquiryMessage.trim() || undefined,
+          buyerPhone: inquiryPhone.trim() || undefined,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setInquiryError(data.error || "Something went wrong. Please try again.");
+        return;
+      }
+      const storeName =
+        pickupLabel?.trim() || sellerName || "the seller";
+      setInquirySuccess(
+        data.confirmationMessage ||
+          (inquiryType === "reserve"
+            ? pickupConfirmationMessage(sellerActionType, storeName)
+            : contactConfirmationMessage())
+      );
+      setInquiryMessage("");
+      setInquiryPhone("");
+      trackBuyerEvent(
+        inquiryType === "reserve" ? "reserve_listing" : "contact_seller",
+        {
+          listingId: listing.id,
+          payload: buildEventPayload({
+            surface: "listing_detail",
+            listing,
+            extra: { seller_action_type: sellerActionType, from: listingFrom },
+          }),
+        }
+      );
+    } catch {
+      setInquiryError("Something went wrong. Please try again.");
+    } finally {
+      setInquirySending(false);
+    }
+  };
+
+  const handlePrimaryCta = () => {
+    if (!user) {
+      const redirect =
+        sellerActionType === "stripe_checkout"
+          ? `/checkout/${listing.id}`
+          : `/listing/${listing.id}`;
+      router.push(`/login?redirect=${encodeURIComponent(redirect)}`);
+      return;
+    }
+    if (sellerActionType === "stripe_checkout") {
+      router.push(`/checkout/${listing.id}`);
+      return;
+    }
+    setInquirySuccess(null);
+    setInquiryError(null);
+    setInquiryMessage("");
+    setInquiryPhone("");
+    setInquiryOpen(true);
+  };
 
   const handleSendMessage = async () => {
     const trimmed = contactMessage.trim();
@@ -378,6 +495,18 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
           <p className="text-lg font-semibold text-gray-900 font-system">
             ${listing.price}
           </p>
+          {actionContext && !isSold && (
+            <div className="mt-2 rounded-lg border border-gray-200 bg-white/60 px-3 py-2">
+              <p className="text-sm font-medium text-gray-900 font-system">
+                {actionContext.headline}
+              </p>
+              {actionContext.subline && (
+                <p className="text-xs text-gray-600 mt-0.5 font-system">
+                  {actionContext.subline}
+                </p>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Shipping Info: listing override or seller default (JSON → generated text, else plain) */}
@@ -545,8 +674,8 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
               </div>
             </>
           )}
-          {/* Contact Seller - subtle link-style button */}
-          {!isSold && (
+          {/* Contact Seller - subtle link (hidden when primary CTA is Ask About This) */}
+          {!isSold && sellerActionType !== "contact_seller" && (
             <button
               type="button"
               onClick={() => {
@@ -581,29 +710,21 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
             surface="listing_detail"
           />
 
-          {/* Center: Buy Now Button */}
+          {/* Center: Primary CTA */}
           {isSold ? (
             <div className="flex-1">
               <JustSoldBanner />
             </div>
           ) : (
-            <button 
-              onClick={() => {
-                if (!user) {
-                  router.push(
-                    `/login?redirect=${encodeURIComponent(`/checkout/${listing.id}`)}`
-                  );
-                  return;
-                }
-                router.push(`/checkout/${listing.id}`);
-              }}
+            <button
+              onClick={handlePrimaryCta}
               className="flex-1 h-14 font-bold text-lg rounded-full transition-colors shadow-md"
               style={{
                 backgroundColor: "#16193a",
                 color: "#ffffff",
               }}
             >
-              Buy Now
+              {ctaLabel}
             </button>
           )}
 
@@ -712,6 +833,105 @@ export default function ProductDetails({ listing }: ProductDetailsProps) {
                   }}
                 >
                   {contactSending ? "Sending…" : "Send message"}
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      </TSModal>
+
+      {/* Local / store pickup or contact seller */}
+      <TSModal
+        isOpen={inquiryOpen}
+        onClose={() => {
+          setInquiryOpen(false);
+          setInquiryError(null);
+          setInquirySuccess(null);
+          setInquiryMessage("");
+          setInquiryPhone("");
+        }}
+        title={
+          inquirySuccess
+            ? "Thanks!"
+            : pickupModalTitle(sellerActionType)
+        }
+      >
+        <div className="space-y-4">
+          {inquirySuccess ? (
+            <div className="space-y-2">
+              {inquirySuccess.split("\n\n").map((paragraph) => (
+                <p key={paragraph} className="text-sm text-white/90 leading-relaxed">
+                  {paragraph}
+                </p>
+              ))}
+            </div>
+          ) : (
+            <>
+              <p className="text-xs text-white/70">
+                {sellerActionType === "store_pickup"
+                  ? pickupLabel
+                    ? `No payment in the app. Visit ${pickupLabel} when you're ready to buy.`
+                    : "No payment in the app. Visit the store when you're ready to buy."
+                  : sellerActionType === "local_pickup"
+                    ? "No payment in the app. The seller will follow up to arrange pickup."
+                    : "Send a message to the seller. No payment happens in the app."}
+              </p>
+              {sellerActionType === "contact_seller" && (
+                <textarea
+                  value={inquiryMessage}
+                  onChange={(e) => setInquiryMessage(e.target.value)}
+                  placeholder="What would you like to know?"
+                  rows={4}
+                  className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/50 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[rgba(197,160,40,0.5)]"
+                  disabled={inquirySending}
+                />
+              )}
+              {isPickupAction(sellerActionType) && (
+                <>
+                  <input
+                    type="tel"
+                    value={inquiryPhone}
+                    onChange={(e) => setInquiryPhone(e.target.value)}
+                    placeholder="Phone (optional)"
+                    className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/50 text-sm focus:outline-none focus:ring-2 focus:ring-[rgba(197,160,40,0.5)]"
+                    disabled={inquirySending}
+                  />
+                  <textarea
+                    value={inquiryMessage}
+                    onChange={(e) => setInquiryMessage(e.target.value)}
+                    placeholder="Note for seller (optional)"
+                    rows={2}
+                    className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/50 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[rgba(197,160,40,0.5)]"
+                    disabled={inquirySending}
+                  />
+                </>
+              )}
+              {inquiryError && (
+                <p className="text-xs text-red-300">{inquiryError}</p>
+              )}
+              <div className="flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setInquiryOpen(false)}
+                  className="px-4 py-2 text-sm font-medium text-white/80 hover:text-white transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSubmitInquiry}
+                  disabled={inquirySending}
+                  className="px-4 py-2 text-sm font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{
+                    backgroundColor: "var(--gold-accent)",
+                    color: "var(--ink-primary)",
+                  }}
+                >
+                  {inquirySending
+                    ? "Sending…"
+                    : isPickupAction(sellerActionType)
+                      ? pickupSubmitLabel(sellerActionType)
+                      : "Contact Seller"}
                 </button>
               </div>
             </>

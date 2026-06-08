@@ -10,6 +10,7 @@ import {
   serializeShippingPreferences,
   BUYER_SHIPPING_UNAVAILABLE_MESSAGE,
 } from "../../../lib/shippingPreferences";
+import { resolveSellerActionType } from "../../../lib/sellerActionType";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2025-11-17.clover",
@@ -45,6 +46,25 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: "This item is no longer available" },
         { status: 400 }
+      );
+    }
+
+    const { data: sellerPaymentProfile } = await supabase
+      .from("profiles")
+      .select(
+        "seller_action_type, payment_mode, payment_pickup_label, stripe_account_id, stripe_onboarding_status"
+      )
+      .eq("user_id", listing.seller_id)
+      .maybeSingle();
+
+    const sellerActionType = resolveSellerActionType(sellerPaymentProfile);
+    if (sellerActionType !== "stripe_checkout") {
+      return NextResponse.json(
+        {
+          error: "This item is not available for in-app checkout.",
+          code: "CHECKOUT_NOT_AVAILABLE",
+        },
+        { status: 409 }
       );
     }
 

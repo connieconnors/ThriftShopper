@@ -15,6 +15,7 @@ import {
   parseShippingPreferences,
   validateListingShippingPreferences,
 } from "@/lib/shippingPreferences";
+import { type SellerActionType, resolveSellerActionType, sellerSettingsActionLabel } from "@/lib/sellerActionType";
 import { useAppShell } from "@/hooks/useAppShell";
 
 interface SellerProfile {
@@ -27,6 +28,8 @@ interface SellerProfile {
   email: string;
   phone: string;
   shippingPreferences: ShippingPreferences;
+  sellerActionType: SellerActionType;
+  paymentPickupLabel: string;
 }
 
 const US_STATES = [
@@ -56,6 +59,8 @@ export default function SellerSettingsPage() {
     email: "",
     phone: "",
     shippingPreferences: DEFAULT_SHIPPING_PREFERENCES,
+    sellerActionType: "stripe_checkout",
+    paymentPickupLabel: "",
   });
 
   // Redirect if not logged in
@@ -97,6 +102,8 @@ export default function SellerSettingsPage() {
           email: data.email || user.email || "",
           phone: data.phone_main || data.phone || "",
           shippingPreferences: parseShippingPreferences(data.shipping_info) ?? DEFAULT_SHIPPING_PREFERENCES,
+          sellerActionType: resolveSellerActionType(data),
+          paymentPickupLabel: data.payment_pickup_label || "",
         });
       } else {
         // No profile yet, pre-fill email
@@ -142,6 +149,16 @@ export default function SellerSettingsPage() {
           email: formData.email,
           phone_main: formData.phone || null,
           shipping_info: serializeShippingPreferences(formData.shippingPreferences),
+          seller_action_type: formData.sellerActionType,
+          payment_mode:
+            formData.sellerActionType === "local_pickup" ||
+            formData.sellerActionType === "store_pickup"
+              ? "reserve_in_store"
+              : formData.sellerActionType,
+          payment_pickup_label:
+            formData.sellerActionType === "store_pickup"
+              ? formData.paymentPickupLabel.trim() || formData.storeName.trim() || null
+              : null,
           is_seller: true,
         }, {
           onConflict: "user_id",
@@ -342,6 +359,45 @@ export default function SellerSettingsPage() {
                 </p>
               </div>
             </div>
+          </div>
+
+          {/* Seller action type (local stores / Apple-safe) */}
+          <div>
+            <label className="block mb-2 font-medium" style={{ color: "#16193a" }}>
+              How buyers get this item
+            </label>
+            <p className="text-xs text-gray-500 mb-3">
+              Buy Online for Stripe. Local or store pickup for in-person sales. Contact Seller for questions-first items.
+            </p>
+            <select
+              value={formData.sellerActionType}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  sellerActionType: e.target.value as SellerActionType,
+                }))
+              }
+              className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#16193a] outline-none transition-colors mb-3"
+            >
+              <option value="stripe_checkout">{sellerSettingsActionLabel("stripe_checkout")}</option>
+              <option value="local_pickup">{sellerSettingsActionLabel("local_pickup")}</option>
+              <option value="store_pickup">{sellerSettingsActionLabel("store_pickup")}</option>
+              <option value="contact_seller">{sellerSettingsActionLabel("contact_seller")}</option>
+            </select>
+            {formData.sellerActionType === "store_pickup" && (
+              <input
+                type="text"
+                value={formData.paymentPickupLabel}
+                onChange={(e) => updateField("paymentPickupLabel", e.target.value)}
+                className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-[#16193a] outline-none transition-colors"
+                placeholder="Store name (e.g. Wilson's Dry Dock)"
+              />
+            )}
+            {formData.sellerActionType === "local_pickup" && (
+              <p className="text-xs text-gray-500">
+                For home sellers — buyers coordinate pickup using your city on your profile.
+              </p>
+            )}
           </div>
 
           {/* Shipping */}

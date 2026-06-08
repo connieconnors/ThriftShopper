@@ -21,6 +21,7 @@ export const BUYER_EVENT_TYPES = [
   // Tier B — funnel + intent
   'share',
   'contact_seller',
+  'reserve_listing',
   'checkout_start',
   'clear_search',
   'clear_mood',

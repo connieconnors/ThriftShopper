@@ -45,6 +45,11 @@ export type Listing = {
     gives_back_name?: string | null;
     gives_back_pct?: number | null;
     is_non_profit_org?: boolean | null;
+    payment_mode?: string | null;
+    seller_action_type?: string | null;
+    payment_pickup_label?: string | null;
+    stripe_account_id?: string | null;
+    stripe_onboarding_status?: string | null;
   } | null;
 };
 
