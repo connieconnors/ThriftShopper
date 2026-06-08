@@ -9,11 +9,13 @@ import { TSLogo } from "@/components/TSLogo"
 import TSModal from "@/components/TSModal"
 import SupportModal from "@/components/SupportModal"
 import { SETTINGS_LEGAL_LINKS, legalHref } from "@/lib/legalNavigation"
+import { useAppShell } from "@/hooks/useAppShell"
 import { ArrowLeft, User, ExternalLink, LogOut, Scale, Loader2, HelpCircle, Store } from "lucide-react"
 
 export default function SettingsPage() {
   const router = useRouter()
   const { user, isLoading: authLoading, signOut } = useAuth()
+  useAppShell()
   const avatarInputRef = useRef<HTMLInputElement>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)

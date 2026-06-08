@@ -12,6 +12,7 @@ import { Loader2, Plus, ArrowLeft, Settings, MessageSquare, ChevronDown, Chevron
 import { GlintIcon } from '../../components/GlintIcon';
 import Link from 'next/link';
 import SupportModal from '@/components/SupportModal';
+import { useAppShell } from '@/hooks/useAppShell';
 import {
   listingNeedsShippingAmountFix,
   SELLER_LISTING_NEEDS_SHIPPING_MESSAGE,
@@ -337,6 +338,7 @@ export default function SellerPageClient() {
   const { user, isLoading: authLoading, signOut } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
+  useAppShell();
   const [listings, setListings] = useState<Listing[]>([]);
   const [paidOrders, setPaidOrders] = useState<any[]>([]);
   const [allOrders, setAllOrders] = useState<any[]>([]);

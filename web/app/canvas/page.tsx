@@ -23,6 +23,7 @@ import {
   Loader2,
 } from "lucide-react";
 import SupportModal from "@/components/SupportModal";
+import { useAppShell } from "@/hooks/useAppShell";
 import { Listing, getPrimaryImage } from "../../lib/types";
 import {
   getRecentlyViewed,
@@ -44,6 +45,7 @@ interface Profile {
 export default function BuyerCanvasPage() {
   const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
+  useAppShell();
   const [mounted, setMounted] = useState(false);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [favorites, setFavorites] = useState<Listing[]>([]);

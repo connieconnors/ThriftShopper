@@ -116,7 +116,7 @@ export default function RootLayout({
       <body className="antialiased">
         <script
           dangerouslySetInnerHTML={{
-            __html: `document.documentElement.style.backgroundColor='#ede9e1';document.body.style.backgroundColor='#ede9e1';`,
+            __html: `(function(){var c='#ede9e1';document.documentElement.style.backgroundColor=c;document.body.style.backgroundColor=c;document.querySelectorAll('meta[name="theme-color"]').forEach(function(m){m.setAttribute('content',c);});})();`,
           }}
         />
 
