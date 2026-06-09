@@ -1975,7 +1975,7 @@ export default function SellerPageClient() {
                 </div>
               ) : (
                 <div className="bg-white rounded-lg border border-gray-200">
-                  <div className="p-2">{completedOrders.map(renderSoldOrderCard)}</div>
+                  <div className="p-2">{completedOrders.map((order) => renderSoldOrderCard(order))}</div>
                 </div>
               )}
 
