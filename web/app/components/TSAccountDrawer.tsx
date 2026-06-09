@@ -165,7 +165,7 @@ export default function TSAccountDrawer({ isOpen, onClose }: TSAccountDrawerProp
                   className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-50 transition-colors"
                 >
                   <HelpCircle className="w-5 h-5 text-gray-600" />
-                  <span>Help</span>
+                  <span>Help Center</span>
                 </Link>
               </div>
             </div>

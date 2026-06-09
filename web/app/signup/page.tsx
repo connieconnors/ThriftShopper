@@ -267,7 +267,7 @@ function SignUpForm() {
               className={`font-semibold ${authLinkClass}`}
               onClick={(e) => e.stopPropagation()}
             >
-              Terms of Service
+              Terms of Use
             </Link>
             {" "}and{" "}
             <Link

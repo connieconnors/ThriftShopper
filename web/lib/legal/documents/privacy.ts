@@ -5,7 +5,7 @@ export const privacyDocument: LegalDocumentMeta = {
   effectiveDate: "June 1, 2026",
   lastUpdated: "June 1, 2026",
   intro: [
-    'ThriftShopper, Inc. ("ThriftShopper," "we," "us," or "our") operates an online marketplace connecting buyers and sellers of secondhand, vintage, collectible, and unique items.',
+    'ThriftShopper Inc. ("ThriftShopper," "we," "us," or "our") operates an online marketplace connecting buyers and sellers of secondhand, vintage, collectible, and unique items.',
     "We collect information necessary to operate and improve ThriftShopper, facilitate transactions, and maintain marketplace safety. We do not sell your personal information.",
   ],
   blocks: [
@@ -81,7 +81,7 @@ export const privacyDocument: LegalDocumentMeta = {
     { type: "h2", text: "13. Contact Us", id: "contact" },
     {
       type: "p",
-      text: "Questions about this Privacy Policy may be directed to ThriftShopper, Inc. at support@thriftshopper.com.",
+      text: "Questions about this Privacy Policy may be directed to ThriftShopper Inc. at support@thriftshopper.com.",
     },
   ],
   canonicalUrl: "https://thriftshopper.com/privacy",

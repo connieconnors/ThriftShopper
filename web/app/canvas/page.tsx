@@ -916,7 +916,7 @@ export default function BuyerCanvasPage() {
             className="flex flex-col items-center gap-0.5 text-white/70 hover:text-white transition-colors"
           >
             <HelpCircle className="h-4 w-4" />
-            <span className="text-[10px]">Support</span>
+            <span className="text-[10px]">Help Center</span>
           </button>
           <Link
             href="/settings"

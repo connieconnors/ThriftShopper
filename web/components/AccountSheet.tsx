@@ -152,7 +152,7 @@ const AccountSheet: React.FC<AccountSheetProps> = ({ isOpen, onClose, onOpenSupp
                       }}
                       className="w-full text-left px-5 py-3.5 text-[15px] font-medium font-system text-[var(--ink-primary)] hover:bg-gray-50 transition-colors"
                     >
-                      Support
+                      Help Center
                     </button>
                   )}
                   <button
@@ -204,7 +204,7 @@ const AccountSheet: React.FC<AccountSheetProps> = ({ isOpen, onClose, onOpenSupp
                       }}
                       className="w-full text-left px-5 py-3.5 text-[15px] font-medium font-system text-[var(--ink-primary)] hover:bg-gray-50 transition-colors"
                     >
-                      Support
+                      Help Center
                     </button>
                   )}
                   <button
@@ -273,7 +273,7 @@ const AccountSheet: React.FC<AccountSheetProps> = ({ isOpen, onClose, onOpenSupp
                   }}
                   className={`w-full text-left px-1 py-1 text-[14px] ${authLinkClass}`}
                 >
-                  Support
+                  Help Center
                 </button>
               )}
             </div>

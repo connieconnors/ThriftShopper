@@ -6,7 +6,7 @@ export const sellerGuidelinesDocument: LegalDocumentMeta = {
   intro: [
     "Welcome to selling on ThriftShopper — a curated marketplace built around discovery for secondhand, vintage, collectible, and one-of-a-kind items.",
     "This page explains what belongs on ThriftShopper, what doesn't, and how to create a successful experience for buyers. It supplements our Terms of Use and may be updated periodically.",
-    "For friendly best practices, see the Seller Success Guide in Help Center (coming soon). This is the legal and enforcement policy for sellers.",
+    "For friendly best practices, see Seller Guidelines in the Help Center. This page is the legal and enforcement policy for sellers.",
   ],
   blocks: [
     { type: "h2", text: "1. Our Marketplace Philosophy", id: "philosophy" },

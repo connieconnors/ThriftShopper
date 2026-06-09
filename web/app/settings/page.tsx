@@ -463,7 +463,7 @@ export default function SettingsPage() {
           >
             <span className="flex items-center gap-2">
               <HelpCircle className="h-4 w-4" style={{ color: "#16193a" }} />
-              Need help? Open Support
+              Need help? Open Help Center
             </span>
             <ExternalLink className="h-3 w-3 text-gray-400" />
           </button>

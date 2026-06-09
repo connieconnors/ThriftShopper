@@ -24,7 +24,7 @@ export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
       title={
         <div className="flex items-center gap-2">
           <TSAppIcon size={22} className="rounded-md" />
-          <span>Support</span>
+          <span>Help Center</span>
         </div>
       }
     >
@@ -94,12 +94,11 @@ export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
                   </p>
                   <p className="text-white/90 leading-relaxed">
                     <a
-                      href="https://thriftshopper.com/support"
-                      target="_blank"
-                      rel="noopener noreferrer"
+                      href="/help"
+                      onClick={onClose}
                       className="underline hover:text-[#EFBF05]"
                     >
-                      thriftshopper.com/support
+                      Help Center
                     </a>
                   </p>
                 </div>

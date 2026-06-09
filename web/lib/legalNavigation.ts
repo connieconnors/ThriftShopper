@@ -51,7 +51,7 @@ export function resolveLegalBack(
 
 /** Shown in Settings → Legal (keep short — compliance docs linked from policies) */
 export const SETTINGS_LEGAL_LINKS = [
-  { href: "/terms", label: "Terms of Service" },
+  { href: "/terms", label: "Terms of Use" },
   { href: "/privacy", label: "Privacy Policy" },
   { href: "/returns", label: "Buyer Protection & Returns" },
   { href: "/seller-guidelines", label: "Seller Guidelines" },

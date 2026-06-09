@@ -61,7 +61,7 @@ export default function SupportPage() {
 
           <section className="mb-8">
             <p className="text-gray-700 leading-relaxed mb-3">
-              For common questions, please use the in-app Support Center, which includes:
+              For common questions, please use the in-app Help Center, which includes:
             </p>
             <ul className="list-disc list-inside space-y-1 text-gray-700 text-sm pl-1">
               {IN_APP_TOPICS.map((topic) => (
@@ -85,7 +85,7 @@ export default function SupportPage() {
                 href="/terms"
                 className="text-[#16193a] underline hover:opacity-80 transition-opacity"
               >
-                Terms of Service
+                Terms of Use
               </Link>
             </div>
           </section>

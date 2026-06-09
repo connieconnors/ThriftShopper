@@ -25,7 +25,7 @@ function HelpPageInner() {
       <main className="px-4 py-4 max-w-lg mx-auto pb-8">
         <div className="flex items-center gap-2 mb-4">
           <TSAppIcon size={22} className="rounded-md" />
-          <h1 className="text-[15px] font-semibold">Support</h1>
+          <h1 className="text-[15px] font-semibold">Help Center</h1>
         </div>
         <SupportCenterContent initialExpandedTopic={section} />
       </main>
