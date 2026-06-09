@@ -143,6 +143,35 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
 
   const voiceSearchRef = useRef(false);
   const pickedImpressionLoggedRef = useRef(false);
+  const initialUrlProcessedRef = useRef(false);
+
+  // Deep links: /browse?search=… (from Canvas) or /browse?seller=… (from seller drawer)
+  useEffect(() => {
+    if (!mounted || initialUrlProcessedRef.current) return;
+
+    const params = new URLSearchParams(window.location.search);
+    const searchQuery = params.get("search")?.trim();
+    const sellerId = params.get("seller")?.trim();
+
+    if (!searchQuery && !sellerId) return;
+    if (!initialListings || initialListings.length === 0) return;
+
+    initialUrlProcessedRef.current = true;
+    window.history.replaceState(null, "", "/browse");
+
+    if (searchQuery) {
+      void handleSearch(searchQuery);
+      return;
+    }
+
+    const sellerListings = initialListings.filter(
+      (listing) => listing.seller_id === sellerId
+    );
+    setSearchResults(sellerListings);
+    setLastSearchQuery("This seller");
+    setSearchInterpretationTerms([]);
+    setCurrentIndex(0);
+  }, [mounted, initialListings]);
 
   // Reset feed state when the incoming dataset changes
   useEffect(() => {

@@ -183,7 +183,7 @@ export default function SellerDrawer({
 
           {/* View All Button */}
           <Link
-            href={`/seller/${sellerId}`}
+            href={`/browse?seller=${sellerId}`}
             onClick={onClose}
             className="mt-6 w-full py-3.5 bg-white/10 hover:bg-white/15 text-white font-medium rounded-full text-center block transition-colors"
           >
