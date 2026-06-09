@@ -358,6 +358,7 @@ export default function SellerPageClient() {
   });
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [relistingId, setRelistingId] = useState<string | null>(null);
+  const [orderActionId, setOrderActionId] = useState<string | number | null>(null);
   const [showMenuId, setShowMenuId] = useState<string | null>(null);
   const [profile, setProfile] = useState<any>(null);
   const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
@@ -1085,7 +1086,43 @@ export default function SellerPageClient() {
     completedOrders: allOrders.filter((order) => isCompletedSellerOrder(order.status)),
   }), [allOrders]);
 
-  const renderSoldOrderCard = (order: any) => {
+  const handleOrderStatusUpdate = async (
+    orderId: string | number,
+    status: "shipped" | "completed" | "delivered"
+  ) => {
+    setOrderActionId(orderId);
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const response = await fetch("/api/orders/update-status", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(session?.access_token
+            ? { Authorization: `Bearer ${session.access_token}` }
+            : {}),
+        },
+        body: JSON.stringify({
+          orderId,
+          status,
+          trackingNumber: null,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok || data.error) {
+        alert(data.error || "We couldn't update this order. Please try again.");
+        return;
+      }
+      await fetchSellerData();
+    } catch {
+      alert("We couldn't update this order. Please try again.");
+    } finally {
+      setOrderActionId(null);
+    }
+  };
+
+  const renderSoldOrderCard = (order: any, options?: { showActions?: boolean }) => {
     const listing = order.listings || null;
     if (!listing) return null;
 
@@ -1195,6 +1232,63 @@ export default function SellerPageClient() {
             <div className="text-[11px] text-gray-500">
               <span>{subtitleOverride}</span>
             </div>
+
+            {options?.showActions && isOpenSellerOrder(orderStatus) && (
+              <div className="mt-2 pt-2 border-t border-gray-200 flex flex-wrap gap-2">
+                {orderStatus === "paid" && (
+                  <>
+                    <button
+                      type="button"
+                      disabled={orderActionId === order.id}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        void handleOrderStatusUpdate(order.id, "shipped");
+                      }}
+                      className="text-[11px] px-2.5 py-1.5 rounded-full font-medium text-white disabled:opacity-50"
+                      style={{ backgroundColor: "#16193a" }}
+                    >
+                      {orderActionId === order.id ? "Saving…" : "Mark shipped"}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={orderActionId === order.id}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        void handleOrderStatusUpdate(order.id, "completed");
+                      }}
+                      className="text-[11px] px-2.5 py-1.5 rounded-full font-medium text-white disabled:opacity-50"
+                      style={{ backgroundColor: "#10b981" }}
+                    >
+                      {orderActionId === order.id ? "Saving…" : "Mark complete"}
+                    </button>
+                  </>
+                )}
+                {orderStatus === "shipped" && (
+                  <button
+                    type="button"
+                    disabled={orderActionId === order.id}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      void handleOrderStatusUpdate(order.id, "delivered");
+                    }}
+                    className="text-[11px] px-2.5 py-1.5 rounded-full font-medium text-white disabled:opacity-50"
+                    style={{ backgroundColor: "#10b981" }}
+                  >
+                    {orderActionId === order.id ? "Saving…" : "Mark delivered"}
+                  </button>
+                )}
+                <Link
+                  href={`/orders/${order.id}`}
+                  className="text-[11px] px-2.5 py-1.5 rounded-full font-medium border border-gray-300 text-gray-700 hover:bg-white"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  Details
+                </Link>
+              </div>
+            )}
           </div>
 
           <button
@@ -1863,7 +1957,7 @@ export default function SellerPageClient() {
                 </div>
               ) : (
                 <div className="bg-white rounded-lg border border-gray-200 mb-4">
-                  <div className="p-2">{openOrders.map(renderSoldOrderCard)}</div>
+                  <div className="p-2">{openOrders.map((order) => renderSoldOrderCard(order, { showActions: true }))}</div>
                 </div>
               )}
 

@@ -86,15 +86,17 @@ export default function OrderDetailsPage() {
 
       const { data: orderRow, error: orderError } = await supabase
         .from("orders")
-        .select(
-          "id, listing_id, buyer_id, seller_id, amount, status, payment_intent_id, shipping_name, shipping_address, shipping_city, shipping_state, shipping_zip, shipping_phone, tracking_number, shipped_at, completed_at, created_at, updated_at"
-        )
+        .select("*")
         .eq("id", orderId)
         .maybeSingle();
 
       if (orderError) {
         console.error("Error fetching order:", orderError);
-        setError("Order not found");
+        setError(
+          orderError.code === "PGRST116"
+            ? "Order not found — you may be signed in with a different account than the one used at checkout"
+            : "We couldn't load this order. Please refresh and try again."
+        );
         return;
       }
 
@@ -126,6 +128,8 @@ export default function OrderDetailsPage() {
 
       setOrder({
         ...orderRow,
+        payment_intent_id:
+          orderRow.payment_intent_id ?? orderRow.stripe_payment_intent_id ?? null,
         tracking_number: orderRow.tracking_number ?? null,
         shipped_at: orderRow.shipped_at ?? null,
         completed_at: orderRow.completed_at ?? null,
@@ -253,8 +257,14 @@ export default function OrderDetailsPage() {
             {error || "Order not found"}
           </h1>
           <Link
-            href="/canvas"
-            className="text-sm text-[#16193a] hover:underline"
+            href="/seller"
+            className="text-sm text-[#16193a] hover:underline block mb-2"
+          >
+            Back to Seller Dashboard
+          </Link>
+          <Link
+            href="/canvas?section=purchases"
+            className="text-sm text-gray-500 hover:underline"
           >
             Back to My Canvas
           </Link>
