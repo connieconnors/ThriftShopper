@@ -358,7 +358,7 @@ export default function SellerPageClient() {
   });
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [relistingId, setRelistingId] = useState<string | null>(null);
-  const [orderActionId, setOrderActionId] = useState<string | number | null>(null);
+  const [orderActionId, setOrderActionId] = useState<string | null>(null);
   const [showMenuId, setShowMenuId] = useState<string | null>(null);
   const [profile, setProfile] = useState<any>(null);
   const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
@@ -1090,7 +1090,8 @@ export default function SellerPageClient() {
     orderId: string | number,
     status: "shipped" | "completed" | "delivered"
   ) => {
-    setOrderActionId(orderId);
+    const actionKey = String(orderId);
+    setOrderActionId(actionKey);
     try {
       const {
         data: { session },
@@ -1239,7 +1240,7 @@ export default function SellerPageClient() {
                   <>
                     <button
                       type="button"
-                      disabled={orderActionId === order.id}
+                      disabled={orderActionId === String(order.id)}
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
@@ -1248,11 +1249,11 @@ export default function SellerPageClient() {
                       className="text-[11px] px-2.5 py-1.5 rounded-full font-medium text-white disabled:opacity-50"
                       style={{ backgroundColor: "#16193a" }}
                     >
-                      {orderActionId === order.id ? "Saving…" : "Mark shipped"}
+                      {orderActionId === String(order.id) ? "Saving…" : "Mark shipped"}
                     </button>
                     <button
                       type="button"
-                      disabled={orderActionId === order.id}
+                      disabled={orderActionId === String(order.id)}
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
@@ -1261,14 +1262,14 @@ export default function SellerPageClient() {
                       className="text-[11px] px-2.5 py-1.5 rounded-full font-medium text-white disabled:opacity-50"
                       style={{ backgroundColor: "#10b981" }}
                     >
-                      {orderActionId === order.id ? "Saving…" : "Mark complete"}
+                      {orderActionId === String(order.id) ? "Saving…" : "Mark complete"}
                     </button>
                   </>
                 )}
                 {orderStatus === "shipped" && (
                   <button
                     type="button"
-                    disabled={orderActionId === order.id}
+                    disabled={orderActionId === String(order.id)}
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
@@ -1277,7 +1278,7 @@ export default function SellerPageClient() {
                     className="text-[11px] px-2.5 py-1.5 rounded-full font-medium text-white disabled:opacity-50"
                     style={{ backgroundColor: "#10b981" }}
                   >
-                    {orderActionId === order.id ? "Saving…" : "Mark delivered"}
+                    {orderActionId === String(order.id) ? "Saving…" : "Mark delivered"}
                   </button>
                 )}
                 <Link
