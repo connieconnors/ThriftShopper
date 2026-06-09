@@ -260,7 +260,8 @@ export function shopDefaultActionBannerCopy(
     case "contact_seller":
       return {
         title: "Shop default: Contact Seller",
-        body: `${perItemNote} Pickup and/or shipping — buyers message you to arrange.`,
+        body:
+          "Buyers contact you to arrange pickup, shipping, payment, or ask questions. You can change this setting for individual listings, or update your shop default in Settings.",
       };
     case "stripe_checkout":
       return {

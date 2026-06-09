@@ -14,6 +14,9 @@ export type Listing = {
   staged_image_url: string | null;
   photo_url: string | null;
   photo_url_2: string | null;
+  /** Seller-uploaded detail / angle shots (optional) */
+  additional_image_url?: string | null;
+  additional_image_two_url?: string | null;
   condition: string | null;
   seller_notes: string | null;
   specifications: string | null;
@@ -55,24 +58,28 @@ export type Listing = {
   } | null;
 };
 
-// Helper to get all available images for a listing
-// Order: original_image_url (primary), clean_image_url (secondary), photo_url_2 (third)
+// Helper to get all available images for a listing (buyer-facing carousel)
+// Order: main photo, then seller-added angles — not AI clean/staged variants of the same shot
 export function getListingImages(listing: Listing): string[] {
   const images: string[] = [];
-  
-  // Primary: original_image_url
-  if (listing.original_image_url) images.push(listing.original_image_url);
-  
-  // Secondary: clean_image_url
-  if (listing.clean_image_url && !images.includes(listing.clean_image_url)) {
-    images.push(listing.clean_image_url);
+
+  const pushUnique = (url: string | null | undefined) => {
+    if (url && !images.includes(url)) {
+      images.push(url);
+    }
+  };
+
+  pushUnique(listing.original_image_url);
+  pushUnique(listing.additional_image_url);
+  pushUnique(listing.additional_image_two_url);
+  pushUnique(listing.photo_url_2);
+
+  if (images.length === 0) {
+    pushUnique(listing.clean_image_url);
+    pushUnique(listing.staged_image_url);
+    pushUnique(listing.photo_url);
   }
-  
-  // Third: photo_url_2
-  if (listing.photo_url_2 && !images.includes(listing.photo_url_2)) {
-    images.push(listing.photo_url_2);
-  }
-  
+
   return images;
 }
 

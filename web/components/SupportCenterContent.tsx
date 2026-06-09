@@ -51,7 +51,6 @@ export function SupportCenterContent({
                 <p className="text-white/90 leading-relaxed">
                   Use the Mood Wheel, search across attributes, or try voice search
                 </p>
-                <p className="text-white/90 leading-relaxed">Buy securely with Stripe • Track orders in your Canvas</p>
                 <p className="text-white/90 leading-relaxed">Most sales are final</p>
               </div>
               <div>
@@ -65,10 +64,6 @@ export function SupportCenterContent({
                 <p className="text-white/90 leading-relaxed">
                   Use AI tools to draft listings — edit anything, your voice wins
                 </p>
-                <p className="text-white/90 leading-relaxed">
-                  Get paid via Stripe Connect • Turn on notifications in Settings
-                </p>
-                <p className="text-white/90 leading-relaxed">Read Seller Guidelines before listing</p>
               </div>
               <div>
                 <p className="font-semibold mb-1" style={{ color: "#EFBF05" }}>
@@ -171,13 +166,16 @@ export function SupportCenterContent({
             <div className="pt-3 space-y-4 text-xs">
               <div>
                 <h4 className="text-sm font-semibold mb-2" style={{ color: "#EFBF05" }}>
-                  How Shipping Works
+                  How Shipping & Pickup Work
                 </h4>
                 <ul className="list-disc list-inside text-white/90 leading-relaxed space-y-1 ml-2">
-                  <li>Sellers set their own shipping timelines</li>
-                  <li>You&apos;ll receive tracking info when your item ships</li>
-                  <li>Most items ship within 3-5 business days</li>
-                  <li>Shipping costs are shown at checkout</li>
+                  <li>Each listing includes the seller&apos;s available fulfillment options</li>
+                  <li>Some items can be shipped directly</li>
+                  <li>Some items are pickup only</li>
+                  <li>
+                    Some sellers may ask buyers to contact them to arrange pickup, shipping, or delivery
+                  </li>
+                  <li>Any applicable shipping costs will be shown on the listing</li>
                 </ul>
               </div>
               <div>
