@@ -1,12 +1,34 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "../../../../lib/supabaseClient";
 import { sendItemShippedEmail } from "../../../../lib/emails/sendEmail";
 import { sendPaymentReceivedEmail } from "../../../../lib/emails/sendEmail";
-import { getAppOrigin } from "../../../../lib/authRedirect";
+import { createAuthenticatedSupabaseClient } from "../../../../lib/supabaseServerAuth";
+
+const VALID_STATUSES = ["paid", "shipped", "delivered", "completed", "cancelled"] as const;
+
+const VALID_TRANSITIONS: Record<string, string[]> = {
+  paid: ["shipped", "completed", "cancelled"],
+  shipped: ["delivered", "cancelled"],
+  delivered: [],
+  completed: [],
+  cancelled: [],
+};
 
 export async function POST(request: NextRequest) {
   try {
-    const { orderId, status, trackingNumber } = await request.json();
+    const auth = await createAuthenticatedSupabaseClient(request);
+    if ("error" in auth) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { supabase, userId } = auth;
+    const body = await request.json();
+    const orderId = body?.orderId != null ? String(body.orderId) : "";
+    const status = body?.status as string | undefined;
+    const trackingNumberRaw = body?.trackingNumber;
+    const trackingNumber =
+      typeof trackingNumberRaw === "string" && trackingNumberRaw.trim()
+        ? trackingNumberRaw.trim()
+        : null;
 
     if (!orderId || !status) {
       return NextResponse.json(
@@ -15,64 +37,64 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate status
-    const validStatuses = ['paid', 'shipped', 'delivered', 'cancelled'];
-    if (!validStatuses.includes(status)) {
+    if (!VALID_STATUSES.includes(status as (typeof VALID_STATUSES)[number])) {
       return NextResponse.json(
-        { error: `Invalid status. Must be one of: ${validStatuses.join(', ')}` },
+        { error: `Invalid status. Must be one of: ${VALID_STATUSES.join(", ")}` },
         { status: 400 }
       );
     }
 
-    // Get auth header
-    const authHeader = request.headers.get("authorization");
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      // Try to get from session (client-side calls)
-      // For now, we'll verify the order belongs to the seller via the order lookup
-    }
-
-    // Fetch the order to verify it exists and get seller_id, buyer_id, listing_id, status
-    // Note: tracking_number column doesn't exist yet, so we don't select it
     const { data: order, error: orderError } = await supabase
       .from("orders")
       .select("id, seller_id, buyer_id, listing_id, amount, status")
       .eq("id", orderId)
-      .single();
+      .maybeSingle();
 
-    if (orderError || !order) {
+    if (orderError) {
+      console.error("Error fetching order:", orderError);
       return NextResponse.json(
-        { error: "Order not found" },
+        { error: "We couldn't update this order. Please try again." },
+        { status: 500 }
+      );
+    }
+
+    if (!order) {
+      return NextResponse.json(
+        { error: "We couldn't find this order. Please refresh and try again." },
         { status: 404 }
       );
     }
 
-    // Validate status transition
-    const currentStatus = order.status;
-    const validTransitions: Record<string, string[]> = {
-      'paid': ['shipped', 'cancelled'],
-      'shipped': ['delivered', 'cancelled'],
-      'delivered': [], // Final state
-      'cancelled': [], // Final state
-    };
+    if (order.seller_id !== userId) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
 
-    if (!validTransitions[currentStatus]?.includes(status)) {
+    const currentStatus = String(order.status ?? "paid");
+    if (!VALID_TRANSITIONS[currentStatus]?.includes(status)) {
       return NextResponse.json(
         { error: `Cannot change status from ${currentStatus} to ${status}` },
         { status: 400 }
       );
     }
 
-    // Update order
-    const updateData: any = {
+    const now = new Date().toISOString();
+    const updateData: Record<string, unknown> = {
       status,
-      updated_at: new Date().toISOString(),
+      updated_at: now,
     };
 
-    // Note: tracking_number column doesn't exist in orders table yet
-    // TODO: Add tracking_number column to orders table if needed
-    // if (status === 'shipped' && trackingNumber) {
-    //   updateData.tracking_number = trackingNumber.trim();
-    // }
+    if (status === "shipped") {
+      updateData.shipped_at = now;
+      updateData.tracking_number = trackingNumber;
+    }
+
+    if (status === "completed") {
+      updateData.completed_at = now;
+    }
+
+    if (status === "delivered") {
+      updateData.completed_at = now;
+    }
 
     const { data: updatedOrder, error: updateError } = await supabase
       .from("orders")
@@ -84,24 +106,19 @@ export async function POST(request: NextRequest) {
     if (updateError) {
       console.error("Error updating order:", updateError);
       return NextResponse.json(
-        { error: "Failed to update order" },
+        { error: "We couldn't update this order. Please try again." },
         { status: 500 }
       );
     }
 
-    // Send emails based on status change (don't block on errors)
-    if (status === 'shipped' || status === 'delivered') {
-      const baseUrl = getAppOrigin();
-
-      // Fetch listing details
+    if (status === "shipped" || status === "delivered") {
       const { data: listing } = await supabase
         .from("listings")
         .select("title")
         .eq("id", order.listing_id)
         .maybeSingle();
 
-      // Send "Item Shipped" email to buyer
-      if (status === 'shipped' && order.buyer_id) {
+      if (status === "shipped" && order.buyer_id) {
         const { data: buyerProfile } = await supabase
           .from("profiles")
           .select("email, display_name")
@@ -115,29 +132,26 @@ export async function POST(request: NextRequest) {
           .maybeSingle();
 
         if (buyerProfile?.email) {
-          // Note: tracking_number column doesn't exist yet
-          // Generate tracking URL (basic - can be enhanced with carrier detection)
-          const trackingUrl = trackingNumber 
+          const trackingUrl = trackingNumber
             ? `https://tools.usps.com/go/TrackConfirmAction?qtc_tLabels1=${trackingNumber}`
             : undefined;
 
           sendItemShippedEmail(buyerProfile.email, {
-            buyerName: buyerProfile.display_name || 'there',
-            orderId: order.id,
-            itemName: listing?.title || 'your item',
-            trackingNumber: trackingNumber || '',
-            carrierName: undefined, // Can be enhanced to detect carrier from tracking number
+            buyerName: buyerProfile.display_name || "there",
+            orderId: String(order.id),
+            itemName: listing?.title || "your item",
+            trackingNumber: trackingNumber || "",
+            carrierName: undefined,
             trackingUrl,
-            estimatedDelivery: undefined, // Can be calculated or provided by seller
-            sellerName: sellerProfile?.display_name || 'the seller',
+            estimatedDelivery: undefined,
+            sellerName: sellerProfile?.display_name || "the seller",
           }).catch((err) => {
-            console.error('Error sending item shipped email:', err);
+            console.error("Error sending item shipped email:", err);
           });
         }
       }
 
-      // Send "Payment Received" email to seller when delivered
-      if (status === 'delivered' && order.seller_id) {
+      if (status === "delivered" && order.seller_id) {
         const { data: sellerProfile } = await supabase
           .from("profiles")
           .select("email, display_name")
@@ -146,18 +160,18 @@ export async function POST(request: NextRequest) {
 
         if (sellerProfile?.email) {
           sendPaymentReceivedEmail(sellerProfile.email, {
-            sellerName: sellerProfile.display_name || 'there',
-            itemName: listing?.title || 'your item',
-            orderId: order.id,
+            sellerName: sellerProfile.display_name || "there",
+            itemName: listing?.title || "your item",
+            orderId: String(order.id),
             amount: order.amount || 0,
-            paymentDate: new Date().toLocaleDateString('en-US', { 
-              year: 'numeric', 
-              month: 'long', 
-              day: 'numeric' 
+            paymentDate: new Date().toLocaleDateString("en-US", {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
             }),
-            stripeDashboardUrl: 'https://dashboard.stripe.com/payments', // Link to Stripe dashboard
+            stripeDashboardUrl: "https://dashboard.stripe.com/payments",
           }).catch((err) => {
-            console.error('Error sending payment received email:', err);
+            console.error("Error sending payment received email:", err);
           });
         }
       }
@@ -169,11 +183,9 @@ export async function POST(request: NextRequest) {
     });
   } catch (error: unknown) {
     console.error("Error updating order status:", error);
-    const message = error instanceof Error ? error.message : "Failed to update order";
     return NextResponse.json(
-      { error: message },
+      { error: "We couldn't update this order. Please try again." },
       { status: 500 }
     );
   }
 }
-

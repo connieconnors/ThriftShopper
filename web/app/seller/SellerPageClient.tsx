@@ -18,6 +18,11 @@ import {
   SELLER_LISTING_NEEDS_SHIPPING_MESSAGE,
 } from '@/lib/shippingPreferences';
 import { resolveSellerActionType, shopDefaultActionBannerCopy } from '@/lib/sellerActionType';
+import {
+  isOpenSellerOrder,
+  isCompletedSellerOrder,
+  orderStatusLabel,
+} from '@/lib/orderStatus';
 
 interface Listing {
   id: string;
@@ -755,7 +760,7 @@ export default function SellerPageClient() {
     try {
       const { data: orders, error: ordersErr } = await supabase
         .from("orders")
-        .select("id, listing_id, amount, status, shipped_at, created_at")
+        .select("id, listing_id, amount, status, shipped_at, completed_at, created_at")
         .eq("seller_id", user.id)
         .order("created_at", { ascending: false });
 
@@ -1074,6 +1079,142 @@ export default function SellerPageClient() {
       (listing) => listing.status === "sold" && !orderListingIds.has(listing.id)
     );
   }, [listings, allOrders]);
+
+  const { openOrders, completedOrders } = useMemo(() => ({
+    openOrders: allOrders.filter((order) => isOpenSellerOrder(order.status)),
+    completedOrders: allOrders.filter((order) => isCompletedSellerOrder(order.status)),
+  }), [allOrders]);
+
+  const renderSoldOrderCard = (order: any) => {
+    const listing = order.listings || null;
+    if (!listing) return null;
+
+    const orderStatus = order.status || "paid";
+    const orderDate = new Date(order.created_at);
+    const daysAgo = Math.floor(
+      (Date.now() - orderDate.getTime()) / (1000 * 60 * 60 * 24)
+    );
+    const timeAgo =
+      daysAgo === 0 ? "Today" : daysAgo === 1 ? "1 day ago" : `${daysAgo} days ago`;
+
+    let statusBadge;
+    if (orderStatus === "completed" || orderStatus === "delivered") {
+      statusBadge = {
+        bg: "bg-green-100",
+        text: "text-green-700",
+        label: orderStatusLabel(orderStatus),
+      };
+    } else if (order.shipped_at || orderStatus === "shipped") {
+      statusBadge = {
+        bg: "bg-transparent",
+        text: "text-[#16193a]",
+        label: "Shipped",
+        border: "border border-[#16193a]",
+      };
+    } else if (orderStatus === "paid") {
+      statusBadge = { bg: "bg-green-100", text: "text-green-700", label: "Paid" };
+    } else if (orderStatus === "cancelled") {
+      statusBadge = { bg: "bg-amber-100", text: "text-amber-800", label: "Voided" };
+    } else {
+      statusBadge = {
+        bg: "bg-gray-100",
+        text: "text-gray-700",
+        label: orderStatusLabel(orderStatus),
+      };
+    }
+
+    const amount = Number.parseFloat(String(order.amount)) || 0;
+    const amountInDollars = amount >= 1000 ? amount / 100 : amount;
+    const subtitleOverride = `${statusBadge.label} • ${timeAgo}`;
+
+    return (
+      <div
+        key={order.id}
+        className="bg-gray-50 rounded-lg border border-gray-200 p-3 hover:shadow-sm transition-shadow mb-3"
+        style={{ minHeight: "80px" }}
+      >
+        <div className="flex items-start justify-between gap-3">
+          <Link
+            href={`/orders/${order.id}`}
+            className="w-[60px] h-[60px] rounded-lg overflow-hidden bg-gray-100 flex-shrink-0"
+          >
+            {listing.original_image_url ||
+            listing.clean_image_url ||
+            listing.staged_image_url ? (
+              <img
+                src={
+                  listing.original_image_url ||
+                  listing.clean_image_url ||
+                  listing.staged_image_url ||
+                  ""
+                }
+                alt={listing.title}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-gray-400 text-[10px]">
+                No image
+              </div>
+            )}
+          </Link>
+
+          <div className="flex-1 min-w-0 flex flex-col">
+            <Link href={`/orders/${order.id}`} className="flex-1 min-w-0">
+              <h3
+                className="text-sm font-medium text-gray-900"
+                style={{
+                  fontSize: "14px",
+                  lineHeight: "1.4",
+                  margin: 0,
+                  marginBottom: "4px",
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  display: "block",
+                }}
+              >
+                {listing.title}
+              </h3>
+            </Link>
+
+            <div className="flex items-center gap-2 mt-1">
+              <Link
+                href={`/orders/${order.id}`}
+                className="text-base font-medium leading-tight"
+                style={{ color: "#16193a", fontSize: "16px" }}
+              >
+                ${amountInDollars.toFixed(2)}
+              </Link>
+              <span
+                className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${statusBadge.bg} ${statusBadge.text} ${statusBadge.border || ""}`}
+              >
+                {statusBadge.label}
+              </span>
+            </div>
+
+            <div className="text-[11px] text-gray-500">
+              <span>{subtitleOverride}</span>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => handleRelist(listing.id)}
+            disabled={relistingId === listing.id}
+            className="flex-shrink-0 self-center px-3 py-2 text-xs font-medium rounded-lg border border-gray-300 bg-white hover:bg-gray-50 transition-colors disabled:opacity-50 flex items-center gap-1.5 text-gray-700"
+            title="Put back on the market (test or voided sales only)"
+          >
+            {relistingId === listing.id ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <RotateCcw className="h-3.5 w-3.5" />
+            )}
+            Relist
+          </button>
+        </div>
+      </div>
+    );
+  };
 
   const handleRelist = async (listingId: string) => {
     if (!user) return;
@@ -1713,145 +1854,34 @@ export default function SellerPageClient() {
 
             <div className="mb-4">
               <h2 className="text-base font-semibold mb-3 font-ui-heading" style={{ color: "#16193a" }}>
-                Sold Items{allOrders.length > 0 ? ` (${allOrders.length})` : ""}
+                Open orders{openOrders.length > 0 ? ` (${openOrders.length})` : ""}
               </h2>
 
-              {allOrders.length === 0 ? (
+              {openOrders.length === 0 ? (
+                <div className="text-center py-6 bg-white rounded-lg border border-gray-200 mb-4">
+                  <p className="text-sm text-gray-600">No open orders.</p>
+                </div>
+              ) : (
+                <div className="bg-white rounded-lg border border-gray-200 mb-4">
+                  <div className="p-2">{openOrders.map(renderSoldOrderCard)}</div>
+                </div>
+              )}
+
+              <h2 className="text-base font-semibold mb-3 font-ui-heading" style={{ color: "#16193a" }}>
+                Completed{completedOrders.length > 0 ? ` (${completedOrders.length})` : ""}
+              </h2>
+
+              {completedOrders.length === 0 && allOrders.length === 0 ? (
                 <div className="text-center py-8 bg-white rounded-lg border border-gray-200">
                   <p className="text-sm text-gray-600">No sold items yet.</p>
                 </div>
+              ) : completedOrders.length === 0 ? (
+                <div className="text-center py-6 bg-white rounded-lg border border-gray-200 mb-4">
+                  <p className="text-sm text-gray-600">No completed orders yet.</p>
+                </div>
               ) : (
                 <div className="bg-white rounded-lg border border-gray-200">
-                  <div className="p-2">
-                    {allOrders.map((order) => {
-                      const listing = order.listings || null;
-                      if (!listing) return null;
-
-                      const orderStatus = order.status || "paid";
-                      const orderDate = new Date(order.created_at);
-                      const daysAgo = Math.floor(
-                        (Date.now() - orderDate.getTime()) / (1000 * 60 * 60 * 24)
-                      );
-                      const timeAgo =
-                        daysAgo === 0 ? "Today" : daysAgo === 1 ? "1 day ago" : `${daysAgo} days ago`;
-
-                      let statusBadge;
-                      if (order.shipped_at || orderStatus === "shipped") {
-                        statusBadge = {
-                          bg: "bg-transparent",
-                          text: "text-[#16193a]",
-                          label: "Shipped",
-                          border: "border border-[#16193a]",
-                        };
-                      } else if (orderStatus === "paid") {
-                        statusBadge = { bg: "bg-green-100", text: "text-green-700", label: "Paid" };
-                      } else if (orderStatus === "awaiting_payment") {
-                        statusBadge = {
-                          bg: "bg-gray-100",
-                          text: "text-gray-700",
-                          label: "Awaiting payment",
-                        };
-                      } else {
-                        statusBadge = {
-                          bg: "bg-gray-100",
-                          text: "text-gray-700",
-                          label: orderStatus,
-                        };
-                      }
-
-                      const amount = Number.parseFloat(String(order.amount)) || 0;
-                      const amountInDollars = amount >= 1000 ? amount / 100 : amount;
-                      const subtitleOverride = `${statusBadge.label} • ${timeAgo}`;
-
-                      return (
-                        <div
-                          key={order.id}
-                          className="bg-gray-50 rounded-lg border border-gray-200 p-3 hover:shadow-sm transition-shadow mb-3"
-                          style={{ minHeight: "80px" }}
-                        >
-                          <div className="flex items-start justify-between gap-3">
-                            <Link
-                              href={`/orders/${order.id}`}
-                              className="w-[60px] h-[60px] rounded-lg overflow-hidden bg-gray-100 flex-shrink-0"
-                            >
-                              {listing.original_image_url ||
-                              listing.clean_image_url ||
-                              listing.staged_image_url ? (
-                                <img
-                                  src={
-                                    listing.original_image_url ||
-                                    listing.clean_image_url ||
-                                    listing.staged_image_url ||
-                                    ""
-                                  }
-                                  alt={listing.title}
-                                  className="w-full h-full object-cover"
-                                />
-                              ) : (
-                                <div className="w-full h-full flex items-center justify-center text-gray-400 text-[10px]">
-                                  No image
-                                </div>
-                              )}
-                            </Link>
-
-                            <div className="flex-1 min-w-0 flex flex-col">
-                              <Link href={`/orders/${order.id}`} className="flex-1 min-w-0">
-                                <h3
-                                  className="text-sm font-medium text-gray-900"
-                                  style={{
-                                    fontSize: "14px",
-                                    lineHeight: "1.4",
-                                    margin: 0,
-                                    marginBottom: "4px",
-                                    whiteSpace: "nowrap",
-                                    overflow: "hidden",
-                                    textOverflow: "ellipsis",
-                                    display: "block",
-                                  }}
-                                >
-                                  {listing.title}
-                                </h3>
-                              </Link>
-
-                              <div className="flex items-center gap-2 mt-1">
-                                <Link
-                                  href={`/orders/${order.id}`}
-                                  className="text-base font-medium leading-tight"
-                                  style={{ color: "#16193a", fontSize: "16px" }}
-                                >
-                                  ${amountInDollars.toFixed(2)}
-                                </Link>
-                                <span
-                                  className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${statusBadge.bg} ${statusBadge.text} ${statusBadge.border || ""}`}
-                                >
-                                  {statusBadge.label}
-                                </span>
-                              </div>
-
-                              <div className="text-[11px] text-gray-500">
-                                <span>{subtitleOverride}</span>
-                              </div>
-                            </div>
-
-                            <button
-                              type="button"
-                              onClick={() => handleRelist(listing.id)}
-                              disabled={relistingId === listing.id}
-                              className="flex-shrink-0 self-center px-3 py-2 text-xs font-medium rounded-lg border border-gray-300 bg-white hover:bg-gray-50 transition-colors disabled:opacity-50 flex items-center gap-1.5 text-gray-700"
-                              title="Put back on the market (test or voided sales only)"
-                            >
-                              {relistingId === listing.id ? (
-                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                              ) : (
-                                <RotateCcw className="h-3.5 w-3.5" />
-                              )}
-                              Relist
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
+                  <div className="p-2">{completedOrders.map(renderSoldOrderCard)}</div>
                 </div>
               )}
 
