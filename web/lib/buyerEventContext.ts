@@ -1,7 +1,7 @@
 import type { Listing } from './types';
 import { normalizeTagColumn } from './utils/tagNormalizer';
 
-export const APP_VERSION = 'beta';
+export const APP_VERSION = '1.0';
 
 export type BuyerSurface =
   | 'browse'

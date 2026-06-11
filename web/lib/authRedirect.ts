@@ -1,15 +1,11 @@
 /**
  * Public app origin for auth redirects, Stripe return URLs, and transactional emails.
  *
- * Set NEXT_PUBLIC_APP_URL per Vercel environment (no hardcoded host in feature code).
- * During beta → app cutover, keep beta in env until app is stable; add both hosts in
- * Supabase redirect allowlist; redirect beta → app only after smoke tests pass.
+ * Set NEXT_PUBLIC_APP_URL in Vercel production to https://app.thriftshopper.com.
  *
- * Supabase Dashboard → Authentication → URL Configuration (allow both during coexist):
- *   Site URL: current primary (beta, then app)
- *   Redirect URLs: https://beta.thriftshopper.com/auth/callback
- *                    https://beta.thriftshopper.com/reset-password
- *                    https://app.thriftshopper.com/auth/callback
+ * Supabase Dashboard → Authentication → URL Configuration:
+ *   Site URL: https://app.thriftshopper.com
+ *   Redirect URLs: https://app.thriftshopper.com/auth/callback
  *                    https://app.thriftshopper.com/reset-password
  *                    http://localhost:3000/auth/callback (dev)
  *                    http://localhost:3000/reset-password (dev)
@@ -32,6 +28,11 @@ export function getAppOrigin(): string {
 
   if (typeof window !== "undefined") {
     return window.location.origin;
+  }
+
+  // Avoid *.vercel.app in transactional emails and Stripe redirects on production.
+  if (process.env.VERCEL_ENV === "production") {
+    return PRODUCTION_FALLBACK;
   }
 
   if (process.env.VERCEL_URL) {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
+import { getAppOrigin } from "../../../lib/authRedirect";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2025-11-17.clover",
@@ -106,7 +107,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create account link for onboarding
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    const baseUrl = getAppOrigin();
     const accountLink = await stripe.accountLinks.create({
       account: accountId,
       refresh_url: `${baseUrl}/seller?stripe_refresh=true`,
