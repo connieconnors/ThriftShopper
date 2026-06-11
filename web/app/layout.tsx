@@ -89,11 +89,10 @@ export const metadata: Metadata = {
 
 
 export const viewport: Viewport = {
-
+  width: "device-width",
+  initialScale: 1,
   themeColor: "#ede9e1",
-
   viewportFit: "cover",
-
 };
 
 
@@ -132,7 +131,7 @@ export default function RootLayout({
 
             <SafeAreaShell />
 
-            <div id="app-root" className="min-h-[100dvh]">
+            <div id="app-root" className="min-h-[100dvh] w-full max-w-full overflow-x-clip">
               {children}
             </div>
 

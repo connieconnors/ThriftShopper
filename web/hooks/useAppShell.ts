@@ -30,11 +30,17 @@ export function applyLinenShell() {
   document.documentElement.style.colorScheme = "light only";
   document.body.style.backgroundColor = SHELL_LINEN;
   document.body.style.minHeight = "100dvh";
+  document.documentElement.style.overflowX = "clip";
+  document.documentElement.style.maxWidth = "100%";
+  document.body.style.overflowX = "clip";
+  document.body.style.maxWidth = "100%";
 
   const appRoot = document.getElementById("app-root");
   if (appRoot) {
     appRoot.style.backgroundColor = SHELL_LINEN;
     appRoot.style.minHeight = "100dvh";
+    appRoot.style.overflowX = "clip";
+    appRoot.style.maxWidth = "100%";
   }
 
   setThemeColorMeta(SHELL_LINEN);

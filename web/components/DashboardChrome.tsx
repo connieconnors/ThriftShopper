@@ -16,7 +16,7 @@ export function DashboardTopBar({ children }: { children: ReactNode }) {
       }}
     >
       <header
-        className="px-4 py-2 flex items-center justify-between shadow-sm"
+        className="px-4 py-2 flex items-center justify-between gap-3 min-w-0 w-full overflow-hidden shadow-sm"
         style={{ backgroundColor: INK }}
       >
         {children}

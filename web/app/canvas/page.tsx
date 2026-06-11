@@ -576,16 +576,16 @@ export default function BuyerCanvasPage() {
     >
       {/* Header */}
       <DashboardTopBar>
-        <Link href="/browse" className="flex items-center gap-2">
+        <Link href="/browse" className="flex items-center gap-2 flex-shrink-0 min-w-0">
           <TSLogo size={28} primaryColor="#ffffff" accentColor="#DFAF37" />
         </Link>
         <Link
           href="/browse"
-          className="text-white/90 hover:text-white text-xs flex items-center gap-1.5 transition-colors h-9 px-2.5 rounded-full hover:bg-white/10"
+          className="text-white/90 hover:text-white text-xs flex items-center gap-1.5 transition-colors h-9 px-2.5 rounded-full hover:bg-white/10 flex-shrink min-w-0 max-w-[55%]"
           aria-label="Back to Discovery"
         >
           <ArrowLeft size={18} className="text-white flex-shrink-0" />
-          Back to Discovery
+          <span className="truncate">Back to Discovery</span>
         </Link>
       </DashboardTopBar>
 
