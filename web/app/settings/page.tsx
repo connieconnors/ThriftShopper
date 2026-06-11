@@ -29,6 +29,7 @@ export default function SettingsPage() {
     phone: "",
     seller_description: "",
     seller_story: "",
+    display_notes: "",
   })
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [supportOpen, setSupportOpen] = useState(false)
@@ -64,6 +65,7 @@ export default function SettingsPage() {
           phone: profileData.phone_main || profileData.phone || "",
           seller_description: profileData.seller_description || "",
           seller_story: profileData.seller_story || "",
+          display_notes: profileData.display_notes || "",
         })
       } else {
         setFormData({
@@ -72,6 +74,7 @@ export default function SettingsPage() {
           phone: "",
           seller_description: "",
           seller_story: "",
+          display_notes: "",
         })
       }
     } catch (error) {
@@ -155,6 +158,10 @@ export default function SettingsPage() {
         phone_main: formData.phone || null,
         seller_description: formData.seller_description || null,
         seller_story: formData.seller_story || null,
+      }
+
+      if (userType === "seller") {
+        updateData.display_notes = formData.display_notes.trim() || null
       }
 
       if (avatarUrl) {
@@ -419,6 +426,39 @@ export default function SettingsPage() {
             <p className="text-xs text-gray-500 mb-4 leading-relaxed">
               Store details, location, and default shipping for your listings.
             </p>
+            <div className="mb-4">
+              <label htmlFor="displayNotes" className="text-xs text-gray-600 mb-1.5 block">
+                Notes for interested buyers{" "}
+                <span className="text-gray-400 font-normal">(optional)</span>
+              </label>
+              <textarea
+                id="displayNotes"
+                value={formData.display_notes}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (value.length <= 200) {
+                    setFormData({ ...formData, display_notes: value });
+                  }
+                }}
+                maxLength={200}
+                className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#16193a]/20 min-h-[72px] resize-none"
+                placeholder="Address, hours, pickup details — share as much or as little as you like."
+              />
+              <div className="flex justify-between items-center mt-1">
+                <p className="text-[10px] text-gray-500">
+                  Shown when a buyer taps your name on one of your items.
+                </p>
+                <p
+                  className={`text-[10px] ${
+                    (formData.display_notes?.length || 0) >= 200
+                      ? "text-red-500"
+                      : "text-gray-400"
+                  }`}
+                >
+                  {formData.display_notes?.length || 0}/200
+                </p>
+              </div>
+            </div>
             <Link
               href="/seller/settings"
               className="flex items-center justify-between w-full py-2.5 text-xs rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors px-3 text-gray-700"

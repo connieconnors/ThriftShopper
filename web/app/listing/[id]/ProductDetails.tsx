@@ -48,6 +48,11 @@ import {
   inquiryModalIntro,
   pickupSubmitLabel,
 } from "../../../lib/sellerActionType";
+import {
+  SellerQuickView,
+  SellerQuickViewTrigger,
+} from "../../../components/SellerQuickView";
+import { formatSellerTown } from "../../../lib/sellerProfile";
 import { supabase } from "../../../lib/supabaseClient";
 
 const CHROME_GLASS = "rgba(22, 25, 58, 0.48)";
@@ -99,6 +104,7 @@ export default function ProductDetails({
   const [inquirySending, setInquirySending] = useState(false);
   const [inquirySuccess, setInquirySuccess] = useState<string | null>(null);
   const [inquiryError, setInquiryError] = useState<string | null>(null);
+  const [sellerQuickViewOpen, setSellerQuickViewOpen] = useState(false);
 
   const listingViewLogged = useRef(false);
 
@@ -202,6 +208,10 @@ export default function ProductDetails({
   // Get seller info (store pickup → shop name, not login/email)
   const sellerName = resolvePublicSellerName(listing, sellerActionType);
   const sellerLocation = getSellerLocation(listing);
+  const sellerTown = formatSellerTown(
+    listing.profiles?.location_city,
+    listing.profiles?.location_state
+  );
   const sellerAvatar = getSellerAvatar(listing);
   const sellerRating = getSellerRating(listing);
   const reviewCount = getSellerReviewCount(listing);
@@ -233,6 +243,27 @@ export default function ProductDetails({
     pickupLabel,
     locationCity: listing.profiles?.location_city,
   });
+
+  const openContactFlow = () => {
+    if (!user) {
+      router.push(
+        `/login?redirect=${encodeURIComponent(`/listing/${listing.id}`)}`
+      );
+      return;
+    }
+    if (sellerActionType === "contact_seller") {
+      setInquirySuccess(null);
+      setInquiryError(null);
+      setInquiryMessage("");
+      setInquiryPhone("");
+      setInquiryOpen(true);
+      return;
+    }
+    setContactError(null);
+    setContactSuccess(false);
+    setContactMessage("");
+    setContactSellerOpen(true);
+  };
 
   const handleSubmitInquiry = async () => {
     if (!user) return;
@@ -494,7 +525,11 @@ export default function ProductDetails({
             ${listing.price}
           </p>
           {actionContext && !isSold && (
-            <div className="mt-2 rounded-lg border border-gray-200 bg-white/60 px-3 py-2">
+            <button
+              type="button"
+              onClick={() => setSellerQuickViewOpen(true)}
+              className="mt-2 w-full text-left rounded-lg border border-gray-200 bg-white/60 px-3 py-2 hover:bg-white/90 transition-colors group"
+            >
               <p className="text-sm font-medium text-gray-900 font-system">
                 {actionContext.headline}
               </p>
@@ -503,7 +538,7 @@ export default function ProductDetails({
                   {actionContext.subline}
                 </p>
               )}
-            </div>
+            </button>
           )}
         </div>
 
@@ -598,20 +633,20 @@ export default function ProductDetails({
 
         {/* Seller Section */}
         <div className="mt-8">
-          <div className="flex items-center gap-2">
-            <span className="text-base font-semibold text-gray-900 font-editorial">
-              {sellerName}
-            </span>
-            {hasTSBadge && (
-              <img 
+          <SellerQuickViewTrigger
+            sellerName={sellerName}
+            sellerLocation={sellerLocation}
+            town={sellerTown}
+            onClick={() => setSellerQuickViewOpen(true)}
+          />
+          {hasTSBadge && (
+            <div className="mt-1">
+              <img
                 src={TS_BADGE_URL}
                 alt="ThriftShopper Verified"
-                className="w-4 h-4 flex-shrink-0"
+                className="w-4 h-4 flex-shrink-0 inline-block"
               />
-            )}
-          </div>
-          {sellerLocation && (
-            <p className="text-sm text-gray-500">{sellerLocation}</p>
+            </div>
           )}
           {sellerStory && (
             <p className="mt-1 text-xs text-gray-500 leading-relaxed">
@@ -676,18 +711,7 @@ export default function ProductDetails({
           {!isSold && sellerActionType !== "contact_seller" && (
             <button
               type="button"
-              onClick={() => {
-                if (!user) {
-                  router.push(
-                    `/login?redirect=${encodeURIComponent(`/listing/${listing.id}`)}`
-                  );
-                  return;
-                }
-                setContactError(null);
-                setContactSuccess(false);
-                setContactMessage("");
-                setContactSellerOpen(true);
-              }}
+              onClick={openContactFlow}
               className="mt-3 inline-flex items-center gap-1.5 text-sm text-[#16193a] hover:text-[#0f1230] font-medium transition-colors"
             >
               <MessageSquare className="h-4 w-4" style={{ color: "var(--gold-accent)" }} />
@@ -756,6 +780,18 @@ export default function ProductDetails({
         sellerLocation={sellerLocation}
         sellerAvatar={sellerAvatar}
         hasTSBadge={hasTSBadge}
+      />
+
+      <SellerQuickView
+        isOpen={sellerQuickViewOpen}
+        onClose={() => setSellerQuickViewOpen(false)}
+        listing={listing}
+        sellerName={sellerName}
+        primaryCtaLabel={ctaLabel}
+        isSold={isSold}
+        onContactSeller={openContactFlow}
+        onPrimaryAction={handlePrimaryCta}
+        showContactAction={!isSold && sellerActionType !== "contact_seller"}
       />
 
       {/* Contact Seller Modal */}

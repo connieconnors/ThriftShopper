@@ -39,12 +39,16 @@ export type Listing = {
   profiles?: {
     display_name: string | null;
     location_city: string | null;
+    location_state?: string | null;
     avatar_url: string | null;
     shipping_info?: string | null; // Seller default shipping (onboarding/settings)
     ts_badge: string | boolean | null; // Can be "true"/"false" string or boolean
     rating: number | null;
     review_count: number | null;
+    seller_description?: string | null;
     seller_story: string | null;
+    display_notes?: string | null;
+    created_at?: string | null;
     is_founding_seller?: boolean | null;
     gives_back?: boolean | null;
     gives_back_name?: string | null;

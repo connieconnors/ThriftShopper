@@ -33,6 +33,17 @@ import {
 } from "../../lib/userPreferences";
 import { useWhisperTranscription } from "@/hooks/useWhisperTranscription";
 import { ListingCarousel } from "@/components/ListingCarousel";
+import {
+  initCanvasStore,
+  loadCanvasEntries,
+  saveCanvasEntry,
+  deleteCanvasEntry,
+  compressImageToDataUrl,
+  CanvasStoreQuotaError,
+  CANVAS_VIBE_ENTRY_ID,
+  CANVAS_DISCOVERY_TEXT_ID,
+  CANVAS_STORY_ENTRY_ID,
+} from "@/lib/canvasStore";
 
 interface Profile {
   display_name: string | null;
@@ -58,8 +69,15 @@ export default function BuyerCanvasPage() {
   
   // Discovery section state
   const [discoveryText, setDiscoveryText] = useState("");
-  const [discoveryImages, setDiscoveryImages] = useState<string[]>([]);
+  const [discoveryImages, setDiscoveryImages] = useState<
+    { id: string; url: string }[]
+  >([]);
   const discoveryImageInputRef = useRef<HTMLInputElement>(null);
+  const [canvasHydrated, setCanvasHydrated] = useState(false);
+  const [storageToast, setStorageToast] = useState(false);
+  const vibeCreatedAtRef = useRef<string | null>(null);
+  const discoveryTextCreatedAtRef = useRef<string | null>(null);
+  const storyCreatedAtRef = useRef<string | null>(null);
   
   // Stories section state
   const [storiesText, setStoriesText] = useState("");
@@ -242,6 +260,185 @@ export default function BuyerCanvasPage() {
       fetchData();
     }
   }, [user]);
+
+  // Playground: restore from canvasStore on mount
+  useEffect(() => {
+    if (!mounted || authLoading) return;
+
+    let cancelled = false;
+    initCanvasStore(user?.id ?? null);
+
+    (async () => {
+      try {
+        const entries = await loadCanvasEntries();
+        if (cancelled) return;
+
+        const vibe = entries.find((e) => e.id === CANVAS_VIBE_ENTRY_ID);
+        if (vibe?.text) {
+          setVibeInput(vibe.text);
+          vibeCreatedAtRef.current = vibe.createdAt;
+        }
+
+        const discoveryMain = entries.find(
+          (e) => e.id === CANVAS_DISCOVERY_TEXT_ID
+        );
+        if (discoveryMain?.text) {
+          setDiscoveryText(discoveryMain.text);
+          discoveryTextCreatedAtRef.current = discoveryMain.createdAt;
+        }
+
+        const images = entries
+          .filter(
+            (e) =>
+              e.type === "discovery_note" &&
+              e.imageDataUrl &&
+              e.id !== CANVAS_DISCOVERY_TEXT_ID
+          )
+          .slice(0, 5)
+          .map((e) => ({ id: e.id, url: e.imageDataUrl! }));
+
+        setDiscoveryImages(images);
+
+        const story = entries.find((e) => e.id === CANVAS_STORY_ENTRY_ID);
+        if (story?.text) {
+          setStoriesText(story.text);
+          storyCreatedAtRef.current = story.createdAt;
+        }
+      } catch (err) {
+        console.error("[canvas] load playground entries:", err);
+      } finally {
+        if (!cancelled) setCanvasHydrated(true);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [mounted, authLoading, user?.id]);
+
+  const showStorageFullToast = () => {
+    setStorageToast(true);
+    window.setTimeout(() => setStorageToast(false), 3500);
+  };
+
+  // Debounced persist: vibe search
+  useEffect(() => {
+    if (!canvasHydrated) return;
+    const timer = window.setTimeout(async () => {
+      try {
+        const trimmed = vibeInput.trim();
+        if (trimmed) {
+          await saveCanvasEntry({
+            id: CANVAS_VIBE_ENTRY_ID,
+            type: "vibe_search",
+            text: trimmed,
+            createdAt:
+              vibeCreatedAtRef.current ?? new Date().toISOString(),
+          });
+          if (!vibeCreatedAtRef.current) {
+            vibeCreatedAtRef.current = new Date().toISOString();
+          }
+        } else {
+          await deleteCanvasEntry(CANVAS_VIBE_ENTRY_ID);
+          vibeCreatedAtRef.current = null;
+        }
+      } catch (err) {
+        if (err instanceof CanvasStoreQuotaError) showStorageFullToast();
+      }
+    }, 500);
+    return () => window.clearTimeout(timer);
+  }, [vibeInput, canvasHydrated]);
+
+  // Debounced persist: discovery note text
+  useEffect(() => {
+    if (!canvasHydrated) return;
+    const timer = window.setTimeout(async () => {
+      try {
+        const trimmed = discoveryText.trim();
+        if (trimmed) {
+          await saveCanvasEntry({
+            id: CANVAS_DISCOVERY_TEXT_ID,
+            type: "discovery_note",
+            text: trimmed,
+            createdAt:
+              discoveryTextCreatedAtRef.current ?? new Date().toISOString(),
+          });
+          if (!discoveryTextCreatedAtRef.current) {
+            discoveryTextCreatedAtRef.current = new Date().toISOString();
+          }
+        } else {
+          await deleteCanvasEntry(CANVAS_DISCOVERY_TEXT_ID);
+          discoveryTextCreatedAtRef.current = null;
+        }
+      } catch (err) {
+        if (err instanceof CanvasStoreQuotaError) showStorageFullToast();
+      }
+    }, 500);
+    return () => window.clearTimeout(timer);
+  }, [discoveryText, canvasHydrated]);
+
+  // Debounced persist: stories
+  useEffect(() => {
+    if (!canvasHydrated) return;
+    const timer = window.setTimeout(async () => {
+      try {
+        const trimmed = storiesText.trim();
+        if (trimmed) {
+          await saveCanvasEntry({
+            id: CANVAS_STORY_ENTRY_ID,
+            type: "story",
+            text: trimmed,
+            createdAt:
+              storyCreatedAtRef.current ?? new Date().toISOString(),
+          });
+          if (!storyCreatedAtRef.current) {
+            storyCreatedAtRef.current = new Date().toISOString();
+          }
+        } else {
+          await deleteCanvasEntry(CANVAS_STORY_ENTRY_ID);
+          storyCreatedAtRef.current = null;
+        }
+      } catch (err) {
+        if (err instanceof CanvasStoreQuotaError) showStorageFullToast();
+      }
+    }, 500);
+    return () => window.clearTimeout(timer);
+  }, [storiesText, canvasHydrated]);
+
+  const handleDiscoveryImageUpload = async (files: File[]) => {
+    if (!canvasHydrated || files.length === 0) return;
+    const remaining = 5 - discoveryImages.length;
+    if (remaining <= 0) return;
+
+    for (const file of files.slice(0, remaining)) {
+      try {
+        const dataUrl = await compressImageToDataUrl(file);
+        const id = crypto.randomUUID();
+        await saveCanvasEntry({
+          id,
+          type: "discovery_note",
+          imageDataUrl: dataUrl,
+          createdAt: new Date().toISOString(),
+        });
+        setDiscoveryImages((prev) => [...prev, { id, url: dataUrl }]);
+      } catch (err) {
+        if (err instanceof CanvasStoreQuotaError) {
+          showStorageFullToast();
+          break;
+        }
+        console.error("[canvas] save discovery image:", err);
+      }
+    }
+  };
+
+  const handleRemoveDiscoveryImage = async (id: string) => {
+    try {
+      await deleteCanvasEntry(id);
+      setDiscoveryImages((prev) => prev.filter((img) => img.id !== id));
+    } catch (err) {
+      console.error("[canvas] remove discovery image:", err);
+    }
+  };
 
   const [showFavorites, setShowFavorites] = useState(false);
   const [showPurchases, setShowPurchases] = useState(false);
@@ -667,6 +864,9 @@ export default function BuyerCanvasPage() {
           <p className="text-xs text-gray-600 leading-relaxed">
             Capture ideas, stories, and things you&apos;re still searching for.
           </p>
+          <p className="text-[10px] text-gray-500 mt-1">
+            Saved on this device.
+          </p>
         </div>
 
         <div className="space-y-3 max-w-md mx-auto">
@@ -754,11 +954,9 @@ export default function BuyerCanvasPage() {
                 onChange={(e) => {
                   const files = Array.from(e.target.files || []);
                   if (files.length > 0) {
-                    const newImages = files.map((file) => {
-                      return URL.createObjectURL(file);
-                    });
-                    setDiscoveryImages((prev) => [...prev, ...newImages].slice(0, 5)); // Max 5 images
+                    void handleDiscoveryImageUpload(files);
                   }
+                  e.target.value = "";
                 }}
               />
               <button
@@ -791,17 +989,24 @@ export default function BuyerCanvasPage() {
             {/* Display uploaded images */}
             {discoveryImages.length > 0 && (
               <div className="flex gap-2 mb-3 flex-wrap">
-                {discoveryImages.map((img, index) => (
-                  <div key={index} className="relative w-16 h-16 rounded-lg overflow-hidden border border-gray-200">
-                    <img src={img} alt={`Discovery ${index + 1}`} className="w-full h-full object-cover" />
+                {discoveryImages.map((img) => (
+                  <div
+                    key={img.id}
+                    className="relative w-16 h-16 rounded-lg overflow-hidden border border-gray-200"
+                  >
+                    <img
+                      src={img.url}
+                      alt=""
+                      className="w-full h-full object-cover"
+                    />
                     <button
-                      onClick={() => {
-                        URL.revokeObjectURL(img);
-                        setDiscoveryImages((prev) => prev.filter((_, i) => i !== index));
-                      }}
-                      className="absolute top-0 right-0 w-4 h-4 bg-red-500 text-white rounded-full flex items-center justify-center text-[10px] hover:bg-red-600"
+                      type="button"
+                      onClick={() => void handleRemoveDiscoveryImage(img.id)}
+                      className="absolute top-0.5 right-0.5 w-4 h-4 rounded-full flex items-center justify-center transition-opacity hover:opacity-100 opacity-90"
+                      style={{ backgroundColor: "rgba(22, 25, 58, 0.6)" }}
+                      aria-label="Remove image"
                     >
-                      <X className="h-2.5 w-2.5" />
+                      <X className="h-2.5 w-2.5 text-white" strokeWidth={2.5} />
                     </button>
                   </div>
                 ))}
@@ -877,10 +1082,12 @@ export default function BuyerCanvasPage() {
         <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
           <button onClick={() => setShowBadges(!showBadges)} className="flex items-center justify-between w-full">
             <div className="flex items-center gap-2">
-              <h2 className="text-sm font-semibold" style={{ color: "#16193a" }}>
-                Badges
+              <h2 className="text-sm font-semibold font-editorial" style={{ color: "#16193a" }}>
+                How Sellers Know You
               </h2>
-              <span className="text-xs text-gray-500">Earn as you hunt</span>
+              <span className="text-xs text-gray-500">
+                Coming soon — your hunting style, recognized. Sellers will see who you are when you reach out.
+              </span>
             </div>
             {showBadges ? (
               <ChevronUp className="h-5 w-5 text-gray-400" />
@@ -907,6 +1114,16 @@ export default function BuyerCanvasPage() {
           )}
         </div>
       </div>
+
+      {storageToast && (
+        <div
+          className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 max-w-[90%] px-4 py-2.5 rounded-lg text-xs text-white shadow-lg text-center"
+          style={{ backgroundColor: "#16193a" }}
+          role="status"
+        >
+          Couldn&apos;t save — storage full on this device
+        </div>
+      )}
 
       {/* Footer Navigation - Simplified like v0 */}
       <DashboardBottomBar>
