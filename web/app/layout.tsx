@@ -13,6 +13,7 @@ import { SafeAreaShell } from "../components/SafeAreaShell";
 import PWARegister from "./components/PWARegister";
 
 import { PostHogProvider } from "./providers/PostHogProvider";
+import { GoogleAnalytics } from "../components/GoogleAnalytics";
 
 
 
@@ -122,6 +123,8 @@ export default function RootLayout({
         />
 
         <PostHogProvider>
+
+          <GoogleAnalytics />
 
           <PWARegister />
 
