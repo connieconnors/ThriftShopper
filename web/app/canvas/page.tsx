@@ -571,7 +571,7 @@ export default function BuyerCanvasPage() {
 
   return (
     <div
-      className="min-h-screen pb-16"
+      className="min-h-screen pb-16 overflow-x-hidden w-full max-w-[100vw]"
       style={{ overscrollBehaviorY: "contain" }}
     >
       {/* Header */}
@@ -590,7 +590,7 @@ export default function BuyerCanvasPage() {
       </DashboardTopBar>
 
       {/* Content Wrapper */}
-      <div className="bg-gray-50">
+      <div className="bg-gray-50 overflow-x-hidden">
       {/* Profile Section */}
       <div className="bg-white px-4 py-4 mb-3">
         <div className="flex items-center gap-3">
@@ -632,7 +632,7 @@ export default function BuyerCanvasPage() {
       )}
 
       {/* Hub — favorites, purchases, messages, listings */}
-      <div className="px-4 pb-4 space-y-3">
+      <div className="px-4 pb-4 space-y-3 max-w-md mx-auto w-full">
         {/* Favorites */}
         <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
           <button

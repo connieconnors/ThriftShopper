@@ -169,8 +169,12 @@ stripe-devtools,
 .__stripe-devtools,
 #__stripe-devtools,
 #stripe-developer-tools,
-.__PrivateStripeElement-devTools {
+.__PrivateStripeElement-devTools,
+[data-stripe-devtools],
+iframe[src*="stripe.com"][title*="Stripe"] {
   display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
 }
 
 .checkout-pay-bar {
