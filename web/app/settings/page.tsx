@@ -18,6 +18,8 @@ export default function SettingsPage() {
   const avatarInputRef = useRef<HTMLInputElement>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
+  const [isSavingNotes, setIsSavingNotes] = useState(false)
+  const [notesSaved, setNotesSaved] = useState(false)
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
   const [profile, setProfile] = useState<any>(null)
   const [userType, setUserType] = useState<"buyer" | "seller">("buyer")
@@ -188,6 +190,36 @@ export default function SettingsPage() {
       alert("Failed to save profile")
     } finally {
       setIsSaving(false)
+    }
+  }
+
+  const handleSaveDisplayNotes = async () => {
+    if (!user) return
+
+    setIsSavingNotes(true)
+    setNotesSaved(false)
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .upsert(
+          {
+            user_id: user.id,
+            display_notes: formData.display_notes.trim() || null,
+          },
+          { onConflict: "user_id" }
+        )
+
+      if (error) throw error
+
+      setNotesSaved(true)
+      setProfile((prev: any) =>
+        prev ? { ...prev, display_notes: formData.display_notes.trim() || null } : prev
+      )
+    } catch (error) {
+      console.error("Error saving buyer notes:", error)
+      alert("Failed to save buyer notes")
+    } finally {
+      setIsSavingNotes(false)
     }
   }
 
@@ -386,39 +418,6 @@ export default function SettingsPage() {
                     </p>
                   </div>
                 </div>
-                <div>
-                  <label htmlFor="displayNotes" className="text-xs text-gray-600 mb-1.5 block">
-                    Notes for interested buyers{" "}
-                    <span className="text-gray-400 font-normal">(optional)</span>
-                  </label>
-                  <textarea
-                    id="displayNotes"
-                    value={formData.display_notes}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      if (value.length <= 200) {
-                        setFormData({ ...formData, display_notes: value });
-                      }
-                    }}
-                    maxLength={200}
-                    className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#16193a]/20 min-h-[72px] resize-none"
-                    placeholder="Address, hours, pickup details — share as much or as little as you like."
-                  />
-                  <div className="flex justify-between items-center mt-1">
-                    <p className="text-[10px] text-gray-500">
-                      Shown when a buyer taps your name on one of your items.
-                    </p>
-                    <p
-                      className={`text-[10px] ${
-                        (formData.display_notes?.length || 0) >= 200
-                          ? "text-red-500"
-                          : "text-gray-400"
-                      }`}
-                    >
-                      {formData.display_notes?.length || 0}/200
-                    </p>
-                  </div>
-                </div>
               </>
             )}
             <button
@@ -457,8 +456,57 @@ export default function SettingsPage() {
               </h2>
             </div>
             <p className="text-xs text-gray-500 mb-4 leading-relaxed">
-              Store location, shipping defaults, and payment mode for new listings.
+              Notes for buyers and store defaults for new listings.
             </p>
+            <div className="mb-4">
+              <label htmlFor="displayNotes" className="text-xs text-gray-600 mb-1.5 block">
+                Notes for interested buyers{" "}
+                <span className="text-gray-400 font-normal">(optional)</span>
+              </label>
+              <textarea
+                id="displayNotes"
+                value={formData.display_notes}
+                onChange={(e) => {
+                  const value = e.target.value
+                  if (value.length <= 200) {
+                    setFormData({ ...formData, display_notes: value })
+                    setNotesSaved(false)
+                  }
+                }}
+                maxLength={200}
+                className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#16193a]/20 min-h-[72px] resize-none"
+                placeholder="Address, hours, pickup details — share as much or as little as you like."
+              />
+              <div className="flex justify-between items-center mt-1 mb-3">
+                <p className="text-[10px] text-gray-500">
+                  Shown when a buyer taps your name on one of your items.
+                </p>
+                <p
+                  className={`text-[10px] ${
+                    (formData.display_notes?.length || 0) >= 200
+                      ? "text-red-500"
+                      : "text-gray-400"
+                  }`}
+                >
+                  {formData.display_notes?.length || 0}/200
+                </p>
+              </div>
+              {notesSaved && (
+                <p className="text-xs text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2 mb-3">
+                  Buyer notes saved.
+                </p>
+              )}
+              <button
+                type="button"
+                onClick={handleSaveDisplayNotes}
+                disabled={isSavingNotes}
+                className="w-full py-2.5 text-xs font-medium rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                style={{ backgroundColor: "#16193a", color: "white" }}
+              >
+                {isSavingNotes && <Loader2 className="h-3 w-3 animate-spin" />}
+                Save Buyer Notes
+              </button>
+            </div>
             <Link
               href="/seller/settings"
               className="flex items-center justify-between w-full py-2.5 text-xs rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors px-3 text-gray-700"
