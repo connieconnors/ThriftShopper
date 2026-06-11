@@ -38,4 +38,9 @@ export function applyLinenShell() {
   }
 
   setThemeColorMeta(SHELL_LINEN);
+
+  // iOS WebView can keep horizontal scroll after wide pages (e.g. Canvas); reset on every route.
+  window.scrollTo(0, 0);
+  document.documentElement.scrollLeft = 0;
+  document.body.scrollLeft = 0;
 }
