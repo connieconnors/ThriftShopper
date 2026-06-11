@@ -386,6 +386,39 @@ export default function SettingsPage() {
                     </p>
                   </div>
                 </div>
+                <div>
+                  <label htmlFor="displayNotes" className="text-xs text-gray-600 mb-1.5 block">
+                    Notes for interested buyers{" "}
+                    <span className="text-gray-400 font-normal">(optional)</span>
+                  </label>
+                  <textarea
+                    id="displayNotes"
+                    value={formData.display_notes}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (value.length <= 200) {
+                        setFormData({ ...formData, display_notes: value });
+                      }
+                    }}
+                    maxLength={200}
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#16193a]/20 min-h-[72px] resize-none"
+                    placeholder="Address, hours, pickup details — share as much or as little as you like."
+                  />
+                  <div className="flex justify-between items-center mt-1">
+                    <p className="text-[10px] text-gray-500">
+                      Shown when a buyer taps your name on one of your items.
+                    </p>
+                    <p
+                      className={`text-[10px] ${
+                        (formData.display_notes?.length || 0) >= 200
+                          ? "text-red-500"
+                          : "text-gray-400"
+                      }`}
+                    >
+                      {formData.display_notes?.length || 0}/200
+                    </p>
+                  </div>
+                </div>
               </>
             )}
             <button
@@ -424,41 +457,8 @@ export default function SettingsPage() {
               </h2>
             </div>
             <p className="text-xs text-gray-500 mb-4 leading-relaxed">
-              Store details, location, and default shipping for your listings.
+              Store location, shipping defaults, and payment mode for new listings.
             </p>
-            <div className="mb-4">
-              <label htmlFor="displayNotes" className="text-xs text-gray-600 mb-1.5 block">
-                Notes for interested buyers{" "}
-                <span className="text-gray-400 font-normal">(optional)</span>
-              </label>
-              <textarea
-                id="displayNotes"
-                value={formData.display_notes}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  if (value.length <= 200) {
-                    setFormData({ ...formData, display_notes: value });
-                  }
-                }}
-                maxLength={200}
-                className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#16193a]/20 min-h-[72px] resize-none"
-                placeholder="Address, hours, pickup details — share as much or as little as you like."
-              />
-              <div className="flex justify-between items-center mt-1">
-                <p className="text-[10px] text-gray-500">
-                  Shown when a buyer taps your name on one of your items.
-                </p>
-                <p
-                  className={`text-[10px] ${
-                    (formData.display_notes?.length || 0) >= 200
-                      ? "text-red-500"
-                      : "text-gray-400"
-                  }`}
-                >
-                  {formData.display_notes?.length || 0}/200
-                </p>
-              </div>
-            </div>
             <Link
               href="/seller/settings"
               className="flex items-center justify-between w-full py-2.5 text-xs rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors px-3 text-gray-700"
