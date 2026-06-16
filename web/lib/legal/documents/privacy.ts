@@ -3,7 +3,7 @@ import type { LegalDocumentMeta } from "@/lib/legal/types";
 export const privacyDocument: LegalDocumentMeta = {
   title: "Privacy Policy",
   effectiveDate: "June 1, 2026",
-  lastUpdated: "June 1, 2026",
+  lastUpdated: "June 12, 2026",
   intro: [
     'ThriftShopper Inc. ("ThriftShopper," "we," "us," or "our") operates an online marketplace connecting buyers and sellers of secondhand, vintage, collectible, and unique items.',
     "We collect information necessary to operate and improve ThriftShopper, facilitate transactions, and maintain marketplace safety. We do not sell your personal information.",
@@ -52,6 +52,10 @@ export const privacyDocument: LegalDocumentMeta = {
     {
       type: "p",
       text: "We do not sell personal information. We may share information with service providers (hosting, analytics, payments, email, security), with buyers and sellers as needed to fulfill transactions, and when required by law.",
+    },
+    {
+      type: "p",
+      text: "Analytics. We use PostHog, a product analytics platform, to collect and analyze usage data including pages viewed, clicks, session activity, and feature interactions. This data helps us understand how users engage with ThriftShopper and improve the platform. PostHog may process this data on servers in the United States or other jurisdictions. For more information, see PostHog's privacy policy at posthog.com/privacy.",
     },
     { type: "h2", text: "8. Data Retention and Security", id: "retention" },
     {
