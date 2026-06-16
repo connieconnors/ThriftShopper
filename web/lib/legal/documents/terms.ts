@@ -3,7 +3,7 @@ import type { LegalDocumentMeta } from "@/lib/legal/types";
 export const termsDocument: LegalDocumentMeta = {
   title: "Terms of Use",
   effectiveDate: "June 1, 2026",
-  lastUpdated: "June 1, 2026",
+  lastUpdated: "June 12, 2026",
   intro: [
     "Welcome to ThriftShopper. These Terms of Use govern your access to and use of the ThriftShopper website, marketplace, mobile experiences, applications, content, communications, and related services operated by ThriftShopper Inc.",
     "By creating an account, browsing listings, buying, selling, or otherwise using the Services, you agree to these Terms and our Privacy Policy. If you do not agree, do not use the Services.",
@@ -97,7 +97,10 @@ export const termsDocument: LegalDocumentMeta = {
       type: "p",
       text: "ThriftShopper may use automated systems, machine-learning technologies, recommendation engines, fraud-detection tools, and artificial-intelligence technologies to improve marketplace operations.",
     },
-    { type: "link", href: "/ai-disclosure", label: "AI Disclosure" },
+    {
+      type: "p",
+      text: "AI Disclosure. ThriftShopper uses AI-assisted tools to support item discovery, search relevance, listing categorization, and fraud prevention. AI-generated suggestions, descriptions, or recommendations are provided for informational purposes only and do not constitute appraisals, guarantees of authenticity, legal advice, or representations of value. ThriftShopper is not liable for errors in AI-generated outputs. Users remain responsible for their own listing accuracy and purchase decisions.",
+    },
     { type: "h2", text: "14. Disclaimer of Warranties", id: "disclaimer" },
     {
       type: "p",
