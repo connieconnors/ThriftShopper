@@ -507,10 +507,10 @@ export default function ProductDetails({
           </div>
         )}
 
-        {/* Tap to Zoom Indicator (subtle) */}
+        {/* Tap to Zoom Indicator — bottom-left to avoid overlapping header ⋮ menu */}
         {images.length > 0 && (
           <div
-            className="absolute top-4 right-4 px-3 py-1.5 backdrop-blur-md rounded-full flex items-center gap-1.5"
+            className="absolute bottom-16 left-4 px-3 py-1.5 backdrop-blur-md rounded-full flex items-center gap-1.5 pointer-events-none"
             style={{ backgroundColor: CHROME_GLASS, border: `1px solid ${CHROME_GLASS_BORDER}` }}
           >
             <svg className="w-4 h-4 text-white/60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
