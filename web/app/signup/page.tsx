@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, FormEvent, Suspense, useEffect } from "react";
+import { useState, FormEvent, Suspense, useEffect, useLayoutEffect, useCallback, type MouseEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { legalHref } from "@/lib/legalNavigation";
@@ -15,39 +15,26 @@ import {
   readSignupDraft,
   writeSignupDraft,
   clearSignupDraft,
+  getInitialSignupDraft,
 } from "@/lib/authFormDraft";
 
 function SignUpForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { signUp, signIn } = useAuth();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [acceptTerms, setAcceptTerms] = useState(false);
-  const [acceptsMarketing, setAcceptsMarketing] = useState(false);
+  const initialDraft = getInitialSignupDraft();
+  const [email, setEmail] = useState(initialDraft.email ?? "");
+  const [password, setPassword] = useState(initialDraft.password ?? "");
+  const [confirmPassword, setConfirmPassword] = useState(initialDraft.confirmPassword ?? "");
+  const [acceptTerms, setAcceptTerms] = useState(initialDraft.acceptTerms ?? false);
+  const [acceptsMarketing, setAcceptsMarketing] = useState(initialDraft.acceptsMarketing ?? false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [draftRestored, setDraftRestored] = useState(false);
   
   // Check if this is a seller signup
   const isSellerSignup = searchParams.get('seller') === 'true';
 
-  useEffect(() => {
-    if (draftRestored) return;
-    const draft = readSignupDraft();
-    if (draft) {
-      if (draft.email) setEmail(draft.email);
-      if (draft.password) setPassword(draft.password);
-      if (draft.confirmPassword) setConfirmPassword(draft.confirmPassword);
-      if (draft.acceptTerms) setAcceptTerms(true);
-      if (draft.acceptsMarketing) setAcceptsMarketing(true);
-    }
-    setDraftRestored(true);
-  }, [draftRestored]);
-
-  useEffect(() => {
-    if (!draftRestored) return;
+  const persistDraft = useCallback(() => {
     writeSignupDraft({
       email,
       password,
@@ -55,14 +42,36 @@ function SignUpForm() {
       acceptTerms,
       acceptsMarketing,
     });
-  }, [
-    email,
-    password,
-    confirmPassword,
-    acceptTerms,
-    acceptsMarketing,
-    draftRestored,
-  ]);
+  }, [email, password, confirmPassword, acceptTerms, acceptsMarketing]);
+
+  useLayoutEffect(() => {
+    const draft = readSignupDraft();
+    if (!draft) return;
+    if (draft.email) setEmail(draft.email);
+    if (draft.password) setPassword(draft.password);
+    if (draft.confirmPassword) setConfirmPassword(draft.confirmPassword);
+    if (draft.acceptTerms) setAcceptTerms(true);
+    if (draft.acceptsMarketing) setAcceptsMarketing(true);
+  }, []);
+
+  useEffect(() => {
+    persistDraft();
+  }, [persistDraft]);
+
+  useEffect(() => {
+    const onHide = () => persistDraft();
+    window.addEventListener("pagehide", onHide);
+    document.addEventListener("visibilitychange", onHide);
+    return () => {
+      window.removeEventListener("pagehide", onHide);
+      document.removeEventListener("visibilitychange", onHide);
+    };
+  }, [persistDraft]);
+
+  const handleLegalLinkClick = (e: MouseEvent) => {
+    e.stopPropagation();
+    persistDraft();
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -310,7 +319,7 @@ function SignUpForm() {
               target="_blank"
               rel="noopener noreferrer"
               className={`font-semibold ${authLinkClass}`}
-              onClick={(e) => e.stopPropagation()}
+              onClick={handleLegalLinkClick}
             >
               Terms of Use
             </Link>
@@ -319,7 +328,7 @@ function SignUpForm() {
               href={legalHref("/privacy", "signup")}
               target="_blank"
               rel="noopener noreferrer"
-              onClick={(e) => e.stopPropagation()}
+              onClick={handleLegalLinkClick}
             >
               Privacy Policy
             </Link>

@@ -20,7 +20,8 @@ export type SignupFormDraft = {
 function readDraft<T>(key: string): T | null {
   if (typeof window === "undefined") return null;
   try {
-    const raw = sessionStorage.getItem(key);
+    const raw =
+      sessionStorage.getItem(key) ?? localStorage.getItem(key);
     if (!raw) return null;
     return JSON.parse(raw) as T;
   } catch {
@@ -30,11 +31,19 @@ function readDraft<T>(key: string): T | null {
 
 function writeDraft<T>(key: string, draft: T) {
   if (typeof window === "undefined") return;
+  const serialized = JSON.stringify(draft);
   try {
-    sessionStorage.setItem(key, JSON.stringify(draft));
+    sessionStorage.setItem(key, serialized);
+    localStorage.setItem(key, serialized);
   } catch {
     /* quota / private mode */
   }
+}
+
+function clearDraft(key: string) {
+  if (typeof window === "undefined") return;
+  sessionStorage.removeItem(key);
+  localStorage.removeItem(key);
 }
 
 export function readLoginDraft(): LoginFormDraft | null {
@@ -46,8 +55,7 @@ export function writeLoginDraft(draft: LoginFormDraft) {
 }
 
 export function clearLoginDraft() {
-  if (typeof window === "undefined") return;
-  sessionStorage.removeItem(LOGIN_DRAFT_KEY);
+  clearDraft(LOGIN_DRAFT_KEY);
 }
 
 export function readSignupDraft(): SignupFormDraft | null {
@@ -59,6 +67,13 @@ export function writeSignupDraft(draft: SignupFormDraft) {
 }
 
 export function clearSignupDraft() {
-  if (typeof window === "undefined") return;
-  sessionStorage.removeItem(SIGNUP_DRAFT_KEY);
+  clearDraft(SIGNUP_DRAFT_KEY);
+}
+
+export function getInitialLoginDraft(): LoginFormDraft {
+  return readLoginDraft() ?? {};
+}
+
+export function getInitialSignupDraft(): SignupFormDraft {
+  return readSignupDraft() ?? {};
 }

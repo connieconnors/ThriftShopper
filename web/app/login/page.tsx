@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, FormEvent, Suspense, useEffect } from "react";
+import { useState, FormEvent, Suspense, useEffect, useLayoutEffect, useCallback, type MouseEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion } from "motion/react";
@@ -15,36 +15,52 @@ import {
   readLoginDraft,
   writeLoginDraft,
   clearLoginDraft,
+  getInitialLoginDraft,
 } from "../../lib/authFormDraft";
 
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { signIn, user, isLoading: authLoading } = useAuth();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [acceptTerms, setAcceptTerms] = useState(false);
+  const initialDraft = getInitialLoginDraft();
+  const [email, setEmail] = useState(initialDraft.email ?? "");
+  const [password, setPassword] = useState(initialDraft.password ?? "");
+  const [acceptTerms, setAcceptTerms] = useState(initialDraft.acceptTerms ?? false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [draftRestored, setDraftRestored] = useState(false);
 
   const redirectTo = searchParams.get("redirect");
 
-  useEffect(() => {
-    if (draftRestored) return;
+  const persistDraft = useCallback(() => {
+    writeLoginDraft({ email, password, acceptTerms });
+  }, [email, password, acceptTerms]);
+
+  useLayoutEffect(() => {
     const draft = readLoginDraft();
-    if (draft) {
-      if (draft.email) setEmail(draft.email);
-      if (draft.password) setPassword(draft.password);
-      if (draft.acceptTerms) setAcceptTerms(true);
-    }
-    setDraftRestored(true);
-  }, [draftRestored]);
+    if (!draft) return;
+    if (draft.email) setEmail(draft.email);
+    if (draft.password) setPassword(draft.password);
+    if (draft.acceptTerms) setAcceptTerms(true);
+  }, []);
 
   useEffect(() => {
-    if (!draftRestored) return;
-    writeLoginDraft({ email, password, acceptTerms });
-  }, [email, password, acceptTerms, draftRestored]);
+    persistDraft();
+  }, [persistDraft]);
+
+  useEffect(() => {
+    const onHide = () => persistDraft();
+    window.addEventListener("pagehide", onHide);
+    document.addEventListener("visibilitychange", onHide);
+    return () => {
+      window.removeEventListener("pagehide", onHide);
+      document.removeEventListener("visibilitychange", onHide);
+    };
+  }, [persistDraft]);
+
+  const handleLegalLinkClick = (e: MouseEvent) => {
+    e.stopPropagation();
+    persistDraft();
+  };
 
   // If user is already logged in, redirect them appropriately
   useEffect(() => {
@@ -348,7 +364,7 @@ function LoginForm() {
               target="_blank"
               rel="noopener noreferrer"
               className={`font-semibold ${authLinkClass}`}
-              onClick={(e) => e.stopPropagation()}
+              onClick={handleLegalLinkClick}
             >
               Terms of Use
             </Link>
@@ -357,7 +373,7 @@ function LoginForm() {
               href={legalHref("/privacy", "login")}
               target="_blank"
               rel="noopener noreferrer"
-              onClick={(e) => e.stopPropagation()}
+              onClick={handleLegalLinkClick}
             >
               Privacy Policy
             </Link>
