@@ -35,7 +35,6 @@ import {
 } from "../../lib/buyerEventContext";
 import { useBrowseCardEvents } from "../../hooks/useBrowseCardEvents";
 import { useBlockedUsers } from "../../hooks/useBlockedUsers";
-import { ListingModerationMenu } from "../../components/ListingModerationMenu";
 
 interface SwipeFeedProps {
   initialListings: Listing[];
@@ -1443,7 +1442,6 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
           if (!isVisible) return null;
 
           const listingImage = getPrimaryImage(listing);
-          const listingSellerName = resolvePublicSellerName(listing);
           const listingSellerAvatar = getSellerAvatar(listing);
           const listingHasTSBadge = hasSellerTSBadge(listing);
 
@@ -1524,21 +1522,7 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
                 }}
               />
 
-              {/* Report / block — current card only */}
-              {offset === 0 && (
-                <div
-                  className="absolute z-20 pointer-events-auto"
-                  style={{ top: "16px", left: "16px" }}
-                >
-                  <ListingModerationMenu
-                    listingId={listing.id}
-                    sellerId={listing.seller_id}
-                    sellerName={listingSellerName}
-                    leaveAfterBlock
-                    leaveHref="/browse"
-                  />
-                </div>
-              )}
+              {/* Report / block: listing detail page only (not browse — avoids logo overlap & mis-taps) */}
 
               {/* Image Counter - Top Right (only show for current card) */}
               {offset === 0 && (
