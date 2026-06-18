@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { runPrePublishModeration } from "../../../../lib/listingModerationPublish";
 
 export async function POST(request: NextRequest) {
   try {
@@ -38,7 +39,9 @@ export async function POST(request: NextRequest) {
 
     const { data: listing, error: listingError } = await supabase
       .from("listings")
-      .select("id, title, status, seller_id")
+      .select(
+        "id, title, status, seller_id, description, story_text, category, original_image_url"
+      )
       .eq("id", listingId)
       .single();
 
@@ -74,6 +77,27 @@ export async function POST(request: NextRequest) {
         { error: "Failed to update order records" },
         { status: 500 }
       );
+    }
+
+    const moderation = await runPrePublishModeration(
+      supabase,
+      listingId,
+      user.id,
+      {
+        title: listing.title,
+        description: listing.description,
+        story_text: listing.story_text,
+        category: listing.category,
+        imageUrl: listing.original_image_url,
+      }
+    );
+
+    if (moderation.outcome === "rejected") {
+      return NextResponse.json(moderation.body, { status: moderation.status });
+    }
+
+    if (moderation.outcome === "pending_review") {
+      return NextResponse.json(moderation.body, { status: moderation.status });
     }
 
     const { error: listingUpdateError } = await supabase

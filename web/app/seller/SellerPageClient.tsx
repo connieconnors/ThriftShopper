@@ -977,6 +977,16 @@ export default function SellerPageClient() {
             );
           } else if (publishData.code === 'SHIPPING_NOT_CONFIGURED') {
             alert(publishData.error || SELLER_LISTING_NEEDS_SHIPPING_MESSAGE);
+          } else if (publishData.code === 'CONTENT_MODERATION_REJECTED') {
+            alert(
+              publishData.error ||
+                'This listing could not be published. Please review our Prohibited Items Policy and update your listing.'
+            );
+          } else if (publishData.code === 'CONTENT_MODERATION_PENDING_REVIEW') {
+            alert(
+              publishData.error ||
+                'Your listing is pending content review and is not visible in the marketplace yet.'
+            );
           } else {
             alert(publishData.error || 'Failed to publish listing');
           }
@@ -1058,7 +1068,7 @@ export default function SellerPageClient() {
     () => [
       {
         key: 'drafts' as const,
-        title: 'Drafts',
+        title: 'Drafts & In Review',
         items: draftListings,
         emptyMessage: 'No drafts. Tap Add New Listing to start one.',
       },
@@ -1344,6 +1354,7 @@ export default function SellerPageClient() {
       const data = await response.json();
       if (!response.ok) {
         alert(data.error || "Failed to relist item");
+        await fetchSellerData();
         return;
       }
 
@@ -1665,6 +1676,10 @@ export default function SellerPageClient() {
                       return { bg: 'bg-purple-100', text: 'text-purple-700', label: 'shipped' };
                     } else if (status === 'hidden') {
                       return { bg: 'bg-yellow-100', text: 'text-yellow-700', label: 'hidden' };
+                    } else if (status === 'rejected') {
+                      return { bg: 'bg-red-100', text: 'text-red-700', label: 'rejected' };
+                    } else if (status === 'pending_review') {
+                      return { bg: 'bg-orange-100', text: 'text-orange-700', label: 'pending review' };
                     } else {
                       return { bg: 'bg-gray-100', text: 'text-gray-600', label: 'draft' };
                     }
@@ -1675,7 +1690,9 @@ export default function SellerPageClient() {
                     listing.custom_shipping_policy,
                     profile?.shipping_info
                   );
-                  const listingHref = (listing.status || 'draft') === 'draft'
+                  const listingHref = ['draft', 'rejected', 'pending_review'].includes(
+                    listing.status || 'draft'
+                  )
                     ? `/sell?edit=${listing.id}`
                     : `/listing/${listing.id}`;
                   

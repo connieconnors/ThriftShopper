@@ -2,10 +2,16 @@
 
 ## Task: Implement Vision API for Inappropriate Content Detection
 
-### Status: ⏳ Pending
+### Status: ✅ Implemented (Anthropic, pre-publish)
 
-### Description:
-Use OpenAI Vision API to automatically check uploaded listing images for inappropriate content before they go live on the marketplace.
+Pre-publish moderation runs in `/api/listings/publish` and `/api/listings/relist` via `web/lib/contentModeration.ts` + `web/lib/listingModerationPublish.ts`.
+
+Outcomes:
+- **approved** → `status: active` (visible in feed)
+- **rejected** → `status: rejected` + seller message with reason
+- **API failure** → `status: pending_review` (not visible; fail closed, not fail open)
+
+Run `web/supabase/add-listing-moderation-statuses.sql` in Supabase to document new status values.
 
 ### User Notes:
 - User has existing code for this feature

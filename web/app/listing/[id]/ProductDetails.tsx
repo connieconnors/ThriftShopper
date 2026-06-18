@@ -19,6 +19,7 @@ import FavoriteButton from "../../components/FavoriteButton";
 import SellerDrawer from "../../components/SellerDrawer";
 import { TSLogo } from "../../../components/TSLogo";
 import { useAuth } from "../../context/AuthContext";
+import { supabase } from "../../../lib/supabaseClient";
 import { addRecentlyViewed } from "../../../lib/userPreferences";
 import { MessageSquare, Bookmark, X } from "lucide-react";
 import { FounderBadge } from "../../../components/FounderBadge";

@@ -3,7 +3,7 @@ import type { LegalDocumentMeta } from "@/lib/legal/types";
 export const termsDocument: LegalDocumentMeta = {
   title: "Terms of Use",
   effectiveDate: "June 1, 2026",
-  lastUpdated: "June 16, 2026",
+  lastUpdated: "May 23, 2026",
   intro: [
     "Welcome to ThriftShopper. These Terms of Use govern your access to and use of the ThriftShopper website, marketplace, mobile experiences, applications, content, communications, and related services operated by ThriftShopper Inc.",
     "By creating an account, browsing listings, buying, selling, or otherwise using the Services, you agree to these Terms and our Privacy Policy. If you do not agree, do not use the Services.",
@@ -67,6 +67,10 @@ export const termsDocument: LegalDocumentMeta = {
     },
     {
       type: "p",
+      text: "Before listings go live, ThriftShopper runs automated content review (including AI-assisted analysis of listing text, category, and photos) against our Prohibited Items Policy. Listings that fail review are marked rejected; listings held during review outages are marked pending review. Neither appears in the marketplace until approved.",
+    },
+    {
+      type: "p",
       text: "ThriftShopper provides tools to report listings and block sellers. We review reports of objectionable content within 24 hours and may remove content or restrict accounts that violate these Terms, our Seller Guidelines, or our Prohibited Items Policy. Blocking a seller removes that seller's listings from your feed immediately and notifies ThriftShopper for review.",
     },
     {
@@ -103,7 +107,7 @@ export const termsDocument: LegalDocumentMeta = {
     },
     {
       type: "p",
-      text: "AI Disclosure. ThriftShopper uses AI-assisted tools to support item discovery, search relevance, listing categorization, and fraud prevention. AI-generated suggestions, descriptions, or recommendations are provided for informational purposes only and do not constitute appraisals, guarantees of authenticity, legal advice, or representations of value. ThriftShopper is not liable for errors in AI-generated outputs. Users remain responsible for their own listing accuracy and purchase decisions.",
+      text: "AI Disclosure. ThriftShopper uses AI-assisted tools to support item discovery, search relevance, listing categorization, pre-publish content moderation, and fraud prevention. AI-generated suggestions, descriptions, or recommendations are provided for informational purposes only and do not constitute appraisals, guarantees of authenticity, legal advice, or representations of value. ThriftShopper is not liable for errors in AI-generated outputs. Users remain responsible for their own listing accuracy and purchase decisions.",
     },
     { type: "h2", text: "14. Disclaimer of Warranties", id: "disclaimer" },
     {

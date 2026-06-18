@@ -6,6 +6,7 @@ import {
   SELLER_LISTING_NEEDS_SHIPPING_MESSAGE,
 } from "../../../../lib/shippingPreferences";
 import { resolveSellerActionType } from "../../../../lib/sellerActionType";
+import { runPrePublishModeration } from "../../../../lib/listingModerationPublish";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2025-11-17.clover",
@@ -52,7 +53,9 @@ export async function POST(request: NextRequest) {
 
     const { data: listing, error: listingError } = await supabase
       .from("listings")
-      .select("id, seller_id, status, custom_shipping_policy, seller_action_type")
+      .select(
+        "id, seller_id, status, custom_shipping_policy, seller_action_type, title, description, story_text, category, original_image_url"
+      )
       .eq("id", listingId)
       .single();
 
@@ -136,6 +139,27 @@ export async function POST(request: NextRequest) {
         },
         { status: 409 }
       );
+    }
+
+    const moderation = await runPrePublishModeration(
+      supabase,
+      listingId,
+      user.id,
+      {
+        title: listing.title,
+        description: listing.description,
+        story_text: listing.story_text,
+        category: listing.category,
+        imageUrl: listing.original_image_url,
+      }
+    );
+
+    if (moderation.outcome === "rejected") {
+      return NextResponse.json(moderation.body, { status: moderation.status });
+    }
+
+    if (moderation.outcome === "pending_review") {
+      return NextResponse.json(moderation.body, { status: moderation.status });
     }
 
     const updateData: Record<string, unknown> = {

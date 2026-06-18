@@ -1,5 +1,11 @@
 // web/lib/types.ts
-export type ListingStatus = 'active' | 'sold' | 'draft' | 'hidden';
+export type ListingStatus =
+  | 'active'
+  | 'sold'
+  | 'draft'
+  | 'hidden'
+  | 'rejected'
+  | 'pending_review';
 
 export type Listing = {
   id: string;

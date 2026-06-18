@@ -1279,6 +1279,20 @@ export default function SellerUploadForm() {
           setError(publishData.error || SELLER_LISTING_NEEDS_SHIPPING_MESSAGE);
           return;
         }
+        if (publishData.code === 'CONTENT_MODERATION_REJECTED') {
+          setError(
+            publishData.error ||
+              'This listing could not be published. Please review our Prohibited Items Policy and update your listing.'
+          );
+          return;
+        }
+        if (publishData.code === 'CONTENT_MODERATION_PENDING_REVIEW') {
+          setError(
+            publishData.error ||
+              'Your listing is pending content review and is not visible in the marketplace yet.'
+          );
+          return;
+        }
         setError(publishData.error || 'Failed to publish listing');
         return;
       }
