@@ -2,6 +2,7 @@ export type LegalFrom =
   | "settings"
   | "help"
   | "signup"
+  | "login"
   | "seller"
   | "onboarding"
   | "sell"
@@ -14,6 +15,7 @@ const BACK_TARGETS: Record<
   settings: { href: "/settings", label: "Settings" },
   help: { href: "/help", label: "Help Center" },
   signup: { href: "/signup", label: "Sign up" },
+  login: { href: "/login", label: "Sign in" },
   seller: { href: "/seller", label: "Seller dashboard" },
   onboarding: { href: "/seller/onboarding", label: "Set up your shop" },
   sell: { href: "/sell", label: "Create listing" },
@@ -25,6 +27,7 @@ export function parseLegalFrom(value: string | null | undefined): LegalFrom {
     value === "settings" ||
     value === "help" ||
     value === "signup" ||
+    value === "login" ||
     value === "seller" ||
     value === "onboarding" ||
     value === "sell"

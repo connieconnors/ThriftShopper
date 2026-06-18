@@ -317,7 +317,7 @@ function LoginForm() {
           >
             I acknowledge that I have read and agree to the{" "}
             <Link
-              href={legalHref("/terms", "signup")}
+              href={legalHref("/terms", "login")}
               className={`font-semibold ${authLinkClass}`}
               onClick={(e) => e.stopPropagation()}
             >
@@ -325,7 +325,7 @@ function LoginForm() {
             </Link>
             {" "}and{" "}
             <Link
-              href={legalHref("/privacy", "signup")}
+              href={legalHref("/privacy", "login")}
               className={`font-semibold ${authLinkClass}`}
               onClick={(e) => e.stopPropagation()}
             >
