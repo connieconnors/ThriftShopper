@@ -318,6 +318,8 @@ function LoginForm() {
             I acknowledge that I have read and agree to the{" "}
             <Link
               href={legalHref("/terms", "login")}
+              target="_blank"
+              rel="noopener noreferrer"
               className={`font-semibold ${authLinkClass}`}
               onClick={(e) => e.stopPropagation()}
             >
@@ -326,7 +328,8 @@ function LoginForm() {
             {" "}and{" "}
             <Link
               href={legalHref("/privacy", "login")}
-              className={`font-semibold ${authLinkClass}`}
+              target="_blank"
+              rel="noopener noreferrer"
               onClick={(e) => e.stopPropagation()}
             >
               Privacy Policy
