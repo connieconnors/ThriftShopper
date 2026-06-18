@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, FormEvent, Suspense } from "react";
+import { useState, FormEvent, Suspense, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { legalHref } from "@/lib/legalNavigation";
@@ -11,6 +11,11 @@ import { AuthWelcomeLayout } from "../../components/AuthWelcomeLayout";
 import { authPrimaryButtonClass, authLinkClass } from "../../components/WelcomeBrandHeader";
 import { SellerFeeTransparencyLine } from "../../components/SellerFeeTransparency";
 import { Loader2 } from "lucide-react";
+import {
+  readSignupDraft,
+  writeSignupDraft,
+  clearSignupDraft,
+} from "@/lib/authFormDraft";
 
 function SignUpForm() {
   const router = useRouter();
@@ -19,12 +24,45 @@ function SignUpForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [acceptTerms, setAcceptTerms] = useState(false);
   const [acceptsMarketing, setAcceptsMarketing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [draftRestored, setDraftRestored] = useState(false);
   
   // Check if this is a seller signup
   const isSellerSignup = searchParams.get('seller') === 'true';
+
+  useEffect(() => {
+    if (draftRestored) return;
+    const draft = readSignupDraft();
+    if (draft) {
+      if (draft.email) setEmail(draft.email);
+      if (draft.password) setPassword(draft.password);
+      if (draft.confirmPassword) setConfirmPassword(draft.confirmPassword);
+      if (draft.acceptTerms) setAcceptTerms(true);
+      if (draft.acceptsMarketing) setAcceptsMarketing(true);
+    }
+    setDraftRestored(true);
+  }, [draftRestored]);
+
+  useEffect(() => {
+    if (!draftRestored) return;
+    writeSignupDraft({
+      email,
+      password,
+      confirmPassword,
+      acceptTerms,
+      acceptsMarketing,
+    });
+  }, [
+    email,
+    password,
+    confirmPassword,
+    acceptTerms,
+    acceptsMarketing,
+    draftRestored,
+  ]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -129,6 +167,7 @@ function SignUpForm() {
         // Show success message and redirect to login
         setError(null);
         alert("Account created! Please check your email to confirm your account, then log in.");
+        clearSignupDraft();
         router.push("/login");
         return;
       }
@@ -163,8 +202,10 @@ function SignUpForm() {
         }
         
         if (isSeller) {
+          clearSignupDraft();
           router.push("/seller/onboarding");
         } else {
+          clearSignupDraft();
           router.push("/browse");
         }
       } else {
@@ -253,6 +294,8 @@ function SignUpForm() {
           <input
             type="checkbox"
             id="accept-terms"
+            checked={acceptTerms}
+            onChange={(e) => setAcceptTerms(e.target.checked)}
             required
             className="mt-1 w-4 h-4 rounded border-gray-300 focus:ring-2 cursor-pointer"
             style={{ accentColor: "var(--ink-primary)" }}

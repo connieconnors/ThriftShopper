@@ -11,6 +11,11 @@ import { AuthWelcomeLayout } from "../../components/AuthWelcomeLayout";
 import { authPrimaryButtonClass, authLinkClass } from "../../components/WelcomeBrandHeader";
 import { SHELL_LINEN } from "../../hooks/useAppShell";
 import { legalHref } from "../../lib/legalNavigation";
+import {
+  readLoginDraft,
+  writeLoginDraft,
+  clearLoginDraft,
+} from "../../lib/authFormDraft";
 
 function LoginForm() {
   const router = useRouter();
@@ -18,10 +23,28 @@ function LoginForm() {
   const { signIn, user, isLoading: authLoading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [acceptTerms, setAcceptTerms] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [draftRestored, setDraftRestored] = useState(false);
 
   const redirectTo = searchParams.get("redirect");
+
+  useEffect(() => {
+    if (draftRestored) return;
+    const draft = readLoginDraft();
+    if (draft) {
+      if (draft.email) setEmail(draft.email);
+      if (draft.password) setPassword(draft.password);
+      if (draft.acceptTerms) setAcceptTerms(true);
+    }
+    setDraftRestored(true);
+  }, [draftRestored]);
+
+  useEffect(() => {
+    if (!draftRestored) return;
+    writeLoginDraft({ email, password, acceptTerms });
+  }, [email, password, acceptTerms, draftRestored]);
 
   // If user is already logged in, redirect them appropriately
   useEffect(() => {
@@ -125,6 +148,8 @@ function LoginForm() {
         setIsLoading(false);
         return;
       }
+
+      clearLoginDraft();
 
       // Get user profile to determine where to redirect
       const { data: { user } } = await supabase.auth.getUser();
@@ -307,6 +332,8 @@ function LoginForm() {
           <input
             type="checkbox"
             id="accept-terms-login"
+            checked={acceptTerms}
+            onChange={(e) => setAcceptTerms(e.target.checked)}
             required
             className="mt-1 w-4 h-4 rounded border-gray-300 focus:ring-2 cursor-pointer"
             style={{ accentColor: "var(--ink-primary)" }}
