@@ -30,8 +30,9 @@ export const sellerGuidelinesDocument: LegalDocumentMeta = {
     },
     {
       type: "p",
-      text: "See What We Accept for our curated, positive framing of marketplace fit.",
+      text: "See our What We Accept page for curated, positive framing of marketplace fit.",
     },
+    { type: "link", href: "/what-we-accept", label: "What We Accept" },
     { type: "h2", text: "3. Prohibited Items", id: "prohibited" },
     {
       type: "p",

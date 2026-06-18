@@ -3,7 +3,7 @@ import type { LegalDocumentMeta } from "@/lib/legal/types";
 export const termsDocument: LegalDocumentMeta = {
   title: "Terms of Use",
   effectiveDate: "June 1, 2026",
-  lastUpdated: "June 12, 2026",
+  lastUpdated: "June 16, 2026",
   intro: [
     "Welcome to ThriftShopper. These Terms of Use govern your access to and use of the ThriftShopper website, marketplace, mobile experiences, applications, content, communications, and related services operated by ThriftShopper Inc.",
     "By creating an account, browsing listings, buying, selling, or otherwise using the Services, you agree to these Terms and our Privacy Policy. If you do not agree, do not use the Services.",
@@ -67,7 +67,11 @@ export const termsDocument: LegalDocumentMeta = {
     },
     {
       type: "p",
-      text: "Reports of policy violations, fraud, or intellectual-property concerns may be submitted to support@thriftshopper.com.",
+      text: "ThriftShopper provides tools to report listings and block sellers. We review reports of objectionable content within 24 hours and may remove content or restrict accounts that violate these Terms, our Seller Guidelines, or our Prohibited Items Policy. Blocking a seller removes that seller's listings from your feed immediately and notifies ThriftShopper for review.",
+    },
+    {
+      type: "p",
+      text: "Reports of policy violations, fraud, or intellectual-property concerns may be submitted in-app or to support@thriftshopper.com.",
     },
     {
       type: "h2",

@@ -10,6 +10,7 @@ import { supabase } from "../../lib/supabaseClient";
 import { AuthWelcomeLayout } from "../../components/AuthWelcomeLayout";
 import { authPrimaryButtonClass, authLinkClass } from "../../components/WelcomeBrandHeader";
 import { SHELL_LINEN } from "../../hooks/useAppShell";
+import { legalHref } from "../../lib/legalNavigation";
 
 function LoginForm() {
   const router = useRouter();
@@ -300,6 +301,37 @@ function LoginForm() {
               Forgot password?
             </Link>
           </div>
+        </div>
+
+        <div className="flex items-start gap-3 pt-2">
+          <input
+            type="checkbox"
+            id="accept-terms-login"
+            required
+            className="mt-1 w-4 h-4 rounded border-gray-300 focus:ring-2 cursor-pointer"
+            style={{ accentColor: "var(--ink-primary)" }}
+          />
+          <label
+            htmlFor="accept-terms-login"
+            className="text-sm text-gray-600 cursor-pointer select-none font-system"
+          >
+            I acknowledge that I have read and agree to the{" "}
+            <Link
+              href={legalHref("/terms", "signup")}
+              className={`font-semibold ${authLinkClass}`}
+              onClick={(e) => e.stopPropagation()}
+            >
+              Terms of Use
+            </Link>
+            {" "}and{" "}
+            <Link
+              href={legalHref("/privacy", "signup")}
+              className={`font-semibold ${authLinkClass}`}
+              onClick={(e) => e.stopPropagation()}
+            >
+              Privacy Policy
+            </Link>
+          </label>
         </div>
 
         <motion.button

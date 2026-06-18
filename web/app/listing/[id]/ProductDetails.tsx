@@ -53,7 +53,7 @@ import {
   SellerQuickViewTrigger,
 } from "../../../components/SellerQuickView";
 import { formatSellerTown } from "../../../lib/sellerProfile";
-import { supabase } from "../../../lib/supabaseClient";
+import { ListingModerationMenu } from "../../../components/ListingModerationMenu";
 
 const CHROME_GLASS = "rgba(22, 25, 58, 0.48)";
 const CHROME_GLASS_BORDER = "rgba(237, 233, 225, 0.25)";
@@ -409,11 +409,20 @@ export default function ProductDetails({
           </Link>
         </div>
 
-        {showShareSuccess && (
-          <div className="px-4 py-2 bg-white/90 text-black text-sm font-medium rounded-full">
-            Link copied!
-          </div>
-        )}
+        <div className="flex items-center gap-2">
+          {showShareSuccess && (
+            <div className="px-4 py-2 bg-white/90 text-black text-sm font-medium rounded-full">
+              Link copied!
+            </div>
+          )}
+          <ListingModerationMenu
+            listingId={listing.id}
+            sellerId={listing.seller_id}
+            sellerName={resolvePublicSellerName(listing)}
+            leaveAfterBlock
+            leaveHref={listingBack.href}
+          />
+        </div>
       </header>
 
       {/* Full-Bleed Image Gallery */}

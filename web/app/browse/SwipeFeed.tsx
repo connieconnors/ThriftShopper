@@ -34,6 +34,8 @@ import {
   resolveDeckSurface,
 } from "../../lib/buyerEventContext";
 import { useBrowseCardEvents } from "../../hooks/useBrowseCardEvents";
+import { useBlockedUsers } from "../../hooks/useBlockedUsers";
+import { ListingModerationMenu } from "../../components/ListingModerationMenu";
 
 interface SwipeFeedProps {
   initialListings: Listing[];
@@ -103,6 +105,16 @@ function filterListingsByMoodTags(source: Listing[], moods: string[]): Listing[]
 export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProps) {
   const router = useRouter();
   const { user } = useAuth();
+  const { blockedUserIds } = useBlockedUsers();
+  const blockedSellerSet = useMemo(() => new Set(blockedUserIds), [blockedUserIds]);
+
+  const withoutBlockedSellers = useCallback(
+    (items: Listing[]) => {
+      if (blockedSellerSet.size === 0) return items;
+      return items.filter((listing) => !blockedSellerSet.has(listing.seller_id));
+    },
+    [blockedSellerSet]
+  );
 
   const [listings, setListings] = useState<Listing[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -481,12 +493,17 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
 
   // Browse deck: prepend semantic picks when not in search/mood mode
   const browseListings = useMemo(() => {
-    if (pickedForYou.length === 0) return filteredListings;
-    const rest = filteredListings.filter((listing) => !pickedIdSet.has(listing.id));
-    return [...pickedForYou, ...rest];
-  }, [filteredListings, pickedForYou, pickedIdSet]);
+    const deck = withoutBlockedSellers(filteredListings);
+    if (pickedForYou.length === 0) return deck;
+    const picks = withoutBlockedSellers(pickedForYou);
+    const rest = deck.filter((listing) => !pickedIdSet.has(listing.id));
+    return [...picks, ...rest];
+  }, [filteredListings, pickedForYou, pickedIdSet, withoutBlockedSellers]);
 
-  const displayListings = searchResults ?? browseListings;
+  const displayListings = useMemo(() => {
+    const base = searchResults ?? browseListings;
+    return withoutBlockedSellers(base);
+  }, [searchResults, browseListings, withoutBlockedSellers]);
   const safeIndexForEvents =
     displayListings.length > 0
       ? Math.min(currentIndex, displayListings.length - 1)
@@ -1506,6 +1523,22 @@ export default function SwipeFeed({ initialListings, shuffleKey }: SwipeFeedProp
                   background: EDITORIAL_GRADIENT,
                 }}
               />
+
+              {/* Report / block — current card only */}
+              {offset === 0 && (
+                <div
+                  className="absolute z-20 pointer-events-auto"
+                  style={{ top: "16px", left: "16px" }}
+                >
+                  <ListingModerationMenu
+                    listingId={listing.id}
+                    sellerId={listing.seller_id}
+                    sellerName={listingSellerName}
+                    leaveAfterBlock
+                    leaveHref="/browse"
+                  />
+                </div>
+              )}
 
               {/* Image Counter - Top Right (only show for current card) */}
               {offset === 0 && (
