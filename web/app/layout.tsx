@@ -14,8 +14,7 @@ import PWARegister from "./components/PWARegister";
 
 import { PostHogProvider } from "./providers/PostHogProvider";
 import { GoogleAnalytics } from "../components/GoogleAnalytics";
-
-
+import { brandShareMetadata } from "../lib/shareMetadata";
 
 const inter = Inter({
 
@@ -54,11 +53,7 @@ const playfair = Playfair_Display({
 
 
 export const metadata: Metadata = {
-
-  title: "ThriftShopper — the magic of discovery™",
-
-  description: "Discover unique vintage and thrift finds",
-
+  ...brandShareMetadata,
   manifest: "/manifest.json",
 
   appleWebApp: {

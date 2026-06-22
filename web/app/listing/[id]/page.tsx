@@ -1,6 +1,8 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import { supabase } from "../../../lib/supabaseClient";
 import { Listing } from "../../../lib/types";
+import { brandShareMetadata } from "../../../lib/shareMetadata";
 import ProductDetails from "./ProductDetails";
 import {
   resolveSellerActionType,
@@ -16,6 +18,11 @@ type ListingPageProps = {
     id: string;
   };
 };
+
+/** Brand splash for link previews — not per-listing product cards. */
+export async function generateMetadata(): Promise<Metadata> {
+  return brandShareMetadata;
+}
 
 export default async function ListingPage({ params }: ListingPageProps) {
   const { id } = await params;
