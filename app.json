@@ -1,0 +1,40 @@
+{
+  "expo": {
+    "name": "ThriftShopper",
+    "slug": "thriftshopper",
+    "version": "1.0.0",
+    "newArchEnabled": true,
+    "userInterfaceStyle": "light",
+    "icon": "./web/public/icon-512.png",
+    "ios": {
+      "bundleIdentifier": "com.thriftshopperinc.thriftshopper",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSCameraUsageDescription": "ThriftShopper uses your camera to photograph items for your listings.",
+        "NSPhotoLibraryUsageDescription": "ThriftShopper can use photos you pick from your library for your listings.",
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": false,
+          "NSAllowsLocalNetworking": true
+        }
+      }
+    },
+    "android": {
+      "package": "com.thriftshopperinc.thriftshopper",
+      "versionCode": 1,
+      "permissions": [
+        "CAMERA",
+        "android.permission.CAMERA"
+      ]
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "ThriftShopper uses your camera to photograph items for your listings.",
+          "recordAudioAndroid": false
+        }
+      ]
+    ],
+    "owner": "thriftshopperconnie"
+  }
+}

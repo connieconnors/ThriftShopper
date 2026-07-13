@@ -3,7 +3,7 @@ import type { LegalDocumentMeta } from "@/lib/legal/types";
 export const privacyDocument: LegalDocumentMeta = {
   title: "Privacy Policy",
   effectiveDate: "June 1, 2026",
-  lastUpdated: "June 12, 2026",
+  lastUpdated: "June 18, 2026",
   intro: [
     'ThriftShopper Inc. ("ThriftShopper," "we," "us," or "our") operates an online marketplace connecting buyers and sellers of secondhand, vintage, collectible, and unique items.',
     "We collect information necessary to operate and improve ThriftShopper, facilitate transactions, and maintain marketplace safety. We do not sell your personal information.",
@@ -12,7 +12,7 @@ export const privacyDocument: LegalDocumentMeta = {
     { type: "h2", text: "1. Information We Collect", id: "information-collected" },
     {
       type: "p",
-      text: "We may collect account information (name, email, profile details), seller information (listings, photos, shipping and payout-related data via payment processors), buyer information (purchase history, shipping, favorites), and communications you send through the platform.",
+      text: "We may collect account information (name, email, profile details), seller information (listings, photos, including photos captured via your device camera, shipping and payout-related data via payment processors), buyer information (purchase history, shipping, favorites), and communications you send through the platform.",
     },
     { type: "h2", text: "2. Payment Information", id: "payments" },
     {
@@ -65,7 +65,7 @@ export const privacyDocument: LegalDocumentMeta = {
     { type: "h2", text: "9. Children's Privacy", id: "children" },
     {
       type: "p",
-      text: "ThriftShopper is intended for individuals age 18 and older. We do not knowingly collect personal information from children under 16.",
+      text: "ThriftShopper is intended for individuals age 18 and older. We do not knowingly collect personal information from children under 18.",
     },
     { type: "h2", text: "10. Your Privacy Rights", id: "rights" },
     {
