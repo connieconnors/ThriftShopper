@@ -23,7 +23,9 @@
       "versionCode": 1,
       "permissions": [
         "CAMERA",
-        "android.permission.CAMERA"
+        "android.permission.CAMERA",
+        "READ_MEDIA_IMAGES",
+        "android.permission.READ_MEDIA_IMAGES"
       ]
     },
     "plugins": [
@@ -35,6 +37,11 @@
         }
       ]
     ],
-    "owner": "thriftshopperconnie"
+    "owner": "thriftshopperconnie",
+    "extra": {
+      "eas": {
+        "projectId": "ff1044a0-2830-4a59-8720-bee897f6a67f"
+      }
+    }
   }
 }
