@@ -1736,7 +1736,7 @@ Return the following JSON structure:
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-3-5-sonnet-20241022', // Use latest Claude Sonnet for best vision quality
+        model: 'claude-sonnet-5',
         max_tokens: 4096,
         messages: [
           {

@@ -26,7 +26,7 @@ export type ModerationResult =
   | { approved: true }
   | { approved: false; reason: string; categories?: string[] };
 
-const MODERATION_MODEL = "claude-3-5-haiku-20241022";
+const MODERATION_MODEL = "claude-haiku-4-5-20251001";
 
 const PROHIBITED_SUMMARY = `
 ThriftShopper is a vintage/thrift marketplace. Reject listings that violate our Prohibited Items Policy:
