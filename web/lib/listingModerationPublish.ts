@@ -1,12 +1,88 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { Resend } from "resend";
 import {
   moderateListingForPublish,
+  ModerationApiError,
   type ModerationListingInput,
   CONTENT_MODERATION_REJECTED,
   CONTENT_MODERATION_PENDING_REVIEW,
   formatModerationRejectionUserMessage,
   MODERATION_PENDING_REVIEW_MESSAGE,
 } from "./contentModeration";
+
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
+const MODERATION_ALERT_EMAIL_TIMEOUT_MS = 5_000;
+
+/** Safe for ops email: only Error.message / string; never raw API bodies or headers. */
+function formatModerationAlertErrorMessage(error: unknown): string {
+  const raw =
+    error instanceof Error
+      ? error.message
+      : typeof error === "string"
+        ? error
+        : "Unknown error";
+
+  const redacted = raw
+    .replace(/sk-[A-Za-z0-9_-]+/g, "[REDACTED]")
+    .replace(/x-api-key:\s*\S+/gi, "x-api-key: [REDACTED]")
+    .replace(/authorization:\s*\S+/gi, "authorization: [REDACTED]")
+    .replace(/Bearer\s+\S+/gi, "Bearer [REDACTED]")
+    .replace(/"type"\s*:\s*"error"[\s\S]*/gi, "[REDACTED API response]")
+    .trim();
+
+  return redacted.slice(0, 500) || "Unknown error";
+}
+
+function formatAnthropicFailureDetails(error: unknown): {
+  httpStatus: string;
+  errorType: string;
+} {
+  if (error instanceof ModerationApiError) {
+    return {
+      httpStatus: String(error.httpStatus),
+      errorType: error.anthropicErrorType ?? "not present",
+    };
+  }
+  return {
+    httpStatus: "no HTTP response",
+    errorType: "no HTTP response",
+  };
+}
+
+async function notifyModerationFailureAlert(
+  listingId: string,
+  error: unknown
+): Promise<void> {
+  if (!resend) return;
+
+  const { httpStatus, errorType } = formatAnthropicFailureDetails(error);
+
+  const sendPromise = resend.emails.send({
+    from: "ThriftShopper <noreply@thriftshopper.com>",
+    to: "support@thriftshopper.com",
+    subject: `[Moderation] Listing pending review — ${listingId}`,
+    text: [
+      "Pre-publish content moderation failed. Listing was set to pending_review.",
+      "",
+      `Listing ID: ${listingId}`,
+      `HTTP status: ${httpStatus}`,
+      `Anthropic error type: ${errorType}`,
+      `Error: ${formatModerationAlertErrorMessage(error)}`,
+      "",
+      `Time: ${new Date().toISOString()}`,
+    ].join("\n"),
+  });
+
+  await Promise.race([
+    sendPromise,
+    new Promise<never>((_, reject) => {
+      setTimeout(
+        () => reject(new Error("Moderation alert email timed out")),
+        MODERATION_ALERT_EMAIL_TIMEOUT_MS
+      );
+    }),
+  ]);
+}
 
 export { CONTENT_MODERATION_REJECTED, CONTENT_MODERATION_PENDING_REVIEW };
 
@@ -74,6 +150,11 @@ export async function runPrePublishModeration(
       sellerId,
       "pending_review"
     );
+    try {
+      await notifyModerationFailureAlert(listingId, moderationError);
+    } catch (emailErr) {
+      console.error("[moderation] alert email failed:", emailErr);
+    }
     if (dbError) {
       return {
         outcome: "pending_review",

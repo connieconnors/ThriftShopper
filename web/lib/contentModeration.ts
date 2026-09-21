@@ -26,7 +26,37 @@ export type ModerationResult =
   | { approved: true }
   | { approved: false; reason: string; categories?: string[] };
 
+/** Thrown when the Anthropic moderation HTTP call fails (!response.ok). */
+export class ModerationApiError extends Error {
+  readonly httpStatus: number;
+  readonly anthropicErrorType?: string;
+
+  constructor(
+    message: string,
+    httpStatus: number,
+    anthropicErrorType?: string
+  ) {
+    super(message);
+    this.name = "ModerationApiError";
+    this.httpStatus = httpStatus;
+    this.anthropicErrorType = anthropicErrorType;
+  }
+}
+
 const MODERATION_MODEL = "claude-haiku-4-5-20251001";
+
+function parseAnthropicErrorType(errorBody: string): string | undefined {
+  try {
+    const parsed = JSON.parse(errorBody) as { error?: { type?: unknown } };
+    const type = parsed?.error?.type;
+    if (typeof type === "string" && /^[a-z][a-z0-9_]*$/.test(type)) {
+      return type;
+    }
+  } catch {
+    // ignore malformed JSON
+  }
+  return undefined;
+}
 
 const PROHIBITED_SUMMARY = `
 ThriftShopper is a vintage/thrift marketplace. Reject listings that violate our Prohibited Items Policy:
@@ -186,10 +216,12 @@ export async function moderateListingForPublish(
   if (!response.ok) {
     const errorText = await response.text().catch(() => "");
     console.error("Moderation API error:", response.status, errorText);
-    throw new Error(
+    throw new ModerationApiError(
       response.status >= 500
         ? "Content review is temporarily unavailable. Please try again shortly."
-        : "Content review failed. Please try again."
+        : "Content review failed. Please try again.",
+      response.status,
+      parseAnthropicErrorType(errorText)
     );
   }
 
